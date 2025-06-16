@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # nov-maze-2024
 
 This is the summer project at NOV summer 2024. 
@@ -96,3 +97,6 @@ The model can output three commands: increase height, decrease height, and maint
 If you plan to train the model using AI, I suggest examining my approach first. Additionally, for reinforcement learning (RL), it is crucial to provide rewards and punishments based on the agent's immediate actions, rather than past actions, to avoid confusing the agent during training. My method involves a function that uses mathematical calculations to predict whether the current action is correct based on future outcomes. If you choose to use my learning method, I recommend reviewing the simulation to ensure its accuracy.
 
 Please note that I am not an expert in AI and its use on regulation systems. My recommendation to review my training steps is intended to give you an overview of what has been done, rather than implying that I have created a perfect system.
+=======
+# maze-2025
+>>>>>>> 5f983cb55f194c8d4b0576cf549e6131eb0f139c
