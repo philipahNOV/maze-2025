@@ -40,7 +40,6 @@ while(n>0):
     img = camera_thread.latest_frame
     if img is not None:
         cv2.imshow("Test Image", img)
-        break
     time.sleep(0.1)
     n -= 1
 
