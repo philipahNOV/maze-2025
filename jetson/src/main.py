@@ -8,6 +8,7 @@ from automatic import Automatic
 from manual_part.manuel_main import elManuel
 
 import time
+import cv2
 
 def initialize_component(component, name, retries=5, delay=2):
     for attempt in range(retries):
@@ -69,9 +70,16 @@ while mqtt_client.jetson_state != "0.0":
 
 print("All Threads Initialized")
 
+#--------------
 #TESTING AREA
 #The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
 print("TEST")
+img = camera_thread.latest_frame
+if img is not None:
+    cv2.imshow("Test Image", img)
+    cv2.waitKey(0)
+
+#--------------
 
 while mqtt_client.jetson_state != "-1":
     if mqtt_client.jetson_state == "1.0":
