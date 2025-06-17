@@ -126,13 +126,16 @@ class CameraThread(threading.Thread):
         x, y, w, h = (200, 0, self.image_size.width - 300, self.image_size.height)
         #x, y, w, h = (0, 0, self.image_size.width, self.image_size.height)
         runtime = sl.RuntimeParameters()
+        print("Waiting for camera to start...")
         c = 0
         sensors_data = sl.SensorsData()
+        print("Camera started")
         while self.running:
             c += 1
             err = self.zed.grab(runtime)
             if err == sl.ERROR_CODE.SUCCESS:
                 self.zed.retrieve_image(self.image_zed, sl.VIEW.LEFT, sl.MEM.CPU, self.image_size)
+                print("Frame grabbed")
                 img = self.image_zed.get_data()
                 # I have removed the board auto detection part because i do not have the time to fully test it. 
                 # This feature will be added back in the future, hopefully.
