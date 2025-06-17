@@ -33,8 +33,10 @@ except Exception as e:
 #The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
 print("TEST")
 camera_thread.run()
+print("Camera thread started")
 img = camera_thread.latest_frame
 if img is not None:
+    print("Image received from camera thread")
     cv2.imshow("Test Image", img)
     cv2.imwrite("test_image.jpg", img)  # Save the image for verification
     cv2.waitKey(0)
