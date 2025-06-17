@@ -39,6 +39,7 @@ if img is not None:
     cv2.imshow("Test Image", img)
     cv2.imwrite("test_image.jpg", img)  # Save the image for verification
     cv2.waitKey(0)
+    cv2.destroyAllWindows()
 else:
     print("No image received from camera thread.")
 #--------------
