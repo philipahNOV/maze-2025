@@ -31,6 +31,7 @@ except Exception as e:
 #--------------
 #TESTING AREA
 #The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
+time.sleep(3)
 print("TEST")
 print("Camera thread started")
 img = camera_thread.latest_frame
