@@ -35,7 +35,7 @@ time.sleep(3)
 print("TEST")
 print("Camera thread started")
 img = camera_thread.latest_frame
-n = 100
+n = 5000
 while(n>0):
     img = camera_thread.latest_frame
     if img is not None:
