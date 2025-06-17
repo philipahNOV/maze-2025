@@ -42,6 +42,7 @@ while(n>0):
         cv2.imshow("Test Image", img)
     time.sleep(0.1)
     n -= 1
+cv2.waitKey(0)
 
 img = None
 if img is not None:
