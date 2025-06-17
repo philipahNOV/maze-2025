@@ -35,7 +35,7 @@ time.sleep(3)
 print("TEST")
 print("Camera thread started")
 img = camera_thread.latest_frame
-n = 5000
+n = 1
 while(n>0):
     img = camera_thread.latest_frame
     if img is not None:
@@ -43,13 +43,23 @@ while(n>0):
         cv2.waitKey(1)
     n -= 1
 cv2.destroyAllWindows()
-
-img = None
-if img is not None:
-    print("Image received from camera thread")
-    cv2.imwrite("test_image.jpg", img)  # Save the image for verification
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-else:
-    print("No image received from camera thread.")
 #--------------
+
+
+# Define video codec and create VideoWriter object
+fourcc = cv2.VideoWriter_fourcc(*'XVID')  # or 'MJPG', 'MP4V', etc.
+fps = 10  # frames per second
+frame_size = (640, 480)  # must match your actual frame size
+out = cv2.VideoWriter('output.avi', fourcc, fps, frame_size)
+n = 500
+while n > 0:
+    frame = camera_thread.latest_frame
+    if frame is not None:
+        resized_frame = cv2.resize(frame, frame_size)  # Ensure it matches frame_size
+        out.write(resized_frame)  # Write frame to video
+        cv2.imshow("Recording...", resized_frame)
+
+        if cv2.waitKey(1) == 27:  # ESC key to exit early
+            break
+    time.sleep(1 / fps)
+    n -= 1
