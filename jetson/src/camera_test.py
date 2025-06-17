@@ -36,6 +36,7 @@ camera_thread.run()
 img = camera_thread.latest_frame
 if img is not None:
     cv2.imshow("Test Image", img)
+    cv2.imwrite("test_image.jpg", img)  # Save the image for verification
     cv2.waitKey(0)
 else:
     print("No image received from camera thread.")
