@@ -32,7 +32,6 @@ except Exception as e:
 #TESTING AREA
 #The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
 print("TEST")
-camera_thread.run()
 print("Camera thread started")
 img = camera_thread.latest_frame
 if img is not None:
