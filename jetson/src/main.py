@@ -69,6 +69,10 @@ while mqtt_client.jetson_state != "0.0":
 
 print("All Threads Initialized")
 
+#TESTING AREA
+#The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
+print("TEST")
+
 while mqtt_client.jetson_state != "-1":
     if mqtt_client.jetson_state == "1.0":
         automatics.state_1_0()
