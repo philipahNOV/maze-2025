@@ -35,9 +35,18 @@ time.sleep(3)
 print("TEST")
 print("Camera thread started")
 img = camera_thread.latest_frame
+n = 3
+while(n>0):
+    img = camera_thread.latest_frame
+    if img is not None:
+        cv2.imshow("Test Image", img)
+        break
+    time.sleep(0.1)
+    n -= 1
+
+img = None
 if img is not None:
     print("Image received from camera thread")
-    cv2.imshow("Test Image", img)
     cv2.imwrite("test_image.jpg", img)  # Save the image for verification
     cv2.waitKey(0)
     cv2.destroyAllWindows()
