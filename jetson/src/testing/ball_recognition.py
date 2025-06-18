@@ -17,17 +17,6 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
 
     # Find all pixels that satisfy both red ratio and intensity threshold
     valid_pixels = np.where((red_ratio > (frac * np.max(red_ratio))) & (total > min_intensity))
-    max_red_ratio = 0
-    brightest_pixel = None
-    if valid_pixels[0].size > 0:
-        # Compute max red ratio among valid pixels
-        max_red_ratio = np.max(red_ratio[valid_pixels])
-        
-        # Find indices of pixels where red_ratio == max_red_ratio among valid pixels
-        max_pixels = np.where(red_ratio == max_red_ratio)
-        
-        # Choose the first max pixel as brightest_pixel (x,y)
-        brightest_pixel = (max_pixels[1][0], max_pixels[0][0])  # (col, row) = (x, y)
     
     spatial_mask = np.ones_like(total, dtype=bool)
     if prev_center is not None:
@@ -42,6 +31,7 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     if valid_pixels[0].size > 0:
         # Compute max red ratio among valid pixels
         max_red_ratio = np.max(red_ratio[valid_pixels])
+        effective_max = max(np.max(red_ratio), 0.3)
         
         # Find indices of pixels where red_ratio == max_red_ratio among valid pixels
         max_pixels = np.where(red_ratio == max_red_ratio)
@@ -50,7 +40,7 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
         brightest_pixel = (max_pixels[1][0], max_pixels[0][0])  # (col, row) = (x, y)
 
     bright_mask = total > min_intensity
-    red_mask = red_ratio > (frac * max_red_ratio)
+    red_mask = red_ratio > (frac * effective_max)
     mask = (np.logical_and(bright_mask, red_mask)).astype(np.uint8) * 255
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -136,7 +126,7 @@ def detect_red_ball(video_name):
             (x, y), radius = cv2.minEnclosingCircle(best_contour)
             center = (int(x), int(y))
             diff = center_difference(prev_center, center)
-            if diff is not None and center_difference(prev_center, center) > 500:
+            if diff is not None and center_difference(prev_center, center) > 10000:
                 print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
                 center = prev_center
             prev_center = center
