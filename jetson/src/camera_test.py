@@ -28,9 +28,6 @@ except Exception as e:
     print(e)
     exit(1)
 
-#--------------
-#TESTING AREA
-#The state is hardcoded to "0.0" to not rely on the Pi for testing purposes
 time.sleep(3)
 print("TEST")
 print("Camera thread started")
@@ -43,15 +40,14 @@ while(n>0):
         cv2.waitKey(1)
     n -= 1
 cv2.destroyAllWindows()
-#--------------
 
 
 # Define video codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # or 'MJPG', 'MP4V', etc.
-fps = 10  # frames per second
+fps = 30  # frames per second
 frame_size = (640, 480)  # must match your actual frame size
 out = cv2.VideoWriter('output.avi', fourcc, fps, frame_size)
-n = 500
+n = 150
 while n > 0:
     frame = camera_thread.latest_frame
     if frame is not None:
