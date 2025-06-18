@@ -125,7 +125,7 @@ def detect_red_ball(video_name):
             radius = int(radius)
             cv2.circle(frame, center, radius, (0, 255, 0), 4)
 
-        cv2.imshow('Video Frame', frame)
+        cv2.imshow('Video frame', frame)
         time.sleep(1 / 15)
         frame_num += 1
         print(f"Displaying frame {frame_num}")
