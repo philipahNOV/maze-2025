@@ -5,6 +5,7 @@ from arduino_connection import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
 import testing.ball_recognition
+import pyzed.sl as sl
 
 from manual_part.manuel_main import elManuel
 
@@ -31,7 +32,6 @@ except Exception as e:
     exit(1)
 
 time.sleep(1.5)
-
 
 frame = camera_thread.latest_frame
 n = 150
