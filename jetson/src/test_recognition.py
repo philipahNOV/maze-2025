@@ -42,8 +42,13 @@ while(n>0):
         time.sleep(1 / 15)
         continue
     center, radius = testing.ball_recognition.detect_red_ball_frame(frame, center)
-    cv2.circle(frame, center, radius, (0, 255, 0), 4)
+    if center is not None and radius is not None:
+        cv2.circle(frame, center, radius, (0, 255, 0), 4)
+    else:
+        cv2.putText(frame, "No ball detected", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
+
     cv2.imshow("Test Image", frame)
+    cv2.waitKey(1)  # This is necessary for the window to update
     n -= 1
     time.sleep(1 / 15)
 cv2.destroyAllWindows()
