@@ -12,7 +12,6 @@ meldig_bytes = melding.to_bytes(4, byteorder='big')
 start_time = time.time()  # Ta tidsstempel før sending
 ser.write(meldig_bytes)  # Send melding
 
-print(f'Venter på svar')
 response = ser.read(4)  # Les respons
 end_time = time.time()  # Ta tidsstempel ved mottak
 print(f'Svar motat\n')
