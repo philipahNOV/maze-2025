@@ -2,7 +2,7 @@ import time
 import serial
 import serial.tools.list_ports
 
-def detect_arduino_port(self):
+def detect_arduino_port():
         """
         Detects the port of the Arduino device connected to the system.
 
@@ -25,3 +25,4 @@ end_time = time.time()  # Ta tidsstempel ved mottak
 
 total_time = end_time - start_time
 print(f"Tidsforsinkelse: {total_time} sekunder")
+
