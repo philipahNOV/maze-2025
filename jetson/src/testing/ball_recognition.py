@@ -99,7 +99,7 @@ def center_difference(prev_center, current_center):
 def detect_red_ball(video_name):
     vid = cv2.VideoCapture(video_name)
     if not vid.isOpened():
-        print("Error: Cannot open video file.")
+        print("Error; Cannot open video file.")
         exit()
 
     frame_num = 0
