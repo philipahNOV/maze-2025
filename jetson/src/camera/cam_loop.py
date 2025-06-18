@@ -130,10 +130,7 @@ class CameraThread(threading.Thread):
         sensors_data = sl.SensorsData()
         while self.running:
             c += 1
-            start = time.time()
             err = self.zed.grab(runtime)
-            duration = time.time() - start
-            print(f"Grab duration: {duration:.3f} seconds")
             if err == sl.ERROR_CODE.SUCCESS:
                 self.zed.retrieve_image(self.image_zed, sl.VIEW.LEFT, sl.MEM.CPU, self.image_size)
                 img = self.image_zed.get_data()

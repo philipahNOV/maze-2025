@@ -42,7 +42,11 @@ while(n>0):
     if frame is None:
         #time.sleep(1 / 15)
         continue
+    start_det = time.time()
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
+    end_det = time.time()
+
+    print(f"Detection time per frame: {(end_det - start_det) * 1000:.2f} ms")
     if center is not None and radius is not None:
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
     else:
