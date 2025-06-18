@@ -30,7 +30,7 @@ arduino_thread.send_target_positions(120, 120, 120, 120)
 step = 0
 max_steps = 100
 ref = (300, 300)
-kp = 0.001
+kp = 0.01
 while step < max_steps:
 
     pos = (step*5, step*5)
@@ -42,7 +42,7 @@ while step < max_steps:
     p_y = kp * e_y
 
     arduino_thread.send_target_positions(int(p_x), int(p_y), 201, 799)
-    time.sleep(0.1)
+    time.sleep(1)
 
     step += 1
 
