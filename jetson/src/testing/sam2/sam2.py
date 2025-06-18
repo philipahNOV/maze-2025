@@ -17,7 +17,7 @@ def track_ball_sam2(video_name, predictor, prev_mask=None):
     """
     vid = cv2.VideoCapture(video_name)
     if not vid.isOpened():
-        print("Error: Cannot open video file.")
+        print("Error: Canot open video file.")
         exit()
 
     frame_num = 0
