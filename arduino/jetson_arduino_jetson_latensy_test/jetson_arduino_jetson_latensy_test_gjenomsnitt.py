@@ -12,13 +12,12 @@ def main():
 
     data = struct.pack('>IIII', tall1, tall2, tall3, tall4)
 
-    n = 500
+    n = 10000
     totale_tider = []
 
     print(f'Starter testen')
 
     for _ in range(n):
-        print(f'Melding {_}')
         start_time = time.time()
         
         ser.write(data)
