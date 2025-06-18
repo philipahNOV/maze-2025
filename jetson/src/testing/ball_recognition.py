@@ -110,8 +110,7 @@ def detect_red_ball(video_name):
         if not ret:
             print("End of video or error reading frame.")
             break
-        masked_frame, mask, brightest_pixel = red_threshold(frame, 0.6, 40, prev_center, 500)
-        cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
+        masked_frame, mask = red_threshold(frame, 0.6, 40, prev_center, 500)
 
         best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
         if best_contour is not None:
@@ -136,7 +135,7 @@ def detect_red_ball(video_name):
     cv2.destroyAllWindows()
 
 def detect_red_ball_frame(frame, prev_center=None):
-    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.55, 50, prev_center, 200)
+    masked_frame, mask = red_threshold(frame, 0.55, 50, prev_center, 200)
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
@@ -166,7 +165,7 @@ def main():
         if not ret:
             print("End of video or error reading frame.")
             break
-        center, radius = detect_red_ball_frame(frame, center)
+        center, radius, masked_frame = detect_red_ball_frame(frame, center)
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
         cv2.imshow('Video Frame', frame)
         time.sleep(1 / 5)
