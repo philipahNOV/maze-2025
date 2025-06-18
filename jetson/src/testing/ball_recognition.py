@@ -147,7 +147,7 @@ def detect_red_ball_frame(frame, prev_center=None):
         (x, y), radius = cv2.minEnclosingCircle(best_contour)
         center = (int(x), int(y))
         diff = center_difference(prev_center, center)
-        if diff is not None and center_difference(prev_center, center) > 500:
+        if diff is not None and center_difference(prev_center, center) > 10000:
             print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
             center = prev_center
         radius = int(radius)
