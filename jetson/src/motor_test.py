@@ -25,6 +25,7 @@ except Exception as e:
     print(e)
     exit(1)
 
+print("Arduino initialized")
 arduino_thread.send_target_positions(200, 200, 200, 200)
 time.sleep(4)
 arduino_thread.send_target_positions(50, 200, 200, 200)
