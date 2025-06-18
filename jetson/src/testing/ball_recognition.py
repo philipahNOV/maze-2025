@@ -71,34 +71,6 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     result[mask == 255] = 255
     return result, (mask > 0).astype(np.uint8) * 255, brightest_pixel
 
-def find_largest_contour(mask):
-    mask = cv2.GaussianBlur(mask, (5,5), 0)
-    contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    if not contours:
-        print("No contours found in the frame.")
-        return
-
-    # Filter small contours
-    min_area = 30
-    contours = [cnt for cnt in contours if cv2.contourArea(cnt) > min_area]
-    if not contours:
-        print("No valid contours found.")
-        return
-
-    largest_contour = max(contours, key=cv2.contourArea)
-
-    # Circularity check
-    perimeter = cv2.arcLength(largest_contour, True)
-    area = cv2.contourArea(largest_contour)
-    if perimeter == 0:
-        print("Perimeter is zero, skipping this frame.")
-        return
-    circularity = 4 * np.pi * (area / (perimeter * perimeter))
-    if circularity < 0.10:
-        print("Circularity check failed, skipping this frame.")
-        return
-    return largest_contour
-
 def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circularity=0.6, prev_center= None, max_diff=500):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
@@ -181,7 +153,7 @@ def detect_red_ball(video_name):
     cv2.destroyAllWindows()
 
 def detect_red_ball_frame(frame, prev_center=None):
-    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.5, 50, prev_center, 400)
+    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.6, 50, prev_center, 200)
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
@@ -214,7 +186,7 @@ def main():
         center, radius = detect_red_ball_frame(frame, center)
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
         cv2.imshow('Video Frame', frame)
-        time.sleep(1 / 15)
+        time.sleep(1 / 5)
         frame_num += 1
         #print(f"Displaying frame {frame_num}")
         if cv2.waitKey(1) & 0xFF == ord('q'):
