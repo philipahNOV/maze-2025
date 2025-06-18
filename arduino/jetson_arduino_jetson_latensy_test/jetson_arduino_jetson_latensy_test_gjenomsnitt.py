@@ -3,7 +3,7 @@ import struct
 import time
 
 def main():
-    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.1)
+    ser = serial.Serial('/dev/ttyACM0', 115200, timeout=0.00001)
     
     tall1 = 123456789
     tall2 = 987654321
