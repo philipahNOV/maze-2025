@@ -50,6 +50,7 @@ out = cv2.VideoWriter('output.avi', fourcc, fps, frame_size)
 n = 150
 while n > 0:
     frame = camera_thread.latest_frame
+    frame_size = (frame.shape[1], frame.shape[0]) if frame is not None else (640, 480)
     if frame is not None:
         resized_frame = cv2.resize(frame, frame_size)  # Ensure it matches frame_size
         out.write(resized_frame)  # Write frame to video
@@ -59,3 +60,5 @@ while n > 0:
             break
     time.sleep(1 / fps)
     n -= 1
+out.release()  # Release the VideoWriter object
+cv2.destroyAllWindows()  # Close all OpenCV windows
