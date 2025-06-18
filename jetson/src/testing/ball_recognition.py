@@ -143,6 +143,7 @@ def detect_red_ball_frame(frame, prev_center=None):
     radius = 0
     if best_contour is not None:
         #cv2.drawContours(masked_frame, [best_contour], -1, (0, 255, 0), thickness=cv2.FILLED)
+        #h
         (x, y), radius = cv2.minEnclosingCircle(best_contour)
         center = (int(x), int(y))
         diff = center_difference(prev_center, center)
