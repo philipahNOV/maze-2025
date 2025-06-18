@@ -119,7 +119,7 @@ def detect_red_ball(video_name):
             center = (int(x), int(y))
             diff = center_difference(prev_center, center)
             if diff is not None and center_difference(prev_center, center) > 10000:
-                print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
+                print(f"Large center difference detected; {center_difference(prev_center, center)} pixels")
                 center = prev_center
             prev_center = center
             radius = int(radius)
