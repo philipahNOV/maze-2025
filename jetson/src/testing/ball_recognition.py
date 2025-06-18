@@ -31,16 +31,17 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     if valid_pixels[0].size > 0:
         # Compute max red ratio among valid pixels
         max_red_ratio = np.max(red_ratio[valid_pixels])
-        effective_max = max(np.max(red_ratio), 0.3)
         
         # Find indices of pixels where red_ratio == max_red_ratio among valid pixels
         max_pixels = np.where(red_ratio == max_red_ratio)
+
+        max_red_ratio = max(max_red_ratio, 0.3)
         
         # Choose the first max pixel as brightest_pixel (x,y)
         brightest_pixel = (max_pixels[1][0], max_pixels[0][0])  # (col, row) = (x, y)
 
     bright_mask = total > min_intensity
-    red_mask = red_ratio > (frac * effective_max)
+    red_mask = red_ratio > (frac * max_red_ratio)
     mask = (np.logical_and(bright_mask, red_mask)).astype(np.uint8) * 255
 
     hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
@@ -143,7 +144,7 @@ def detect_red_ball(video_name):
     cv2.destroyAllWindows()
 
 def detect_red_ball_frame(frame, prev_center=None):
-    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.6, 50, prev_center, 200)
+    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.55, 50, prev_center, 200)
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
