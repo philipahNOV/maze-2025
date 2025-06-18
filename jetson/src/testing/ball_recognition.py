@@ -129,7 +129,7 @@ def detect_red_ball(video_name):
         time.sleep(1 / 15)
         frame_num += 1
         print(f"Displaying frame {frame_num}")
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # Pess 'q' to exit
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Pes 'q' to exit
             break
     vid.release()
     cv2.destroyAllWindows()
