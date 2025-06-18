@@ -15,7 +15,10 @@ def main():
     n = 1000
     totale_tider = []
 
+    print(f'Starter testen')
+
     for _ in range(n):
+        print(f'Melding {n}')
         start_time = time.time()
         
         ser.write(data)
