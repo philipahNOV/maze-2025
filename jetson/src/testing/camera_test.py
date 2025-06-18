@@ -46,7 +46,7 @@ cv2.destroyAllWindows()
 fourcc = cv2.VideoWriter_fourcc(*'MP4V')  # or 'MJPG', 'MP4V', etc.
 fps = 15  # frames per second
 frame_size = (640, 480)  # must match your actual frame size
-out = cv2.VideoWriter('output.mp4', fourcc, fps, frame_size)
+out = cv2.VideoWriter('output1.mp4', fourcc, fps, frame_size)
 if not out.isOpened():
     print("Error: Failed to open VideoWriter")
     exit()
