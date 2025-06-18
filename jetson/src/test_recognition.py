@@ -51,5 +51,5 @@ while(n>0):
     cv2.imshow("Masked Frame", masked_frame)
     cv2.waitKey(1)  # This is necessary for the window to update
     n -= 1
-    time.sleep(1 / 15)
+    time.sleep(1 / 30)
 cv2.destroyAllWindows()
