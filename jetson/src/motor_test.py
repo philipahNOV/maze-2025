@@ -47,3 +47,4 @@ while step < max_steps:
     step += 1
 
 arduino_thread.send_target_positions(120, 120, 120, 120)
+print("test")
