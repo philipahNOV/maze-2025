@@ -16,7 +16,7 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     red_ratio = R / total
 
     # Find all pixels that satisfy both red ratio and intensity threshold
-    valid_pixels = np.where((red_ratio > (frac * np.max(red_ratio))) & (total > min_intensity))
+    max_red_ratio = np.max(red_ratio)
     
     spatial_mask = np.ones_like(total, dtype=bool)
     if prev_center is not None:
@@ -25,21 +25,20 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
         dist_sq = (X - prev_center[0]) ** 2 + (Y - prev_center[1]) ** 2
         spatial_mask = dist_sq <= roi_radius ** 2
 
-    valid_pixels = np.where((red_ratio > (frac * np.max(red_ratio))) & (total > min_intensity) & spatial_mask)
-    max_red_ratio = 0
+    #valid_pixels = np.where((red_ratio > max_red_ratio) & (total > min_intensity) & spatial_mask)
+    valid_pixels = np.where(spatial_mask)
     brightest_pixel = None
-    if valid_pixels[0].size > 0:
+    if valid_pixels[0].size > 0 and prev_center is not None:
         # Compute max red ratio among valid pixels
         max_red_ratio = np.max(red_ratio[valid_pixels])
         
         # Find indices of pixels where red_ratio == max_red_ratio among valid pixels
         max_pixels = np.where(red_ratio == max_red_ratio)
-
-        max_red_ratio = max(max_red_ratio, 0.3)
         
         # Choose the first max pixel as brightest_pixel (x,y)
         brightest_pixel = (max_pixels[1][0], max_pixels[0][0])  # (col, row) = (x, y)
 
+    max_red_ratio = max(max_red_ratio, 0.3)
     bright_mask = total > min_intensity
     red_mask = red_ratio > (frac * max_red_ratio)
     mask = (np.logical_and(bright_mask, red_mask)).astype(np.uint8) * 255

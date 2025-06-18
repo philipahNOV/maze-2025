@@ -55,5 +55,5 @@ while(n>0):
     #time.sleep(1 / 30)
 end = time.time()
 print(f"Time taken: {end - start:.2f} seconds")
-print(f"FPS: {n / (end - start):.2f}")
+print(f"FPS: {150 / (end - start):.2f}")
 cv2.destroyAllWindows()
