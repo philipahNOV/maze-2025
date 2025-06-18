@@ -3,7 +3,7 @@ import serial
 import serial.tools.list_ports
 
 print(f'Åpner seriel port')
-ser = serial.Serial("/dev/ttyACM0", 9600, timeout=1)
+ser = serial.Serial("/dev/ttyACM0", 9600, timeout=0.00001)
 print(f'Seriel port er åpnet\n')
 
 print(f'Sender melding')
