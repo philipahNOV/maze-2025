@@ -39,15 +39,16 @@ center = None
 start = time.time()
 while(n>0):
     frame = camera_thread.latest_frame
-    frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     if frame is None:
         #time.sleep(1 / 15)
         continue
+    #frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     start_det = time.time()
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
-    end_det = time.time()
+    print(f"Center: {center}")
+    #end_det = time.time()
 
-    print(f"Detection time per frame: {(end_det - start_det) * 1000:.2f} ms")
+    #print(f"Detection time per frame: {(end_det - start_det) * 1000:.2f} ms")
     if center is not None and radius is not None:
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
     else:
