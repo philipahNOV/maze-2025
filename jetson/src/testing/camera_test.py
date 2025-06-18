@@ -50,7 +50,7 @@ out = cv2.VideoWriter('output.mp4', fourcc, fps, frame_size)
 if not out.isOpened():
     print("Error: Failed to open VideoWriter")
     exit()
-n = 45
+n = 75
 while n > 0:
     frame = camera_thread.latest_frame
     if frame is not None:
