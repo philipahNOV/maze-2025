@@ -12,7 +12,7 @@ def main():
 
     data = struct.pack('>IIII', tall1, tall2, tall3, tall4)
 
-    n = 1000
+    n = 500
     totale_tider = []
 
     print(f'Starter testen')
