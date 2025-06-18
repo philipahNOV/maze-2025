@@ -42,3 +42,6 @@ while True:
     print(f"Displaying frame {frame_num}")
     if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to exit
         break
+
+vid.release()
+cv2.destroyAllWindows()
