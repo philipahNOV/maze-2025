@@ -34,12 +34,13 @@ time.sleep(1.5)
 
 
 frame = camera_thread.latest_frame
-n = 200
+n = 150
 center = None
+start = time.time()
 while(n>0):
     frame = camera_thread.latest_frame
     if frame is None:
-        time.sleep(1 / 15)
+        #time.sleep(1 / 15)
         continue
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
     if center is not None and radius is not None:
@@ -51,5 +52,8 @@ while(n>0):
     cv2.imshow("Masked Frame", masked_frame)
     cv2.waitKey(1)  # This is necessary for the window to update
     n -= 1
-    time.sleep(1 / 30)
+    #time.sleep(1 / 30)
+end = time.time()
+print(f"Time taken: {end - start:.2f} seconds")
+print(f"FPS: {n / (end - start):.2f}")
 cv2.destroyAllWindows()
