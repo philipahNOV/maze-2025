@@ -4,10 +4,18 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if (Serial.available() > 0)
-  {
-    String incomingMessage = Serial.readStringUntil('\n');
-    Serial.println(incomingMessage);  // Send tilbake meldingen
+  // Vent til det er minst 4 bytes tilgjengelig
+  if (Serial.available() >= 4) {
+    unsigned long tall_mottatt = 0;
+
+    // Les inn bytes og rekonstruer tallet
+    for (int i = 0; i < 4; i++) {
+      tall_mottatt = (tall_mottatt << 8) | Serial.read();
+    }
+
+    // Send det samme tallet tilbake
+    for (int i = 3; i >= 0; i--) {
+      Serial.write((tall_mottatt >> (i * 8)) & 0xFF);
+    }
   }
 }
