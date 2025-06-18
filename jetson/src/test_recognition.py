@@ -39,7 +39,7 @@ center = None
 start = time.time()
 while(n>0):
     frame = camera_thread.latest_frame
-    frame_resized = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
+    frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     if frame is None:
         #time.sleep(1 / 15)
         continue
