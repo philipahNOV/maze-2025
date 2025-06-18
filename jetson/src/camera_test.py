@@ -44,10 +44,10 @@ cv2.destroyAllWindows()
 
 # Define video codec and create VideoWriter object
 fourcc = cv2.VideoWriter_fourcc(*'XVID')  # or 'MJPG', 'MP4V', etc.
-fps = 30  # frames per second
+fps = 15  # frames per second
 frame_size = (640, 480)  # must match your actual frame size
 out = cv2.VideoWriter('output.avi', fourcc, fps, frame_size)
-n = 150
+n = 60
 while n > 0:
     frame = camera_thread.latest_frame
     if frame is not None:
