@@ -27,39 +27,32 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
 
     #valid_pixels = np.where((red_ratio > max_red_ratio) & (total > min_intensity) & spatial_mask)
     valid_pixels = np.where(spatial_mask)
-    brightest_pixel = None
     if valid_pixels[0].size > 0 and prev_center is not None:
         # Compute max red ratio among valid pixels
         max_red_ratio = np.max(red_ratio[valid_pixels])
-        
-        # Find indices of pixels where red_ratio == max_red_ratio among valid pixels
-        max_pixels = np.where(red_ratio == max_red_ratio)
-        
-        # Choose the first max pixel as brightest_pixel (x,y)
-        brightest_pixel = (max_pixels[1][0], max_pixels[0][0])  # (col, row) = (x, y)
 
     max_red_ratio = max(max_red_ratio, 0.3)
     bright_mask = total > min_intensity
     red_mask = red_ratio > (frac * max_red_ratio)
     mask = (np.logical_and(bright_mask, red_mask)).astype(np.uint8) * 255
 
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    #hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
     # Rough skin color range (tweak as needed)
-    lower_skin = np.array([0, 20, 70])
-    upper_skin = np.array([20, 255, 255])
-    skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
+    #lower_skin = np.array([0, 20, 70])
+    #upper_skin = np.array([20, 255, 255])
+    #skin_mask = cv2.inRange(hsv, lower_skin, upper_skin)
 
-    mask = cv2.bitwise_and(mask, cv2.bitwise_not(skin_mask))
+    #mask = cv2.bitwise_and(mask, cv2.bitwise_not(skin_mask))
 
     # Morphological cleaning
-    kernel = np.ones((5, 5), np.uint8)
+    kernel = np.ones((3, 3), np.uint8)
     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Apply mask to original frame
     result = np.zeros_like(frame)
     result[mask == 255] = 255
-    return result, (mask > 0).astype(np.uint8) * 255, brightest_pixel
+    return result, (mask > 0).astype(np.uint8) * 255
 
 def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circularity=0.6, prev_center= None, max_diff=500):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
