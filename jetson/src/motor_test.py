@@ -33,8 +33,8 @@ step = 0
 max_steps = 100
 ref = (300, 300)
 kp = 0.01
-for i in range(10):
-    arduino_thread.send_target_positions(0, 2*i+2, 201, 799)
-    time.sleep(2)
+for i in range(1000):
+    arduino_thread.send_target_positions(0, 0.02*i, 201, 799)
+    time.sleep(0.02)
 
 arduino_thread.send_target_positions(120, 120, 120, 120)
