@@ -99,7 +99,7 @@ def center_difference(prev_center, current_center):
 def detect_red_ball(video_name):
     vid = cv2.VideoCapture(video_name)
     if not vid.isOpened():
-        print("Error: Cannot open video file.")
+        print("Error; Cannot open video file.")
         exit()
 
     frame_num = 0
@@ -119,17 +119,17 @@ def detect_red_ball(video_name):
             center = (int(x), int(y))
             diff = center_difference(prev_center, center)
             if diff is not None and center_difference(prev_center, center) > 10000:
-                print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
+                print(f"Large center difference detected; {center_difference(prev_center, center)} pixels")
                 center = prev_center
             prev_center = center
             radius = int(radius)
             cv2.circle(frame, center, radius, (0, 255, 0), 4)
 
-        cv2.imshow('Video Frame', frame)
+        cv2.imshow('Video frame', frame)
         time.sleep(1 / 15)
         frame_num += 1
         print(f"Displaying frame {frame_num}")
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to exit
+        if cv2.waitKey(1) & 0xFF == ord('q'):  # Pes 'q' to exit
             break
     vid.release()
     cv2.destroyAllWindows()
