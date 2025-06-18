@@ -43,15 +43,18 @@ cv2.destroyAllWindows()
 
 
 # Define video codec and create VideoWriter object
-fourcc = cv2.VideoWriter_fourcc(*'XVID')  # or 'MJPG', 'MP4V', etc.
+fourcc = cv2.VideoWriter_fourcc(*'MP4V')  # or 'MJPG', 'MP4V', etc.
 fps = 15  # frames per second
 frame_size = (640, 480)  # must match your actual frame size
-out = cv2.VideoWriter('output.avi', fourcc, fps, frame_size)
+out = cv2.VideoWriter('output.mp4', fourcc, fps, frame_size)
+if not out.isOpened():
+    print("Error: Failed to open VideoWriter")
+    exit()
 n = 45
 while n > 0:
     frame = camera_thread.latest_frame
-    frame_size = (frame.shape[1], frame.shape[0]) if frame is not None else (640, 480)
     if frame is not None:
+        print("Captured frame size:", frame.shape[1], frame.shape[0])
         resized_frame = cv2.resize(frame, frame_size)  # Ensure it matches frame_size
         out.write(resized_frame)  # Write frame to video
         cv2.imshow("Recording...", resized_frame)
