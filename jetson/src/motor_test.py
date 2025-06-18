@@ -25,7 +25,7 @@ except Exception as e:
     print(e)
     exit(1)
 
-time.sleep(2)  # Allow time for Arduino connection to stabilize
+time.sleep(5)  # Allow time for Arduino connection to stabilize
 arduino_thread.send_target_positions(120, 120, 120, 120)
 time.sleep(1)
 arduino_thread.send_target_positions(777,777,777,777)
@@ -34,7 +34,7 @@ max_steps = 100
 ref = (300, 300)
 kp = 0.01
 for i in range(1000):
-    arduino_thread.send_target_positions(0, 0.02*i, 201, 799)
+    arduino_thread.send_target_positions(0, 0.005*i, 201, 799)
     time.sleep(0.02)
 
 arduino_thread.send_target_positions(120, 120, 120, 120)
