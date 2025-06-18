@@ -181,7 +181,7 @@ def detect_red_ball(video_name):
     cv2.destroyAllWindows()
 
 def detect_red_ball_frame(frame, prev_center=None):
-    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.6, 40, prev_center, 500)
+    masked_frame, mask, brightest_pixel = red_threshold(frame, 0.6, 40, prev_center, 20000)
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
