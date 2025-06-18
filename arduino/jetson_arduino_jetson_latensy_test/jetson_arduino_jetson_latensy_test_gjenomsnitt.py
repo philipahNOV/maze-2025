@@ -18,7 +18,7 @@ def main():
     print(f'Starter testen')
 
     for _ in range(n):
-        print(f'Melding {n}')
+        print(f'Melding {_}')
         start_time = time.time()
         
         ser.write(data)
