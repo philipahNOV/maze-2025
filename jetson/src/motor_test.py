@@ -25,8 +25,23 @@ except Exception as e:
     print(e)
     exit(1)
 
-time.sleep(6)  # Allow time for Arduino to initialize
-print("Arduino initialized")
-arduino_thread.send_target_positions(1, 3, 100, 100)
-time.sleep(10)
-arduino_thread.send_target_positions(3, 1, 100, 100)
+time.sleep(2)  # Allow time for Arduino connection to stabilize
+
+step = 0
+max_steps = 100
+ref = (300, 300)
+kp = 0.1
+while step < max_steps:
+
+    pos = (step*5, step*5)
+    
+    e_x = ref[0] - pos[0]
+    e_y = ref[1] - pos[1]
+
+    p_x = kp * e_x
+    p_y = kp * e_y
+
+    arduino_thread.send_target_positions(int(p_x), int(p_y), 201, 799)
+    time.sleep(0.1)
+
+    steps += 1
