@@ -65,9 +65,9 @@ def horizontal(tol = 0.2):
             dir_y = 3
         vel_x = int(kp * abs(theta_x))
         vel_y = int(kp * abs(theta_y))
-        print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
-        arduino_thread.send_target_positions(dir_x, 2, vel_x, 1)
-        time.sleep(3)
+        #print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
+        #arduino_thread.send_target_positions(dir_x, 2, vel_x, 1)
+        time.sleep(0.1)
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
