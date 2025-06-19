@@ -53,7 +53,7 @@ def horizontal(tol = 0.2):
         if abs(theta_x) < tol and abs(theta_y) < tol:
             print("Orientation is within tolerance, stopping motors.")
             arduino_thread.send_target_positions(120, 120, 120, 120)
-            return
+            #eturn
         if theta_x > 0 and theta_y > 0:
             dir_x = 3
             dir_y = 3
