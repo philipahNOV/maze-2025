@@ -98,7 +98,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
     theta_y = -(kp * e_y  + kd * edot_y)
     print(f"theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
-    return (e_x, e_y), time.time(), edot_x, (edot_x, edot_y)
+    return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
     """
