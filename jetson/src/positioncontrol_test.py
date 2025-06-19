@@ -55,9 +55,9 @@ def axisControl(ref):
     if abs(e_x) < tol:
         dir_x = 2
     elif e_x > 0:
-        dir_x = 1
-    elif e_x < 0:
         dir_x = 3
+    elif e_x < 0:
+        dir_x = 1
     if abs(e_y) < tol:
         dir_y = 2
     elif e_y > 0:
@@ -68,23 +68,34 @@ def axisControl(ref):
     vel_x = max(int(kp * abs(e_x)), min_velocity)
     vel_y = max(int(kp * abs(e_y)), min_velocity)
     dir_y = 2
-    print(f"theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
+    print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
-def posControl(center, prev_center, ref=(200, 200), tol=10):
+def posControl(center, prev_center, e_prev, t_prev, ref=(200, 200), tol=1):
+    kp = 0.00002  # Proportional gain for position control
+    kd = 0.00004  # Derivative gain for position control
+
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
             print("Large jump detected, resetting position control.")
-            return
-
+            return None, None
+        
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
-    kp = 0.0001  # Proportional gain for position control
+        
+    edot_x = 0
+    edot_y = 0
+    if e_prev is not None and t_prev is not None:
+        dt = time.time() - t_prev
+        if dt > 0.0001:  # Avoid division by zero
+            edot_x = (e_x - e_prev[0]) / dt
+            edot_y = (e_y - e_prev[1]) / dt
 
-    theta_x = -kp * e_x
-    theta_y = -kp * e_y
-    print(f"theta_x: {theta_x}, theta_y: {theta_y}")
+    theta_x = -(kp * e_x  + kd * edot_x)
+    theta_y = -(kp * e_y  + kd * edot_y)
+    print(f"theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
+    return (e_x, e_y), time.time()
 
 def horizontal(tol = 0.2):
     """
@@ -150,6 +161,8 @@ frame = camera_thread.latest_frame
 center = None
 prev_center = None
 limit = time.time() + 100
+e_prev = None
+t_prev = None
 while time.time() < limit:
     frame = camera_thread.latest_frame
     if frame is None:
@@ -162,8 +175,8 @@ while time.time() < limit:
     cv2.circle(frame, center, 10, (0, 255, 0), 4)
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
-    if limit - time.time() < 90:
-        posControl(center, prev_center)
+    if limit - time.time() < 95:
+        e_prev, t_prev = posControl(center, prev_center, e_prev, t_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
