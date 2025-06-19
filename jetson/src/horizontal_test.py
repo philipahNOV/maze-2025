@@ -72,6 +72,7 @@ def horizontal(tol = 0.2):
         time.sleep(0.1)
     print("Deadline reached, stopping motors.")
 
-time.sleep(5)  # Allow time for Arduino connection to stabilize
+time.sleep(10)  # Allow time for Arduino connection to stabilize
 #horizontal(0.005)
-arduino_thread.send_target_positions(1, 2, 20, 1)
+print("Sending target positions to Arduino")
+arduino_thread.send_target_positions(1, 1, 20, 20)
