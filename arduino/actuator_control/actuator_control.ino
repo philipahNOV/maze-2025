@@ -27,10 +27,7 @@ namespace {
     long dist_act_2{0};
 }
 
-
-
-long actuator_dist(uint8_t pot_pin);
-
+float actuator_dist(uint8_t pot_pin);
 
 void setup() {
     // put your setup code here, to run once:
@@ -66,13 +63,13 @@ void loop() {
     delay(1);
 }
 
-long actuator_dist(uint8_t pot_pin)
+float actuator_dist(uint8_t pot_pin)
 {
     uint8_t act_max_stroke = 50; // mm
     uint16_t adc_max_hight = 1018;
     uint8_t adc_min_hight = 2;
 
-    long dist = map(analogRead(pot_pin), adc_min_hight, adc_max_hight, 0, act_max_stroke);
+    float dist = (analogRead(pot_pin) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
 
     return dist;
 }
