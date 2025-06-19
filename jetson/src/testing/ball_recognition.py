@@ -57,7 +57,7 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
 def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circularity=0.6, prev_center= None, max_diff=500):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
-        print("No contours found.")
+        #print("No contours found.")
         return None
     
     best_contour = None
@@ -87,7 +87,8 @@ def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circular
             best_contour = cnt
     
     if best_contour is None:
-        print("No contour passed the circularity filter.")
+        pass
+        #print("No contour passed the circularity filter.")
     
     return best_contour
 
@@ -148,7 +149,7 @@ def detect_red_ball_frame(frame, prev_center=None):
         center = (int(x), int(y))
         diff = center_difference(prev_center, center)
         if diff is not None and center_difference(prev_center, center) > 10000:
-            print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
+            #print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
             center = prev_center
         radius = int(radius)
     return center, radius, masked_frame
