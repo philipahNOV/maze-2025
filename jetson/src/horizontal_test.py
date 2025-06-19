@@ -40,15 +40,17 @@ def horizontal(tol = 0.2):
     deadline = time.time() + 20  # 20 seconds deadline
 
     while time.time() < deadline:
+        print(camera_thread.orientation)
         theta_x = camera_thread.orientation[0]
         theta_y = camera_thread.orientation[1]
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
             continue
         if abs(theta_x) < tol and abs(theta_y) < tol:
-            print("Orientation is within tolerance, stopping motors.")
-            arduino_thread.send_target_positions(120, 120, 120, 120)
-            return
+            #print("Orientation is within tolerance, stopping motors.")
+            #arduino_thread.send_target_positions(120, 120, 120, 120)
+            #return
+            pass
         if theta_x > 0 and theta_y > 0:
             dir_x = 3
             dir_y = 3
