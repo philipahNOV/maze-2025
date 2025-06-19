@@ -36,14 +36,16 @@ except Exception as e:
 
 
 def horizontal(tol = 0.2):
+    x_offset = 0.017  # Offset for x-axis orientation
+    y_offset = -0.002  # Offset for y-axis orientation
     kp = 1000 # Proportional gain for the control loop
     deadline = time.time() + 60  # 20 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
     while time.time() < deadline:
         print(camera_thread.orientation)
-        theta_x = camera_thread.orientation[1]
-        theta_y = camera_thread.orientation[0]
+        theta_x = camera_thread.orientation[1] + x_offset
+        theta_y = camera_thread.orientation[0] + y_offset
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
             continue
@@ -66,7 +68,7 @@ def horizontal(tol = 0.2):
         vel_x = max(int(kp * abs(theta_x)), 30)
         vel_y = max(int(kp * abs(theta_y)), 30)
         print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
-       # arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+        arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.2)
     print("Deadline reached, stopping motors.")
 
