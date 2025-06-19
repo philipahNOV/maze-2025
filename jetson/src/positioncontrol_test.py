@@ -78,7 +78,7 @@ def posControl(center, prev_center, ref=(200, 200), tol=10):
 
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
-    kp = 0.001  # Proportional gain for position control
+    kp = 0.0001  # Proportional gain for position control
 
     theta_x = -kp * e_x
     theta_y = -kp * e_y
@@ -108,7 +108,7 @@ def horizontal(tol = 0.2):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
-    kp = 700 # Proportional gain for the control loop
+    kp = 1000 # Proportional gain for the control loop
     deadline = time.time() + 20  # 20 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
@@ -139,7 +139,7 @@ def horizontal(tol = 0.2):
         vel_x = max(int(kp * abs(theta_x)), min_velocity)
         vel_y = max(int(kp * abs(theta_y)), min_velocity)
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-        time.sleep(0.05)
+        #time.sleep(0.05)
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
@@ -158,8 +158,8 @@ while time.time() < limit:
     if center is None:
         print("No ball detected, skipping frame.")
         continue
-    center = (center[1], center[0])  # Convert to (x, y) format for consistency
     cv2.circle(frame, center, 15, (0, 255, 0), 4)
+    center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 90:
         posControl(center, prev_center)
