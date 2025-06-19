@@ -158,16 +158,11 @@ while time.time() < limit:
     if center is None:
         print("No ball detected, skipping frame.")
         continue
+    center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 90:
         posControl(center, prev_center)
     prev_center = center
-
-    if center is not None and radius is not None:
-        cv2.circle(frame, center, radius, (0, 255, 0), 4)
-    else:
-        #cv2.putText(frame, "No ball detected", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
-        pass
 
     cv2.imshow("Test Image", frame)
     cv2.imshow("Masked Frame", masked_frame)
