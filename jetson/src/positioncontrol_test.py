@@ -55,9 +55,9 @@ def axisControl(ref):
     if abs(e_x) < tol:
         dir_x = 2
     elif e_x > 0:
-        dir_x = 1
-    elif e_x < 0:
         dir_x = 3
+    elif e_x < 0:
+        dir_x = 1
     if abs(e_y) < tol:
         dir_y = 2
     elif e_y > 0:
@@ -72,8 +72,8 @@ def axisControl(ref):
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
 def posControl(center, prev_center, e_prev, t_prev, ref=(200, 200), tol=1):
-    kp = 0.00002  # Proportional gain for position control
-    kd = 0.00004  # Derivative gain for position control
+    kp = 0.00005  # Proportional gain for position control
+    kd = 0.0001  # Derivative gain for position control
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
