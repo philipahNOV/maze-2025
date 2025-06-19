@@ -78,7 +78,7 @@ def posControl(center, prev_center, ref=(200, 200), tol=10):
 
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
-    kp = 0.002  # Proportional gain for position control
+    kp = 0.001  # Proportional gain for position control
 
     theta_x = -kp * e_x
     theta_y = -kp * e_y
@@ -159,6 +159,7 @@ while time.time() < limit:
         print("No ball detected, skipping frame.")
         continue
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
+    cv2.circle(frame, center, 15, (0, 255, 0), 4)
     print(f"Center: {center}")
     if limit - time.time() < 90:
         posControl(center, prev_center)
