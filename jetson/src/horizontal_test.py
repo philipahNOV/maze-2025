@@ -38,8 +38,8 @@ except Exception as e:
 def horizontal(tol = 0.2):
     x_offset = 0.017  # Offset for x-axis orientation
     y_offset = -0.002  # Offset for y-axis orientation
-    min_velocity = 15 # Minimum velocity for motors
-    kp = 600 # Proportional gain for the control loop
+    min_velocity = 20 # Minimum velocity for motors
+    kp = 700 # Proportional gain for the control loop
     deadline = time.time() + 60  # 60 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
