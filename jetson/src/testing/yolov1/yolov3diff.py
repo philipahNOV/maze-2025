@@ -3,7 +3,7 @@ import numpy as np
 from ultralytics import YOLO
 
 # === CONFIGURATION ===
-TARGET_COLOR = 'yellow'     # Options: 'red', 'green', 'blue', 'yellow'
+TARGET_COLOR = 'red'     # Options: 'red', 'green', 'blue', 'yellow'
 CONF_THRESHOLD = 0.3
 COLOR_THRESH = 0.25         # Minimum color dominance fraction
 
