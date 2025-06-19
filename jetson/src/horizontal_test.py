@@ -36,7 +36,7 @@ except Exception as e:
 
 
 def horizontal(tol = 0.2):
-    kp = 20 # Proportional gain for the control loop
+    kp = 100 # Proportional gain for the control loop
     deadline = time.time() + 20  # 20 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
