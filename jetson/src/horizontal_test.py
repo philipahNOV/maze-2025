@@ -38,6 +38,7 @@ except Exception as e:
 def horizontal(tol = 0.2):
     kp = 20 # Proportional gain for the control loop
     deadline = time.time() + 20  # 20 seconds deadline
+    arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
     while time.time() < deadline:
         print(camera_thread.orientation)
@@ -47,10 +48,9 @@ def horizontal(tol = 0.2):
             print("Orientation data not available yet.")
             continue
         if abs(theta_x) < tol and abs(theta_y) < tol:
-            #print("Orientation is within tolerance, stopping motors.")
-            #arduino_thread.send_target_positions(120, 120, 120, 120)
-            #return
-            pass
+            print("Orientation is within tolerance, stopping motors.")
+            arduino_thread.send_target_positions(120, 120, 120, 120)
+            return
         if theta_x > 0 and theta_y > 0:
             dir_x = 3
             dir_y = 3
