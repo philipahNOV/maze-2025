@@ -154,7 +154,7 @@ def detect_red_ball_frame(frame, prev_center=None):
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
-    M = cv2.moments(mask)
+    M = cv2.moments(masked_frame)
     if M["m00"] != 0:
         cX = int(M["m10"] / M["m00"])
         cY = int(M["m01"] / M["m00"])
