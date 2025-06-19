@@ -74,4 +74,4 @@ def horizontal(tol = 0.2):
 
 time.sleep(5)  # Allow time for Arduino connection to stabilize
 #horizontal(0.005)
-arduino_thread.send_target_positions(2, 1, 1, 15)
+arduino_thread.send_target_positions(2, 1, 1, 40)
