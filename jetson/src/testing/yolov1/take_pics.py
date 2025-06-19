@@ -2,7 +2,7 @@ import cv2
 import os
 
 def main():
-    cap = cv2.VideoCapture(1)  # Change to 1 or 2 if needed
+    cap = cv2.VideoCapture(0)  # Change to 1 or 2 if needed
     if not cap.isOpened():
         print("Error: Could not open camera.")
         return
