@@ -78,7 +78,7 @@ def posControl(center, prev_center, ref=(200, 200), tol=10):
 
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
-    kp = 0.0005  # Proportional gain for position control
+    kp = 0.002  # Proportional gain for position control
 
     theta_x = -kp * e_x
     theta_y = -kp * e_y
@@ -165,7 +165,6 @@ while time.time() < limit:
 
     if center is not None and radius is not None:
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
-        cv2.circle(frame, (center[1], center[0]), radius, (255, 0, 0), 4)
     else:
         #cv2.putText(frame, "No ball detected", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
         pass

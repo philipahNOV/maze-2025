@@ -156,6 +156,7 @@ def detect_red_ball_frame(frame, prev_center=None):
     #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
     gray_mask = cv2.cvtColor(masked_frame, cv2.COLOR_BGR2GRAY)
     M = cv2.moments(gray_mask)
+    center = None
     if M["m00"] != 0:
         cX = int(M["m10"] / M["m00"])
         cY = int(M["m01"] / M["m00"])
