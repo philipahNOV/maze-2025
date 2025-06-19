@@ -23,8 +23,8 @@ namespace {
     uint16_t pot_raw_data_act_1{0};
     uint16_t pot_raw_data_act_2{0};
 
-    long dist_act_1{0};
-    long dist_act_2{0};
+    float dist_act_1{0};
+    float dist_act_2{0};
 }
 
 float actuator_dist(uint8_t pot_pin);
@@ -65,11 +65,11 @@ void loop() {
 
 float actuator_dist(uint8_t pot_pin)
 {
-    uint8_t act_max_stroke = 50; // mm
-    uint16_t adc_max_hight = 1018;
-    uint8_t adc_min_hight = 2;
+    float act_max_stroke = 50.0; // mm
+    float adc_max_hight = 1018.0;
+    float adc_min_hight = 2.0;
 
-    float dist = (analogRead(pot_pin) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
+    float dist = (float(analogRead(pot_pin)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
 
     return dist;
 }
