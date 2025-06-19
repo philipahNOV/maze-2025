@@ -40,7 +40,7 @@ def axisControl(ref):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
-    kp = 700 # Proportional gain for the control loop
+    kp = 1500 # Proportional gain for the control loop
     tol = 0.001
 
     theta_x = camera_thread.orientation[1] + x_offset
@@ -68,6 +68,7 @@ def axisControl(ref):
     vel_x = max(int(kp * abs(e_x)), min_velocity)
     vel_y = max(int(kp * abs(e_y)), min_velocity)
     dir_y = 2
+    print(f"theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
 def posControl(center, prev_center, ref=(200, 200), tol=10):
@@ -108,7 +109,7 @@ def horizontal(tol = 0.2):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
-    kp = 1000 # Proportional gain for the control loop
+    kp = 700 # Proportional gain for the control loop
     deadline = time.time() + 20  # 20 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
@@ -139,7 +140,7 @@ def horizontal(tol = 0.2):
         vel_x = max(int(kp * abs(theta_x)), min_velocity)
         vel_y = max(int(kp * abs(theta_y)), min_velocity)
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-        #time.sleep(0.05)
+        time.sleep(0.05)
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
@@ -158,7 +159,7 @@ while time.time() < limit:
     if center is None:
         print("No ball detected, skipping frame.")
         continue
-    cv2.circle(frame, center, 15, (0, 255, 0), 4)
+    cv2.circle(frame, center, 10, (0, 255, 0), 4)
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 90:
