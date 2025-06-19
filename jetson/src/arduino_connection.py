@@ -67,11 +67,9 @@ class ArduinoConnection(threading.Thread):
             speed1 (int): The speed for motor 1.
             speed2 (int): The speed for motor 2.
         """
-        print(f"Sending target positions: {position1}, {position2}, {speed1}, {speed2}")
         with self.condition:
             self.command_var = f"{position1} {position2} {speed1} {speed2}\n"
             self.condition.notify()
-        print(f"Command set: {self.command_var.strip()}")
 
 
     def run(self):
