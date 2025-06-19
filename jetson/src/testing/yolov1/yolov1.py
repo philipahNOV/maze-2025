@@ -8,39 +8,36 @@ def center_difference(prev_center, current_center):
         return None
     return np.linalg.norm(np.array(current_center) - np.array(prev_center))
 
-def detect_ball_yolo(model, frame, prev_center=None, max_diff=300):
+def detect_balls_yolo(model, frame, prev_centers=None, max_diff=300, conf_thresh=0.8):
     results = model.predict(frame, verbose=False, imgsz=640)[0]
-    best_box = None
-    best_conf = 0
+    detections = []
 
     for box in results.boxes:
         cls = int(box.cls[0].item())
         conf = float(box.conf[0].item())
-        if conf < 0.1:
+        if conf < conf_thresh:
             continue
 
         x1, y1, x2, y2 = map(int, box.xyxy[0])
         center = ((x1 + x2) // 2, (y1 + y2) // 2)
 
-        if prev_center is not None:
-            if center_difference(prev_center, center) > max_diff:
+        if prev_centers:
+            if all(center_difference(prev, center) > max_diff for prev in prev_centers):
                 continue
 
-        if conf > best_conf:
-            best_box = (x1, y1, x2, y2, center)
-            best_conf = conf
+        detections.append((x1, y1, x2, y2, center, conf))
 
-    return best_box
+    return detections
 
 def main():
     model = YOLO("best.pt")
-    cap = cv2.VideoCapture(0)  # Use webcam; change to 1 or 2 for different camera
+    cap = cv2.VideoCapture(0)  # 0 for default webcam
 
     if not cap.isOpened():
         print("Error: Cannot open camera.")
         return
 
-    prev_center = None
+    prev_centers = []
 
     while True:
         ret, frame = cap.read()
@@ -48,15 +45,16 @@ def main():
             print("Error reading frame.")
             break
 
-        result = detect_ball_yolo(model, frame, prev_center)
+        detections = detect_balls_yolo(model, frame, prev_centers)
 
-        if result:
-            x1, y1, x2, y2, center = result
-            prev_center = center
+        prev_centers = []
+        for x1, y1, x2, y2, center, conf in detections:
+            prev_centers.append(center)
             cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
             cv2.circle(frame, center, 5, (0, 0, 255), -1)
-            cv2.putText(frame, f"Ball", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
+            label = f"Ball: {conf:.2f}"
+            cv2.putText(frame, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
         cv2.imshow("YOLO Ball Tracker", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):

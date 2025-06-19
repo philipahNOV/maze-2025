@@ -7,7 +7,7 @@ CONF_THRESHOLD = 0.6          # Only show detections with confidence >= this
 COLOR_FILTER = 'red'           # Choose: 'red', 'green', 'blue', 'yellow'
 RED_THRESH = 0.5          # % of pixels in box that must be the chosen color
 
-# === COLOR FILTERING ===
+# === COLOR FILERING ===
 def is_color_dominant(frame, box, color='red', thresh=0.25):
     x1, y1, x2, y2 = map(int, box)
     roi = frame[y1:y2, x1:x2]
