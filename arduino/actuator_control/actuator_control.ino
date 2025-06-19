@@ -20,7 +20,8 @@ namespace actuators {
 }
 
 namespace {
-    float pot_raw_data_act_1{0};
+    uint16_t pot_raw_data_act_1{0};
+    uint16_t pot_raw_data_act_2{0};
 }
 
 void setup() {
@@ -32,6 +33,11 @@ void loop() {
     // put your main code here, to run repeatedly:
 
     pot_raw_data_act_1 = analogRead(actuators::actuator_1::pot_feedback);
+    pot_raw_data_act_2 = analogRead(actuators::actuator_2::pot_feedback);
+    
+    Serial.print("Aktuator 1: ");
     Serial.print(pot_raw_data_act_1);
+    Serial.print(" Aktuator 2: ");
+    Serial.println(pot_raw_data_act_2);
     delay(1);
 }
