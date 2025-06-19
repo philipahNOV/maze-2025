@@ -36,11 +36,30 @@ except Exception as e:
 
 
 def horizontal(tol = 0.2):
-    x_offset = -0.008  # Offset for x-axis orientation
-    y_offset = -0.0015  # Offset for y-axis orientation
+    """
+    Gradually levels the platform by adjusting actuator angles based on camera orientation.
+
+    This function reads orientation data (theta_x, theta_y) from the camera and sends
+    corresponding direction and velocity commands to the Arduino via the arduino_thread.
+    It applies a proportional control strategy (P-controller) to minimize tilt in both
+    axes, driving the platform toward a horizontal position.
+
+    Parameters:
+        tol (float): Acceptable angular deviation from horizontal in radians (default: 0.2).
+
+    Behavior:
+    - Adds optional offsets to compensate for sensor calibration error.
+    - Sends stop command initially and when within tolerance.
+    - Computes direction based on sign of tilt.
+    - Computes velocity with a proportional gain (kp), respecting a minimum speed threshold.
+    - Terminates either when the platform is level within tolerance or a time deadline is reached.
+    """
+
+    x_offset = 0  # Offset for x-axis orientation (tested -0.008)
+    y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
     kp = 700 # Proportional gain for the control loop
-    deadline = time.time() + 300  # 60 seconds deadline
+    deadline = time.time() + 20  # 20 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
     while time.time() < deadline:
@@ -69,7 +88,6 @@ def horizontal(tol = 0.2):
 
         vel_x = max(int(kp * abs(theta_x)), min_velocity)
         vel_y = max(int(kp * abs(theta_y)), min_velocity)
-        print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.05)
     print("Deadline reached, stopping motors.")
