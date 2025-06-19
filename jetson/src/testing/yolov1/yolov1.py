@@ -14,9 +14,9 @@ def detect_ball_yolo(model, frame, prev_center=None, max_diff=300):
     best_conf = 0
 
     for box in results.boxes:
-        cls_id = int(box.cls[0].item())
+        cls = int(box.cls[0].item())
         conf = float(box.conf[0].item())
-        if conf < 0.3:
+        if conf < 0.1:
             continue
 
         x1, y1, x2, y2 = map(int, box.xyxy[0])
