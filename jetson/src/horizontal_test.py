@@ -28,5 +28,44 @@ except Exception as e:
     print(e)
     exit(1)
 
-for i in range(10000):
-    print(camera_thread.orientation)
+try:
+    arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
+except Exception as e:
+    print(e)
+    exit(1)
+
+
+def horizontal(tol = 0.2):
+    kp = 20 # Proportional gain for the control loop
+    deadline = time.time() + 20  # 20 seconds deadline
+
+    while time.time() < deadline:
+        theta_x = camera_thread.orientation[0]
+        theta_y = camera_thread.orientation[1]
+        if theta_x is None or theta_y is None:
+            print("Orientation data not available yet.")
+            continue
+        if abs(theta_x) < tol and abs(theta_y) < tol:
+            print("Orientation is within tolerance, stopping motors.")
+            arduino_thread.send_target_positions(120, 120, 120, 120)
+            return
+        if theta_x > 0 and theta_y > 0:
+            dir_x = 3
+            dir_y = 3
+        elif theta_x < 0 and theta_y < 0:
+            dir_x = 1
+            dir_y = 1
+        elif theta_x > 0 and theta_y < 0:
+            dir_x = 3
+            dir_y = 1
+        elif theta_x < 0 and theta_y > 0:
+            dir_x = 1
+            dir_y = 3
+        vel_x = kp * theta_x
+        vel_y = kp * theta_y
+        print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
+        arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+        time.sleep(0.1)
+
+time.sleep(3)  # Allow time for Arduino connection to stabilize
+horizontal()
