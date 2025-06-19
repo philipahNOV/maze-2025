@@ -158,7 +158,6 @@ while time.time() < limit:
     if center is None:
         print("No ball detected, skipping frame.")
         continue
-    center = (center[1], center[0])
     print(f"Center: {center}")
     if limit - time.time() < 90:
         posControl(center, prev_center)

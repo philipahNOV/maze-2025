@@ -164,6 +164,7 @@ def detect_red_ball_frame(frame, prev_center=None):
         center = None  # No object detected
     if center is not None:
         prev_center = center
+        center = (center[1], center[0])
 
     best_contour = None
     #center = prev_center
