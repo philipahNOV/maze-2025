@@ -155,6 +155,9 @@ while time.time() < limit:
         continue
     #frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
+    if center is None:
+        print("No ball detected, skipping frame.")
+        continue
     center = (center[1], center[0])
     print(f"Center: {center}")
     if limit - time.time() < 90:
