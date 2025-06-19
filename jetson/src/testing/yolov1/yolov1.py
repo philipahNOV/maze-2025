@@ -1,61 +1,64 @@
 import cv2
-from ultralytics import YOLO
 import numpy as np
+from ultralytics import YOLO
+import time
 
-def center_difference(p1, p2):
-    if p1 is None or p2 is None:
+def center_difference(prev_center, current_center):
+    if prev_center is None or current_center is None:
         return None
-    return np.linalg.norm(np.array(p1) - np.array(p2))
+    return np.linalg.norm(np.array(current_center) - np.array(prev_center))
 
-def detect_ball_with_yolo(video_path='output.mp4', model_path='best.pt'):
-    model = YOLO(model_path)
+def detect_ball_yolo(model, frame, prev_center=None, max_diff=300):
+    results = model.predict(frame, verbose=False, imgsz=640)[0]
+    best_box = None
+    best_conf = 0
 
-    cap = cv2.VideoCapture(video_path)
+    for box in results.boxes:
+        cls_id = int(box.cls[0].item())
+        conf = float(box.conf[0].item())
+        if conf < 0.3:
+            continue
+
+        x1, y1, x2, y2 = map(int, box.xyxy[0])
+        center = ((x1 + x2) // 2, (y1 + y2) // 2)
+
+        if prev_center is not None:
+            if center_difference(prev_center, center) > max_diff:
+                continue
+
+        if conf > best_conf:
+            best_box = (x1, y1, x2, y2, center)
+            best_conf = conf
+
+    return best_box
+
+def main():
+    model = YOLO("best.pt")
+    cap = cv2.VideoCapture(0)  # Use webcam; change to 1 or 2 for different camera
+
     if not cap.isOpened():
-        print(f"Error opening video file: {video_path}")
+        print("Error: Cannot open camera.")
         return
 
     prev_center = None
-    frame_num = 0
 
     while True:
         ret, frame = cap.read()
         if not ret:
-            print("End of video or error reading frame.")
+            print("Error reading frame.")
             break
 
-        results = model(frame)[0]
-        detections = results.boxes
+        result = detect_ball_yolo(model, frame, prev_center)
 
-        best_center = None
-        best_radius = 0
-
-        for box in detections:
-            cls_id = int(box.cls[0].item())
-            conf = float(box.conf[0].item())
-
-            if conf < 0.4:  # conf
-                continue
-
-            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
-            cx = int((x1 + x2) / 2)
-            cy = int((y1 + y2) / 2)
-            w = int(x2 - x1)
-            h = int(y2 - y1)
-            radius = int((w + h) / 4)
-
-            if prev_center is None or center_difference(prev_center, (cx, cy)) < 300:
-                best_center = (cx, cy)
-                best_radius = radius
-
-        if best_center:
-            prev_center = best_center
-            cv2.circle(frame, best_center, best_radius, (0, 255, 0), 3)
-            cv2.putText(frame, f"Ball", (best_center[0] - 10, best_center[1] - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+        if result:
+            x1, y1, x2, y2, center = result
+            prev_center = center
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.circle(frame, center, 5, (0, 0, 255), -1)
+            cv2.putText(frame, f"Ball", (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2)
 
         cv2.imshow("YOLO Ball Tracker", frame)
-        frame_num += 1
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
@@ -63,4 +66,4 @@ def detect_ball_with_yolo(video_path='output.mp4', model_path='best.pt'):
     cv2.destroyAllWindows()
 
 if __name__ == "__main__":
-    detect_ball_with_yolo("output.mp4", "best.pt")
+    main()
