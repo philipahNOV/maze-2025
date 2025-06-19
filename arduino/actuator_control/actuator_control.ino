@@ -20,11 +20,11 @@ namespace actuators {
 }
 
 namespace {
-    uint16_t pot_raw_data_act_1{analogRead(actuators::actuator_1::pot_feedback)};
-    uint16_t pot_raw_data_act_2{analogRead(actuators::actuator_2::pot_feedback)};
+    uint16_t pot_raw_data_act_1{0};
+    uint16_t pot_raw_data_act_2{0};
 
-    long dist_act_1{actuator_dist(actuators::actuator_1::pot_feedback)};
-    long dist_act_2{actuator_dist(actuators::actuator_2::pot_feedback)};
+    long dist_act_1{0};
+    long dist_act_2{0};
 }
 
 
@@ -36,11 +36,11 @@ void setup() {
     // put your setup code here, to run once:
     Serial.begin(9600);
 
-    pot_raw_data_act_1{analogRead(actuators::actuator_1::pot_feedback)};
-    pot_raw_data_act_2{analogRead(actuators::actuator_2::pot_feedback)};
+    pot_raw_data_act_1 = analogRead(actuators::actuator_1::pot_feedback);
+    pot_raw_data_act_2 = analogRead(actuators::actuator_2::pot_feedback);
 
-    dist_act_1{actuator_dist(actuators::actuator_1::pot_feedback)};
-    dist_act_2{actuator_dist(actuators::actuator_2::pot_feedback)};
+    dist_act_1 = actuator_dist(actuators::actuator_1::pot_feedback);
+    dist_act_2 = actuator_dist(actuators::actuator_2::pot_feedback);
 }
 
 void loop() {
@@ -54,14 +54,14 @@ void loop() {
     
     Serial.print("Aktuator 1: Raw = ");
     Serial.print(pot_raw_data_act_1);
-    Serial.print(" Dist = ")
-    Serial.print(dist_act_1)
+    Serial.print(" Dist = ");
+    Serial.print(dist_act_1);
 
     Serial.print(" | Aktuator 2: Raw = ");
     Serial.print(pot_raw_data_act_2);
-    Serial.print(" Dist = ")
-    Serial.print(dist_act_2)
-    Serial.print("\r")
+    Serial.print(" Dist = ");
+    Serial.print(dist_act_2);
+    Serial.print("\r");
 
     delay(1);
 }
