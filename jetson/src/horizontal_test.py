@@ -42,8 +42,8 @@ def horizontal(tol = 0.2):
 
     while time.time() < deadline:
         print(camera_thread.orientation)
-        theta_x = camera_thread.orientation[0]
-        theta_y = camera_thread.orientation[1]
+        theta_x = camera_thread.orientation[1]
+        theta_y = camera_thread.orientation[0]
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
             continue
