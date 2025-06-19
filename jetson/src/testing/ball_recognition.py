@@ -113,7 +113,21 @@ def detect_red_ball(video_name):
             break
         masked_frame, mask = red_threshold(frame, 0.6, 40, prev_center, 500)
 
-        best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
+        #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
+        M = cv2.moments(mask)
+
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY)
+        else:
+            center = None  # No object detected
+        if center is not None:
+            radius = 5
+            cv2.circle(frame, center, radius, (0, 255, 0), 4)
+            prev_center = center
+
+        best_contour = None
         if best_contour is not None:
             #cv2.drawContours(masked_frame, [best_contour], -1, (0, 255, 0), thickness=cv2.FILLED)
             (x, y), radius = cv2.minEnclosingCircle(best_contour)
