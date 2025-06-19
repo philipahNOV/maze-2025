@@ -85,9 +85,9 @@ def posControl(center, prev_center, ref=(200, 200), tol=10):
     axisControl((theta_x, theta_y))
 
 time.sleep(10)
-posControl((0, 0))
+#posControl((0, 0))
 
-time.sleep(1000)
+#time.sleep(1000)
 frame = camera_thread.latest_frame
 center = None
 prev_center = None
