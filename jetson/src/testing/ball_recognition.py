@@ -57,7 +57,7 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
 def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circularity=0.6, prev_center= None, max_diff=500):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not contours:
-        print("No contours found.")
+        #print("No contours found.")
         return None
     
     best_contour = None
@@ -87,7 +87,8 @@ def find_most_circular_contour(mask, min_area=100, max_area = 5000, min_circular
             best_contour = cnt
     
     if best_contour is None:
-        print("No contour passed the circularity filter.")
+        pass
+        #print("No contour passed the circularity filter.")
     
     return best_contour
 
@@ -112,7 +113,21 @@ def detect_red_ball(video_name):
             break
         masked_frame, mask = red_threshold(frame, 0.6, 40, prev_center, 500)
 
-        best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
+        #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.4, prev_center=prev_center, max_diff=200)
+        M = cv2.moments(mask)
+
+        if M["m00"] != 0:
+            cX = int(M["m10"] / M["m00"])
+            cY = int(M["m01"] / M["m00"])
+            center = (cX, cY)
+        else:
+            center = None  # No object detected
+        if center is not None:
+            radius = 5
+            cv2.circle(frame, center, radius, (0, 255, 0), 4)
+            prev_center = center
+
+        best_contour = None
         if best_contour is not None:
             #cv2.drawContours(masked_frame, [best_contour], -1, (0, 255, 0), thickness=cv2.FILLED)
             (x, y), radius = cv2.minEnclosingCircle(best_contour)
@@ -135,11 +150,26 @@ def detect_red_ball(video_name):
     cv2.destroyAllWindows()
 
 def detect_red_ball_frame(frame, prev_center=None):
-    masked_frame, mask = red_threshold(frame, 0.55, 50, prev_center, 500)
+    masked_frame, mask = red_threshold(frame, 0.6, 50, prev_center, 500)
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
-    best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
-    center = prev_center
+    #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
+    gray_mask = cv2.cvtColor(masked_frame, cv2.COLOR_BGR2GRAY)
+    M = cv2.moments(gray_mask)
+    center = None
+    if M["m00"] != 0:
+        cX = int(M["m10"] / M["m00"])
+        cY = int(M["m01"] / M["m00"])
+        center = (cX, cY)
+    else:
+        center = None  # No object detected
+    if center is not None:
+        prev_center = center
+        print("TEST")
+        #center = (center[1], center[0])
+
+    best_contour = None
+    #center = prev_center
     radius = 0
     if best_contour is not None:
         #cv2.drawContours(masked_frame, [best_contour], -1, (0, 255, 0), thickness=cv2.FILLED)
@@ -148,7 +178,7 @@ def detect_red_ball_frame(frame, prev_center=None):
         center = (int(x), int(y))
         diff = center_difference(prev_center, center)
         if diff is not None and center_difference(prev_center, center) > 10000:
-            print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
+            #print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
             center = prev_center
         radius = int(radius)
     return center, radius, masked_frame
@@ -167,7 +197,7 @@ def main():
             print("End of video or error reading frame.")
             break
         center, radius, masked_frame = detect_red_ball_frame(frame, center)
-        cv2.circle(frame, center, radius, (0, 255, 0), 4)
+        cv2.circle(frame, center, 5, (0, 255, 0), 4)
         cv2.imshow('Video Frame', frame)
         #time.sleep(1 / 5)
         frame_num += 1
