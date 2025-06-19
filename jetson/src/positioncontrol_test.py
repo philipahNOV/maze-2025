@@ -158,7 +158,7 @@ def horizontal(tol = 0.2):
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
-horizontal(0.001)
+horizontal(0.0015)
 
 frame = camera_thread.latest_frame
 center = None
