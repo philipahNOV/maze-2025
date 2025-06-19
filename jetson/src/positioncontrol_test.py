@@ -55,9 +55,9 @@ def axisControl(ref):
     if abs(e_x) < tol:
         dir_x = 2
     elif e_x > 0:
-        dir_x = 3
-    elif e_x < 0:
         dir_x = 1
+    elif e_x < 0:
+        dir_x = 3
     if abs(e_y) < tol:
         dir_y = 2
     elif e_y > 0:
