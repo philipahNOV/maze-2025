@@ -54,18 +54,19 @@ def horizontal(tol = 0.2):
             print("Orientation is within tolerance, stopping motors.")
             arduino_thread.send_target_positions(120, 120, 120, 120)
             return
-        if theta_x > 0 and theta_y > 0:
+        if abs(theta_x) < tol:
+            dir_x = 2
+        elif theta_x > 0:
             dir_x = 3
-            dir_y = 3
-        elif theta_x < 0 and theta_y < 0:
+        elif theta_x < 0:
             dir_x = 1
-            dir_y = 1
-        elif theta_x > 0 and theta_y < 0:
-            dir_x = 3
-            dir_y = 1
-        elif theta_x < 0 and theta_y > 0:
-            dir_x = 1
+        if abs(theta_y) < tol:
+            dir_y = 2
+        elif theta_y > 0:
             dir_y = 3
+        elif theta_y < 0:
+            dir_y = 1
+
         vel_x = max(int(kp * abs(theta_x)), min_velocity)
         vel_y = max(int(kp * abs(theta_y)), min_velocity)
         print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
@@ -74,4 +75,4 @@ def horizontal(tol = 0.2):
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
-horizontal(0.005)
+horizontal(0.0025)
