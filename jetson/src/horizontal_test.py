@@ -71,7 +71,7 @@ def horizontal(tol = 0.2):
 
 time.sleep(3)  # Allow time for Arduino connection to stabilize
 #horizontal()
-a = time.time() + 20
+a = time.time() + 50
 while time.time() < a:
     print(camera_thread.orientation)
     time.sleep(0.1)
