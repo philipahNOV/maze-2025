@@ -65,15 +65,15 @@ def horizontal(tol = 0.2):
         elif theta_x < 0 and theta_y > 0:
             dir_x = 1
             dir_y = 3
-        vel_x = max(int(kp * abs(theta_x)), 20)
-        vel_y = max(int(kp * abs(theta_y)), 20)
+        vel_x = max(int(kp * abs(theta_x)), 10)
+        vel_y = max(int(kp * abs(theta_y)), 10)
         print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.1)
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
-horizontal(0.01)
+horizontal(0.005)
 #a = time.time() + 50
 #while time.time() < a:
 #    print(camera_thread.orientation)
