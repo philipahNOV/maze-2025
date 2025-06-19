@@ -5,6 +5,7 @@ from arduino_connection import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
 import testing.ball_recognition
+import numpy as np
 
 from manual_part.manuel_main import elManuel
 
@@ -68,7 +69,12 @@ def axisControl(ref):
     vel_y = max(int(kp * abs(e_y)), min_velocity)
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
-def posControl(center, ref=(200, 200), tol=10):
+def posControl(center, prev_center, ref=(200, 200), tol=10):
+    if prev_center is not None:
+        if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
+            print("Large jump detected, resetting position control.")
+            return
+
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
     kp = 0.0005  # Proportional gain for position control
@@ -84,6 +90,7 @@ posControl((0, 0))
 time.sleep(1000)
 frame = camera_thread.latest_frame
 center = None
+prev_center = None
 limit = time.time() + 100
 while time.time() < limit:
     frame = camera_thread.latest_frame
@@ -92,7 +99,8 @@ while time.time() < limit:
     frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
     print(f"Center: {center}")
-    posControl(center)
+    posControl(center, prev_center)
+    prev_center = center
 
     if center is not None and radius is not None:
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
