@@ -71,7 +71,7 @@ def axisControl(ref):
     print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
-def posControl(center, prev_center, e_prev, t_prev, ref=(200, 200), tol=1):
+def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
     kp = 0.00005  # Proportional gain for position control
     kd = 0.0001  # Derivative gain for position control
 
@@ -85,17 +85,20 @@ def posControl(center, prev_center, e_prev, t_prev, ref=(200, 200), tol=1):
         
     edot_x = 0
     edot_y = 0
+    alpha = 0.5
     if e_prev is not None and t_prev is not None:
         dt = time.time() - t_prev
         if dt > 0.0001:  # Avoid division by zero
             edot_x = (e_x - e_prev[0]) / dt
             edot_y = (e_y - e_prev[1]) / dt
+            edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
+            edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
     theta_x = -(kp * e_x  + kd * edot_x)
     theta_y = -(kp * e_y  + kd * edot_y)
     print(f"theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
-    return (e_x, e_y), time.time()
+    return (e_x, e_y), time.time(), edot_x, (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
     """
@@ -163,6 +166,7 @@ prev_center = None
 limit = time.time() + 100
 e_prev = None
 t_prev = None
+edot_prev = (0, 0)
 while time.time() < limit:
     frame = camera_thread.latest_frame
     if frame is None:
@@ -176,7 +180,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev = posControl(center, prev_center, e_prev, t_prev)
+        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
