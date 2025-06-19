@@ -38,7 +38,7 @@ except Exception as e:
 def horizontal(tol = 0.2):
     x_offset = 0.017  # Offset for x-axis orientation
     y_offset = -0.002  # Offset for y-axis orientation
-    min_velocity = 20 # Minimum velocity for motors
+    min_velocity = 25 # Minimum velocity for motors
     kp = 700 # Proportional gain for the control loop
     deadline = time.time() + 60  # 60 seconds deadline
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
@@ -53,7 +53,7 @@ def horizontal(tol = 0.2):
         if abs(theta_x) < tol and abs(theta_y) < tol:
             print("Orientation is within tolerance, stopping motors.")
             arduino_thread.send_target_positions(120, 120, 120, 120)
-            #eturn
+            return
         if theta_x > 0 and theta_y > 0:
             dir_x = 3
             dir_y = 3
@@ -70,7 +70,7 @@ def horizontal(tol = 0.2):
         vel_y = max(int(kp * abs(theta_y)), min_velocity)
         print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-        time.sleep(0.1)
+        time.sleep(0.05)
     print("Deadline reached, stopping motors.")
 
 time.sleep(10)  # Allow time for Arduino connection to stabilize
