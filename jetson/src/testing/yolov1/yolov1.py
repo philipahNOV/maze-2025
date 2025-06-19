@@ -34,7 +34,7 @@ def detect_ball_yolo(model, frame, prev_center=None, max_diff=300):
 
 def main():
     model = YOLO("best.pt")
-    cap = cv2.VideoCapture(2)  # Use webcam; change to 1 or 2 for different camera
+    cap = cv2.VideoCapture(0)  # Use webcam; change to 1 or 2 for different camera
 
     if not cap.isOpened():
         print("Error: Cannot open camera.")
