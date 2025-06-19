@@ -165,6 +165,7 @@ while time.time() < limit:
 
     if center is not None and radius is not None:
         cv2.circle(frame, center, radius, (0, 255, 0), 4)
+        cv2.circle(frame, (center[1], center[0]), radius, (255, 0, 0), 4)
     else:
         #cv2.putText(frame, "No ball detected", (20, 40), cv2.FONT_HERSHEY_SIMPLEX, 1, (0,0,255), 2)
         pass
