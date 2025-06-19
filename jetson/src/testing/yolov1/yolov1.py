@@ -8,7 +8,7 @@ def center_difference(prev_center, current_center):
         return None
     return np.linalg.norm(np.array(current_center) - np.array(prev_center))
 
-def detect_balls_yolo(model, frame, prev_centers=None, max_diff=300, conf_thresh=0.4):
+def detect_balls_yolo(model, frame, prev_centers=None, max_diff=300, conf_thresh=0.1):
     results = model.predict(frame, verbose=False, imgsz=640)[0]
     detections = []
 
