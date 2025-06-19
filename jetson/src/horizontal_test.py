@@ -63,8 +63,8 @@ def horizontal(tol = 0.2):
         elif theta_x < 0 and theta_y > 0:
             dir_x = 1
             dir_y = 3
-        vel_x = kp * abs(theta_x)
-        vel_y = kp * abs(theta_y)
+        vel_x = int(kp * abs(theta_x))
+        vel_y = int(kp * abs(theta_y))
         print(f"Orientation: {theta_x}, {theta_y} | Velocities: {vel_x}, {vel_y}")
         arduino_thread.send_target_positions(dir_x, 2, vel_x, 120)
         time.sleep(0.3)
