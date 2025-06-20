@@ -46,9 +46,9 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     #mask = cv2.bitwise_and(mask, cv2.bitwise_not(skin_mask))
 
     # Morphological cleaning
-    kernel = np.ones((3, 3), np.uint8)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-    mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+    #kernel = np.ones((3, 3), np.uint8)
+    #mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+    #mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
 
     # Apply mask to original frame
     result = np.zeros_like(frame)

@@ -294,7 +294,7 @@ while time.time() < limit:
     current_time = time.time()
     fps = 1.0 / (current_time - prev_time)
     prev_time = current_time
-    #frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
+    frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
     if center is None:
         print("No ball detected, skipping frame.")
