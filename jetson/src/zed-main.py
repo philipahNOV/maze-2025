@@ -58,7 +58,7 @@ def main():
         show_menu()
         choice = input("Select option: ")
         if choice == "1":
-            run_tracker(camera)
+            run_tracker()
         elif choice == "2":
             print("[TODO] PID control module")
         elif choice == "3":
