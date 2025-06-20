@@ -194,6 +194,7 @@ class Controller:
             elif theta_y < 0:
                 dir_y = 1
 
+            print(f"{theta_x}, {theta_y}, {dir_x}, {dir_y}")
             vel_x = max(int(kp * abs(theta_x)), self.min_velocity)
             vel_y = max(int(kp * abs(theta_y)), self.min_velocity)
             self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
