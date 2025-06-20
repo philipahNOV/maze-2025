@@ -1,6 +1,6 @@
 // Initialiserer variabler
 
-// Namespace for aktuatorene
+// Navnerom for aktuatorene
 namespace actuators {
     
     // Struct for pinnenummerene
@@ -11,64 +11,62 @@ namespace actuators {
         uint8_t pot_feedback;
     };
 
+    // Aktuator en
     ActuatorPins actuator_1 = {9, 10, A4};
 
-    // Namespace for aktuator 2
+    // Aktuator to
     ActuatorPins actuator_2 = {11, 12, A3};
 }
 
+// Navnerom for globale variabler
 namespace {
-    float dist_act_1{0};
-    float dist_act_2{0};
+
 }
 
-float actuator_position(uint8_t* pot_pin);
-void actuator_mov_dist(float position, float speed, int actuator);
+// Initialiserer funksjoner
+float actuator_position(uint8_t* pot_pin); // Funksjon for posisjonen til aktuatoren
+void actuator_move_distance(float distance, uint8_t speed, uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
 
 void setup() {
-    // put your setup code here, to run once:
+    // Starter seriel kominikasjon
     Serial.begin(9600);
 
-    dist_act_1 = actuator_position(&actuators::actuator_1.pot_feedback);
-    dist_act_2 = actuator_position(&actuators::actuator_2.pot_feedback);
-
+    // Setter pin modusene
+    // Aktuator en
     pinMode(actuators::actuator_1.pwm_up, OUTPUT);
     pinMode(actuators::actuator_1.pwm_down, OUTPUT);
 
+    // Aktuator to
     pinMode(actuators::actuator_2.pwm_up, OUTPUT);
     pinMode(actuators::actuator_2.pwm_down, OUTPUT);
 
-    actuator_mov_dist(25.0, 30.0, 1);
+
+    actuator_move_distance(5.0, 30.0, 1);
 }
 
 void loop() {
     // put your main code here, to run repeatedly:
-
-    dist_act_1 = actuator_position(&actuators::actuator_1.pot_feedback);
-    dist_act_2 = actuator_position(&actuators::actuator_2.pot_feedback);
     
 }
 
 // Funksjon for å returnere posisjonen til aktuatoren
-float actuator_position(uint8_t* pPot_pin) 
+float actuator_position(uint8_t* pPot_pin) // Tar inn en peker til potensjometer pinnen
 {
-    const float act_max_stroke = 50.0; // mm
-    const float adc_max_hight = 1018.0;
-    const float adc_min_hight = 2.0;
+    const float act_max_stroke = 50.0; // Maks slaglengde for aktuatorene (mm)
+    const float adc_max_hight = 1018.0; // ADC verdien for maks lengde
+    const float adc_min_hight = 2.0; // ADC verdi for minimum lengde
 
-    float dist = (float(analogRead(*pPot_pin)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
+    float dist = (float(analogRead(*pPot_pin)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight); // Kalkulerer distansen
 
-    return dist;
+    return dist; // Returnerer distanse 
 }
 
-void actuator_mov_dist(float distance, float speed, int actuator)
+void actuator_move_distance(float distance, uint8_t speed, uint8_t actuator)
 {
-    float targetTolerance{0.3}; // mm
-    float max_hight{48}; // mm
-    float min_hight{2}; //mm
-
-    actuators::ActuatorPins* pSelectedActuatorPins = nullptr; // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
+    // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
+    actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
     
+    // Velger aktuator
     if (actuator == 1) // Hvis det er aktuator en
     {
         pSelectedActuatorPins = &actuators::actuator_1; // Peker til selectedActuatorPins til aktoator en
@@ -82,38 +80,34 @@ void actuator_mov_dist(float distance, float speed, int actuator)
         Serial.print("Ikke et valg. Velg mellom en eller to aktuator");
         return;
     }
-
     
-    uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback;
-    uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down;
-    float init_position = actuator_position(&pot_pin);
+    // Initialserer variabler
+    float targetTolerance{0.3}; // Tolleranse for hvor hvor nære ønsket distanse før ok (mm) 
+    float max_hight{48}; // Maksimal høyde (mm)
+    float min_hight{2}; //Minimum høyde (mm)
 
-    if (init_position + distance > max_hight && distance >= 0.0)
+    uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback; // Aktuator potensjometer pinne
+    uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down; // PWM pinne som skal brukes
+    float init_position{actuator_position(&pot_pin)}; // Initial aktuatorposisjon
+
+    // Sjekk om distansen er lenger en aktuatoren kan flytte seg
+    if (init_position + abs(distance) > max_hight && distance >= 0.0) // Maks lengde
     {
-        distance = max_hight;
+        distance = max_hight - init_position; // Kalkulerer distansen så den ikke går for langt opp
     }
-    else if (init_position - abs(distance) && distance < 0.0)
+    else if (init_position - abs(distance) < min_hight && distance < 0.0) // Min lengde
     {
-        distance = -max_hight;
+        distance = min_hight - init_position; // Kalkulerer distansen så den ikke går for langt ned
     }
     else
     {
         // Do nothing
     }
 
-    Serial.print("Pos: ");
-    Serial.print(actuator_position(&pot_pin));
-    Serial.print(" Dist: ");
-    Serial.println();
-
+    // Kjører til aktuatoren har kjørt så langt den skal
     while (abs(actuator_position(&pot_pin) - init_position) < abs(distance) + targetTolerance)
     {
-        Serial.print("1: ");
-        Serial.print(abs(actuator_position(&pot_pin) - init_position));
-        Serial.print(" 2: ");
-        Serial.println(abs(distance) + targetTolerance);
-        //analogWrite(pwm_pin, constrain(speed, 0, 255));
+        analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
     }
-
-    Serial.print("Ferdig");
+    analogWrite(pwm_pin, 0); // Stopper motoren
 }
