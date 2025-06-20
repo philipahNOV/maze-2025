@@ -16,7 +16,6 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     red_ratio = R / total
 
     # Find all pixels that satisfy both red ratio and intensity threshold
-    max_red_ratio = np.max(red_ratio)
     
     spatial_mask = np.ones_like(total, dtype=bool)
     if prev_center is not None:
@@ -30,6 +29,8 @@ def red_threshold(frame, frac, min_intensity, prev_center=None, roi_radius=100):
     if valid_pixels[0].size > 0 and prev_center is not None:
         # Compute max red ratio among valid pixels
         max_red_ratio = np.max(red_ratio[valid_pixels])
+    else:
+        max_red_ratio = np.max(red_ratio)
 
     max_red_ratio = max(max_red_ratio, 0.3)
     bright_mask = total > min_intensity
@@ -151,11 +152,13 @@ def detect_red_ball(video_name):
 
 def detect_red_ball_frame(frame, prev_center=None):
     masked_frame, mask = red_threshold(frame, 0.6, 50, prev_center, 500)
+    if cv2.countNonZero(mask) == 0:
+        return None, 0, masked_frame
     #cv2.circle(frame, brightest_pixel, 10, (0, 0, 255), 4)
 
     #best_contour = find_most_circular_contour(mask, min_area=1, max_area=800, min_circularity=0.5, prev_center=prev_center, max_diff=10000)
-    gray_mask = cv2.cvtColor(masked_frame, cv2.COLOR_BGR2GRAY)
-    M = cv2.moments(gray_mask)
+    #gray_mask = cv2.cvtColor(masked_frame, cv2.COLOR_BGR2GRAY)
+    M = cv2.moments(mask)
     center = None
     if M["m00"] != 0:
         cX = int(M["m10"] / M["m00"])
@@ -168,19 +171,19 @@ def detect_red_ball_frame(frame, prev_center=None):
         print("TEST")
         #center = (center[1], center[0])
 
-    best_contour = None
+    #best_contour = None
     #center = prev_center
     radius = 0
-    if best_contour is not None:
+    #if best_contour is not None:
         #cv2.drawContours(masked_frame, [best_contour], -1, (0, 255, 0), thickness=cv2.FILLED)
         #he
-        (x, y), radius = cv2.minEnclosingCircle(best_contour)
-        center = (int(x), int(y))
-        diff = center_difference(prev_center, center)
-        if diff is not None and center_difference(prev_center, center) > 10000:
-            #print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
-            center = prev_center
-        radius = int(radius)
+    #    (x, y), radius = cv2.minEnclosingCircle(best_contour)
+    #    center = (int(x), int(y))
+    #    diff = center_difference(prev_center, center)
+    #    if diff is not None and center_difference(prev_center, center) > 10000:
+    #        #print(f"Large center difference detected: {center_difference(prev_center, center)} pixels")
+    #        center = prev_center
+    #    radius = int(radius)
     return center, radius, masked_frame
     
 def main():

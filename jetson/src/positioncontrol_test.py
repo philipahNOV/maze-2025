@@ -276,10 +276,16 @@ limit = time.time() + 100
 e_prev = None
 t_prev = None
 edot_prev = (0, 0)
+
+prev_time = time.time()
 while time.time() < limit:
     frame = camera_thread.latest_frame
     if frame is None:
         continue
+
+    current_time = time.time()
+    fps = 1.0 / (current_time - prev_time)
+    prev_time = current_time
     #frame = cv2.resize(frame, (320, 240))  # Resize to a standard size if needed
     center, radius, masked_frame = testing.ball_recognition.detect_red_ball_frame(frame, center)
     if center is None:
@@ -291,6 +297,10 @@ while time.time() < limit:
     if limit - time.time() < 95:
         e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
+
+    # Draw FPS on the frame
+    cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
+                1, (0, 255, 255), 2)
 
     cv2.imshow("Test Image", frame)
     cv2.imshow("Masked Frame", masked_frame)
