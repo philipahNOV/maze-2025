@@ -6,11 +6,15 @@ from camera.cam_loop import CameraThread
 from automatic import Automatic
 import testing.ball_recognition
 import numpy as np
+import threading
 
 from manual_part.manuel_main import elManuel
 
 import time
 import cv2
+
+ref_lock = threading.Lock()
+ref_theta = None
 
 def initialize_component(component, name, retries=5, delay=2):
     for attempt in range(retries):
@@ -35,6 +39,51 @@ try:
 except Exception as e:
     print(e)
     exit(1)
+
+def axisControlMultithread():
+    global ref_theta
+    x_offset = 0  # Offset for x-axis orientation (tested -0.008)
+    y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+    min_velocity = 22 # Minimum velocity for motors
+    kp = 3000  # Proportional gain for the control loop
+    tol = 0.001
+    arduino_thread.send_target_positions(120, 120, 120, 120)
+
+    while True:
+        theta_x = camera_thread.orientation[1] + x_offset
+        theta_y = camera_thread.orientation[0] + y_offset
+
+        if theta_x is None or theta_y is None:
+            print("Orientation data not available yet.")
+            time.sleep(0.05)
+            continue
+
+        with ref_lock:
+            if ref_theta is None:
+                continue
+            ref_theta_x, ref_theta_y = ref_theta
+        e_x = ref_theta_x - theta_x
+        e_y = ref_theta_y - theta_y
+
+        if abs(e_x) < tol:
+            dir_x = 2
+        elif e_x > 0:
+            dir_x = 3
+        elif e_x < 0:
+            dir_x = 1
+        if abs(e_y) < tol:
+            dir_y = 2
+        elif e_y > 0:
+            dir_y = 3
+        elif e_y < 0:
+            dir_y = 1
+
+        vel_x = min(max(int(kp * abs(e_x)), min_velocity), 255)
+        vel_y = min(max(int(kp * abs(e_y)), min_velocity), 255)
+        dir_y = 2
+        print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
+        arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+        time.sleep(0.05)
 
 def axisControl(ref):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
@@ -72,6 +121,7 @@ def axisControl(ref):
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
 def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
+
     kp = 0.00025  # Proportional gain for position control
     kd = 0  # Derivative gain for position control
 
@@ -98,6 +148,37 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
     theta_y = -(kp * e_y  + kd * edot_y)
     print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
+    return (e_x, e_y), time.time(), (edot_x, edot_y)
+
+def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
+    global ref_theta
+
+    kp = 0.00025  # Proportional gain for position control
+    kd = 0  # Derivative gain for position control
+
+    if prev_center is not None:
+        if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
+            print("Large jump detected, resetting position control.")
+            return None, None
+        
+    e_x = ref[0] - center[0]
+    e_y = ref[1] - center[1]
+        
+    edot_x = 0
+    edot_y = 0
+    alpha = 0.5
+    if e_prev is not None and t_prev is not None:
+        dt = time.time() - t_prev
+        if dt > 0.0001:  # Avoid division by zero
+            edot_x = (e_x - e_prev[0]) / dt
+            edot_y = (e_y - e_prev[1]) / dt
+            edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
+            edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
+
+    with ref_lock:
+        ref_theta = ((kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
+
+    print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
@@ -160,6 +241,9 @@ def horizontal(tol = 0.2):
 time.sleep(10)  # Allow time for Arduino connection to stabilize
 horizontal(0.0015)
 
+axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
+axis_thread.start()
+
 frame = camera_thread.latest_frame
 center = None
 prev_center = None
@@ -180,7 +264,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
+        e_prev, t_prev, edot_prev = posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
