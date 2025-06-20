@@ -1,7 +1,7 @@
 import time
 import cv2
-from tracker import BallTracker
-from camera import ZEDCamera
+from ZED.tracker import BallTracker
+from ZED.camera import ZEDCamera
 
 def run_tracker():
     tracker = BallTracker(model_path="testing/yolov1/best.pt")
