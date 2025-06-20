@@ -56,8 +56,8 @@ class Controller:
         Applies PD control with deadzone handling, and updates previous error and time for derivative calculation.
         """
 
-        pos = self.tracker.get_position()
-        self.pos = (pos[1], pos[0])
+        self.pos = self.tracker.get_position()
+        #self.pos = (pos[1], pos[0])
 
 
         if not self.pos: 
@@ -117,8 +117,8 @@ class Controller:
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
-        #self.axisControl((theta_x, theta_y))
-        time.sleep(0.05)
+        self.axisControl((theta_x, theta_y))
+        #time.sleep(0.05)
 
     def axisControl(self, ref):
 
