@@ -45,7 +45,7 @@ def axisControlMultithread():
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
     kp = 5000  # Proportional gain for the control loop
-    tol = 0.001
+    tol = 0.002
     arduino_thread.send_target_positions(120, 120, 120, 120)
 
     while True:
@@ -81,7 +81,7 @@ def axisControlMultithread():
         vel_x = min(max(int(kp * abs(e_x)), min_velocity), 255)
         vel_y = min(max(int(kp * abs(e_y)), min_velocity), 255)
         dir_y = 2
-        print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
+        print(f"e_x: {e_x}, theta_x: {theta_x}, ref: {ref_theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.05)
 
@@ -145,7 +145,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
 
     theta_x = (kp * e_x  + kd * edot_x)
     theta_y = -(kp * e_y  + kd * edot_y)
-    print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
+   # print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
@@ -177,7 +177,7 @@ def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(2
     with ref_lock:
         ref_theta = ((kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
 
-    print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
+    #print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
