@@ -3,7 +3,7 @@ import cv2
 from ZED.tracker import BallTracker
 from ZED.camera import ZEDCamera
 
-def run_tracker():
+def run_tracker(camera):
     tracker = BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
     print("[INFO] Waiting for YOLO initialization...")
@@ -13,9 +13,11 @@ def run_tracker():
     print("[INFO] Tracking started. Press 'q' to quit.")
     try:
         while True:
-            frame = tracker.frame
+            frame = camera.grab_frame()
             if frame is None:
                 continue
+
+            tracker.process_frame(frame)
 
             for label, data in tracker.tracked_objects.items():
                 pos = data["position"]
@@ -24,7 +26,7 @@ def run_tracker():
                     cv2.circle(frame, pos, 8, color, -1)
                     cv2.putText(frame, label, (pos[0] + 10, pos[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
-            orientation = tracker.get_orientation()
+            orientation = camera.get_orientation()
             if orientation:
                 text = f"Orientation: [{orientation[0]:.2f}, {orientation[1]:.2f}]"
                 cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
@@ -49,7 +51,6 @@ def main():
     camera = ZEDCamera()
     try:
         camera.init_camera()
-        camera.grab_frame()
         print("[INFO] ZED camera initialized.")
     except RuntimeError as e:
         print(f"[ERROR] {e}")
@@ -59,7 +60,7 @@ def main():
         show_menu()
         choice = input("Select option: ")
         if choice == "1":
-            run_tracker()
+            run_tracker(camera)
         elif choice == "2":
             print("[TODO] PID control module")
         elif choice == "3":
@@ -71,7 +72,6 @@ def main():
 
     camera.close()
     print("[INFO] Camera closed. Goodbye.")
-
 
 if __name__ == "__main__":
     main()
