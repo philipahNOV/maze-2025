@@ -22,15 +22,15 @@ namespace {
     float dist_act_2{0};
 }
 
-float actuator_dist(uint8_t* pot_pin);
+float actuator_position(uint8_t* pot_pin);
 void actuator_mov_dist(float position, float speed, int actuator);
 
 void setup() {
     // put your setup code here, to run once:
     Serial.begin(9600);
 
-    dist_act_1 = actuator_dist(&actuators::actuator_1.pot_feedback);
-    dist_act_2 = actuator_dist(&actuators::actuator_2.pot_feedback);
+    dist_act_1 = actuator_position(&actuators::actuator_1.pot_feedback);
+    dist_act_2 = actuator_position(&actuators::actuator_2.pot_feedback);
 
     pinMode(actuators::actuator_1.pwm_up, OUTPUT);
     pinMode(actuators::actuator_1.pwm_down, OUTPUT);
@@ -44,13 +44,13 @@ void setup() {
 void loop() {
     // put your main code here, to run repeatedly:
 
-    dist_act_1 = actuator_dist(&actuators::actuator_1.pot_feedback);
-    dist_act_2 = actuator_dist(&actuators::actuator_2.pot_feedback);
+    dist_act_1 = actuator_position(&actuators::actuator_1.pot_feedback);
+    dist_act_2 = actuator_position(&actuators::actuator_2.pot_feedback);
     
 }
 
 // Funksjon for å returnere posisjonen til aktuatoren
-float actuator_dist(uint8_t* pPot_pin) 
+float actuator_position(uint8_t* pPot_pin) 
 {
     const float act_max_stroke = 50.0; // mm
     const float adc_max_hight = 1018.0;
@@ -61,10 +61,11 @@ float actuator_dist(uint8_t* pPot_pin)
     return dist;
 }
 
-void actuator_mov_dist(float position, float speed, int actuator)
+void actuator_mov_dist(float distance, float speed, int actuator)
 {
-    float targetTolerance{0.3}; //mm
-    float position_constrain = constrain(position, 5.0, 45.0);
+    float targetTolerance{0.3}; // mm
+    float max_hight{48}; // mm
+    float min_hight{2}; //mm
 
     actuators::ActuatorPins* pSelectedActuatorPins = nullptr; // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
     
@@ -82,11 +83,37 @@ void actuator_mov_dist(float position, float speed, int actuator)
         return;
     }
 
-    uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback;
-    uint8_t pwm_pin = ((actuator_dist(&pot_pin) - position_constrain) >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down;
     
-    while (actuator_dist(&pot_pin) < position_constrain - targetTolerance || actuator_dist(&pot_pin) > position_constrain + targetTolerance)
+    uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback;
+    uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down;
+    float init_position = actuator_position(&pot_pin);
+
+    if (init_position + distance > max_hight && distance >= 0.0)
     {
-        analogWrite(pwm_pin, constrain(speed, 0, 255));
+        distance = max_hight;
     }
+    else if (init_position - abs(distance) && distance < 0.0)
+    {
+        distance = -max_hight;
+    }
+    else
+    {
+        // Do nothing
+    }
+
+    Serial.print("Pos: ");
+    Serial.print(actuator_position(&pot_pin));
+    Serial.print(" Dist: ");
+    Serial.println();
+
+    while (abs(actuator_position(&pot_pin) - init_position) < abs(distance) + targetTolerance)
+    {
+        Serial.print("1: ");
+        Serial.print(abs(actuator_position(&pot_pin) - init_position));
+        Serial.print(" 2: ");
+        Serial.println(abs(distance) + targetTolerance);
+        //analogWrite(pwm_pin, constrain(speed, 0, 255));
+    }
+
+    Serial.print("Ferdig");
 }
