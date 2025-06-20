@@ -38,7 +38,7 @@ class Controller:
         self.kd_x = 0.000
         self.kp_y = 0.00007
         self.kd_y = 0.00008
-        self.ki_y = 0.00001
+        self.ki_y = 0.00006
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
