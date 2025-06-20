@@ -81,6 +81,10 @@ class BallTracker:
 
             if not self.initialized:
                 results = self.model.predict(source=frame, conf=0.5)[0]
+
+                self.ball_confirm_counter = 0
+                self.ball_confirm_threshold = 3
+
                 for box in results.boxes:
                     cls = int(box.cls[0])
                     label = self.model.names[cls]
