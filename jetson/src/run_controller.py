@@ -54,6 +54,7 @@ def main():
 
             ball_pos = tracker.get_position()
             if not ball_pos:
+                print("No ball found (run_controller)")
                 continue
             
             print(f"Ball position: {ball_pos}", end="\r")
