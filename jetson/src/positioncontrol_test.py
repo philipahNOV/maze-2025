@@ -40,7 +40,7 @@ except Exception as e:
     print(e)
     exit(1)
 
-def axisControl(ref):
+def axisControlMultithread(ref):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
