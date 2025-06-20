@@ -286,9 +286,20 @@ e_prev = None
 t_prev = None
 edot_prev = (0, 0)
 
-ballTracker = tracking.BallTracker("testing/yolov1/best.pt")
-while True:
-    print(ballTracker.get_position())
+tracker = tracking.BallTracker("testing/yolov1/best.pt")
+tracker.start()
+ 
+try:
+    while True:
+        pos = tracker.get_position()
+        if pos:
+            print(f"Ball position: x={pos[0]}, y={pos[1]}")
+        else:
+            print("Ball not found.")
+        time.sleep(0.1)
+except KeyboardInterrupt:
+    print("Stopp")
+    tracker.stop()
 
 prev_time = time.time()
 while time.time() < limit:
