@@ -19,7 +19,8 @@ def run_tracker(camera):
         while True:
             frame = camera.grab_frame()
             if frame is None:
-                continue
+                print("Failed to grab frame from ZED camera.")
+                break
 
             tracker.process_frame(frame)
 
@@ -60,6 +61,7 @@ def main():
     camera = ZEDCamera()
     try:
         camera.init_camera()
+        camera.grab_frame()
         print("[INFO] ZED camera initialized.")
     except RuntimeError as e:
         print(f"[ERROR] {e}")
@@ -80,7 +82,7 @@ def main():
             print("Invalid choice.")
 
     camera.close()
-    print("[INFO] Camera closed. Goodbye.")
+    print("[INFO] Camera closed.")
 
 if __name__ == "__main__":
     main()

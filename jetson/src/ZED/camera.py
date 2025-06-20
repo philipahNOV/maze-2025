@@ -16,12 +16,14 @@ class ZEDCamera:
 
     def grab_frame(self):
         image = sl.Mat()
-        if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
-            self.zed.retrieve_image(image, sl.VIEW.LEFT)
+        if zed.grab() == sl.ERROR_CODE.SUCCESS:
+            zed.retrieve_image(image, sl.VIEW.LEFT)
             rgba = image.get_data()
             rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
-            return cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+            return bgr
         return None
+
     
     def get_orientation(self):
         sensors_data = sl.SensorsData()
