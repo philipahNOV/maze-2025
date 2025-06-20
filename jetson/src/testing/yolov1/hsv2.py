@@ -88,7 +88,11 @@ class BallTracker:
                     cx = (x1 + x2) // 2
                     cy = (y1 + y2) // 2
                     if label == "ball":
-                        self.tracked_objects["ball"]["position"] = (cx, cy)
+                        roi = frame[y1:y2, x1:x2]
+                        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                        mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
+                        if cv2.countNonZero(mask) > 100:
+                            self.tracked_objects["ball"]["position"] = (cx, cy)
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
                 self.initialized = True
