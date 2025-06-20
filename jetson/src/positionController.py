@@ -56,7 +56,7 @@ class Controller:
         Applies PD control with deadzone handling, and updates previous error and time for derivative calculation.
         """
 
-        self.pos = self.tracker.get_position()
+        self.pos = (self.tracker.get_position()[1], self.tracker.get_position()[0])
         if not self.pos: return
 
         self.ref = ref
@@ -151,7 +151,7 @@ class Controller:
         dir_y = 2
         #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
         self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-        time.sleep(0.167)
+        time.sleep(0.1)
 
     def horizontal(self, tol = 0.0015, timeLimit = 20):
         
