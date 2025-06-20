@@ -45,7 +45,7 @@ def axisControlMultithread():
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
     kp = 5000  # Proportional gain for the control loop
-    tol = 0.002
+    tol = 0
     arduino_thread.send_target_positions(120, 120, 120, 120)
 
     while True:
@@ -154,8 +154,8 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
 def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
     global ref_theta
 
-    kp = 0.0001  # Proportional gain for position control
-    kd = 0.00015  # Derivative gain for position control
+    kp = 0.0004  # Proportional gain for position control
+    kd = 0.0004  # Derivative gain for position control
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
@@ -244,8 +244,8 @@ def horizontal(tol = 0.2):
 time.sleep(10)  # Allow time for Arduino connection to stabilize
 horizontal(0.0015)
 
-#axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
-#axis_thread.start()
+axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
+axis_thread.start()
 
 frame = camera_thread.latest_frame
 center = None
@@ -267,7 +267,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
+        e_prev, t_prev, edot_prev = posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
