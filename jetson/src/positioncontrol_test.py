@@ -123,8 +123,10 @@ def axisControl(ref):
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
 def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=10):
-    kp = 0.0001  # Proportional gain for position control
-    kd = 0.00015  # Derivative gain for position control
+    kp_x = 0.0001  # Proportional gain for position control
+    kd_x = 0.00015  # Derivative gain for position control
+    kp_y = 0.00012
+    kd_y = 0.00017
     deadzone_pos_tol = 30
     deadzone_vel_tol = 3
     deadzone_tilt = 0.0
@@ -150,7 +152,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
             edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
-    if abs(e_x) < pos_tol and abs(edot_x) < vel_tol:
+    if abs(e_y) < pos_tol and abs(edot_y) < vel_tol:
         # Ball is at target → STOP
         theta_x = 0
         return None, None, None
@@ -159,7 +161,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
         theta_x = np.sign(e_x) * deadzone_tilt
     else:
         # Ball is far → USE CONTROL
-        theta_x = (kp * e_x  + kd * edot_x)
+        theta_x = (kp_x * e_x  + kd_x * edot_x)
 
     if abs(e_y) < pos_tol and abs(edot_y) < vel_tol:
         # Ball is at target → STOP
@@ -169,7 +171,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
         theta_y = -np.sign(e_y) * deadzone_tilt
     else:
         # Ball is far → USE CONTROL
-        theta_y = -(kp * e_y  + kd * edot_y)
+        theta_y = (kp_y * e_y  + kd_y * edot_y)
         
     if abs(e_x) < pos_tol and abs(edot_x) < vel_tol and abs(e_y) < tol and abs(edot_y) < vel_tol:
     	print("Target reached!")
