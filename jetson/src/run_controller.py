@@ -47,8 +47,8 @@ def main():
                 pos = data["position"]
                 if pos:
                     color = (0, 255, 0) if label == "ball" else (0, 0, 255)
-                    cv2.circle(frame, (500, 500), 8, color, -1)
-                    cv2.circle(frame, pos, 5, (0, 0, 255), -1)
+                    cv2.circle(frame, pos, 8, color, -1)
+                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
                     cv2.putText(frame, label, (pos[0]+10, pos[1]), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
@@ -60,7 +60,7 @@ def main():
 
             #--- Control ---
 
-            controller.posControl((500, 500))
+            controller.posControl((770, 330))
 
             #---------------
 
