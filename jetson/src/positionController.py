@@ -110,7 +110,7 @@ class Controller:
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
-        print(f"Ballpos: {self.pos[0]}, {self.pos[1]}")
+        print(self.tracker.get_position())
 
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
