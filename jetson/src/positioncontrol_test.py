@@ -40,12 +40,11 @@ except Exception as e:
     print(e)
     exit(1)
 
-def axisControlMultithread():
-    global ref_theta
+def axisControl(ref):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
-    kp = 3000  # Proportional gain for the control loop
+    kp = 5000  # Proportional gain for the control loop
     tol = 0.001
     arduino_thread.send_target_positions(120, 120, 120, 120)
 
@@ -89,7 +88,7 @@ def axisControl(ref):
     x_offset = 0  # Offset for x-axis orientation (tested -0.008)
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
-    kp = 3000  # Proportional gain for the control loop
+    kp = 5000  # Proportional gain for the control loop
     tol = 0.001
 
     theta_x = camera_thread.orientation[1] + x_offset
@@ -99,8 +98,8 @@ def axisControl(ref):
         print("Orientation data not available yet.")
         return
     
-    e_x = ref[0] - theta_x
-    e_y = ref[1] - theta_y
+    e_x = theta_x - ref[0]
+    e_y = theta_y - ref[1]
     if abs(e_x) < tol:
         dir_x = 2
     elif e_x > 0:
@@ -121,9 +120,8 @@ def axisControl(ref):
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
 def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
-
-    kp = 0.00025  # Proportional gain for position control
-    kd = 0  # Derivative gain for position control
+    kp = 0.0001  # Proportional gain for position control
+    kd = 0.00015  # Derivative gain for position control
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
