@@ -59,7 +59,7 @@ def main():
 
             #--- Control ---
 
-            controller.posControl((300, 300))
+            controller.posControl((500, 500))
 
             #---------------
 
