@@ -86,6 +86,8 @@ class Controller:
                 edot_y = (e_y - self.prevError[1]) / dt
                 edot_x = alpha * edot_x + (1 - alpha) * self.prevVelError[0]
                 edot_y = alpha * edot_y + (1 - alpha) * self.prevVelError[1]
+        else:
+            dt = 0
 
         if self.e_int:
             self.e_int += e_y*dt
