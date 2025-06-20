@@ -11,7 +11,7 @@ class ZEDCamera:
 
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             print("ZED camera failed to open.")
-            exit(1)
+            raise RuntimeError("ZED camera failed to open.")
 
         return self.zed
 
@@ -33,13 +33,15 @@ class ZEDCamera:
             zed_imu_pose = sl.Transform()
             imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
             ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+            # Calculate direction values from quaternion components.
+            # dir1 combines ox (x component) and ow (w component) to represent a direction in the x-w plane.
             dir1 = ox + ow
+            # dir2 combines oy (y component) and oz (z component) to represent a direction in the y-z plane.
             dir2 = oy - oz
+            # Return the orientation as a 2D direction vector.
             return [-dir2, dir1]
         else:
             return None
-
-
 
     def close(self):
         self.zed.close()
