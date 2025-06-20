@@ -60,10 +60,11 @@ def axisControlMultithread():
 
         with ref_lock:
             if ref_theta is None:
+                time.sleep(0.05)
                 continue
             ref_theta_x, ref_theta_y = ref_theta
-        e_x = ref_theta_x - theta_x
-        e_y = ref_theta_y - theta_y
+        e_x = theta_x - ref_theta_x
+        e_y = theta_y - ref_theta_y
 
         if abs(e_x) < tol:
             dir_x = 2
