@@ -1,12 +1,12 @@
 import time
 import numpy as np
-import testing.yolov1.hsv2 as tracking
+import testing.yolov1.hsv3 as tracking
 import arduino_connection
 
 class Controller:
 
     """
-    Handles position and orientation control for a ball-on-plate system.
+    Handles position ad orientation control for a ball-on-plate system.
 
     Uses computer vision tracking and IMU to get the ball's position and orientation,
     applies PD control logic to compute desired platform tilt angles,
