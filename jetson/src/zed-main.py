@@ -49,6 +49,7 @@ def main():
     camera = ZEDCamera()
     try:
         camera.init_camera()
+        camera.grab_frame()
         print("[INFO] ZED camera initialized.")
     except RuntimeError as e:
         print(f"[ERROR] {e}")
