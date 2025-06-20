@@ -2,17 +2,18 @@ import pyzed.sl as sl
 import cv2
 
 class ZEDCamera:
-    def __init__(self):
-        self.zed = sl.Camera()
-
     def init_camera(self):
+        zed = sl.Camera()
         init_params = sl.InitParameters()
-        init_params.camera_resolution = sl.RESOLUTION.HD720
+        init_params.camera_resolution = sl.RESOLUTION.HD720  # Use HD720 for 30 FPS
         init_params.camera_fps = 30
         init_params.coordinate_units = sl.UNIT.MILLIMETER
-        status = self.zed.open(init_params)
-        if status != sl.ERROR_CODE.SUCCESS:
-            raise RuntimeError(f"ZED open failed: {status}")
+
+        if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+            print("ZED camera failed to open.")
+            exit(1)
+
+        return zed
 
     def grab_frame(self):
         image = sl.Mat()
