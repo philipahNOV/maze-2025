@@ -49,8 +49,9 @@ def axisControlMultithread():
     arduino_thread.send_target_positions(120, 120, 120, 120)
 
     while True:
-        theta_x = camera_thread.orientation[1] + x_offset
-        theta_y = camera_thread.orientation[0] + y_offset
+        orientation = camera_thread.get_orientation()
+        theta_x = orientation[0] + x_offset
+        theta_y = orientation[0] + y_offset
 
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
@@ -239,8 +240,8 @@ def horizontal(tol = 0.2):
 time.sleep(10)  # Allow time for Arduino connection to stabilize
 horizontal(0.0015)
 
-axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
-axis_thread.start()
+#axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
+#axis_thread.start()
 
 frame = camera_thread.latest_frame
 center = None
@@ -262,7 +263,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev, edot_prev = posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev)
+        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)

@@ -50,6 +50,7 @@ class CameraThread(threading.Thread):
         self.orientation = None
         self.orientation_deg = None
         self.ang_vel = None
+        self.orientation_lock = threading.Lock()
         print("CameraThread initialized")
     
     def find_board_corners(self, img):
@@ -162,11 +163,16 @@ class CameraThread(threading.Thread):
                 dir1_deg = dir1*180/np.pi
                 dir2 = oy - oz
                 dir2_deg = dir2*180/np.pi
-                self.orientation = [-dir2, dir1]
-                self.orientation_deg = [-dir2_deg, dir1_deg]
+                with self.orientation_lock:
+                    self.orientation = [-dir2, dir1]
+                    self.orientation_deg = [-dir2_deg, dir1_deg]
                 self.ang_vel = imu_data.get_angular_velocity()
             else:
                 print("Failed to grab frame:", repr(err))
+
+    def get_orientation(self):
+        with self.orientation_lock:
+            return self.orientation.copy() if self.orientation else None
 
     def stop(self):
         """
