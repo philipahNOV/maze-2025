@@ -20,9 +20,10 @@ def grab_zed_frame(zed):
     image = sl.Mat()
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image, sl.VIEW.LEFT)
-        frame = image.get_data()
-        frame = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)  # ZED gives RGBA
-        return frame
+        rgba = image.get_data()
+        rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        return bgr
     return None
 
 model = YOLO("best.pt")
@@ -81,6 +82,15 @@ def draw_tracking(frame, label, position, color=(0,255,0)):
         cv2.circle(frame, position, 8, color, -1)
         cv2.putText(frame, label, (position[0]+10, position[1]-10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
+def get_position():
+    pos = tracked_objects["ball"]["position"]
+    if pos:
+        print("Ball position: x={}, y={}".format(pos[0], pos[1]))
+    
+    else:
+        print("Ball nto detected.")
+
+
 def main():
     #cap = cv2.VideoCapture(0)
     zed = init_zed_camera()
@@ -116,7 +126,6 @@ def main():
             initialized = True
             continue
 
-        # Predictive tracking
         for label in tracked_objects:
             hsv_lower, hsv_upper = HSV_RANGES["ball" if "ball" in label else "marker"]
             prev_pos = tracked_objects[label]["position"]
@@ -127,6 +136,7 @@ def main():
 
             draw_tracking(frame, label, tracked_objects[label]["position"])
 
+        get_position()
         cv2.imshow("Tracking", frame)
         key = cv2.waitKey(1)
         if key == 27:
