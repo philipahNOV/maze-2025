@@ -4,25 +4,12 @@ import time
 
 def main():
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
-    tracker.start()
-    print("BallTracker started. Press 'q' to quit.")
-
+    print("Starting BallTracker tracking loop. Press Ctrl+C to stop.")
     try:
-        while True:
-            frame = tracker.frame
-            pos = tracker.get_position()
-            if frame is not None:
-                # Draw the tracked position
-                if pos is not None:
-                    cv2.circle(frame, pos, 10, (0, 255, 0), 2)
-                    cv2.putText(frame, f"Ball: {pos}", (pos[0]+15, pos[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0,255,0), 2)
-                cv2.imshow("Ball Tracking", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-            time.sleep(0.01)
-    finally:
+        tracker._tracking_loop()
+    except KeyboardInterrupt:
+        print("Tracking stopped by user.")
         tracker.stop()
-        cv2.destroyAllWindows()
 
 if __name__ == "__main__":
     main()
