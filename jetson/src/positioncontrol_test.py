@@ -28,12 +28,12 @@ def initialize_component(component, name, retries=5, delay=2):
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
-try:
-    camera_thread = initialize_component(CameraThread, "CameraThread")
-    camera_thread.start()
-except Exception as e:
-    print(e)
-    exit(1)
+#try:
+#    camera_thread = initialize_component(CameraThread, "CameraThread")
+#    camera_thread.start()
+#except Exception as e:
+#    print(e)
+#    exit(1)
 
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
@@ -272,13 +272,13 @@ def horizontal(tol = 0.2):
         time.sleep(0.05)
     print("Deadline reached, stopping motors.")
 
-time.sleep(10)  # Allow time for Arduino connection to stabilize
-horizontal(0.0015)
+#time.sleep(10)  # Allow time for Arduino connection to stabilize
+#horizontal(0.0015)
 
 #axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
 #axis_thread.start()
 
-frame = camera_thread.latest_frame
+#frame = camera_thread.latest_frame
 center = None
 prev_center = None
 limit = time.time() + 100
