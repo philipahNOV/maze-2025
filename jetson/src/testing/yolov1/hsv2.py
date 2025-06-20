@@ -118,3 +118,31 @@ class BallTracker:
 
     def get_position(self):
         return self.tracked_objects["ball"]["position"]
+
+    def get_orientation(zed):
+        sensors_data = sl.SensorsData()
+        if zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+            return None
+
+        imu_data = sensors_data.get_imu_data()
+        zed_imu_pose = sl.Transform()
+        imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+        ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+        dir1 = ox + ow
+        dir2 = oy - oz
+
+        # Euler angles (roll and pitch only)
+        import math
+        sinr_cosp = 2 * (ow * ox + oy * oz)
+        cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
+        roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
+
+        sinp = 2 * (ow * oy - oz * ox)
+        if abs(sinp) >= 1:
+            pitch = math.degrees(math.copysign(math.pi / 2, sinp))
+        else:
+            pitch = math.degrees(math.asin(sinp))
+
+        print(f"Roll: {round(roll, 2)}°, Pitch: {round(pitch, 2)}°")
+        print(f"Orientation: dir1={dir1}, dir2={dir2}")
+        return [-dir2, dir1]
