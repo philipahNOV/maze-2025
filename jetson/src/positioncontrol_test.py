@@ -50,7 +50,7 @@ def axisControlMultithread():
 
     while True:
         orientation = camera_thread.get_orientation()
-        theta_x = orientation[0] + x_offset
+        theta_x = orientation[1] + x_offset
         theta_y = orientation[0] + y_offset
 
         if theta_x is None or theta_y is None:

@@ -163,16 +163,24 @@ class CameraThread(threading.Thread):
                 dir1_deg = dir1*180/np.pi
                 dir2 = oy - oz
                 dir2_deg = dir2*180/np.pi
-                with self.orientation_lock:
-                    self.orientation = [-dir2, dir1]
-                    self.orientation_deg = [-dir2_deg, dir1_deg]
+                self.orientation = [-dir2, dir1]
+                self.orientation_deg = [-dir2_deg, dir1_deg]
                 self.ang_vel = imu_data.get_angular_velocity()
             else:
                 print("Failed to grab frame:", repr(err))
 
     def get_orientation(self):
-        with self.orientation_lock:
-            return self.orientation.copy() if self.orientation else None
+        sensors_data = sl.SensorsData()
+        if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) == sl.ERROR_CODE.SUCCESS:
+            imu_data = sensors_data.get_imu_data()
+            zed_imu_pose = sl.Transform()
+            imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+            ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+            dir1 = ox + ow
+            dir2 = oy - oz
+            return [-dir2, dir1]
+        else:
+            return None
 
     def stop(self):
         """
