@@ -122,14 +122,18 @@ def axisControl(ref):
     print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
-def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
+def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=10):
     kp = 0.0001  # Proportional gain for position control
     kd = 0.00015  # Derivative gain for position control
+    deadzone_tol = 50
+    deadzone_tilt = 0.02
+    tol = 10
+
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
             print("Large jump detected, resetting position control.")
-            return None, None
+            return None, None, None
         
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
@@ -145,8 +149,26 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
             edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
-    theta_x = (kp * e_x  + kd * edot_x)
-    theta_y = -(kp * e_y  + kd * edot_y)
+    if abs(e_x) < tol:
+        # Ball is at target → STOP
+        theta_x = 0
+    elif abs(e_x) < deadzone_tol:
+        # Ball is close, but needs help moving → ESCAPE DEAD ZONE
+        theta_x = np.sign(e_x) * deadzone_tilt
+    else:
+        # Ball is far → USE CONTROL
+        theta_x = (kp * e_x  + kd * edot_x)
+
+    if abs(e_y) < tol:
+        # Ball is at target → STOP
+        theta_y = 0
+    elif abs(e_y) < deadzone_tol:
+        # Ball is close, but needs help moving → ESCAPE DEAD ZONE
+        theta_y = np.sign(e_y) * deadzone_tilt
+    else:
+        # Ball is far → USE CONTROL
+        theta_y = -(kp * e_y  + kd * edot_y)
+
    # print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
     return (e_x, e_y), time.time(), (edot_x, edot_y)
@@ -244,8 +266,8 @@ def horizontal(tol = 0.2):
 time.sleep(10)  # Allow time for Arduino connection to stabilize
 horizontal(0.0015)
 
-axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
-axis_thread.start()
+#axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
+#axis_thread.start()
 
 frame = camera_thread.latest_frame
 center = None
@@ -267,7 +289,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev, edot_prev = posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev)
+        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
