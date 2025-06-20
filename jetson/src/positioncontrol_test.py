@@ -92,8 +92,9 @@ def axisControl(ref):
     kp = 5000  # Proportional gain for the control loop
     tol = 0.001
 
-    theta_x = camera_thread.orientation[1] + x_offset
-    theta_y = camera_thread.orientation[0] + y_offset
+    orientation = camera_thread.get_orientation()
+    theta_x = orientation[1] + x_offset
+    theta_y = orientation[0] + y_offset
 
     if theta_x is None or theta_y is None:
         print("Orientation data not available yet.")
@@ -175,7 +176,7 @@ def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(2
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
     with ref_lock:
-        ref_theta = ((kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
+        ref_theta = (-(kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
 
     #print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
     return (e_x, e_y), time.time(), (edot_x, edot_y)
@@ -242,8 +243,8 @@ def horizontal(tol = 0.2):
 time.sleep(10)  # Allow time for Arduino connection to stabilize
 horizontal(0.0015)
 
-axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
-axis_thread.start()
+#axis_thread = threading.Thread(target=axisControlMultithread, daemon=True)
+#axis_thread.start()
 
 frame = camera_thread.latest_frame
 center = None
@@ -265,7 +266,7 @@ while time.time() < limit:
     center = (center[1], center[0])  # Convert to (x, y) format for consistency
     print(f"Center: {center}")
     if limit - time.time() < 95:
-        e_prev, t_prev, edot_prev = posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev)
+        e_prev, t_prev, edot_prev = posControl(center, prev_center, e_prev, t_prev, edot_prev)
     prev_center = center
 
     cv2.imshow("Test Image", frame)
