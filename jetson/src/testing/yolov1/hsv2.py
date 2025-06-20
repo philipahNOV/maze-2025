@@ -119,9 +119,9 @@ class BallTracker:
     def get_position(self):
         return self.tracked_objects["ball"]["position"]
 
-    def get_orientation(zed):
+    def get_orientation(self):
         sensors_data = sl.SensorsData()
-        if zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+        if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
             return None
 
         imu_data = sensors_data.get_imu_data()
