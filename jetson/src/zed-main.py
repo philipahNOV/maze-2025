@@ -61,11 +61,23 @@ def main():
     camera = ZEDCamera()
     try:
         camera.init_camera()
-        camera.grab_frame()
         print("[INFO] ZED camera initialized.")
     except RuntimeError as e:
         print(f"[ERROR] {e}")
         return 
+    
+    grab = camera.grab_frame()
+    if grab is None:
+        print("[ERROR] Failed to grab initial frame from ZED camera.")
+        return
+    
+    cv2.imshow("Initial Frame", grab)
+    key = cv2.waitKey(0)
+    if key == ord('q'):
+        cv2.destroyAllWindows()
+        camera.close()
+        print("[INFO] Camera closed.")
+        return
 
     while True:
         show_menu()
