@@ -171,7 +171,7 @@ class Controller:
 
         while time.time() < deadline:
             orientation = self.tracker.get_orientation()
-            if not self.ori: continue
+            if not orientation: continue
 
             theta_x = orientation[1] + self.x_offset
             theta_y = orientation[0] + self.y_offset
