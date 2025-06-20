@@ -1,14 +1,20 @@
 import testing.yolov1.hsv2 as tracking
-import cv2
-import time
+from time import sleep
 
 def main():
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
-    print("Starting BallTracker tracking loop. Press Ctrl+C to stop.")
+    tracker.start()
+    
     try:
-        tracker._tracking_loop()
+        while True:
+            position = tracker.get_position()
+            if position:
+                print("Ball position:", position)
+            else:
+                print("Ball not detected")
+            sleep(0.1) 
     except KeyboardInterrupt:
-        print("Tracking stopped by user.")
+        print("\nStopping tracker...")
         tracker.stop()
 
 if __name__ == "__main__":
