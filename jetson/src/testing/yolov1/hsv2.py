@@ -81,28 +81,22 @@ class BallTracker:
 
             if not self.initialized:
                 results = self.model.predict(source=frame, conf=0.5)[0]
-
-                self.ball_confirm_counter = 0
-                self.ball_confirm_threshold = 3
-
                 for box in results.boxes:
                     cls = int(box.cls[0])
                     label = self.model.names[cls]
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
                     cx = (x1 + x2) // 2
                     cy = (y1 + y2) // 2
-
                     if label == "ball":
                         roi = frame[y1:y2, x1:x2]
                         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
                         mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
                         if cv2.countNonZero(mask) > 100:
-                            self.ball_confirm_counter += 1
-                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                                self.tracked_objects["ball"]["position"] = (cx, cy)
-                                self.initialized = True
-                                break
-
+                            self.tracked_objects["ball"]["position"] = (cx, cy)
+                    elif label.startswith("marker"):
+                        self.tracked_objects[label]["position"] = (cx, cy)
+                self.initialized = True
+                continue
 
             for label in self.tracked_objects:
                 hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
