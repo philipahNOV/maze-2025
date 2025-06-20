@@ -151,21 +151,21 @@ class CameraThread(threading.Thread):
                 cropped_img = img[y:y+h, x:x+w]
                 self.latest_frame = cv2.cvtColor(cropped_img, cv2.COLOR_BGRA2BGR)
                 self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.IMAGE) # Retrieve only frame synchronized data
-                imu_data = sensors_data.get_imu_data()
+                #imu_data = sensors_data.get_imu_data()
             
-                zed_imu_pose = sl.Transform()
-                ox = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[0], 3)
-                oy = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[1], 3)
-                oz = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[2], 3)
-                ow = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[3], 3)
+                #zed_imu_pose = sl.Transform()
+                #ox = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[0], 3)
+                #oy = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[1], 3)
+                #oz = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[2], 3)
+                #ow = round(imu_data.get_pose(zed_imu_pose).get_orientation().get()[3], 3)
                 
-                dir1 = ox + ow
-                dir1_deg = dir1*180/np.pi
-                dir2 = oy - oz
-                dir2_deg = dir2*180/np.pi
-                self.orientation = [-dir2, dir1]
-                self.orientation_deg = [-dir2_deg, dir1_deg]
-                self.ang_vel = imu_data.get_angular_velocity()
+                #dir1 = ox + ow
+                #dir1_deg = dir1*180/np.pi
+                #dir2 = oy - oz
+                #dir2_deg = dir2*180/np.pi
+                #self.orientation = [-dir2, dir1]
+                #self.orientation_deg = [-dir2_deg, dir1_deg]
+                #self.ang_vel = imu_data.get_angular_velocity()
             else:
                 print("Failed to grab frame:", repr(err))
 

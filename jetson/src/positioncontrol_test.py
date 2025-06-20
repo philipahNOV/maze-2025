@@ -208,9 +208,11 @@ def horizontal(tol = 0.2):
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
     while time.time() < deadline:
-        print(camera_thread.orientation)
-        theta_x = camera_thread.orientation[1] + x_offset
-        theta_y = camera_thread.orientation[0] + y_offset
+        orientation = camera_thread.get_orientation()
+        theta_x = orientation[1] + x_offset
+        theta_y = orientation[0] + y_offset
+        print(orientation)
+
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
             continue
