@@ -33,7 +33,7 @@ class Controller:
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.00005
+        self.kp_x = 0.0001
         self.kd_x = 0.0001
         self.kp_y = 0.00012
         self.kd_y = 0.00017
@@ -106,13 +106,15 @@ class Controller:
             print("Target reached!")
             return
         
-        print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
+        #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
+        print(f"Ballpos: {self.pos}")
 
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
-        self.axisControl((theta_x, theta_y))
+        #self.axisControl((theta_x, theta_y))
+        time.sleep(0.05)
 
     def axisControl(self, ref):
 
