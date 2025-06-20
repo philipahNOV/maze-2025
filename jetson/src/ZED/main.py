@@ -1,6 +1,7 @@
 import time
 import cv2
 from ZED.tracker import BallTracker
+from ZED.camera import ZEDCamera
 
 def run_tracker():
     tracker = BallTracker(model_path="testing/yolov1/best.pt")
@@ -45,11 +46,19 @@ def show_menu():
     """)
 
 def main():
+    camera = ZEDCamera()
+    try:
+        camera.init_camera()
+        print("[INFO] ZED camera initialized.")
+    except RuntimeError as e:
+        print(f"[ERROR] {e}")
+        return 
+
     while True:
         show_menu()
         choice = input("Select option: ")
         if choice == "1":
-            run_tracker()
+            run_tracker(camera)
         elif choice == "2":
             print("[TODO] PID control module")
         elif choice == "3":
@@ -58,6 +67,10 @@ def main():
             break
         else:
             print("Invalid choice.")
+
+    camera.close()
+    print("[INFO] Camera closed. Goodbye.")
+
 
 if __name__ == "__main__":
     main()
