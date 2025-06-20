@@ -3,22 +3,22 @@ import cv2
 
 class ZEDCamera:
     def init_camera(self):
-        zed = sl.Camera()
+        self.zed = sl.Camera()
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.HD720  # Use HD720 for 30 FPS
         init_params.camera_fps = 30
         init_params.coordinate_units = sl.UNIT.MILLIMETER
 
-        if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+        if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             print("ZED camera failed to open.")
             exit(1)
 
-        return zed
+        return self.zed
 
     def grab_frame(self):
         image = sl.Mat()
-        if zed.grab() == sl.ERROR_CODE.SUCCESS:
-            zed.retrieve_image(image, sl.VIEW.LEFT)
+        if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
+            self.zed.retrieve_image(image, sl.VIEW.LEFT)
             rgba = image.get_data()
             rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
             bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
