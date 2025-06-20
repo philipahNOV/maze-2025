@@ -57,7 +57,9 @@ class Controller:
         """
 
         self.pos = (self.tracker.get_position()[1], self.tracker.get_position()[0])
-        if not self.pos: return
+        if not self.pos: 
+            print("No ball detected")
+            return
 
         self.ref = ref
 
