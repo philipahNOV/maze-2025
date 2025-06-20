@@ -286,7 +286,7 @@ e_prev = None
 t_prev = None
 edot_prev = (0, 0)
 
-ballTracker = tracking.BallTracker()
+ballTracker = tracking.BallTracker("testing/yolov1/best.pt")
 while True:
     print(ballTracker.get_position())
 
