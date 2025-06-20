@@ -28,6 +28,8 @@ class BallTracker:
         self.zed = sl.Camera()
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.HD720
+        init_params.depth_mode = sl.DEPTH_MODE.NONE  # No depth required for this task
+        init_params.coordinate_system = sl.COORDINATE_SYSTEM.IMAGE
         init_params.camera_fps = 30
         init_params.coordinate_units = sl.UNIT.MILLIMETER
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
