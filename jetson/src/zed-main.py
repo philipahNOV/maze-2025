@@ -4,11 +4,15 @@ from ZED.tracker import BallTracker
 from ZED.camera import ZEDCamera
 
 def run_tracker(camera):
-    tracker = BallTracker(model_path="testing/yolov1/best.pt")
-    tracker.start()
-    print("[INFO] Waiting for YOLO initialization...")
-    while not tracker.initialized:
-        time.sleep(0.1)
+    try:
+        tracker = BallTracker(model_path="testing/yolov1/best.pt")
+        tracker.start()
+        print("[INFO] Waiting for YOLO initialization...")
+        while not tracker.initialized:
+            time.sleep(0.1)
+    except Exception as e:
+        print(f"[ERROR] Failed to start tracker: {e}")
+        return
 
     print("[INFO] Tracking started. Press 'q' to quit.")
     try:
@@ -24,19 +28,24 @@ def run_tracker(camera):
                 if pos:
                     color = (0, 255, 0) if label == "ball" else (0, 0, 255)
                     cv2.circle(frame, pos, 8, color, -1)
-                    cv2.putText(frame, label, (pos[0] + 10, pos[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+                    cv2.putText(frame, label, (pos[0] + 10, pos[1]),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
             orientation = camera.get_orientation()
             if orientation:
                 text = f"Orientation: [{orientation[0]:.2f}, {orientation[1]:.2f}]"
-                cv2.putText(frame, text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                cv2.putText(frame, text, (10, 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
 
             cv2.imshow("Tracking", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
+    except Exception as e:
+        print(f"[ERROR] during tracking: {e}")
     finally:
         tracker.stop()
         cv2.destroyAllWindows()
+
 
 def show_menu():
     print("""
