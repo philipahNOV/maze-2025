@@ -25,6 +25,7 @@ class Controller:
         self.prevVelError = None
         self.ori = None
         self.tracker = tracker
+        self.e_int = None
 
         #ARDUINO PARAMETERS
         self.x_offset = 0  # Offset for x-axis orientation (tested -0.008)
@@ -37,6 +38,7 @@ class Controller:
         self.kd_x = 0.000
         self.kp_y = 0.00007
         self.kd_y = 0.00008
+        self.ki_y = 0.00001
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
@@ -85,6 +87,11 @@ class Controller:
                 edot_x = alpha * edot_x + (1 - alpha) * self.prevVelError[0]
                 edot_y = alpha * edot_y + (1 - alpha) * self.prevVelError[1]
 
+        if self.e_int:
+            self.e_int += e_y*dt
+        else:
+            self.e_int = e_y*dt
+
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
             # Ball is at target → STOP
             theta_x = 0
@@ -103,7 +110,7 @@ class Controller:
             theta_y = -np.sign(e_y) * self.deadzone_tilt
         else:
             # Ball is far → USE CONTROL
-            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y)
+            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_int)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             print("Target reached!")
