@@ -151,8 +151,8 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
 def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
     global ref_theta
 
-    kp = 0.00025  # Proportional gain for position control
-    kd = 0  # Derivative gain for position control
+    kp = 0.0001  # Proportional gain for position control
+    kd = 0.00015  # Derivative gain for position control
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
