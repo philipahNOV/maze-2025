@@ -143,6 +143,6 @@ class BallTracker:
         else:
             pitch = math.degrees(math.asin(sinp))
 
-        print(f"Roll: {round(roll, 2)}°, Pitch: {round(pitch, 2)}°")
-        print(f"Orientation: dir1={dir1}, dir2={dir2}")
+        #print(f"Roll: {round(roll, 2)}°, Pitch: {round(pitch, 2)}°")
+        #print(f"Orientation: dir1={dir1}, dir2={dir2}")
         return [-dir2, dir1]
