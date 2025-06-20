@@ -25,7 +25,8 @@ class Controller:
         self.prevVelError = None
         self.ori = None
         self.tracker = tracker
-        self.e_int = None
+        self.e_x_int = 0
+        self.e_y_int = 0
 
         #ARDUINO PARAMETERS
         self.x_offset = 0  # Offset for x-axis orientation (tested -0.008)
@@ -89,10 +90,12 @@ class Controller:
         else:
             dt = 0
 
-        if self.e_int:
-            self.e_int += e_y*dt
+        if self.e_x_int and self.e_y_int:
+            self.e_x_int += e_x*dt
+            self.e_y_int += e_y*dt
         else:
-            self.e_int = e_y*dt
+            self.e_x_int = e_x*dt
+            self.e_y_int = e_y*dt
 
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
             # Ball is at target → STOP
@@ -165,7 +168,7 @@ class Controller:
 
         vel_x = min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), 255)
         vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), 255)
-        dir_y = 2
+        #dir_y = 2
         #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
         self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.05)
