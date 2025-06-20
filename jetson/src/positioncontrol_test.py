@@ -45,12 +45,12 @@ def axisControlMultithread():
     y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
     min_velocity = 22 # Minimum velocity for motors
     kp = 5000  # Proportional gain for the control loop
-    tol = 0.001
+    tol = 0
     arduino_thread.send_target_positions(120, 120, 120, 120)
 
     while True:
         orientation = camera_thread.get_orientation()
-        theta_x = orientation[0] + x_offset
+        theta_x = orientation[1] + x_offset
         theta_y = orientation[0] + y_offset
 
         if theta_x is None or theta_y is None:
@@ -60,10 +60,11 @@ def axisControlMultithread():
 
         with ref_lock:
             if ref_theta is None:
+                time.sleep(0.05)
                 continue
             ref_theta_x, ref_theta_y = ref_theta
-        e_x = ref_theta_x - theta_x
-        e_y = ref_theta_y - theta_y
+        e_x = theta_x - ref_theta_x
+        e_y = theta_y - ref_theta_y
 
         if abs(e_x) < tol:
             dir_x = 2
@@ -81,7 +82,7 @@ def axisControlMultithread():
         vel_x = min(max(int(kp * abs(e_x)), min_velocity), 255)
         vel_y = min(max(int(kp * abs(e_y)), min_velocity), 255)
         dir_y = 2
-        print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
+        print(f"e_x: {e_x}, theta_x: {theta_x}, ref: {ref_theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
         arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         time.sleep(0.05)
 
@@ -92,8 +93,9 @@ def axisControl(ref):
     kp = 5000  # Proportional gain for the control loop
     tol = 0.001
 
-    theta_x = camera_thread.orientation[1] + x_offset
-    theta_y = camera_thread.orientation[0] + y_offset
+    orientation = camera_thread.get_orientation()
+    theta_x = orientation[1] + x_offset
+    theta_y = orientation[0] + y_offset
 
     if theta_x is None or theta_y is None:
         print("Orientation data not available yet.")
@@ -120,14 +122,18 @@ def axisControl(ref):
     print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
     arduino_thread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
 
-def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
+def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=10):
     kp = 0.0001  # Proportional gain for position control
     kd = 0.00015  # Derivative gain for position control
+    deadzone_tol = 50
+    deadzone_tilt = 0.02
+    tol = 10
+
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
             print("Large jump detected, resetting position control.")
-            return None, None
+            return None, None, None
         
     e_x = ref[0] - center[0]
     e_y = ref[1] - center[1]
@@ -143,17 +149,35 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
             edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
-    theta_x = (kp * e_x  + kd * edot_x)
-    theta_y = -(kp * e_y  + kd * edot_y)
-    print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
+    if abs(e_x) < tol:
+        # Ball is at target → STOP
+        theta_x = 0
+    elif abs(e_x) < deadzone_tol:
+        # Ball is close, but needs help moving → ESCAPE DEAD ZONE
+        theta_x = np.sign(e_x) * deadzone_tilt
+    else:
+        # Ball is far → USE CONTROL
+        theta_x = (kp * e_x  + kd * edot_x)
+
+    if abs(e_y) < tol:
+        # Ball is at target → STOP
+        theta_y = 0
+    elif abs(e_y) < deadzone_tol:
+        # Ball is close, but needs help moving → ESCAPE DEAD ZONE
+        theta_y = np.sign(e_y) * deadzone_tilt
+    else:
+        # Ball is far → USE CONTROL
+        theta_y = -(kp * e_y  + kd * edot_y)
+
+   # print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), tol=1):
     global ref_theta
 
-    kp = 0.0001  # Proportional gain for position control
-    kd = 0.00015  # Derivative gain for position control
+    kp = 0.0004  # Proportional gain for position control
+    kd = 0.0004  # Derivative gain for position control
 
     if prev_center is not None:
         if abs(np.linalg.norm(np.array(center) - np.array(prev_center))) > 300:
@@ -175,9 +199,9 @@ def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(2
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
     with ref_lock:
-        ref_theta = ((kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
+        ref_theta = (-(kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
 
-    print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
+    #print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
@@ -208,9 +232,11 @@ def horizontal(tol = 0.2):
     arduino_thread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
 
     while time.time() < deadline:
-        print(camera_thread.orientation)
-        theta_x = camera_thread.orientation[1] + x_offset
-        theta_y = camera_thread.orientation[0] + y_offset
+        orientation = camera_thread.get_orientation()
+        theta_x = orientation[1] + x_offset
+        theta_y = orientation[0] + y_offset
+        print(orientation)
+
         if theta_x is None or theta_y is None:
             print("Orientation data not available yet.")
             continue
