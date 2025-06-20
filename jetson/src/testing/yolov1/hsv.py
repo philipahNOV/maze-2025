@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 from ultralytics import YOLO
 import pyzed.sl as sl
+import math
 
 def init_zed_camera():
     zed = sl.Camera()
@@ -55,6 +56,55 @@ def get_center_of_mass(mask):
     cx = int(M["m10"] / M["m00"])
     cy = int(M["m01"] / M["m00"])
     return (cx, cy)
+
+import math
+
+def get_orientation(zed):
+    sensors_data = sl.SensorsData()
+    if zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+        return None
+
+    imu_data = sensors_data.get_imu_data()
+    orientation = imu_data.get_pose().get_orientation().get()  # Quaternion: (x, y, z, w)
+    ox, oy, oz, ow = orientation
+
+    # Compute Euler angles from quaternion
+    sinr_cosp = 2 * (ow * ox + oy * oz)
+    cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
+    roll = math.atan2(sinr_cosp, cosr_cosp)
+
+    sinp = 2 * (ow * oy - oz * ox)
+    if abs(sinp) >= 1:
+        pitch = math.copysign(math.pi / 2, sinp)
+    else:
+        pitch = math.asin(sinp)
+
+    siny_cosp = 2 * (ow * oz + ox * oy)
+    cosy_cosp = 1 - 2 * (oy * oy + oz * oz)
+    yaw = math.atan2(siny_cosp, cosy_cosp)
+
+    # Convert radians to degrees
+    roll_deg = math.degrees(roll)
+    pitch_deg = math.degrees(pitch)
+    yaw_deg = math.degrees(yaw)
+
+    # Angular velocity
+    angular_vel = imu_data.get_angular_velocity()
+    avx, avy, avz = angular_vel[0], angular_vel[1], angular_vel[2]
+
+    # Linear acceleration
+    linear_accel = imu_data.get_linear_acceleration()
+    lax, lay, laz = linear_accel[0], linear_accel[1], linear_accel[2]
+
+    print("\n--- IMU ORIENTATION ---")
+    print(f"Quaternion [x, y, z, w]: [{ox:.3f}, {oy:.3f}, {oz:.3f}, {ow:.3f}]")
+    print(f"Euler Angles [roll, pitch, yaw]: [{roll_deg:.2f}°, {pitch_deg:.2f}°, {yaw_deg:.2f}°]")
+    print(f"Angular Velocity [x, y, z] (rad/s): [{avx:.3f}, {avy:.3f}, {avz:.3f}]")
+    print(f"Linear Acceleration [x, y, z] (m/s²): [{lax:.3f}, {lay:.3f}, {laz:.3f}]")
+
+    return [roll_deg, pitch_deg, yaw_deg]
+
+
 
 def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper):
     h, w = frame.shape[:2]
@@ -137,6 +187,10 @@ def main():
             draw_tracking(frame, label, tracked_objects[label]["position"])
 
         get_position()
+
+        get_orientation(zed)
+        
+
         cv2.imshow("Tracking", frame)
         key = cv2.waitKey(1)
         if key == 27:
