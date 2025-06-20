@@ -3,7 +3,7 @@ import cv2
 import time
 
 def main():
-    tracker = tracking.BallTracker(model_path="best.pt")
+    tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
     print("BallTracker started. Press 'q' to quit.")
 
