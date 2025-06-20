@@ -117,7 +117,7 @@ class Controller:
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
-        self.axisControl((theta_x, theta_y))
+        self.axisControl((theta_y, theta_x))
         #time.sleep(0.05)
 
     def axisControl(self, ref):
