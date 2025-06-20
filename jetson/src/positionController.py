@@ -35,11 +35,12 @@ class Controller:
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.0001
-        self.kd_x = 0.000
+        self.kp_x = 0.00007
+        self.kd_x = 0.00008
         self.kp_y = 0.00007
         self.kd_y = 0.00008
-        self.ki_y = 0.00006
+        self.ki_y = 0.00005
+        self.ki_x = 0.00005
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
@@ -47,7 +48,7 @@ class Controller:
         self.vel_tol = 1
 
         #Axis control
-        self.kp_theta = 5000  # Proportional gain for the control loop
+        self.kp_theta = 6500  # Proportional gain for the control loop
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -79,7 +80,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.5
+        alpha = 0.55
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
@@ -105,7 +106,7 @@ class Controller:
             theta_x = np.sign(e_x) * self.deadzone_tilt
         else:
             # Ball is far → USE CONTROL
-            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x)
+            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int)
 
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             # Ball is at target → STOP
@@ -115,7 +116,7 @@ class Controller:
             theta_y = -np.sign(e_y) * self.deadzone_tilt
         else:
             # Ball is far → USE CONTROL
-            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_int)
+            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             print("Target reached!")
