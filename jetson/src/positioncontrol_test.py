@@ -177,7 +177,7 @@ def posControlMultithread(center, prev_center, e_prev, t_prev, edot_prev, ref=(2
     with ref_lock:
         ref_theta = ((kp * e_x  + kd * edot_x), -(kp * e_y  + kd * edot_y))
 
-    print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
+    #print(f"e_x: {e_x}, ref_tehta_x: {ref_theta[0]}, ref_theta_y: {ref_theta[1]}, edot_x: {edot_x}, edot_y: {edot_y}")
     return (e_x, e_y), time.time(), (edot_x, edot_y)
 
 def horizontal(tol = 0.2):
