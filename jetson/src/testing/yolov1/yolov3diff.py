@@ -5,12 +5,12 @@ from ultralytics import YOLO
 # === CONFIGURATION ===
 TARGET_COLOR = 'red'     #'red', 'green'
 CONF_THRESHOLD = 0.75
-COLOR_THRESH = 0.4
+COLOR_THRESH = 0.2
 
 COLOR_THRESHOLDS = {
     'red': {'r': 0.45, 'g': 0.0, 'b': 0.0},
     'green': {'g': 0.25, 'r': 0.0, 'b': 0.0},
-    'blue': {'b': 0.45, 'r': 0.0, 'g': 0.0},
+    'blue': {'b': 0.25, 'r': 0.0, 'g': 0.0},
     'yellow': {'r': 0.35, 'g': 0.35, 'b': 0.3},
 }
 
