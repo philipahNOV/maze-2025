@@ -152,7 +152,7 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
             edot_x = alpha * edot_x + (1 - alpha) * edot_prev[0]
             edot_y = alpha * edot_y + (1 - alpha) * edot_prev[1]
 
-    if abs(e_y) < pos_tol and abs(edot_y) < vel_tol:
+    if abs(e_x) < pos_tol and abs(edot_x) < vel_tol:
         # Ball is at target → STOP
         theta_x = 0
         return None, None, None
@@ -174,9 +174,9 @@ def posControl(center, prev_center, e_prev, t_prev, edot_prev, ref=(200, 200), t
         theta_y = (kp_y * e_y  + kd_y * edot_y)
         
     if abs(e_x) < pos_tol and abs(edot_x) < vel_tol and abs(e_y) < tol and abs(edot_y) < vel_tol:
-    	print("Target reached!")
-    	return None, None, None
-
+        print("Target reached!")
+        return None, None, None
+    
     print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
     axisControl((theta_x, theta_y))
     return (e_x, e_y), time.time(), (edot_x, edot_y)
