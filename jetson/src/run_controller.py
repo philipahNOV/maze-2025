@@ -53,6 +53,7 @@ def main():
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
             ball_pos = tracker.get_position()
+            cv2.imshow("Ball & Marker Tracking", frame)
             if not ball_pos:
                 print("No ball found (run_controller)")
                 continue
@@ -66,7 +67,6 @@ def main():
             #---------------
 
 
-            cv2.imshow("Ball & Marker Tracking", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
