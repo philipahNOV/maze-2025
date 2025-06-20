@@ -151,7 +151,7 @@ class Controller:
         dir_y = 2
         #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
         self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-        time.sleep(0.1)
+        time.sleep(0.05)
 
     def horizontal(self, tol = 0.0015, timeLimit = 20):
         
