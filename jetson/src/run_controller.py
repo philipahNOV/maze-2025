@@ -34,6 +34,7 @@ def main():
     print("[INFO] Tracking started. Press 'q' to quit.")
 
     controller = positionController.Controller(arduino_thread, tracker)
+    time.sleep(5)
     controller.horizontal()
     
     try:
