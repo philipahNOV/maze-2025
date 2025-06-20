@@ -27,10 +27,12 @@ def main():
                     cv2.circle(frame, pos, 8, color, -1)
                     cv2.putText(frame, label, (pos[0]+10, pos[1]), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
+            
             ball_pos = tracker.get_position()
             if ball_pos:
                 print(f"Ball position: {ball_pos}", end="\r")
+
+            tracker.get_orientation()
 
             cv2.imshow("Ball & Marker Tracking", frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
