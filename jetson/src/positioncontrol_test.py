@@ -7,6 +7,7 @@ from automatic import Automatic
 import testing.ball_recognition
 import numpy as np
 import threading
+import testing.yolov1.hsv as tracking
 
 from manual_part.manuel_main import elManuel
 
@@ -284,6 +285,9 @@ limit = time.time() + 100
 e_prev = None
 t_prev = None
 edot_prev = (0, 0)
+
+while True:
+    print(tracking.get_position())
 
 prev_time = time.time()
 while time.time() < limit:
