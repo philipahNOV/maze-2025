@@ -59,33 +59,33 @@ def get_center_of_mass(mask):
 
 import math
 
-def get_orientation(zed):
-    sensors_data = sl.SensorsData()
-    if zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
-        return None
+# def get_orientation(zed):
+#     sensors_data = sl.SensorsData()
+#     if zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+#         return None
 
-    imu_data = sensors_data.get_imu_data()
-    zed_imu_pose = sl.Transform()
-    imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
-    ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
-    dir1 = ox + ow
-    dir2 = oy - oz
+#     imu_data = sensors_data.get_imu_data()
+#     zed_imu_pose = sl.Transform()
+#     imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+#     ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+#     dir1 = ox + ow
+#     dir2 = oy - oz
 
-    # Euler angles (roll and pitch only)
-    import math
-    sinr_cosp = 2 * (ow * ox + oy * oz)
-    cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
-    roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
+#     # Euler angles (roll and pitch only)
+#     import math
+#     sinr_cosp = 2 * (ow * ox + oy * oz)
+#     cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
+#     roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
 
-    sinp = 2 * (ow * oy - oz * ox)
-    if abs(sinp) >= 1:
-        pitch = math.degrees(math.copysign(math.pi / 2, sinp))
-    else:
-        pitch = math.degrees(math.asin(sinp))
+#     sinp = 2 * (ow * oy - oz * ox)
+#     if abs(sinp) >= 1:
+#         pitch = math.degrees(math.copysign(math.pi / 2, sinp))
+#     else:
+#         pitch = math.degrees(math.asin(sinp))
 
-    print(f"Roll: {round(roll, 2)}°, Pitch: {round(pitch, 2)}°")
-    print(f"Orientation: dir1={dir1}, dir2={dir2}")
-    return [-dir2, dir1]
+#     print(f"Roll: {round(roll, 2)}°, Pitch: {round(pitch, 2)}°")
+#     print(f"Orientation: dir1={dir1}, dir2={dir2}")
+#     return [-dir2, dir1]
 
 
 
@@ -143,7 +143,7 @@ def main():
             break
 
         if not initialized:
-            results = model.predict(source=frame, conf=0.5)[0]
+            results = model.predict(source=frame, conf=0.6)[0]
             for box in results.boxes:
                 cls = int(box.cls[0])
                 label = model.names[cls]
@@ -152,7 +152,12 @@ def main():
                 cy = (y1 + y2) // 2
 
                 if label == "ball":
-                    tracked_objects["ball"]["position"] = (cx, cy)
+                    roi = frame[y1:y2, x1:x2]
+                    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                    mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
+                    if cv2.countNonZero(mask) > 100:  # Enough green pixels
+                        tracked_objects["ball"]["position"] = (cx, cy)
+
                 elif label.startswith("marker"):
                     tracked_objects[label]["position"] = (cx, cy)
 
@@ -171,7 +176,7 @@ def main():
 
         get_position()
 
-        get_orientation(zed)
+        # get_orientation(zed)
         
 
         cv2.imshow("Tracking", frame)
