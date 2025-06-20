@@ -3,13 +3,13 @@ import numpy as np
 from ultralytics import YOLO
 
 # === CONFIGURATION ===
-TARGET_COLOR = 'red'     # Options: 'red', 'green', 'blue', 'yellow'
-CONF_THRESHOLD = 0.3
-COLOR_THRESH = 0.25         # Minimum color dominance fraction
-
+TARGET_COLOR = 'red'     #'red', 'green'
+CONF_THRESHOLD = 0.75
+COLOR_THRESH = 0.4
+q
 COLOR_THRESHOLDS = {
     'red': {'r': 0.45, 'g': 0.0, 'b': 0.0},
-    'green': {'g': 0.45, 'r': 0.0, 'b': 0.0},
+    'green': {'g': 0.25, 'r': 0.0, 'b': 0.0},
     'blue': {'b': 0.45, 'r': 0.0, 'g': 0.0},
     'yellow': {'r': 0.35, 'g': 0.35, 'b': 0.3},
 }
@@ -84,7 +84,7 @@ def main():
             cv2.putText(frame, f"{TARGET_COLOR}: {conf:.2f}", (x1, y1 - 10),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
-        cv2.imshow("YOLOv8 Color Filtered Detection", frame)
+        cv2.imshow("some shit", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
 
