@@ -55,7 +55,7 @@ class Controller:
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
-        self.max_angle = 5 #Max angle in deg
+        self.max_angle = 4 #Max angle in deg
 
     def set_ball_pos(self, pos):
         self.pos = pos
