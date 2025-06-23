@@ -116,7 +116,7 @@ class BallTracker:
 
                     if label == "ball":
                         # (1130, 30)
-                        if abs(cx - 1130) < 100 and abs(cy - 30) < 100:
+                        if abs(cx - 390) < 100 and abs(cy - 570) < 100:
                             self.ball_confirm_counter += 1
                             self.tracked_objects["ball"]["position"] = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
