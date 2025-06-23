@@ -9,16 +9,15 @@ import threading
 
 def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=15):
     def objective(trial):
-        # PID gain search space (narrowed around known good values)
+    # PID tuning ranges
         controller.kp_x = trial.suggest_float("kp_x", 5e-5, 2e-4, log=True)
         controller.kd_x = trial.suggest_float("kd_x", 3e-5, 2e-4, log=True)
-        controller.ki_x = trial.suggest_float("ki_x", 0.0, 5e-5)
-
+        controller.ki_x = trial.suggest_float("ki_x", 0.0, 5e-5, log=False)
         controller.kp_y = trial.suggest_float("kp_y", 5e-5, 2e-4, log=True)
         controller.kd_y = trial.suggest_float("kd_y", 3e-5, 2e-4, log=True)
-        controller.ki_y = trial.suggest_float("ki_y", 0.0, 5e-5)
+        controller.ki_y = trial.suggest_float("ki_y", 0.0, 5e-5, log=False)
 
-        # Reset controller state
+        # Reset state
         controller.e_x_int = 0
         controller.e_y_int = 0
         controller.prevError = None
@@ -26,51 +25,28 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
         controller.prevVelError = (0, 0)
 
         total_error = 0
-        overshoot_count = 0
-        max_overshoot = 0
-        control_smoothness = 0
-
-        prev_tilt = (0.0, 0.0)
+        overshoot_penalty = 0
+        prev_dist = None
         start_time = time.time()
         timeout = 6  # seconds per trial
-        dt = 0.05
-        steps = 0
 
         while time.time() - start_time < timeout:
             controller.posControl(ref_point)
             pos = controller.tracker.get_position()
-
             if pos:
-                error_vec = np.array(ref_point) - np.array(pos)
-                error = np.linalg.norm(error_vec)
-                total_error += error
-                steps += 1
+                dist = np.linalg.norm(np.array(ref_point) - np.array(pos))
+                total_error += dist
 
-                # Overshoot penalty if error was previously low and now grows
-                if error < controller.pos_tol and error > 2:
-                    overshoot_count += 1
-                    max_overshoot = max(max_overshoot, error)
+                # Penalize overshoot (if error starts increasing)
+                if prev_dist is not None and dist > prev_dist:
+                    overshoot_penalty += (dist - prev_dist) * 10  # weighted penalty
+                prev_dist = dist
 
-            try:
-                tilt = controller.get_current_tilt()  # Tuple: (tilt_x, tilt_y)
-            except:
-                tilt = prev_tilt  # Fallback if method not defined
+                if dist < controller.pos_tol:
+                    break
+            time.sleep(0.05)
 
-            tilt_delta = np.linalg.norm(np.array(tilt) - np.array(prev_tilt))
-            control_smoothness += tilt_delta
-            prev_tilt = tilt
-
-            time.sleep(dt)
-
-        if steps == 0:
-            return float('inf')
-
-        avg_error = total_error / steps
-        avg_smoothness = control_smoothness / steps
-        overshoot_penalty = overshoot_count * 10 + max_overshoot
-
-        # Final objective
-        return avg_error + 0.5 * avg_smoothness + overshoot_penalty
+        return total_error + overshoot_penalty
 
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
