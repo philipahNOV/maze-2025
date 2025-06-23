@@ -4,6 +4,7 @@ import cv2
 import positionController
 import arduino_connection
 import optuna
+from optuna.study import create_study
 import numpy as np
 
 def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=30):
@@ -39,7 +40,7 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
 
         return total_error
 
-    study = optuna.create_study(direction="minimize")
+    study = create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
 
     print("[OPTUNA] Best parameters found:")
