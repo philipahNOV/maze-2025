@@ -26,8 +26,8 @@ namespace {
 // Initialiserer funksjoner
 float actuator_position(uint8_t* pot_pin); // Funksjon for posisjonen til aktuatoren
 int8_t actuator_limit_check(const uint8_t actuator); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
-void actuator_move_distance(float distance, const uint8_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
-void actuator_move_speed(const uint8_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator med en hastighet
+void actuator_move_distance(float distance, const int16_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
+void actuator_move_speed(const int16_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator med en hastighet
 
 void setup() {
     // Starter seriel kominikasjon
@@ -131,7 +131,7 @@ int8_t actuator_limit_check(const uint8_t actuator)
     }
 }
 
-void actuator_move_distance(const float distance, const uint8_t speed, const uint8_t actuator)
+void actuator_move_distance(const float distance, const int16_t speed, const uint8_t actuator)
 {
     // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
     actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
@@ -179,7 +179,7 @@ void actuator_move_distance(const float distance, const uint8_t speed, const uin
     analogWrite(pwm_pin, 0); // Stopper motoren
 }
 
-void actuator_move_speed(const uint8_t speed, const uint8_t actuator)
+void actuator_move_speed(const int16_t speed, const uint8_t actuator)
 {
     // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
     actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
