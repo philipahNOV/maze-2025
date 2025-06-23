@@ -22,13 +22,12 @@ def grab_zed_frame(zed):
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image, sl.VIEW.LEFT)
         rgba = image.get_data()
-        bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGR)  # for OpenCV
-        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)    # for model
+        rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)   # Direct RGBA to RGB
+        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)     # RGB to BGR for OpenCV
         return rgb, bgr
-    return None, None
 
 
-model = YOLO("best.pt")
+# Model will be loaded inside main()
 
 # HSV ranges
 HSV_RANGES = {
@@ -128,6 +127,8 @@ def get_position():
 
 
 def main():
+    # Load YOLO model inside main to avoid slow import time
+    model = YOLO("best.pt")
     #cap = cv2.VideoCapture(0)
     zed = init_zed_camera()
 
