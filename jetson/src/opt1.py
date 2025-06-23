@@ -9,7 +9,7 @@ import threading
 
 def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=40):
     def objective(trial):
-    # PID tuning ranges
+        # PID tuning ranges
         controller.kp_x = trial.suggest_float("kp_x", 5e-5, 2e-4, log=True)
         controller.kd_x = trial.suggest_float("kd_x", 3e-5, 2e-4, log=True)
         controller.ki_x = trial.suggest_float("ki_x", 0.0, 5e-5, log=False)
@@ -24,30 +24,47 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
         controller.prevTime = None
         controller.prevVelError = (0, 0)
 
-        total_error = 0
-        overshoot_penalty = 0
+        approach_error = 0
+        hold_error = 0
         prev_dist = None
         start_time = time.time()
-        timeout = 6  # seconds per trial
+        timeout = 12  # total max time per trial (approach + hold)
+
+        reached_target = False
+        hold_start_time = None
+        hold_duration = 5  # seconds to hold position
 
         while time.time() - start_time < timeout:
             controller.posControl(ref_point)
             pos = controller.tracker.get_position()
+
             if pos:
                 dist = np.linalg.norm(np.array(ref_point) - np.array(pos))
-                total_error += dist
 
-                # Penalize overshoot (if error starts increasing)
-                if prev_dist is not None and dist > prev_dist:
-                    overshoot_penalty += (dist - prev_dist) * 10  # weighted penalty
+                if not reached_target:
+                    approach_error += dist
+                    if dist < controller.pos_tol:
+                        reached_target = True
+                        hold_start_time = time.time()
+                        continue  # start holding
+                else:
+                    hold_error += dist
+                    if dist > controller.pos_tol:
+                        # Left the hold zone, trial fails early
+                        return approach_error + 1000  # large penalty
+                    if time.time() - hold_start_time >= hold_duration:
+                        break  # success!
+
+                # Optional overshoot penalty
+                if prev_dist is not None and dist > prev_dist and not reached_target:
+                    approach_error += (dist - prev_dist) * 10
                 prev_dist = dist
 
-                if dist < controller.pos_tol:
-                    break
             time.sleep(0.05)
 
-        return total_error + overshoot_penalty
+        return approach_error + hold_error * 2  # emphasize holding stability
 
+    # Optimize
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
 
@@ -64,6 +81,7 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
     controller.ki_y = best["ki_y"]
 
     return study
+
 
 def show_camera(tracker, stop_event):
     """ Continuously show camera frame until stop_event is set. """
