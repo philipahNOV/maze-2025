@@ -110,6 +110,9 @@ class Controller:
             self.e_x_int = e_x*dt
             self.e_y_int = e_y*dt
 
+        if edot_x > 5: self.e_x_int = 0
+        if edot_y > 5: self.e_y_int = 0
+
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
             # Ball is at target → STOP
             theta_x = 0
