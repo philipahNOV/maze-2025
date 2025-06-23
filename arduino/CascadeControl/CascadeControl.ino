@@ -140,19 +140,37 @@ void setup() {
   Serial.begin(9600);
 }
 
+void clearSerialBuffer() {
+    while (Serial.available() > 0) {
+        Serial.read();
+    }
+}
+
 void loop() {
   
   
   setMotorSpeed(dirMotor1, dirMotor2, speedMotor1, speedMotor2);
   // Motor control logic
   if (elevator == 0){
-    if (Serial.available() >= 4 * sizeof(int)) {
-      dirMotor1 = Serial.parseInt();   
-      dirMotor2 = Serial.parseInt();   
-      speedMotor1 = Serial.parseInt(); 
-      speedMotor2 = Serial.parseInt(); 
-
-      while (Serial.available() && Serial.read() != '\n') {} // Clear the buffer
+    if (Serial.available() > 0) {
+    String input = Serial.readStringUntil('\n');
+    
+    // Parse input string manually
+    int values[4];
+    int count = sscanf(input.c_str(), "%d,%d,%d,%d", 
+                       &values[0], &values[1], &values[2], &values[3]);
+    
+    if (count == 4) {
+        dirMotor1 = values[0];
+        dirMotor2 = values[1];
+        speedMotor1 = values[2];
+        speedMotor2 = values[3];
+    } else {
+        // Ugyldig data - clear buffer
+        clearSerialBuffer();
+        Serial.println("ERROR: Invalid data format");
+    }
+}
 
       if (dirMotor1 == 100 && dirMotor2 == 100 && speedMotor1 == 100 && speedMotor2 == 100) {
           elManuel = 1;
