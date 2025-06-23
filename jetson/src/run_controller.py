@@ -38,6 +38,7 @@ def main():
     controller.horizontal()
     
     try:
+        start_time = time.time()
         while True:
             frame = tracker.frame
             if frame is None:
@@ -62,7 +63,10 @@ def main():
 
             #--- Control ---
 
-            controller.posControl((770, 330))
+            if time.time() - start_time < 30:
+                controller.posControl((770-150, 330-150))
+            else:
+                controller.posControl((770+150, 330+150))
 
             #---------------
 
