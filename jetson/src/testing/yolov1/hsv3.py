@@ -120,35 +120,36 @@ class BallTracker:
                         mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
                         if cv2.countNonZero(mask) > 100:
                             self.ball_confirm_counter += 1
+                            print("Ball HSV mean:", cv2.mean(hsv))
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.tracked_objects["ball"]["position"] = (cx, cy)
+                                self.initialized = True  # switch to hsv
+
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
-                self.initialized = True
-                continue
 
-            # HSV tracking
-            for label in self.tracked_objects:
-                hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
-                prev_pos = self.tracked_objects[label]["position"]
-                new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
-                if new_pos:
-                    self.tracked_objects[label]["position"] = new_pos
+            else:
+                # use HSV tracking after ball has been initialized
+                for label in self.tracked_objects:
+                    hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
+                    prev_pos = self.tracked_objects[label]["position"]
+                    new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
+                    if new_pos:
+                        self.tracked_objects[label]["position"] = new_pos
 
             self.frame = bgr_frame
             time.sleep(0.005)
+
 
     def start(self):
         self.init_camera()
         self.grab_frame()
         self.running = True
 
-        # Start producer thread
         self.producer_thread = threading.Thread(target=self.producer_loop)
         self.producer_thread.daemon = True
         self.producer_thread.start()
 
-        # Start consumer thread
         self.consumer_thread = threading.Thread(target=self.consumer_loop)
         self.consumer_thread.daemon = True
         self.consumer_thread.start()
