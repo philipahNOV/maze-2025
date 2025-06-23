@@ -5,16 +5,18 @@ import positionController
 import arduino_connection
 import optuna
 import numpy as np
+import threading
 
 def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=15):
     def objective(trial):
-        # Suggest gains
-        controller.kp_x = trial.suggest_float("kp_x", 1e-6, 1e-2, log=True)
-        controller.kd_x = trial.suggest_float("kd_x", 1e-6, 1e-2, log=True)
-        controller.ki_x = trial.suggest_float("ki_x", 0.0, 1e-4, log=False)
-        controller.kp_y = trial.suggest_float("kp_y", 1e-6, 1e-3, log=True)
-        controller.kd_y = trial.suggest_float("kd_y", 1e-6, 1e-3, log=True)
-        controller.ki_y = trial.suggest_float("ki_y", 0.0, 1e-4, log=False)
+        # PID gain search space (narrowed around known good values)
+        controller.kp_x = trial.suggest_float("kp_x", 5e-5, 2e-4, log=True)
+        controller.kd_x = trial.suggest_float("kd_x", 3e-5, 2e-4, log=True)
+        controller.ki_x = trial.suggest_float("ki_x", 0.0, 5e-5)
+
+        controller.kp_y = trial.suggest_float("kp_y", 5e-5, 2e-4, log=True)
+        controller.kd_y = trial.suggest_float("kd_y", 3e-5, 2e-4, log=True)
+        controller.ki_y = trial.suggest_float("ki_y", 0.0, 5e-5)
 
         # Reset controller state
         controller.e_x_int = 0
@@ -24,27 +26,58 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
         controller.prevVelError = (0, 0)
 
         total_error = 0
+        overshoot_count = 0
+        max_overshoot = 0
+        control_smoothness = 0
+
+        prev_tilt = (0.0, 0.0)
         start_time = time.time()
         timeout = 6  # seconds per trial
+        dt = 0.05
+        steps = 0
 
         while time.time() - start_time < timeout:
             controller.posControl(ref_point)
             pos = controller.tracker.get_position()
-            if pos:
-                error = np.linalg.norm(np.array(ref_point) - np.array(pos))
-                total_error += error
-                if error < controller.pos_tol:
-                    break
-            time.sleep(0.05)
 
-        return total_error
+            if pos:
+                error_vec = np.array(ref_point) - np.array(pos)
+                error = np.linalg.norm(error_vec)
+                total_error += error
+                steps += 1
+
+                # Overshoot penalty if error was previously low and now grows
+                if error < controller.pos_tol and error > 2:
+                    overshoot_count += 1
+                    max_overshoot = max(max_overshoot, error)
+
+            try:
+                tilt = controller.get_current_tilt()  # Tuple: (tilt_x, tilt_y)
+            except:
+                tilt = prev_tilt  # Fallback if method not defined
+
+            tilt_delta = np.linalg.norm(np.array(tilt) - np.array(prev_tilt))
+            control_smoothness += tilt_delta
+            prev_tilt = tilt
+
+            time.sleep(dt)
+
+        if steps == 0:
+            return float('inf')
+
+        avg_error = total_error / steps
+        avg_smoothness = control_smoothness / steps
+        overshoot_penalty = overshoot_count * 10 + max_overshoot
+
+        # Final objective
+        return avg_error + 0.5 * avg_smoothness + overshoot_penalty
 
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)
 
     print("[OPTUNA] Best parameters found:")
     for k, v in study.best_params.items():
-        print(f"  {k}: {v}")
+        print(f"  {k}: {v:.8f}")
 
     best = study.best_params
     controller.kp_x = best["kp_x"]
@@ -55,6 +88,26 @@ def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n
     controller.ki_y = best["ki_y"]
 
     return study
+
+def show_camera(tracker, stop_event):
+    """ Continuously show camera frame until stop_event is set. """
+    while not stop_event.is_set():
+        frame = tracker.frame
+        if frame is not None:
+            for label, data in tracker.tracked_objects.items():
+                pos = data["position"]
+                if pos:
+                    color = (0, 255, 0) if label == "ball" else (0, 0, 255)
+                    cv2.circle(frame, pos, 8, color, -1)
+                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
+                    cv2.putText(frame, label, (pos[0] + 10, pos[1]),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            cv2.imshow("Ball & Marker Tracking", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            stop_event.set()
+            break
+        time.sleep(0.03)  # ~30 FPS
+
 
 def main():
     mode = input("Choose mode: [1] Run Controller  [2] Tune PID with Optuna\n> ").strip()
@@ -88,32 +141,27 @@ def main():
     time.sleep(5)
     controller.horizontal()
 
+    # Start camera display thread
+    stop_event = threading.Event()
+    camera_thread = threading.Thread(target=show_camera, args=(tracker, stop_event))
+    camera_thread.start()
+
     if mode == "2":
         ref_point = (770, 330)
-        tune_pid_with_optuna(controller, ref_point)
+        try:
+            tune_pid_with_optuna(controller, ref_point)
+        finally:
+            stop_event.set()
+            camera_thread.join()
+            tracker.stop()
+            cv2.destroyAllWindows()
         return
 
     print("[INFO] Tracking started. Press 'q' to quit.")
-
     try:
         start_time = time.time()
         while True:
-            frame = tracker.frame
-            if frame is None:
-                continue
-
-            for label, data in tracker.tracked_objects.items():
-                pos = data["position"]
-                if pos:
-                    color = (0, 255, 0) if label == "ball" else (0, 0, 255)
-                    cv2.circle(frame, pos, 8, color, -1)
-                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
-                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
-                    cv2.putText(frame, label, (pos[0]+10, pos[1]), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
             ball_pos = tracker.get_position()
-            cv2.imshow("Ball & Marker Tracking", frame)
             if not ball_pos:
                 print("No ball found (run_controller)")
                 continue
@@ -123,12 +171,14 @@ def main():
             else:
                 controller.posControl((770, 330))
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if stop_event.is_set():
                 break
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
     finally:
+        stop_event.set()
+        camera_thread.join()
         tracker.stop()
         cv2.destroyAllWindows()
         print("[INFO] Tracker stopped.")
