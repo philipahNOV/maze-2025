@@ -6,7 +6,7 @@ import arduino_connection
 import optuna
 import numpy as np
 
-def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=30):
+def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=15):
     def objective(trial):
         # Suggest gains
         controller.kp_x = trial.suggest_float("kp_x", 1e-6, 1e-2, log=True)
@@ -89,7 +89,7 @@ def main():
     controller.horizontal()
 
     if mode == "2":
-        ref_point = (770 - 150, 330 - 150)
+        ref_point = (770, 330)
         tune_pid_with_optuna(controller, ref_point)
         return
 
@@ -107,8 +107,8 @@ def main():
                 if pos:
                     color = (0, 255, 0) if label == "ball" else (0, 0, 255)
                     cv2.circle(frame, pos, 8, color, -1)
-                    cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-                    cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
+                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
+                    cv2.circle(frame, (770, 330), 5, (0, 0, 255), -1)
                     cv2.putText(frame, label, (pos[0]+10, pos[1]), 
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
@@ -119,9 +119,9 @@ def main():
                 continue
 
             if time.time() - start_time < 30:
-                controller.posControl((770-150, 330-150))
+                controller.posControl((770, 330))
             else:
-                controller.posControl((770+150, 330+150))
+                controller.posControl((770, 330))
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
