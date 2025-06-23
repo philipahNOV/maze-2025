@@ -56,6 +56,10 @@ def main():
 
             ball_pos = tracker.get_position()
             cv2.imshow("Ball & Marker Tracking", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
             if not ball_pos:
                 print("No ball found (run_controller)")
                 continue
@@ -71,9 +75,6 @@ def main():
 
             #---------------
 
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
