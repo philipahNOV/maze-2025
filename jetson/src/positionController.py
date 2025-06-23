@@ -59,6 +59,12 @@ class Controller:
     def set_ball_pos(self, pos):
         self.pos = pos
 
+    def significant_motor_change(self, dir_x, dir_y, vel_x, vel_y):
+        if dir_x == self.prev_dir_x and dir_y == self.prev_dir_y:
+            if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
+                return False
+        return True
+
     def posControl(self, ref):
         
         """
@@ -180,17 +186,9 @@ class Controller:
         #dir_y = 2
         #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
 
-        if dir_x == self.prev_dir_x and dir_y == self.prev_dir_y:
-            if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
-                self.prev_dir_x = dir_x
-                self.prev_vel_x = vel_x
-                self.prev_dir_y = dir_y
-                self.prev_vel_y = vel_y
-                return
-                
+        if self.significant_motor_change(dir_x, dir_y, vel_x, vel_y):
+            self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
         
-        self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-
         self.prev_dir_x = dir_x
         self.prev_vel_x = vel_x
         self.prev_dir_y = dir_y
