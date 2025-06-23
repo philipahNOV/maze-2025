@@ -52,19 +52,17 @@ void setup() {
 
 void loop() {
     // put your main code here, to run repeatedly:
-
-
     if (teller == 0)
     {
         actuator_move_speed(25, 1);
-        delay(0.5);
-        teller =+ 1;
+        delay(500);
+        teller += 1;
     }
     else if (teller == 1)
     {
         actuator_move_speed(-25, 1);
-        delay(0.5);
-        teller =+ 1;
+        delay(500);
+        teller += 1;
     }
     else
     {
@@ -150,42 +148,31 @@ void actuator_move_distance(const float distance, const uint8_t speed, const uin
         Serial.print("Ikke et valg. Velg mellom en eller to aktuator");
         return;
     }
-    
-    // Initialserer variabler
-    const float act_max_stroke{50.0}; // Maks slaglengde for aktuatorene (mm)
-    const float act_min_stroke{0.0}; // Minste slaglengde for aktuatorene (mm)
+      // Initialserer variabler
     const float targetTolerance{0.3}; // Tolleranse for hvor hvor nære ønsket distanse før ok (mm) 
-    const float max_hight{48}; // Maksimal høyde for å ikke kjøre aktuatoren helt til toppen (mm)
-    const float min_hight{2}; // Minimum høyde for å ikke kjøre aktuatoren helt til bunden (mm)
 
     const uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback; // Aktuator potensjometer pinne
     const uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down; // PWM pinne som skal brukes
     const float init_position{actuator_position(&pot_pin)}; // Initial aktuatorposisjon
-    float distance_adj{distance};
 
-    // Sjekk om distansen er lenger en aktuatoren kan flytte seg
-    if ((init_position >= max_hight && distance >= 0.0) || (init_position <= min_hight && distance < 0.0)) // Hvis den er utenfor området så går den ikke lenger
+    // Sjekk om aktuatoren allerede er i grenseområdet og prøver å bevege seg feil vei
+    int8_t limit_status = actuator_limit_check(actuator);
+    if ((limit_status == 1 && distance > 0.0) || (limit_status == -1 && distance < 0.0))
     {
-        return; 
-    }
-    else if (init_position + abs(distance) > act_max_stroke && distance >= 0.0) // Maks lengde
-    {
-        distance_adj = max_hight - init_position; // Kalkulerer distansen så den ikke går for langt opp
-    }
-    else if (init_position - abs(distance) < act_min_stroke && distance < 0.0) // Min lengde
-    {
-        distance_adj = min_hight - init_position; // Kalkulerer distansen så den ikke går for langt ned
-    }
-    else
-    {
-        // Do nothing
+        return; // Kan ikke bevege seg i den retningen
     }
 
     analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
-    // Kjører til aktuatoren har kjørt så langt den skal
-    while (abs(actuator_position(&pot_pin) - init_position) < abs(distance_adj) + targetTolerance)
+    
+    // Kjører til aktuatoren har kjørt ønsket distanse eller når en grense
+    while (abs(actuator_position(&pot_pin) - init_position) < abs(distance) - targetTolerance)
     {
-        // Wait
+        // Sjekk kontinuerlig om vi når en grense under bevegelsen
+        limit_status = actuator_limit_check(actuator);
+        if ((limit_status == 1 && distance > 0.0) || (limit_status == -1 && distance < 0.0))
+        {
+            break; // Stopp hvis vi når en grense
+        }
     }
     analogWrite(pwm_pin, 0); // Stopper motoren
 }
