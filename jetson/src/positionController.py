@@ -45,8 +45,8 @@ class Controller:
         self.kd_x = 0.00008
         self.kp_y = 0.00007
         self.kd_y = 0.00008
-        self.ki_y = 0.00005
-        self.ki_x = 0.00005
+        self.ki_y = 0.0001
+        self.ki_x = 0.0001
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
@@ -85,7 +85,7 @@ class Controller:
 
         if self.prevPos is not None:
             if abs(np.linalg.norm(np.array(self.pos) - np.array(self.prevPos))) > 300:
-                print("Large jump detected, resetting position control.")
+                #print("Large jump detected, resetting position control.")
                 return
             
         e_x = ref[0] - self.pos[0]
@@ -113,6 +113,9 @@ class Controller:
 
         if edot_x > 5: self.e_x_int = 0
         if edot_y > 5: self.e_y_int = 0
+        
+        print(edot_x)
+        print(edot_y)
 
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
             # Ball is at target → STOP
