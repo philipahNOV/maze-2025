@@ -53,7 +53,7 @@ class BallTracker:
             bgr = image.get_data()  # ZED returns BGR directly (720, 1280, 3)
             rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
             return rgb, bgr
-        return None, None
+        return None
 
     def producer_loop(self):
         while self.running:
