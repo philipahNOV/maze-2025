@@ -26,6 +26,7 @@ namespace {
 // Initialiserer funksjoner
 float actuator_position(uint8_t* pot_pin); // Funksjon for posisjonen til aktuatoren
 void actuator_move_distance(float distance, uint8_t speed, uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
+void actuator_move_speed(const uint8_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator med en hastighet
 
 void setup() {
     // Starter seriel kominikasjon
@@ -40,12 +41,74 @@ void setup() {
     pinMode(actuators::actuator_2.pwm_up, OUTPUT);
     pinMode(actuators::actuator_2.pwm_down, OUTPUT);
 
+    // Setter setter analog pinnene til null for at motorene ikke skal bevege seg
+    analogWrite(actuators::actuator_1.pwm_up, 0);
+    analogWrite(actuators::actuator_1.pwm_down, 0);
 
-    actuator_move_distance(5.0, 30.0, 1);
+    analogWrite(actuators::actuator_2.pwm_up, 0);
+    analogWrite(actuators::actuator_2.pwm_down, 0);
 }
 
 void loop() {
     // put your main code here, to run repeatedly:
+
+    for (int i = 0; i < 10; i++) // Kjører en loop for å teste aktuatorene
+    {
+        if (i == 0)
+        {
+            actuator_move_speed(20, 1); // Beveger aktuator en oppover med hastighet 10
+        }
+        else if (i == 1)
+        {
+            actuator_move_speed(30, 1);; // Beveger aktuator to oppover med hastighet 10
+        }
+        else if (i == 2)
+        {
+            actuator_move_speed(50, 1);; // Beveger aktuator to oppover med hastighet 10
+        }
+        else if (i == 3)
+        {
+            actuator_move_speed(0, 1);; // Beveger aktuator to oppover med hastighet 10
+        }
+        else if (i == 4)
+        {
+            actuator_move_speed(-20, 1);; // Beveger aktuator to oppover med hastighet 10
+        }
+        else if (i == 5)
+        {
+            actuator_move_speed(-30, 1);; // Beveger aktuator to oppover med hastighet 10
+        }
+        else if (i == 6)
+        {
+            actuator_move_speed(-50, 1); // Stopper aktuator en
+        }
+        else if (i == 7)
+        {
+            actuator_move_speed(0, 1); // Stopper aktuator to
+        }
+        else if (i == 8)
+        {
+            actuator_move_speed(20, 2);
+        }
+        else if (i == 9)
+        {
+            actuator_move_speed(-20, 2);
+        }
+        else
+        {
+            actuator_move_speed(0, 1);
+            actuator_move_speed(0, 2);
+        }
+        
+
+        delay(500); // Venter i 0.5 sekund
+    }
+
+    analogWrite(actuators::actuator_1.pwm_up, 0);
+    analogWrite(actuators::actuator_1.pwm_down, 0);
+
+    analogWrite(actuators::actuator_2.pwm_up, 0);
+    analogWrite(actuators::actuator_2.pwm_down, 0);
     
 }
 
@@ -118,4 +181,38 @@ void actuator_move_distance(const float distance, uint8_t speed, const uint8_t a
         // Wait
     }
     analogWrite(pwm_pin, 0); // Stopper motoren
+}
+
+void actuator_move_speed(const uint8_t speed, const uint8_t actuator)
+{
+    // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
+    actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
+    
+    // Velger aktuator
+    if (actuator == 1) // Hvis det er aktuator en
+    {
+        pSelectedActuatorPins = &actuators::actuator_1; // Peker til selectedActuatorPins til aktoator en
+    }
+    else if (actuator == 2) // Hvis det er aktuator to
+    {
+        pSelectedActuatorPins = &actuators::actuator_2; // Peker til selectedActuatorPins til aktoator to
+    }
+    else // Hvis aktuator valget ikke er gyldig
+    {
+        Serial.print("Ikke et valg. Velg mellom en eller to aktuator");
+        return;
+    }
+
+    const uint8_t pwm_pin = (speed >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down; // PWM pinne som skal brukes
+
+    if (speed == 0)
+    {   
+        // Hvis hastigheten er 0, så stopper motoren
+        analogWrite(pSelectedActuatorPins -> pwm_up, 0); 
+        analogWrite(pSelectedActuatorPins -> pwm_down, 0); 
+    }
+    else
+    {
+        analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
+    }
 }
