@@ -62,6 +62,7 @@ class Controller:
     def significant_motor_change(self, dir_x, dir_y, vel_x, vel_y):
         if dir_x == self.prev_dir_x and dir_y == self.prev_dir_y:
             if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
+            	print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
                 return False
         return True
 
