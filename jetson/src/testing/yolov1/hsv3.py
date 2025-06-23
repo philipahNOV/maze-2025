@@ -122,9 +122,9 @@ class BallTracker:
                             self.ball_confirm_counter += 1
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.tracked_objects["ball"]["position"] = (cx, cy)
-                                self.initialized = True
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
+                self.initialized = True
                 continue
 
             # HSV tracking
