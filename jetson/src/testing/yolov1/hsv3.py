@@ -22,7 +22,7 @@ class BallTracker:
 
         self.HSV_RANGES = {
             # "ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # green
-            "ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # red
+            "ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # Red
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
@@ -43,10 +43,10 @@ class BallTracker:
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             raise RuntimeError("ZED camera failed to open")
 
-    def grab_zed_frame(zed):
+    def grab_frame(self):
         image = sl.Mat()
-        if zed.grab() == sl.ERROR_CODE.SUCCESS:
-            zed.retrieve_image(image, sl.VIEW.LEFT)
+        if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
+            self.zed.retrieve_image(image, sl.VIEW.LEFT)
             bgr = image.get_data()  # ZED returns BGR directly (720, 1280, 3)
             rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
             return rgb, bgr
@@ -54,7 +54,7 @@ class BallTracker:
 
     def producer_loop(self):
         while self.running:
-            frame = self.grab_zed_frame()
+            frame = self.grab_frame()
             if frame is not None:
                 with self.lock:
                     self.latest_frame = frame
