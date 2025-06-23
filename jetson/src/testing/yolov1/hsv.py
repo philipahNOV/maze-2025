@@ -21,10 +21,28 @@ def grab_zed_frame(zed):
     image = sl.Mat()
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image, sl.VIEW.LEFT)
-        rgba = image.get_data()
-        rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)   # Direct RGBA to RGB
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)     # RGB to BGR for OpenCV
-        return rgb, bgr
+        raw_data = image.get_data()
+        
+        # Debug: Check what ZED actually returns
+        print(f"Raw data shape: {raw_data.shape}")
+        print(f"Raw data dtype: {raw_data.dtype}")
+        
+        # Try different approaches:
+        
+        # Option 1: ZED might return BGR natively (not RGBA)
+        if raw_data.shape[2] == 3:  # BGR format
+            bgr = raw_data
+            rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+            return rgb, bgr
+            
+        # Option 2: ZED returns RGBA, but channels might be different
+        elif raw_data.shape[2] == 4:  # RGBA format
+            # Try direct RGBA to BGR conversion
+            bgr = cv2.cvtColor(raw_data, cv2.COLOR_RGBA2BGR)
+            rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+            return rgb, bgr
+            
+    return None, None
 
 
 # Model will be loaded inside main()
