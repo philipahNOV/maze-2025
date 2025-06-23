@@ -57,37 +57,13 @@ void loop() {
     if (teller == 0)
     {
         actuator_move_speed(25, 1);
-        delay(1.0);
+        delay(0.5);
         teller =+ 1;
     }
-    else if (teller = 1)
+    else if (teller == 1)
     {
         actuator_move_speed(-25, 1);
-        delay(1.0);
-        teller =+ 1;
-    }
-    else if (teller = 2)
-    {
-        actuator_move_speed(0, 1);
-        delay(1.0);
-        teller =+ 1;
-    }
-    else if (teller = 3)
-    {
-        actuator_move_speed(25, 2);
-        delay(1.0);
-        teller =+ 1;
-    }
-    else if (teller = 4)
-    {
-        actuator_move_speed(-25, 2);
-        delay(1.0);
-        teller =+ 1;
-    }
-    else if (teller = 5)
-    {
-        actuator_move_speed(0, 2);
-        delay(1.0);
+        delay(0.5);
         teller =+ 1;
     }
     else
