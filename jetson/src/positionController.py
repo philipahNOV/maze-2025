@@ -41,10 +41,10 @@ class Controller:
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.00007
-        self.kd_x = 0.00008
-        self.kp_y = 0.00007
-        self.kd_y = 0.00008
+        self.kp_x = 0.00006
+        self.kd_x = 0.000045
+        self.kp_y = 0.00006
+        self.kd_y = 0.000045
         self.ki_y = 0.0001
         self.ki_x = 0.0001
         self.deadzone_pos_tol = 30
