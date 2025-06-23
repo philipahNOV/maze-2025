@@ -54,12 +54,14 @@ void loop() {
     // put your main code here, to run repeatedly:
     if (teller == 0)
     {
+        Serial.println("1");
         actuator_move_speed(25, 1);
         delay(500);
         teller += 1;
     }
     else if (teller == 1)
     {
+        Serial.println("2");
         actuator_move_speed(-25, 1);
         delay(500);
         teller += 1;
@@ -204,6 +206,7 @@ void actuator_move_speed(const uint8_t speed, const uint8_t actuator)
     // Sjekker om aktuatoren er innenfor grensen for å bevege seg
     if ((speed > 0.0 && actuator_limit_check(actuator) != 1) || (speed < 0.0 && actuator_limit_check(actuator) != -1)) // Hvis den er innenfor grensen for å bevege seg
     {   
+        Serial.println(speed);
         analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
     }
     else // Hvis den ikke er innenfor grensen for å bevege seg
@@ -213,5 +216,3 @@ void actuator_move_speed(const uint8_t speed, const uint8_t actuator)
         analogWrite(pSelectedActuatorPins -> pwm_down, 0); 
     }
 }
-
-
