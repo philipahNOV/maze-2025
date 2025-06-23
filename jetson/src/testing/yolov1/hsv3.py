@@ -142,9 +142,17 @@ class BallTracker:
         self.init_camera()
         self.grab_frame()
         self.running = True
-        self.thread = threading.Thread(target=self._tracking_loop)
-        self.thread.daemon = True
-        self.thread.start()
+
+        # Start producer thread
+        self.producer_thread = threading.Thread(target=self.producer_loop)
+        self.producer_thread.daemon = True
+        self.producer_thread.start()
+
+        # Start consumer thread
+        self.consumer_thread = threading.Thread(target=self.consumer_loop)
+        self.consumer_thread.daemon = True
+        self.consumer_thread.start()
+
 
     def stop(self):
         self.running = False
