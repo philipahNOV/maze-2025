@@ -21,7 +21,7 @@ class BallTracker:
         }
 
         self.HSV_RANGES = {
-            "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),
+            "ball": (np.array([0, 100, 50]), np.array([10, 255, 180])),
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
