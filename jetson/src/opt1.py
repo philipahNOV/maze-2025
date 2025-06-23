@@ -9,12 +9,12 @@ import numpy as np
 def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=30):
     def objective(trial):
         # Suggest gains
-        controller.kp_x = trial.suggest_float("kp_x", 1e-6, 1e-3, log=True)
-        controller.kd_x = trial.suggest_float("kd_x", 1e-6, 1e-3, log=True)
-        controller.ki_x = trial.suggest_float("ki_x", 0.0, 1e-4, log=True)
+        controller.kp_x = trial.suggest_float("kp_x", 1e-6, 1e-2, log=True)
+        controller.kd_x = trial.suggest_float("kd_x", 1e-6, 1e-2, log=True)
+        controller.ki_x = trial.suggest_float("ki_x", 0.0, 1e-4, log=False)
         controller.kp_y = trial.suggest_float("kp_y", 1e-6, 1e-3, log=True)
         controller.kd_y = trial.suggest_float("kd_y", 1e-6, 1e-3, log=True)
-        controller.ki_y = trial.suggest_float("ki_y", 0.0, 1e-4, log=True)
+        controller.ki_y = trial.suggest_float("ki_y", 0.0, 1e-4, log=False)
 
         # Reset controller state
         controller.e_x_int = 0
