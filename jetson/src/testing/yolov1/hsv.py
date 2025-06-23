@@ -31,7 +31,8 @@ model = YOLO("best.pt")
 
 # HSV ranges
 HSV_RANGES = {
-    "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
+    # "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
+    "ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # Red
     # "ball": (np.array([0, 0, 90]), np.array([180, 60, 255])), # Grey
     "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),   # Red
 }
