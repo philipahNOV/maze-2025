@@ -33,6 +33,8 @@ class Controller:
         self.prev_dir_y = 2
         self.prev_vel_y = 0
 
+        self.prev_command_time = time.time()
+
         #ARDUINO PARAMETERS
         self.x_offset = -0.0018  # Offset for x-axis orientation (tested -0.008)
         self.y_offset = -0.0015  # Offset for y-axis orientation (tested -0.0015)
@@ -62,6 +64,7 @@ class Controller:
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
         self.max_angle = 1.5 #Max angle in deg
+        self.command_delay = 0.05
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -75,7 +78,9 @@ class Controller:
     
     def saturate_angles(self, theta_x, theta_y):
         rad = np.deg2rad(self.max_angle)
-        return (min(theta_x, rad), min(theta_y, rad))
+        theta_x = max(min(theta_x, rad), -rad)
+        theta_y = max(min(theta_y, rad), -rad)
+        return (theta_x, theta_y)
 
     def posControl(self, ref):
         
@@ -97,6 +102,7 @@ class Controller:
         if self.prevPos is not None:
             if abs(np.linalg.norm(np.array(self.pos) - np.array(self.prevPos))) > 300:
                 #print("Large jump detected, resetting position control.")
+                self.prevTime = time.time()
                 return
             
         e_x = ref[0] - self.pos[0]
@@ -115,12 +121,8 @@ class Controller:
         else:
             dt = 0
 
-        if self.e_x_int and self.e_y_int:
-            self.e_x_int += e_x*dt
-            self.e_y_int += e_y*dt
-        else:
-            self.e_x_int = e_x*dt
-            self.e_y_int = e_y*dt
+        self.e_x_int += e_x * dt
+        self.e_y_int += e_y * dt
 
         if abs(edot_x) > 20: self.e_x_int = 0
         if abs(edot_y) > 20: self.e_y_int = 0
@@ -141,7 +143,7 @@ class Controller:
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             # Ball is at target → STOP
             theta_y = 0
-        elif abs(e_y) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
+        elif abs(e_y) < self.deadzone_pos_tol and abs(edot_y) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
             theta_y = -np.sign(e_y) * self.deadzone_tilt
             print("Escaping")
@@ -154,7 +156,8 @@ class Controller:
             self.e_x_int = 0
             self.e_y_int = 0
             self.arduinoThread.send_target_positions(120, 120, 120, 120)
-            time.sleep(0.05)
+            self.prevTime = time.time()
+            time.sleep(self.command_delay)
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
@@ -165,8 +168,10 @@ class Controller:
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
+        if time.time() < self.prev_command_time + self.command_delay:
+            return
+
         self.axisControl(self.saturate_angles(theta_y, theta_x))
-        #time.sleep(0.05)
 
     def axisControl(self, ref):
 
@@ -209,13 +214,13 @@ class Controller:
 
         if self.significant_motor_change(dir_x, dir_y, vel_x, vel_y):
             self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+            self.prev_command_time = time.time()
         
         self.prev_dir_x = dir_x
         self.prev_vel_x = vel_x
         self.prev_dir_y = dir_y
         self.prev_vel_y = vel_y
 
-        time.sleep(0.05)
 
     def horizontal(self, tol = 0.0015, timeLimit = 20):
         
@@ -263,6 +268,6 @@ class Controller:
             vel_x = max(int(kp * abs(theta_x)), self.min_velocity)
             vel_y = max(int(kp * abs(theta_y)), self.min_velocity)
             self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
-            time.sleep(0.05)
+            time.sleep(self.command_delay)
         print("Deadline reached, stopping motors.")
         
