@@ -45,8 +45,8 @@ class Controller:
         self.kd_x = 0.000045
         self.kp_y = 0.00006
         self.kd_y = 0.000045
-        self.ki_y = 0.0001
-        self.ki_x = 0.0001
+        self.ki_y = 0.000
+        self.ki_x = 0.000
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = np.deg2rad(0.5)
