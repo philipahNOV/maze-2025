@@ -22,9 +22,10 @@ def grab_zed_frame(zed):
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image, sl.VIEW.LEFT)
         rgba = image.get_data()
-        bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGR)
-        return bgr
-    return None
+        bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGR)  # for OpenCV
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)    # for model
+        return rgb, bgr
+    return None, None
 
 
 model = YOLO("best.pt")
@@ -45,7 +46,7 @@ tracked_objects = {
     "marker_4": {"position": None},
 }
 
-WINDOW_SIZE = 50  # px radius around previous location
+WINDOW_SIZE = 80  # px radius around previous location
 
 def get_center_of_mass(mask):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -139,13 +140,13 @@ def main():
     #         break
 
     while True:
-        frame = grab_zed_frame(zed)
-        if frame is None:
+        rgb_frame, bgr_frame = grab_zed_frame(zed)
+        if rgb_frame is None:
             print("Failed to grab frame from ZED camera.")
             break
 
         if not initialized:
-            results = model.predict(source=frame, conf=0.6)[0]
+            results = model.predict(source=rgb_frame, conf=0.6)[0]
             for box in results.boxes:
                 cls = int(box.cls[0])
                 label = model.names[cls]
@@ -154,7 +155,7 @@ def main():
                 cy = (y1 + y2) // 2
 
                 if label == "ball":
-                    roi = frame[y1:y2, x1:x2]
+                    roi = bgr_frame[y1:y2, x1:x2]
                     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
                     mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
                     if cv2.countNonZero(mask) > 100:
@@ -169,19 +170,19 @@ def main():
         for label in tracked_objects:
             hsv_lower, hsv_upper = HSV_RANGES["ball" if "ball" in label else "marker"]
             prev_pos = tracked_objects[label]["position"]
-            new_pos = hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper)
+            new_pos = hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
 
             if new_pos:
                 tracked_objects[label]["position"] = new_pos
 
-            draw_tracking(frame, label, tracked_objects[label]["position"])
+            draw_tracking(bgr_frame, label, tracked_objects[label]["position"])
 
         get_position()
 
         # get_orientation(zed)
         
 
-        cv2.imshow("Tracking", frame)
+        cv2.imshow("Tracking", bgr_frame)
         key = cv2.waitKey(1)
         if key == 27:
             break
