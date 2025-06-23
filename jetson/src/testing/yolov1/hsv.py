@@ -156,12 +156,11 @@ def main():
                 cy = (y1 + y2) // 2
 
                 if label == "ball":
-                    if abs(cx - 1130) < 100 and abs(cy - 30) < 100:
-                        roi = bgr_frame[y1:y2, x1:x2]
-                        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-                        mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
-                        if cv2.countNonZero(mask) > 100:
-                            tracked_objects["ball"]["position"] = (cx, cy)
+                    roi = bgr_frame[y1:y2, x1:x2]
+                    hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                    mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
+                    if cv2.countNonZero(mask) > 100:
+                        tracked_objects["ball"]["position"] = (cx, cy)
 
                 elif label.startswith("marker"):
                     tracked_objects[label]["position"] = (cx, cy)
