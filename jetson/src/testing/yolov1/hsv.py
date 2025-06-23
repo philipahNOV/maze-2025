@@ -31,7 +31,8 @@ model = YOLO("best.pt")
 
 # HSV ranges
 HSV_RANGES = {
-    "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
+    # "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
+    "ball": (np.array([0, 0, 90]), np.array([180, 60, 255])), # Grey
     "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),   # Red
 }
 
@@ -155,7 +156,7 @@ def main():
                     roi = frame[y1:y2, x1:x2]
                     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
                     mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
-                    if cv2.countNonZero(mask) > 100:  # Enough green pixels
+                    if cv2.countNonZero(mask) > 100:
                         tracked_objects["ball"]["position"] = (cx, cy)
 
                 elif label.startswith("marker"):
