@@ -7,7 +7,7 @@ import optuna
 import numpy as np
 import threading
 
-def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=40):
+def tune_pid_with_optuna(controller: positionController.Controller, ref_point, n_trials=20):
     def objective(trial):
         # PID tuning ranges
         controller.kp_x = trial.suggest_float("kp_x", 5e-5, 2e-4, log=True)
