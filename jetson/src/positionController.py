@@ -34,28 +34,34 @@ class Controller:
         self.prev_vel_y = 0
 
         #ARDUINO PARAMETERS
-        self.x_offset = 0  # Offset for x-axis orientation (tested -0.008)
-        self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+        self.x_offset = -0.0018  # Offset for x-axis orientation (tested -0.008)
+        self.y_offset = -0.0015  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
-        self.min_vel_diff = 10
+        self.min_vel_diff = 5
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.00006
-        self.kd_x = 0.000045
-        self.kp_y = 0.00006
-        self.kd_y = 0.000045
-        self.ki_y = 0.000
-        self.ki_x = 0.000
+        self.kp_x = 0.00005
+        self.kd_x = 0.00005
+        self.kp_y = 0.00005
+        self.kd_y = 0.00005
+        self.ki_y = 0.0003
+        self.ki_x = 0.0003
+        #self.kp_x = 0.00009796
+        #self.kd_x = 0.00004655
+        #self.kp_y = 0.00005752
+        #self.kd_y = 0.00004655
+        #self.ki_y = 0.00002805
+        #self.ki_x = 0.00003344
         self.deadzone_pos_tol = 30
-        self.deadzone_vel_tol = 5
-        self.deadzone_tilt = np.deg2rad(0.5)
-        self.pos_tol = 10
-        self.vel_tol = 1
+        self.deadzone_vel_tol = 10
+        self.deadzone_tilt = np.deg2rad(0)
+        self.pos_tol = 30
+        self.vel_tol = 10
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
-        self.max_angle = 4 #Max angle in deg
+        self.max_angle = 1.5 #Max angle in deg
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -116,14 +122,13 @@ class Controller:
             self.e_x_int = e_x*dt
             self.e_y_int = e_y*dt
 
-        if edot_x > 5: self.e_x_int = 0
-        if edot_y > 5: self.e_y_int = 0
+        if abs(edot_x) > 20: self.e_x_int = 0
+        if abs(edot_y) > 20: self.e_y_int = 0
         
         print(edot_x)
         print(edot_y)
 
-        if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
-            # Ball is at target → STOP
+        if abs(e_x) < self.pos_tol: #at target → STOP
             theta_x = 0
         elif abs(e_x) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
@@ -148,6 +153,8 @@ class Controller:
             print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
+            self.arduinoThread.send_target_positions(120, 120, 120, 120)
+            time.sleep(0.05)
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
