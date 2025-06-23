@@ -3,6 +3,7 @@ import time
 import cv2
 import positionController
 import arduino_connection
+import lowPassFilter
 
 def main():
 
@@ -26,6 +27,7 @@ def main():
 
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
@@ -34,8 +36,9 @@ def main():
     print("[INFO] Tracking started. Press 'q' to quit.")
 
     controller = positionController.Controller(arduino_thread, tracker)
-    time.sleep(5)
+    time.sleep(1)
     controller.horizontal()
+    time.sleep(2)
     
     try:
         start_time = time.time()
@@ -44,17 +47,25 @@ def main():
             if frame is None:
                 continue
 
-            for label, data in tracker.tracked_objects.items():
-                pos = data["position"]
-                if pos:
-                    color = (0, 255, 0) if label == "ball" else (0, 0, 255)
-                    cv2.circle(frame, pos, 8, color, -1)
-                    cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-                    cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
-                    cv2.putText(frame, label, (pos[0]+10, pos[1]), 
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
+            #for label, data in tracker.tracked_objects.items():
+            #    pos = data["position"]
+            #    if pos:
+            #        color = (0, 255, 0) if label == "ball" else (0, 0, 255)
+            #        cv2.circle(frame, pos, 8, color, -1)
+            #        cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
+            #        cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
+            #        cv2.putText(frame, label, (pos[0]+10, pos[1]), 
+            #                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
             ball_pos = tracker.get_position()
+            ball_pos = smoother.update(ball_pos)
+
+            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
+            cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
+            cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
+            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
             cv2.imshow("Ball & Marker Tracking", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
