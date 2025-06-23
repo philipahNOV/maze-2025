@@ -45,8 +45,8 @@ class Controller:
         self.kd_x = 0.00008
         self.kp_y = 0.00007
         self.kd_y = 0.00008
-        self.ki_y = 0.00005
-        self.ki_x = 0.00005
+        self.ki_y = 0.0001
+        self.ki_x = 0.0001
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
@@ -55,6 +55,7 @@ class Controller:
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
+        self.max_angle = 5 #Max angle in deg
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -65,6 +66,10 @@ class Controller:
                 print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
                 return False
         return True
+    
+    def saturate_angles(self, theta_x, theta_y):
+        rad = np.deg2rad(self.max_angle)
+        return (min(theta_x, rad), min(theta_y, rad))
 
     def posControl(self, ref):
         
@@ -85,7 +90,7 @@ class Controller:
 
         if self.prevPos is not None:
             if abs(np.linalg.norm(np.array(self.pos) - np.array(self.prevPos))) > 300:
-                print("Large jump detected, resetting position control.")
+                #print("Large jump detected, resetting position control.")
                 return
             
         e_x = ref[0] - self.pos[0]
@@ -113,6 +118,9 @@ class Controller:
 
         if edot_x > 5: self.e_x_int = 0
         if edot_y > 5: self.e_y_int = 0
+        
+        print(edot_x)
+        print(edot_y)
 
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
             # Ball is at target → STOP
@@ -148,7 +156,7 @@ class Controller:
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
-        self.axisControl((theta_y, theta_x))
+        self.axisControl(self.saturate_angles(theta_y, theta_x))
         #time.sleep(0.05)
 
     def axisControl(self, ref):
