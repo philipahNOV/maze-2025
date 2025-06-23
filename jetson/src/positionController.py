@@ -49,7 +49,7 @@ class Controller:
         self.ki_x = 0.0001
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
-        self.deadzone_tilt = 0
+        self.deadzone_tilt = np.deg2rad(0.5)
         self.pos_tol = 10
         self.vel_tol = 1
 
@@ -128,6 +128,7 @@ class Controller:
         elif abs(e_x) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
             theta_x = np.sign(e_x) * self.deadzone_tilt
+            print("Escaping")
         else:
             # Ball is far → USE CONTROL
             theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int)
@@ -138,6 +139,7 @@ class Controller:
         elif abs(e_y) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
             theta_y = -np.sign(e_y) * self.deadzone_tilt
+            print("Escaping")
         else:
             # Ball is far → USE CONTROL
             theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int)
