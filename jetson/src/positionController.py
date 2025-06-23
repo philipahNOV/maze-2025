@@ -28,18 +28,25 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
+        self.prev_dir_x = 2
+        self.prev_vel_x = 0
+        self.prev_dir_y = 2
+        self.prev_vel_y = 0
+
         #ARDUINO PARAMETERS
         self.x_offset = 0  # Offset for x-axis orientation (tested -0.008)
         self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
+        self.min_vel_diff = 10
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.0001
-        self.kd_x = 0.000
+        self.kp_x = 0.00007
+        self.kd_x = 0.00008
         self.kp_y = 0.00007
         self.kd_y = 0.00008
-        self.ki_y = 0.00006
+        self.ki_y = 0.00005
+        self.ki_x = 0.00005
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 5
         self.deadzone_tilt = 0
@@ -47,7 +54,7 @@ class Controller:
         self.vel_tol = 1
 
         #Axis control
-        self.kp_theta = 5000  # Proportional gain for the control loop
+        self.kp_theta = 6500  # Proportional gain for the control loop
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -79,7 +86,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.5
+        alpha = 0.55
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
@@ -105,7 +112,7 @@ class Controller:
             theta_x = np.sign(e_x) * self.deadzone_tilt
         else:
             # Ball is far → USE CONTROL
-            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x)
+            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int)
 
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             # Ball is at target → STOP
@@ -115,10 +122,12 @@ class Controller:
             theta_y = -np.sign(e_y) * self.deadzone_tilt
         else:
             # Ball is far → USE CONTROL
-            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_int)
+            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             print("Target reached!")
+            self.e_x_int = 0
+            self.e_y_int = 0
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
@@ -170,7 +179,23 @@ class Controller:
         vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), 255)
         #dir_y = 2
         #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
+
+        if dir_x == self.prev_dir_x and dir_y == self.prev_dir_y:
+            if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
+                self.prev_dir_x = dir_x
+                self.prev_vel_x = vel_x
+                self.prev_dir_y = dir_y
+                self.prev_vel_y = vel_y
+                return
+                
+        
         self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+
+        self.prev_dir_x = dir_x
+        self.prev_vel_x = vel_x
+        self.prev_dir_y = dir_y
+        self.prev_vel_y = vel_y
+
         time.sleep(0.05)
 
     def horizontal(self, tol = 0.0015, timeLimit = 20):
