@@ -40,7 +40,7 @@ def main():
     try:
         start_time = time.time()
         while True:
-            frame = tracker.frame
+            frame = tracker.grab_zed_frame()
             if frame is None:
                 continue
 
