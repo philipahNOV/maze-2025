@@ -115,15 +115,22 @@ class BallTracker:
                     cy = (y1 + y2) // 2
 
                     if label == "ball":
-                        roi = bgr_frame[y1:y2, x1:x2]
-                        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-                        mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
-                        if cv2.countNonZero(mask) > 100:
-                            self.ball_confirm_counter += 1
-                            print("Ball HSV mean:", cv2.mean(hsv))
-                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                                self.tracked_objects["ball"]["position"] = (cx, cy)
-                                self.initialized = True  # switch to hsv
+                        self.ball_confirm_counter += 1
+                        self.tracked_objects["ball"]["position"] = (cx, cy)
+                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                            self.initialized = True
+
+
+                    # if label == "ball":
+                    #     roi = bgr_frame[y1:y2, x1:x2]
+                    #     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                    #     mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
+                    #     if cv2.countNonZero(mask) > 100:
+                    #         self.ball_confirm_counter += 1
+                    #         print("Ball HSV mean:", cv2.mean(hsv))
+                    #         if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                    #             self.tracked_objects["ball"]["position"] = (cx, cy)
+                    #             self.initialized = True  # switch to hsv
 
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
