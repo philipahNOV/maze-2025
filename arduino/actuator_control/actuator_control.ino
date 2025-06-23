@@ -20,12 +20,13 @@ namespace actuators {
 
 // Navnerom for globale variabler
 namespace {
-
+    int teller{0};
 }
 
 // Initialiserer funksjoner
 float actuator_position(uint8_t* pot_pin); // Funksjon for posisjonen til aktuatoren
-void actuator_move_distance(float distance, uint8_t speed, uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
+int8_t actuator_limit_check(const uint8_t actuator); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
+void actuator_move_distance(float distance, const uint8_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
 void actuator_move_speed(const uint8_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator med en hastighet
 
 void setup() {
@@ -41,7 +42,7 @@ void setup() {
     pinMode(actuators::actuator_2.pwm_up, OUTPUT);
     pinMode(actuators::actuator_2.pwm_down, OUTPUT);
 
-    // Setter setter analog pinnene til null for at motorene ikke skal bevege seg
+    // Setter analog pinnene til null for at motorene ikke skal bevege seg når programmet starter
     analogWrite(actuators::actuator_1.pwm_up, 0);
     analogWrite(actuators::actuator_1.pwm_down, 0);
 
@@ -52,64 +53,51 @@ void setup() {
 void loop() {
     // put your main code here, to run repeatedly:
 
-    for (int i = 0; i < 10; i++) // Kjører en loop for å teste aktuatorene
+
+    if (teller == 0)
     {
-        if (i == 0)
-        {
-            actuator_move_speed(20, 1); // Beveger aktuator en oppover med hastighet 10
-        }
-        else if (i == 1)
-        {
-            actuator_move_speed(30, 1);; // Beveger aktuator to oppover med hastighet 10
-        }
-        else if (i == 2)
-        {
-            actuator_move_speed(50, 1);; // Beveger aktuator to oppover med hastighet 10
-        }
-        else if (i == 3)
-        {
-            actuator_move_speed(0, 1);; // Beveger aktuator to oppover med hastighet 10
-        }
-        else if (i == 4)
-        {
-            actuator_move_speed(-20, 1);; // Beveger aktuator to oppover med hastighet 10
-        }
-        else if (i == 5)
-        {
-            actuator_move_speed(-30, 1);; // Beveger aktuator to oppover med hastighet 10
-        }
-        else if (i == 6)
-        {
-            actuator_move_speed(-50, 1); // Stopper aktuator en
-        }
-        else if (i == 7)
-        {
-            actuator_move_speed(0, 1); // Stopper aktuator to
-        }
-        else if (i == 8)
-        {
-            actuator_move_speed(20, 2);
-        }
-        else if (i == 9)
-        {
-            actuator_move_speed(-20, 2);
-        }
-        else
-        {
-            actuator_move_speed(0, 1);
-            actuator_move_speed(0, 2);
-        }
-        
-
-        delay(500); // Venter i 0.5 sekund
+        actuator_move_speed(25, 1);
+        delay(1.0);
+        teller =+ 1;
     }
+    else if (teller = 1)
+    {
+        actuator_move_speed(-25, 1);
+        delay(1.0);
+        teller =+ 1;
+    }
+    else if (teller = 2)
+    {
+        actuator_move_speed(0, 1);
+        delay(1.0);
+        teller =+ 1;
+    }
+    else if (teller = 3)
+    {
+        actuator_move_speed(25, 2);
+        delay(1.0);
+        teller =+ 1;
+    }
+    else if (teller = 4)
+    {
+        actuator_move_speed(-25, 2);
+        delay(1.0);
+        teller =+ 1;
+    }
+    else if (teller = 5)
+    {
+        actuator_move_speed(0, 2);
+        delay(1.0);
+        teller =+ 1;
+    }
+    else
+    {
+        analogWrite(actuators::actuator_1.pwm_up, 0);
+        analogWrite(actuators::actuator_1.pwm_down, 0);
 
-    analogWrite(actuators::actuator_1.pwm_up, 0);
-    analogWrite(actuators::actuator_1.pwm_down, 0);
-
-    analogWrite(actuators::actuator_2.pwm_up, 0);
-    analogWrite(actuators::actuator_2.pwm_down, 0);
-    
+        analogWrite(actuators::actuator_2.pwm_up, 0);
+        analogWrite(actuators::actuator_2.pwm_down, 0);
+    }
 }
 
 // Funksjon for å returnere posisjonen til aktuatoren
@@ -124,7 +112,50 @@ float actuator_position(const uint8_t* pPot_pin) // Tar inn en peker til potensj
     return dist; // Returnerer distanse 
 }
 
-void actuator_move_distance(const float distance, uint8_t speed, const uint8_t actuator)
+// Returnerer: 0 = OK å bevege seg, 1 = for høyt (ikke beveg opp), -1 = for lavt (ikke beveg ned)
+int8_t actuator_limit_check(const uint8_t actuator)
+{
+    // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
+    actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
+    
+    // Velger aktuator
+    if (actuator == 1) // Hvis det er aktuator en
+    {
+        pSelectedActuatorPins = &actuators::actuator_1; // Peker til selectedActuatorPins til aktoator en
+    }
+    else if (actuator == 2) // Hvis det er aktuator to
+    {
+        pSelectedActuatorPins = &actuators::actuator_2; // Peker til selectedActuatorPins til aktoator to
+    }
+    else // Hvis aktuator valget ikke er gyldig
+    {
+        Serial.print("Ikke et valg. Velg mellom en eller to aktuator");
+        return 0;
+    }
+
+    const uint8_t pot_pin = pSelectedActuatorPins -> pot_feedback; // Aktuator potensjometer pinne
+
+    const float act_max_stroke{50.0}; // Maks slaglengde for aktuatorene (mm)
+    const float adc_max_hight{1018.0}; // ADC verdien for maks lengde
+    const float adc_min_hight{2.0}; // ADC verdi for minimum lengde
+    const float offset{3.0}; // Distansen fra toppen og bunden hvor aktuatorene ikke skal gå innenfor (mm)
+
+    float dist = (float(analogRead(pot_pin)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight); // Kalkulerer distansen
+
+    if (dist >= act_max_stroke - offset) // For høyt
+    {
+        return 1;
+    }
+    else if (dist <= 0.0 + offset) // For lavt
+    {
+        return -1;
+    }
+    else {
+        return 0; // OK å bevege seg
+    }
+}
+
+void actuator_move_distance(const float distance, const uint8_t speed, const uint8_t actuator)
 {
     // Initialiserer pekeren til selectedActuatorPins strukturen til en nulponter
     actuators::ActuatorPins* pSelectedActuatorPins = nullptr; 
@@ -203,16 +234,21 @@ void actuator_move_speed(const uint8_t speed, const uint8_t actuator)
         return;
     }
 
+    // Initialiserer variabler
     const uint8_t pwm_pin = (speed >= 0.0) ? pSelectedActuatorPins -> pwm_up : pSelectedActuatorPins -> pwm_down; // PWM pinne som skal brukes
 
-    if (speed == 0)
+
+    // Sjekker om aktuatoren er innenfor grensen for å bevege seg
+    if ((speed > 0.0 && actuator_limit_check(actuator) != 1) || (speed < 0.0 && actuator_limit_check(actuator) != -1)) // Hvis den er innenfor grensen for å bevege seg
     {   
-        // Hvis hastigheten er 0, så stopper motoren
-        analogWrite(pSelectedActuatorPins -> pwm_up, 0); 
-        analogWrite(pSelectedActuatorPins -> pwm_down, 0); 
-    }
-    else
-    {
         analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
     }
+    else // Hvis den ikke er innenfor grensen for å bevege seg
+    {
+        // Hvis hastigheten er 0, så stopper motoren
+        analogWrite(pSelectedActuatorPins -> pwm_up, 0);
+        analogWrite(pSelectedActuatorPins -> pwm_down, 0); 
+    }
 }
+
+
