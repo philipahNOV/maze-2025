@@ -54,7 +54,7 @@ class BallTracker:
 
     def producer_loop(self):
         while self.running:
-            frame = self.grab_frame()
+            frame = self.grab_zed_frame()
             if frame is not None:
                 with self.lock:
                     self.latest_frame = frame
