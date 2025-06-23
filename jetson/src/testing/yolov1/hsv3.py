@@ -33,6 +33,9 @@ class BallTracker:
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 3
 
+        self.latest_rgb_frame = None
+        self.latest_bgr_frame = None
+
     def init_camera(self):
         self.zed = sl.Camera()
         init_params = sl.InitParameters()
@@ -54,11 +57,13 @@ class BallTracker:
 
     def producer_loop(self):
         while self.running:
-            frame = self.grab_frame()
-            if frame is not None:
+            frames = self.grab_frame()
+            if frames is not None:
+                rgb_frame, bgr_frame = frames
                 with self.lock:
-                    self.latest_frame = frame
-            time.sleep(0.001)  # Avoid CPU overload
+                    self.latest_rgb_frame = rgb_frame
+                    self.latest_bgr_frame = bgr_frame
+            time.sleep(0.001)
 
     def get_center_of_mass(self, mask):
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -93,14 +98,15 @@ class BallTracker:
     def consumer_loop(self):
         while self.running:
             with self.lock:
-                frame = self.latest_frame.copy() if self.latest_frame is not None else None
+                rgb_frame = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                bgr_frame = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
-            if frame is None:
+            if rgb_frame is None or bgr_frame is None:
                 time.sleep(0.01)
                 continue
 
             if not self.initialized:
-                results = self.model.predict(source=frame, conf=0.5)[0]
+                results = self.model.predict(source=rgb_frame, conf=0.5)[0]
                 for box in results.boxes:
                     cls = int(box.cls[0])
                     label = self.model.names[cls]
@@ -109,7 +115,7 @@ class BallTracker:
                     cy = (y1 + y2) // 2
 
                     if label == "ball":
-                        roi = frame[y1:y2, x1:x2]
+                        roi = bgr_frame[y1:y2, x1:x2]
                         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
                         mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
                         if cv2.countNonZero(mask) > 100:
@@ -125,11 +131,11 @@ class BallTracker:
             for label in self.tracked_objects:
                 hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
                 prev_pos = self.tracked_objects[label]["position"]
-                new_pos = self.hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper)
+                new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
                 if new_pos:
                     self.tracked_objects[label]["position"] = new_pos
 
-            self.frame = frame
+            self.frame = bgr_frame
             time.sleep(0.005)
 
     def start(self):
