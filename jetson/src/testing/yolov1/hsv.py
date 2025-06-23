@@ -22,10 +22,10 @@ def grab_zed_frame(zed):
     if zed.grab() == sl.ERROR_CODE.SUCCESS:
         zed.retrieve_image(image, sl.VIEW.LEFT)
         rgba = image.get_data()
-        rgb = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
-        bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
+        bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGR)
         return bgr
     return None
+
 
 model = YOLO("best.pt")
 
