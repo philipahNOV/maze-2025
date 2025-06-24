@@ -125,28 +125,22 @@ class BallTracker:
 
 
                     if label == "ball":
-                        # if abs(cx - 390) > 60 or abs(cy - 570) > 60:
-                        #     continue  # Skip detections too far from target region
+                        if 390 <= cx <= 1120 and 10 <= cy <= 720:
+                            roi = bgr_frame[y1:y2, x1:x2]
+                            # if roi.size == 0:
+                            #     continue  # skip invalid ROI
 
-                        roi = bgr_frame[y1:y2, x1:x2]
-                        if roi.size == 0:
-                            continue  # skip invalid ROI
-
-                        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-                        mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
-                        nonzero_count = cv2.countNonZero(mask)
-
-                        if nonzero_count > 100:
-                            self.tracked_objects["ball"]["position"] = (cx, cy)
-                            self.ball_confirm_counter += 1
-                            print(f"[INFO] Ball HSV mean: {cv2.mean(hsv)}, non-zero: {nonzero_count}, position: ({cx}, {cy})")
-
-                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                                self.initialized = True  # switch to HSV tracking
+                            hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                            mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
+                            if cv2.countNonZero(mask) > 100:
+                                self.tracked_objects["ball"]["position"] = (cx, cy)
 
 
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
+                    
+                self.initialized = True
+                continue
 
             else:
                 # use HSV tracking after ball has been initialized
