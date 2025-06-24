@@ -42,7 +42,8 @@ def main():
     print("[INFO] Tracking started. Press 'q' to quit.")
 
     controller = positionController.Controller(arduino_thread, tracker)
-    path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
+    #path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
+    path_array = [(100, 100), (600, 100), (600, 600), (100, 600), (100, 100)]
     pathFollower = path_following.PathFollower(path_array, controller)
     time.sleep(1)
     controller.horizontal()

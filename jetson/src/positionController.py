@@ -52,6 +52,7 @@ class Controller:
         #self.ki_y = 0.0006
         #self.ki_x = 0.0006
 
+        #Best so far (pathfollowing)
         self.kp_x = 0.00007
         self.kd_x = 0.00007
         self.kp_y = 0.00007
