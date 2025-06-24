@@ -5,13 +5,45 @@ import positionController
 import arduino_connection
 import lowPassFilter
 import PPOfile
+import numpy as np
 
 def main():
 
-    def plot_waypoints(frame, pathFollower: PPOfile.PathFollower):
-        for n in range(pathFollower.length):
-            cv2.circle(frame, pathFollower.path[n], 5, (0, 0, 255), -1)
+    def plot_waypoints(frame, pathFollower: PPOfile.OptimizedPathFollower):
+        """Plot waypoints on the frame with current target highlighted."""
+        for n in range(pathFollower.path_length):
+            # Use different colors for current target vs other waypoints
+            if n == pathFollower.current_waypoint_idx:
+                color = (0, 255, 255)  # Yellow for current target
+                radius = 8
+            elif n < pathFollower.current_waypoint_idx:
+                color = (0, 255, 0)    # Green for completed waypoints
+                radius = 5
+            else:
+                color = (0, 0, 255)    # Red for future waypoints
+                radius = 5
+            
+            # Convert to integer coordinates for cv2.circle
+            waypoint = (int(pathFollower.path[n][0]), int(pathFollower.path[n][1]))
+            cv2.circle(frame, waypoint, radius, color, -1)
+            
+            # Add waypoint number
+            cv2.putText(frame, str(n), (waypoint[0] + 10, waypoint[1] - 10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.4, color, 1)
 
+    def plot_progress_info(frame, pathFollower: PPOfile.OptimizedPathFollower):
+        """Display progress information on the frame."""
+        progress = pathFollower.get_progress()
+        info_text = [
+            f"Waypoint: {progress['current_waypoint']}/{progress['total_waypoints']}",
+            f"Progress: {progress['progress_percentage']:.1f}%",
+            f"Remaining: {progress['waypoints_remaining']}"
+        ]
+        
+        y_offset = 30
+        for i, text in enumerate(info_text):
+            cv2.putText(frame, text, (10, y_offset + i * 25),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
 
     def initialize_component(component, name, retries=5, delay=2):
         for attempt in range(retries):
@@ -24,6 +56,7 @@ def main():
                 time.sleep(delay)
         raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
+    # Initialize Arduino connection
     try:
         arduino_thread = initialize_component(arduino_connection.ArduinoConnection, "ArduinoConnection")
         time.sleep(10)
@@ -31,6 +64,7 @@ def main():
         print(e)
         exit(1)
 
+    # Initialize tracking components
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
@@ -41,63 +75,110 @@ def main():
 
     print("[INFO] Tracking started. Press 'q' to quit.")
 
+    # Initialize controller
     controller = positionController.Controller(arduino_thread, tracker)
-    path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
-    pathFollower = PPOfile.PathFollower(path_array, controller)
+    
+    # Define path
+    path_array = [
+        (50, 50), (150, 50), (250, 50), (350, 50), (450, 50), 
+        (450, 150), (450, 250), (450, 350), (450, 450)
+    ]
+    
+    # Initialize path follower
+    try:
+        print("[INFO] Initializing PPO Path Follower...")
+        print("[INFO] This may take several minutes for training...")
+        
+        # Option 1: Train new agent (takes time)
+        pathFollower = PPOfile.OptimizedPathFollower(
+            path_array=path_array, 
+            controller=controller,
+            train_steps=20000,  # Reduced for faster initialization
+            agent_path="ball_path_agent.zip"
+        )
+        
+        # Option 2: Load pre-trained agent (much faster)
+        # Uncomment this and comment above if you have a trained model
+        # pathFollower = PPOfile.OptimizedPathFollower.load_trained_agent(
+        #     path_array=path_array,
+        #     controller=controller,
+        #     agent_path="ball_path_agent.zip"
+        # )
+        
+        print("[INFO] Path follower initialized successfully!")
+        
+    except Exception as e:
+        print(f"[ERROR] Failed to initialize path follower: {e}")
+        print("[INFO] Falling back to manual control...")
+        pathFollower = None
+
+    # Platform initialization
     time.sleep(1)
     controller.horizontal()
     time.sleep(2)
     
+    # Main control loop
     try:
         start_time = time.time()
+        path_complete = False
+        
         while True:
             frame = tracker.frame
             if frame is None:
                 continue
 
-            plot_waypoints(frame, pathFollower)
+            # Plot waypoints and progress
+            if pathFollower:
+                plot_waypoints(frame, pathFollower)
+                plot_progress_info(frame, pathFollower)
 
-            #for label, data in tracker.tracked_objects.items():
-            #    pos = data["position"]
-            #    if pos:
-            #        color = (0, 255, 0) if label == "ball" else (0, 0, 255)
-            #        cv2.circle(frame, pos, 8, color, -1)
-            #        cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-            #        cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
-            #        cv2.putText(frame, label, (pos[0]+10, pos[1]), 
-            #                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
-
+            # Get and smooth ball position
             ball_pos = tracker.get_position()
+            if not ball_pos:
+                print("No ball found", end="\r")
+                cv2.imshow("Ball & Marker Tracking", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break
+                continue
+                
             ball_pos = smoother.update(ball_pos)
 
+            # Draw ball position
             cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
-            #cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-            #cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
+            # Display frame
             cv2.imshow("Ball & Marker Tracking", frame)
-
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            if not ball_pos:
-                print("No ball found (run_controller)")
-                continue
-            
-            #print(f"Ball position: {ball_pos}", end="\r")
-
-            #--- Control ---
-
-            #if time.time() - start_time < 30:
-                #controller.posControl((770-150, 330-150))
-            #else:
-                #controller.posControl((770+150, 330+150))
-
-            pathFollower.follow_path(ball_pos)
-
-            #---------------
-
+            # Control logic
+            if pathFollower and not path_complete:
+                try:
+                    action = pathFollower.follow_path(ball_pos)
+                    
+                    if action is None:
+                        print("[INFO] Path following complete!")
+                        path_complete = True
+                        # Optionally restart path
+                        # pathFollower.reset_path_following()
+                        # path_complete = False
+                    else:
+                        # Optional: Print progress occasionally
+                        if int(time.time()) % 5 == 0:  # Every 5 seconds
+                            progress = pathFollower.get_progress()
+                            print(f"[INFO] Progress: {progress['progress_percentage']:.1f}%")
+                            
+                except Exception as e:
+                    print(f"[ERROR] Path following error: {e}")
+                    # Fall back to simple position control or stop
+                    controller.horizontal()
+            else:
+                # Fallback control or manual control
+                # Example: Simple position control to center
+                # controller.posControl((400, 300))
+                pass
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")

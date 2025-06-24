@@ -108,7 +108,7 @@ class BallTracker:
                 continue
 
             if not self.initialized:
-                results = self.model.predict(source=rgb_frame, conf=0.5)[0]
+                results = self.model.predict(source=rgb_frame, conf=0.6)[0]
                 for box in results.boxes:
                     cls = int(box.cls[0])
                     label = self.model.names[cls]

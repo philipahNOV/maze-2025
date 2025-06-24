@@ -1,90 +1,352 @@
 import numpy as np
 from stable_baselines3 import PPO
 from stable_baselines3.common.vec_env import DummyVecEnv
+from stable_baselines3.common.callbacks import EvalCallback
 import gymnasium as gym
+from gymnasium import spaces
 import positionController
+from typing import Tuple, Optional, Dict, Any, List
+
 
 class PathFollowerEnv(gym.Env):
-    def __init__(self, path_array, camera_offset_x=420, camera_offset_y=10, acceptance_radius=30):
-        super(PathFollowerEnv, self).__init__()
+    """
+    Gymnasium environment for path following using reinforcement learning.
+    Optimized for modern Gymnasium API with proper typing and error handling.
+    """
+    
+    metadata = {"render_modes": ["human"], "render_fps": 30}
+    
+    def __init__(self, 
+                 path_array: List[Tuple[float, float]], 
+                 camera_offset_x: float = 420, 
+                 camera_offset_y: float = 10, 
+                 acceptance_radius: float = 30,
+                 max_steps: int = 1000):
+        super().__init__()
+        
+        # Environment parameters
         self.camera_offset_x = camera_offset_x
         self.camera_offset_y = camera_offset_y
         self.acceptance_radius = acceptance_radius
-
-        self.path = [
-            (pt[0] + self.camera_offset_x, pt[1] + self.camera_offset_y)
+        self.max_steps = max_steps
+        self.current_step = 0
+        
+        # Process path with offset
+        if not path_array:
+            raise ValueError("Path array cannot be empty")
+            
+        self.path = np.array([
+            [pt[0] + self.camera_offset_x, pt[1] + self.camera_offset_y]
             for pt in path_array
-        ]
-        self.length = len(self.path)
-        self.action_space = gym.spaces.Box(low=-1, high=1, shape=(2,), dtype=np.float32)
-        self.observation_space = gym.spaces.Box(
-            low=np.array([0, 0, 0, 0], dtype=np.float32),
-            high=np.array([1000, 1000, 1000, 1000], dtype=np.float32),
+        ], dtype=np.float32)
+        
+        self.path_length = len(self.path)
+        
+        # Define action and observation spaces
+        self.action_space = spaces.Box(
+            low=-10.0, high=10.0, shape=(2,), dtype=np.float32
+        )
+        
+        # Observation: [ball_x, ball_y, target_x, target_y, distance_to_target, waypoint_progress]
+        self.observation_space = spaces.Box(
+            low=np.array([0, 0, 0, 0, 0, 0], dtype=np.float32),
+            high=np.array([1000, 1000, 1000, 1000, 1000, 1], dtype=np.float32),
             dtype=np.float32
         )
-        self.reset()
-
-    def reset(self):
-        self.ballPos = np.array(self.path[0], dtype=np.float32)
-        self.next_waypoint = 0
-        return self._get_obs()
-
-    def _get_obs(self):
-        return np.array(list(self.ballPos) + list(self.path[self.next_waypoint]), dtype=np.float32)
-
-    def step(self, action):
-        self.ballPos += action
-
-        done = False
-        reward = -np.linalg.norm(self.ballPos - np.array(self.path[self.next_waypoint]))
-        if np.linalg.norm(self.ballPos - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
-            self.next_waypoint += 1
-            reward += 100
-            if self.next_waypoint >= self.length:
-                done = True
-                reward += 1000
-
-        return self._get_obs(), reward, done, {}
-
-class PathFollower:
-    def __init__(self, path_array, controller: positionController.Controller, agent_path="ppo_agent.zip", train_steps=10000):
-        self.path = []
-        self.controller = controller
-        self.length = 0
-
-        self.camera_offset_x = 420
-        self.camera_offset_y = 10
-
-        self.prev_waypoint = None
-        self.next_waypoint = 0
-
-        if path_array is not None and len(path_array) > 0:
-            self.path = [
-                (pt[0] + self.camera_offset_x, pt[1] + self.camera_offset_y)
-                for pt in path_array
-            ]
-            self.length = len(self.path)
-
-        self.acceptance_radius = 30
-
-        env = DummyVecEnv([lambda: PathFollowerEnv(path_array)])
-        self.agent = PPO("MlpPolicy", env, verbose=1)
-        self.agent.learn(total_timesteps=train_steps)
-        self.agent.save(agent_path)
-
-    def follow_path(self, ballPos):
-        if self.next_waypoint >= self.length:
-            print("Path complete.")
-            return None 
-        self.controller.posControl(self.path[self.next_waypoint])
-        if self.next_waypoint < self.length:
-            state = np.array(list(ballPos) + list(self.path[self.next_waypoint]), dtype=np.float32)
-            action, _ = self.agent.predict(state, deterministic=True)
+        
+        # Initialize state
+        self.ball_pos = None
+        self.current_waypoint_idx = 0
+        self.previous_distance = None
+        
+    def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
+        """Reset environment to initial state."""
+        super().reset(seed=seed)
+        
+        self.ball_pos = self.path[0].copy()
+        self.current_waypoint_idx = 0
+        self.current_step = 0
+        self.previous_distance = np.linalg.norm(
+            self.ball_pos - self.path[self.current_waypoint_idx]
+        )
+        
+        observation = self._get_observation()
+        info = self._get_info()
+        
+        return observation, info
+    
+    def _get_observation(self) -> np.ndarray:
+        """Get current observation."""
+        target_pos = self.path[self.current_waypoint_idx]
+        distance_to_target = np.linalg.norm(self.ball_pos - target_pos)
+        waypoint_progress = self.current_waypoint_idx / (self.path_length - 1)
+        
+        return np.array([
+            self.ball_pos[0],
+            self.ball_pos[1],
+            target_pos[0],
+            target_pos[1],
+            distance_to_target,
+            waypoint_progress
+        ], dtype=np.float32)
+    
+    def _get_info(self) -> Dict[str, Any]:
+        """Get additional info."""
+        return {
+            "current_waypoint": self.current_waypoint_idx,
+            "total_waypoints": self.path_length,
+            "distance_to_target": np.linalg.norm(
+                self.ball_pos - self.path[self.current_waypoint_idx]
+            ),
+            "path_complete": self.current_waypoint_idx >= self.path_length - 1
+        }
+    
+    def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
+        """Execute one step in the environment."""
+        self.current_step += 1
+        
+        # Apply action (clamp to prevent extreme movements)
+        action = np.clip(action, self.action_space.low, self.action_space.high)
+        self.ball_pos += action
+        
+        # Calculate distance to current target
+        target_pos = self.path[self.current_waypoint_idx]
+        current_distance = np.linalg.norm(self.ball_pos - target_pos)
+        
+        # Calculate reward
+        reward = self._calculate_reward(current_distance, action)
+        
+        # Check if waypoint is reached
+        waypoint_reached = current_distance < self.acceptance_radius
+        if waypoint_reached:
+            reward += 100  # Waypoint bonus
+            self.current_waypoint_idx += 1
+        
+        # Check termination conditions
+        terminated = self.current_waypoint_idx >= self.path_length
+        truncated = self.current_step >= self.max_steps
+        
+        if terminated:
+            reward += 1000  # Path completion bonus
+        
+        # Update previous distance for next iteration
+        if not terminated:
+            self.previous_distance = current_distance
+        
+        observation = self._get_observation()
+        info = self._get_info()
+        
+        return observation, reward, terminated, truncated, info
+    
+    def _calculate_reward(self, current_distance: float, action: np.ndarray) -> float:
+        """Calculate reward based on distance and movement efficiency."""
+        # Distance-based reward (negative distance encourages getting closer)
+        distance_reward = -current_distance * 0.1
+        
+        # Progress reward (encourage movement towards target)
+        if self.previous_distance is not None:
+            progress = self.previous_distance - current_distance
+            progress_reward = progress * 10
         else:
+            progress_reward = 0
+        
+        # Action penalty (encourage efficient movements)
+        action_penalty = -np.linalg.norm(action) * 0.01
+        
+        # Time penalty (encourage faster completion)
+        time_penalty = -0.1
+        
+        return distance_reward + progress_reward + action_penalty + time_penalty
+
+
+class OptimizedPathFollower:
+    """
+    Optimized path follower using PPO with improved training and inference.
+    """
+    
+    def __init__(self, 
+                 path_array: List[Tuple[float, float]], 
+                 controller: positionController.Controller,
+                 agent_path: str = "ppo_agent.zip",
+                 train_steps: int = 50000,
+                 camera_offset_x: float = 420,
+                 camera_offset_y: float = 10,
+                 acceptance_radius: float = 30):
+        
+        self.controller = controller
+        self.camera_offset_x = camera_offset_x
+        self.camera_offset_y = camera_offset_y
+        self.acceptance_radius = acceptance_radius
+        self.agent_path = agent_path
+        
+        # Validate input
+        if not path_array:
+            raise ValueError("Path array cannot be empty")
+        
+        # Process path
+        self.path = np.array([
+            [pt[0] + camera_offset_x, pt[1] + camera_offset_y]
+            for pt in path_array
+        ], dtype=np.float32)
+        
+        self.path_length = len(self.path)
+        self.current_waypoint_idx = 0
+        self.prev_waypoint_idx = None
+        
+        # Create and train agent
+        self._setup_and_train_agent(path_array, train_steps)
+    
+    def _setup_and_train_agent(self, path_array: List[Tuple[float, float]], train_steps: int):
+        """Setup and train the PPO agent with improved configuration."""
+        
+        # Create training environment
+        def make_env():
+            return PathFollowerEnv(
+                path_array=path_array,
+                camera_offset_x=self.camera_offset_x,
+                camera_offset_y=self.camera_offset_y,
+                acceptance_radius=self.acceptance_radius
+            )
+        
+        env = DummyVecEnv([make_env])
+        
+        # Create PPO agent with optimized hyperparameters
+        self.agent = PPO(
+            policy="MlpPolicy",
+            env=env,
+            learning_rate=3e-4,
+            n_steps=2048,
+            batch_size=64,
+            n_epochs=10,
+            gamma=0.99,
+            gae_lambda=0.95,
+            clip_range=0.2,
+            ent_coef=0.01,
+            vf_coef=0.5,
+            max_grad_norm=0.5,
+            verbose=1,
+            tensorboard_log="./ppo_pathfollower_tensorboard/",
+            policy_kwargs=dict(
+                net_arch=[dict(pi=[256, 256], vf=[256, 256])]
+            )
+        )
+        
+        # Setup evaluation callback for monitoring training
+        eval_env = DummyVecEnv([make_env])
+        eval_callback = EvalCallback(
+            eval_env,
+            best_model_save_path="./logs/",
+            log_path="./logs/",
+            eval_freq=5000,
+            deterministic=True,
+            render=False
+        )
+        
+        print(f"Training PPO agent for {train_steps} timesteps...")
+        self.agent.learn(
+            total_timesteps=train_steps,
+            callback=eval_callback,
+            progress_bar=True
+        )
+        
+        # Save the trained model
+        self.agent.save(self.agent_path)
+        print(f"Agent saved to {self.agent_path}")
+    
+    @classmethod
+    def load_trained_agent(cls, 
+                          path_array: List[Tuple[float, float]], 
+                          controller: positionController.Controller,
+                          agent_path: str = "ppo_agent.zip",
+                          **kwargs) -> 'OptimizedPathFollower':
+        """Load a pre-trained agent instead of training from scratch."""
+        instance = cls.__new__(cls)
+        instance.controller = controller
+        instance.camera_offset_x = kwargs.get('camera_offset_x', 420)
+        instance.camera_offset_y = kwargs.get('camera_offset_y', 10)
+        instance.acceptance_radius = kwargs.get('acceptance_radius', 30)
+        instance.agent_path = agent_path
+        
+        # Process path
+        instance.path = np.array([
+            [pt[0] + instance.camera_offset_x, pt[1] + instance.camera_offset_y]
+            for pt in path_array
+        ], dtype=np.float32)
+        
+        instance.path_length = len(instance.path)
+        instance.current_waypoint_idx = 0
+        instance.prev_waypoint_idx = None
+        
+        # Load trained agent
+        try:
+            instance.agent = PPO.load(agent_path)
+            print(f"Loaded trained agent from {agent_path}")
+        except FileNotFoundError:
+            raise FileNotFoundError(f"No trained agent found at {agent_path}. Train first or provide correct path.")
+        
+        return instance
+    
+    def follow_path(self, ball_pos: Tuple[float, float]) -> Optional[np.ndarray]:
+        """
+        Follow the path using the trained agent.
+        
+        Args:
+            ball_pos: Current position of the ball (x, y)
+            
+        Returns:
+            Action to take or None if path is complete
+        """
+        if self.current_waypoint_idx >= self.path_length:
+            print("Path complete!")
             return None
-
-        if self.next_waypoint < self.length and np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
-            self.prev_waypoint = self.next_waypoint
-            self.next_waypoint += 1
-
+        
+        # Convert ball position to numpy array
+        ball_pos_array = np.array(ball_pos, dtype=np.float32)
+        
+        # Use controller for position control
+        target_pos = self.path[self.current_waypoint_idx]
+        self.controller.posControl(target_pos)
+        
+        # Create observation for the agent
+        target_pos = self.path[self.current_waypoint_idx]
+        distance_to_target = np.linalg.norm(ball_pos_array - target_pos)
+        waypoint_progress = self.current_waypoint_idx / (self.path_length - 1)
+        
+        observation = np.array([
+            ball_pos_array[0],
+            ball_pos_array[1],
+            target_pos[0],
+            target_pos[1],
+            distance_to_target,
+            waypoint_progress
+        ], dtype=np.float32)
+        
+        # Get action from trained agent
+        action, _ = self.agent.predict(observation, deterministic=True)
+        
+        # Check if waypoint is reached
+        if distance_to_target < self.acceptance_radius:
+            print(f"Waypoint {self.current_waypoint_idx} reached!")
+            self.prev_waypoint_idx = self.current_waypoint_idx
+            self.current_waypoint_idx += 1
+            
+            if self.current_waypoint_idx >= self.path_length:
+                print("All waypoints completed!")
+                return None
+        
         return action
+    
+    def reset_path_following(self):
+        """Reset the path following to start from the beginning."""
+        self.current_waypoint_idx = 0
+        self.prev_waypoint_idx = None
+        print("Path following reset to beginning.")
+    
+    def get_progress(self) -> Dict[str, Any]:
+        """Get current progress information."""
+        return {
+            "current_waypoint": self.current_waypoint_idx,
+            "total_waypoints": self.path_length,
+            "progress_percentage": (self.current_waypoint_idx / self.path_length) * 100,
+            "waypoints_remaining": self.path_length - self.current_waypoint_idx
+        }
