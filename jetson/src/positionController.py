@@ -58,8 +58,8 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 10
-        self.vel_tol = 1
+        self.pos_tol = 5
+        self.vel_tol = 0.1
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
