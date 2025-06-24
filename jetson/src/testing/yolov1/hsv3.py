@@ -125,8 +125,8 @@ class BallTracker:
 
 
                     if label == "ball":
-                        if abs(cx - 390) > 60 or abs(cy - 570) > 60:
-                            continue  # Skip detections too far from target region
+                        # if abs(cx - 390) > 60 or abs(cy - 570) > 60:
+                        #     continue  # Skip detections too far from target region
 
                         roi = bgr_frame[y1:y2, x1:x2]
                         if roi.size == 0:
