@@ -20,15 +20,26 @@ namespace actuators {
 
 // Navnerom for globale variabler
 namespace {
+    struct Speeds
+    {
+        int16_t speed_actuator_1; // Fart for aktuator en
+        int16_t speed_actuator_2; // Fart for aktuator to
+    };
+
+    Speeds actuator_speeds = {0, 0}; // Initialiserer hastighetene for aktuatorene
+
     int teller{0};
 }
 
 // Initialiserer funksjoner
 void stop_actuator(uint8_t actuator); // Funksjon for å stoppe aktuatoren
-float actuator_position(uint8_t* pot_pin); // Funksjon for posisjonen til aktuatoren
+float actuator_position(const uint8_t* pPot_pin); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
 void actuator_move_distance(float distance, const int16_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator en distanse
 void actuator_move_speed(const int16_t speed, const uint8_t actuator); // Funksjon for å bevege en aktuator med en hastighet
+void move_speed(); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
+void read_serial(); // Funksjon for å lese innkommende seriedata
+void clear_serial_buffer(); // Funksjon for å tømme seriebufferen
 
 void setup() {
     // Starter seriel kominikasjon
@@ -50,6 +61,7 @@ void setup() {
 
 void loop() {
     actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
+    read_serial();
 }
 
 // Funksjon for å stoppe aktuatorene
@@ -86,26 +98,30 @@ void actuator_limit_check()
     const float offset{3.0}; // Distansen fra toppen og bunden hvor aktuatorene ikke skal gå innenfor (mm)
 
     // Array med pekere til begge aktuatorene
-    actuators::ActuatorData* actuators_list[] = {
+    actuators::ActuatorData* pActuators_list[] = {
         &actuators::actuator_1,
         &actuators::actuator_2
     };
 
     // Sjekk om aktuatorene er over eller under grensen
-    for (int i = 0; i < 2; i++) {
-        actuators::ActuatorData* pActuator = actuators_list[i]; // Peker til aktuatoren i listen
+    for (int i = 0; i < 2; i++)
+    {
+        actuators::ActuatorData* pActuator = pActuators_list[i]; // Peker til aktuatoren i listen
         float dist = actuator_position(&pActuator->pot_feedback); // Henter posisjonen til aktuatoren
         
         // Sjekker om aktuatoren er over eller under grensen
-        if (dist >= act_max_stroke - offset) {
+        if (dist >= act_max_stroke - offset)
+        {
             // For høyt
             pActuator->distance_status = 1;
         } 
-        else if (dist <= 0.0 + offset) {
+        else if (dist <= 0.0 + offset)
+        {
             // For lavt
             pActuator->distance_status = -1;
         } 
-        else {
+        else
+        {
             // Innenfor grensene
             pActuator->distance_status = 0;
         }
@@ -114,32 +130,33 @@ void actuator_limit_check()
 
 void actuator_move_distance(const float distance, const int16_t speed, const uint8_t actuator)
 {
-    // Initialiserer pekeren til selectedActuatorData strukturen til en nulponter
+    // Initialiserer pekeren til selectedActuatorData strukturen til en nullpeker
     actuators::ActuatorData* pSelectedActuatorData = nullptr; 
     
     // Velger aktuator
     if (actuator == 1) // Hvis det er aktuator en
     {
-        pSelectedActuatorData = &actuators::actuator_1; // Peker til selectedActuatorData til aktoator en
+        pSelectedActuatorData = &actuators::actuator_1; // Peker til selectedActuatorData til aktuator en
     }
     else if (actuator == 2) // Hvis det er aktuator to
     {
-        pSelectedActuatorData = &actuators::actuator_2; // Peker til selectedActuatorData til aktoator to
+        pSelectedActuatorData = &actuators::actuator_2; // Peker til selectedActuatorData til aktuator to
     }
     else // Hvis aktuator valget ikke er gyldig
     {
         Serial.print("Ikke et valg. Velg mellom en eller to aktuator");
         return;
     }
-      // Initialserer variabler
-    const float targetTolerance{0.3}; // Tolleranse for hvor hvor nære ønsket distanse før ok (mm) 
+    
+    // Initialiserer variabler
+    const float targetTolerance{0.3}; // Toleranse for hvor nære ønsket distanse før ok (mm) 
 
-    const uint8_t pot_pin = pSelectedActuatorData -> pot_feedback; // Aktuator potensjometer pinne
-    const uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorData -> pwm_up : pSelectedActuatorData -> pwm_down; // PWM pinne som skal brukes
+    const uint8_t pot_pin = pSelectedActuatorData->pot_feedback; // Aktuator potensjometer pinne
+    const uint8_t pwm_pin = (distance >= 0.0) ? pSelectedActuatorData->pwm_up : pSelectedActuatorData->pwm_down; // PWM pinne som skal brukes
     const float init_position{actuator_position(&pot_pin)}; // Initial aktuatorposisjon
 
     // Sjekk om aktuatoren allerede er i grenseområdet og prøver å bevege seg feil vei
-    if ((distance > 0.0 && pSelectedActuatorData -> distance_status == 1) || (distance < 0.0 && pSelectedActuatorData -> distance_status == -1))
+    if ((distance > 0.0 && pSelectedActuatorData->distance_status == 1) || (distance < 0.0 && pSelectedActuatorData->distance_status == -1))
     {
         return; // Kan ikke bevege seg i den retningen
     }
@@ -150,7 +167,7 @@ void actuator_move_distance(const float distance, const int16_t speed, const uin
     while (abs(actuator_position(&pot_pin) - init_position) < abs(distance) - targetTolerance)
     {
         // Sjekk kontinuerlig om vi når en grense under bevegelsen
-        if ((distance > 0.0 && pSelectedActuatorData -> distance_status == 1) || (distance < 0.0 && pSelectedActuatorData -> distance_status == -1))
+        if ((distance > 0.0 && pSelectedActuatorData->distance_status == 1) || (distance < 0.0 && pSelectedActuatorData->distance_status == -1))
         {
             break; // Stopp hvis vi når en grense
         }
@@ -160,17 +177,17 @@ void actuator_move_distance(const float distance, const int16_t speed, const uin
 
 void actuator_move_speed(const int16_t speed, const uint8_t actuator)
 {
-    // Initialiserer pekeren til selectedActuatorData strukturen til en nulponter
-    actuators::ActuatorData* pSelectedActuatorData = nullptr; 
+    // Initialiserer pekeren til selectedActuatorData strukturen til en nullpeker
+    actuators::ActuatorData* pSelectedActuatorData = nullptr;
     
     // Velger aktuator
     if (actuator == 1) // Hvis det er aktuator en
     {
-        pSelectedActuatorData = &actuators::actuator_1; // Peker til selectedActuatorData til aktoator en
+        pSelectedActuatorData = &actuators::actuator_1; // Peker til selectedActuatorData til aktuator en
     }
     else if (actuator == 2) // Hvis det er aktuator to
     {
-        pSelectedActuatorData = &actuators::actuator_2; // Peker til selectedActuatorData til aktoator to
+        pSelectedActuatorData = &actuators::actuator_2; // Peker til selectedActuatorData til aktuator to
     }
     else // Hvis aktuator valget ikke er gyldig
     {
@@ -179,18 +196,96 @@ void actuator_move_speed(const int16_t speed, const uint8_t actuator)
     }
 
     // Initialiserer variabler
-    const uint8_t pwm_pin = (speed >= 0.0) ? pSelectedActuatorData -> pwm_up : pSelectedActuatorData -> pwm_down; // PWM pinne som skal brukes
+    const uint8_t pwm_pin = (speed >= 0) ? pSelectedActuatorData->pwm_up : pSelectedActuatorData->pwm_down; // PWM pinne som skal brukes
 
 
     // Sjekker om aktuatoren er innenfor grensen for å bevege seg
-    if ((speed > 0.0 && pSelectedActuatorData -> distance_status != 1) || (speed < 0.0 && pSelectedActuatorData -> distance_status != -1)) // Hvis den er innenfor grensen for å bevege seg
+    if ((speed > 0 && pSelectedActuatorData->distance_status != 1) || (speed < 0 && pSelectedActuatorData->distance_status != -1)) // Hvis den er innenfor grensen for å bevege seg
     {   
         analogWrite(pwm_pin, abs(speed)); // Sender PWM signalet til motorkontrolleren
     }
     else // Hvis den ikke er innenfor grensen for å bevege seg
     {
-        // Hvis hastigheten er 0, så stopper motoren
-        analogWrite(pSelectedActuatorData -> pwm_up, 0);
-        analogWrite(pSelectedActuatorData -> pwm_down, 0);
+        // Stopper motoren
+        analogWrite(pSelectedActuatorData->pwm_up, 0);
+        analogWrite(pSelectedActuatorData->pwm_down, 0);
+    }
+}
+
+void move_speed()
+{
+    // Array med pekere til begge aktuatorene
+    actuators::ActuatorData* pActuators_list[] = {
+        &actuators::actuator_1,
+        &actuators::actuator_2
+    };
+
+    int16_t* pSpeed_list[] = {
+        &actuator_speeds.speed_actuator_1,
+        &actuator_speeds.speed_actuator_2
+    };
+
+    // Sjekk om aktuatorene er over eller under grensen
+    for (int i = 0; i < 2; i++)
+    {
+        actuators::ActuatorData* pActuator = pActuators_list[i]; // Peker til aktuatoren i listen
+        int16_t speed = *pSpeed_list[i];
+
+        const uint8_t pwm_pin = (speed >= 0) ? pActuator->pwm_up : pActuator->pwm_down; // PWM pinne som skal brukes
+        
+        // Sjekker om aktuatoren er over eller under grensen
+        if ((speed > 0 && pActuator->distance_status != 1) || (speed < 0 && pActuator->distance_status != -1))
+        {
+            analogWrite(pwm_pin, abs(speed)); // Sender PWM signalet til motorkontrolleren
+        }
+        else
+        {
+            // Stopper motoren
+            analogWrite(pActuator->pwm_up, 0);
+            analogWrite(pActuator->pwm_down, 0);
+        }
+    }
+}
+
+
+void read_serial()
+{
+    if (Serial.available() > 0)
+    {
+        String input = Serial.readStringUntil('\n');
+        input.trim();
+        
+        int16_t speed1, speed2, checksum;
+        int16_t parsed = sscanf(input.c_str(), "%d,%d,%d", &speed1, &speed2, &checksum);
+        
+        if (parsed == 3)
+        {
+            // Valider checksum
+            int16_t expected_checksum = (speed1 + speed2) % 256;
+            if (checksum == expected_checksum)
+            {
+                actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
+                actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
+                Serial.println("OK");
+            }
+            else
+            {
+                Serial.println("ERROR: Checksum mismatch");
+                clear_serial_buffer();
+            }
+        }
+        else
+        {
+            Serial.println("ERROR: Invalid format");
+            clear_serial_buffer();
+        }
+    }
+}
+
+void clear_serial_buffer()
+{
+    while (Serial.available() > 0)
+    {
+        Serial.read(); // Les og forkast alle bytes i bufferen
     }
 }
