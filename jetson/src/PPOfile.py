@@ -226,7 +226,7 @@ class OptimizedPathFollower:
             max_grad_norm=0.5,
             verbose=1,
             policy_kwargs=dict(
-                net_arch=[dict(pi=[256, 256], vf=[256, 256])]
+                net_arch=dict(pi=[256, 256], vf=[256, 256])
             )
         )
         
