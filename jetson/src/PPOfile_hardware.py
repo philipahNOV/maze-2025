@@ -41,23 +41,18 @@ class RealTimePathFollowerEnv(gym.Env):
         ], dtype=np.float32)
         
         self.path_length = len(self.path)
-        
-        # Define action space - these will be high-level position targets
-        # The controller will handle the low-level motor control
         self.action_space = spaces.Box(
-            low=np.array([-50.0, -50.0], dtype=np.float32),  # Relative movement limits
+            low=np.array([-50.0, -50.0], dtype=np.float32),
             high=np.array([50.0, 50.0], dtype=np.float32),
             dtype=np.float32
         )
         
-        # Observation: [ball_x, ball_y, target_x, target_y, distance, angle_to_target, waypoint_progress]
         self.observation_space = spaces.Box(
             low=np.array([0, 0, 0, 0, 0, -np.pi, 0], dtype=np.float32),
             high=np.array([1000, 1000, 1000, 1000, 1000, np.pi, 1], dtype=np.float32),
             dtype=np.float32
         )
         
-        # Initialize state
         self.current_ball_pos = None
         self.current_waypoint_idx = 0
         self.previous_distance = None
@@ -65,19 +60,15 @@ class RealTimePathFollowerEnv(gym.Env):
         self.last_waypoint_time = None
         
     def reset(self, seed: Optional[int] = None, options: Optional[Dict] = None) -> Tuple[np.ndarray, Dict]:
-        """Reset environment - start new path following episode."""
         super().reset(seed=seed)
         
-        # Reset to first waypoint
         self.current_waypoint_idx = 0
         self.current_step = 0
         self.episode_start_time = time.time()
         self.last_waypoint_time = time.time()
         
-        # Get initial ball position from hardware
         self.current_ball_pos = self._get_real_ball_position()
         if self.current_ball_pos is None:
-            # If no ball detected, use first waypoint as starting position
             self.current_ball_pos = self.path[0].copy()
         
         self.previous_distance = np.linalg.norm(
@@ -138,36 +129,27 @@ class RealTimePathFollowerEnv(gym.Env):
         }
     
     def step(self, action: np.ndarray) -> Tuple[np.ndarray, float, bool, bool, Dict]:
-        """Execute one step - send action to real hardware and get feedback."""
         self.current_step += 1
         step_start_time = time.time()
         
-        # Get current ball position from hardware
         new_ball_pos = self._get_real_ball_position()
         if new_ball_pos is None:
-            # If we can't get ball position, return negative reward and continue
             observation = self._get_observation()
             return observation, -10.0, False, True, self._get_info()
         
         self.current_ball_pos = new_ball_pos
-        
         target_position = self.current_ball_pos + action
         
-        # Send position command to hardware controller
         try:
-            # Use the existing posControl method - it handles the low-level control
             self.controller.posControl(tuple(target_position))
             
-            # Wait for controller to process (but not too long)
             time.sleep(min(self.step_timeout, 0.05))
             
         except Exception as e:
             print(f"Error controlling hardware: {e}")
-            # Return negative reward for control failure
             observation = self._get_observation()
             return observation, -20.0, False, True, self._get_info()
         
-        # Get new ball position after control action
         time.sleep(0.02)  # Small delay for system to respond
         updated_ball_pos = self._get_real_ball_position()
         if updated_ball_pos is not None:
