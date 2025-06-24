@@ -176,7 +176,7 @@ void move_speed()
 
 void read_serial()
 {
-    if (Serial.available() >= 6)
+    if (Serial.available() >= 3)
     {
         char buffer[64]; // Buffer for å lese innkommende data
         int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser inn data til linjeskift eller buffer er fullt
