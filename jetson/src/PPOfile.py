@@ -225,7 +225,6 @@ class OptimizedPathFollower:
             vf_coef=0.5,
             max_grad_norm=0.5,
             verbose=1,
-            tensorboard_log="./ppo_pathfollower_tensorboard/",
             policy_kwargs=dict(
                 net_arch=[dict(pi=[256, 256], vf=[256, 256])]
             )
@@ -236,7 +235,6 @@ class OptimizedPathFollower:
         eval_callback = EvalCallback(
             eval_env,
             best_model_save_path="./logs/",
-            log_path="./logs/",
             eval_freq=5000,
             deterministic=True,
             render=False
