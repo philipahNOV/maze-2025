@@ -8,7 +8,7 @@ namespace actuators {
         const uint8_t pwm_up; // Pinne for PWM oppover
         const uint8_t pwm_down; // Pinne for PWM nedover
         const uint8_t pot_feedback; // Pinne for potensjometer
-        uint8_t distance_status; // Motor status. -1 er under nedre grense, 1 er over øvre grense
+        int8_t distance_status; // Motor status. -1 er under nedre grense, 1 er over øvre grense
     };
 
     // Aktuator en
@@ -185,8 +185,7 @@ void actuator_move_speed(const int16_t speed, const uint8_t actuator)
     // Sjekker om aktuatoren er innenfor grensen for å bevege seg
     if ((speed > 0.0 && pSelectedActuatorData -> distance_status != 1) || (speed < 0.0 && pSelectedActuatorData -> distance_status != -1)) // Hvis den er innenfor grensen for å bevege seg
     {   
-        Serial.println(speed);
-        analogWrite(pwm_pin, speed); // Sender PWM signalet til motorkontrolleren
+        analogWrite(pwm_pin, abs(speed)); // Sender PWM signalet til motorkontrolleren
     }
     else // Hvis den ikke er innenfor grensen for å bevege seg
     {
