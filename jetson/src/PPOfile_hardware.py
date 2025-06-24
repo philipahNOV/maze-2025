@@ -81,7 +81,6 @@ class RealTimePathFollowerEnv(gym.Env):
         return observation, info
     
     def _get_real_ball_position(self) -> Optional[np.ndarray]:
-        """Get actual ball position from hardware tracker."""
         try:
             pos = self.controller.tracker.get_position()
             if pos is not None:
@@ -92,7 +91,6 @@ class RealTimePathFollowerEnv(gym.Env):
             return None
     
     def _get_observation(self) -> np.ndarray:
-        """Get current observation from real hardware state."""
         if self.current_ball_pos is None:
             self.current_ball_pos = self._get_real_ball_position()
             if self.current_ball_pos is None:
@@ -117,7 +115,6 @@ class RealTimePathFollowerEnv(gym.Env):
         ], dtype=np.float32)
     
     def _get_info(self) -> Dict[str, Any]:
-        """Get additional info."""
         return {
             "current_waypoint": self.current_waypoint_idx,
             "total_waypoints": self.path_length,
@@ -150,15 +147,13 @@ class RealTimePathFollowerEnv(gym.Env):
             observation = self._get_observation()
             return observation, -20.0, False, True, self._get_info()
         
-        time.sleep(0.02)  # Small delay for system to respond
+        time.sleep(0.02)
         updated_ball_pos = self._get_real_ball_position()
         if updated_ball_pos is not None:
             self.current_ball_pos = updated_ball_pos
         
-        # Calculate reward based on actual hardware response
         reward = self._calculate_reward_from_hardware(action)
         
-        # Check if waypoint is reached
         current_target = self.path[self.current_waypoint_idx]
         current_distance = np.linalg.norm(self.current_ball_pos - current_target)
         waypoint_reached = current_distance < self.acceptance_radius
@@ -175,7 +170,7 @@ class RealTimePathFollowerEnv(gym.Env):
                     (time.time() - self.last_waypoint_time > 30))  # Timeout if stuck
         
         if terminated:
-            reward += 500  # Path completion bonus
+            reward += 500
             print("Path completed successfully!")
         
         observation = self._get_observation()
@@ -191,23 +186,18 @@ class RealTimePathFollowerEnv(gym.Env):
         current_target = self.path[self.current_waypoint_idx]
         current_distance = np.linalg.norm(self.current_ball_pos - current_target)
         
-        # Distance-based reward
         distance_reward = -current_distance * 0.05
         
-        # Progress reward
         if self.previous_distance is not None:
             progress = self.previous_distance - current_distance
-            progress_reward = progress * 5  # Reward for getting closer
+            progress_reward = progress * 5
         else:
             progress_reward = 0
         
-        # Action efficiency penalty
         action_penalty = -np.linalg.norm(action) * 0.001
         
-        # Time penalty (encourage faster completion)
         time_penalty = -0.05
         
-        # Stability reward (penalize erratic movement)
         stability_reward = 0
         if hasattr(self, 'previous_action'):
             action_change = np.linalg.norm(action - self.previous_action)
@@ -221,9 +211,7 @@ class RealTimePathFollowerEnv(gym.Env):
         return total_reward
 
 
-class HardwareTrainingCallback(BaseCallback):
-    """Callback to monitor training progress with hardware."""
-    
+class HardwareTrainingCallback(BaseCallback):    
     def __init__(self, verbose=0):
         super().__init__(verbose)
         self.episode_rewards = []
@@ -255,7 +243,6 @@ class RealTimePathFollower:
         self.agent_path = agent_path
         self.path_array = path_array
         
-        # Create real-time environment
         def make_env():
             return RealTimePathFollowerEnv(
                 path_array=path_array,
@@ -307,7 +294,6 @@ class RealTimePathFollower:
             print(f"Partial training saved to {self.agent_path}_interrupted")
         except Exception as e:
             print(f"Training error: {e}")
-            # Try to save partial progress
             try:
                 self.agent.save(self.agent_path + "_error")
                 print(f"Partial training saved to {self.agent_path}_error")
@@ -333,7 +319,6 @@ class RealTimePathFollower:
                     current_info = info[0] if info else {}
                     print(f"Step {step_count}: Waypoint {current_info.get('current_waypoint', 0)}/{current_info.get('total_waypoints', 0)}")
                 
-                # Safety check - stop if taking too long
                 if step_count > 5000:
                     print("Episode taking too long, moving to next episode")
                     break
@@ -357,7 +342,6 @@ class RealTimePathFollower:
         }
 
 
-# Modified simple interface for your main script
 class SimpleRealTimePathFollower:
     """Simplified interface that trains in the background while providing immediate control."""
     
@@ -411,7 +395,6 @@ class SimpleRealTimePathFollower:
         ball_pos_array = np.array(ball_pos, dtype=np.float32)
         target_pos = self.path[self.current_waypoint_idx]
         
-        # Check if waypoint reached
         distance = np.linalg.norm(ball_pos_array - target_pos)
         if distance < self.acceptance_radius:
             print(f"Waypoint {self.current_waypoint_idx} reached!")
@@ -422,13 +405,11 @@ class SimpleRealTimePathFollower:
         
         if self.use_ai_control and hasattr(self, 'ppo_follower'):
             try:
-                # This would need to be implemented in the PPO follower
                 return np.array([target_pos[0] - ball_pos_array[0], 
                                target_pos[1] - ball_pos_array[1]], dtype=np.float32)
             except:
                 pass
         
-        # Basic control - just send target to existing controller
         self.controller.posControl(tuple(target_pos))
         return np.array([target_pos[0] - ball_pos_array[0], 
                         target_pos[1] - ball_pos_array[1]], dtype=np.float32)
