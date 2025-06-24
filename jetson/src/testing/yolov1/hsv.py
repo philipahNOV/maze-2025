@@ -45,7 +45,7 @@ tracked_objects = {
     "marker_4": {"position": None},
 }
 
-WINDOW_SIZE = 80  # px radius around previous location
+WINDOW_SIZE = 100  # px radius around previous location
 
 def get_center_of_mass(mask):
     contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
