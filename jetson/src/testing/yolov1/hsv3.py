@@ -26,6 +26,8 @@ class BallTracker:
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
+        self.INIT_BALL_REGION = ((390, 10), (1120, 720))
+
         self.model = YOLO(model_path)
         self.WINDOW_SIZE = 50
         self.running = False
@@ -115,7 +117,7 @@ class BallTracker:
                     cy = (y1 + y2) // 2
 
                     if label == "ball":
-                        if 390 <= cx <= 1120 and 10 <= cy <= 720:
+                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
                             self.ball_confirm_counter += 1
                             self.tracked_objects["ball"]["position"] = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
