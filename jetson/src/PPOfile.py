@@ -105,24 +105,19 @@ class PathFollowerEnv(gym.Env):
         """Execute one step in the environment."""
         self.current_step += 1
         
-        # Apply action (clamp to prevent extreme movements)
         action = np.clip(action, self.action_space.low, self.action_space.high)
         self.ball_pos += action
         
-        # Calculate distance to current target
         target_pos = self.path[self.current_waypoint_idx]
         current_distance = np.linalg.norm(self.ball_pos - target_pos)
         
-        # Calculate reward
         reward = self._calculate_reward(current_distance, action)
         
-        # Check if waypoint is reached
         waypoint_reached = current_distance < self.acceptance_radius
         if waypoint_reached:
             reward += 100  # Waypoint bonus
             self.current_waypoint_idx += 1
         
-        # Check termination conditions
         terminated = self.current_waypoint_idx >= self.path_length
         truncated = self.current_step >= self.max_steps
         
@@ -199,7 +194,6 @@ class OptimizedPathFollower:
     def _setup_and_train_agent(self, path_array: List[Tuple[float, float]], train_steps: int):
         """Setup and train the PPO agent with improved configuration."""
         
-        # Create training environment
         def make_env():
             return PathFollowerEnv(
                 path_array=path_array,
@@ -210,7 +204,6 @@ class OptimizedPathFollower:
         
         env = DummyVecEnv([make_env])
         
-        # Create PPO agent with optimized hyperparameters
         self.agent = PPO(
             policy="MlpPolicy",
             env=env,
@@ -226,11 +219,10 @@ class OptimizedPathFollower:
             max_grad_norm=0.5,
             verbose=1,
             policy_kwargs=dict(
-                net_arch=[dict(pi=[256, 256], vf=[256, 256])]
+                net_arch=dict(pi=[256, 256], vf=[256, 256])
             )
         )
         
-        # Setup evaluation callback for monitoring training
         eval_env = DummyVecEnv([make_env])
         eval_callback = EvalCallback(
             eval_env,
@@ -247,7 +239,6 @@ class OptimizedPathFollower:
             progress_bar=True
         )
         
-        # Save the trained model
         self.agent.save(self.agent_path)
         print(f"Agent saved to {self.agent_path}")
     
@@ -298,14 +289,11 @@ class OptimizedPathFollower:
             print("Path complete!")
             return None
         
-        # Convert ball position to numpy array
         ball_pos_array = np.array(ball_pos, dtype=np.float32)
         
-        # Use controller for position control
         target_pos = self.path[self.current_waypoint_idx]
         self.controller.posControl(target_pos)
         
-        # Create observation for the agent
         target_pos = self.path[self.current_waypoint_idx]
         distance_to_target = np.linalg.norm(ball_pos_array - target_pos)
         waypoint_progress = self.current_waypoint_idx / (self.path_length - 1)
@@ -319,10 +307,8 @@ class OptimizedPathFollower:
             waypoint_progress
         ], dtype=np.float32)
         
-        # Get action from trained agent
         action, _ = self.agent.predict(observation, deterministic=True)
         
-        # Check if waypoint is reached
         if distance_to_target < self.acceptance_radius:
             print(f"Waypoint {self.current_waypoint_idx} reached!")
             self.prev_waypoint_idx = self.current_waypoint_idx
