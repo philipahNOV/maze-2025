@@ -23,7 +23,7 @@ class PathFollower:
         self.acceptance_radius = 30
 
     def follow_path(self, ballPos):
-        self.controller.posControl(self.next_waypoint)
+        self.controller.posControl(self.path[self.next_waypoint])
 
         if abs(ballPos - self.path[self.next_waypoint]) < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
