@@ -4,13 +4,13 @@ import cv2
 import positionController
 import arduino_connection
 import lowPassFilter
-import path
+import path_following
 
 def main():
 
-    def plot_waypoints(frame, path_obj: path.Path):
-        for n in range(path_obj.length):
-            cv2.circle(frame, path_obj.path[n], 5, (0, 0, 255), -1)
+    def plot_waypoints(frame, pathFollower: path_following.PathFollower):
+        for n in range(pathFollower.length):
+            cv2.circle(frame, pathFollower.path[n], 5, (0, 0, 255), -1)
 
 
     def initialize_component(component, name, retries=5, delay=2):
@@ -34,8 +34,6 @@ def main():
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
-    path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
-    path_obj = path.Path(path_array=path_array)
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
@@ -44,6 +42,8 @@ def main():
     print("[INFO] Tracking started. Press 'q' to quit.")
 
     controller = positionController.Controller(arduino_thread, tracker)
+    path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
+    pathFollower = path_following.PathFollower(path_array, controller)
     time.sleep(1)
     controller.horizontal()
     time.sleep(2)
@@ -55,7 +55,7 @@ def main():
             if frame is None:
                 continue
 
-            plot_waypoints(frame, path_obj)
+            plot_waypoints(frame, pathFollower)
 
             #for label, data in tracker.tracked_objects.items():
             #    pos = data["position"]
@@ -93,6 +93,8 @@ def main():
                 #controller.posControl((770-150, 330-150))
             #else:
                 #controller.posControl((770+150, 330+150))
+
+            pathFollower.follow_path(ball_pos)
 
             #---------------
 
