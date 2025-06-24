@@ -93,6 +93,5 @@ def main():
         tracker.stop()
         cv2.destroyAllWindows()
         print("[INFO] Tracker stopped.")
-
 if __name__ == "__main__":
     main()
