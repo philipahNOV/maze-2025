@@ -29,5 +29,3 @@ class PathFollower:
         if np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
             self.next_waypoint = self.next_waypoint + 1
-
-    
