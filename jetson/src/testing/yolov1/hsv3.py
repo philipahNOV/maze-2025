@@ -114,35 +114,35 @@ class BallTracker:
                     cx = (x1 + x2) // 2
                     cy = (y1 + y2) // 2
 
-                    if label == "ball":
-                        # (1130, 30)
-                        if abs(cx - 390) < 100 and abs(cy - 570) < 100:
-                            self.ball_confirm_counter += 1
-                            self.tracked_objects["ball"]["position"] = (cx, cy)
-                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                                self.initialized = True
-
-
-
                     # if label == "ball":
-                    #     if abs(cx - 1130) > 60 or abs(cy - 30) > 60:
-                    #         continue  # Skip detections too far from target region
-
-                    #     roi = bgr_frame[y1:y2, x1:x2]
-                    #     if roi.size == 0:
-                    #         continue  # skip invalid ROI
-
-                    #     hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-                    #     mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
-                    #     nonzero_count = cv2.countNonZero(mask)
-
-                    #     if nonzero_count > 50:
-                    #         self.tracked_objects["ball"]["position"] = (cx, cy)
+                    #     (1130, 30)
+                    #     if abs(cx - 390) < 100 and abs(cy - 570) < 100:
                     #         self.ball_confirm_counter += 1
-                    #         print(f"[INFO] Ball HSV mean: {cv2.mean(hsv)}, non-zero: {nonzero_count}, position: ({cx}, {cy})")
-
+                    #         self.tracked_objects["ball"]["position"] = (cx, cy)
                     #         if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                    #             self.initialized = True  # switch to HSV tracking
+                    #             self.initialized = True
+
+
+
+                    if label == "ball":
+                        if abs(cx - 390) > 60 or abs(cy - 570) > 60:
+                            continue  # Skip detections too far from target region
+
+                        roi = bgr_frame[y1:y2, x1:x2]
+                        if roi.size == 0:
+                            continue  # skip invalid ROI
+
+                        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+                        mask = cv2.inRange(hsv, *self.HSV_RANGES["ball"])
+                        nonzero_count = cv2.countNonZero(mask)
+
+                        if nonzero_count > 100:
+                            self.tracked_objects["ball"]["position"] = (cx, cy)
+                            self.ball_confirm_counter += 1
+                            print(f"[INFO] Ball HSV mean: {cv2.mean(hsv)}, non-zero: {nonzero_count}, position: ({cx}, {cy})")
+
+                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                                self.initialized = True  # switch to HSV tracking
 
 
                     elif label.startswith("marker"):
