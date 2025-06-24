@@ -12,11 +12,6 @@ import queue
 
 
 class RealTimePathFollowerEnv(gym.Env):
-    """
-    Real-time Gymnasium environment that interfaces with actual hardware.
-    Trains the PPO agent while controlling the real ball-on-plate system.
-    """
-    
     metadata = {"render_modes": ["human"], "render_fps": 30}
     
     def __init__(self, 
@@ -26,7 +21,7 @@ class RealTimePathFollowerEnv(gym.Env):
                  camera_offset_y: float = 10, 
                  acceptance_radius: float = 30,
                  max_steps: int = 2000,
-                 step_timeout: float = 0.1):
+                 step_timeout: float = 0.01):
         super().__init__()
         
         self.controller = controller
@@ -36,8 +31,7 @@ class RealTimePathFollowerEnv(gym.Env):
         self.max_steps = max_steps
         self.step_timeout = step_timeout
         self.current_step = 0
-        
-        # Process path with offset
+
         if not path_array:
             raise ValueError("Path array cannot be empty")
             
@@ -111,13 +105,11 @@ class RealTimePathFollowerEnv(gym.Env):
         if self.current_ball_pos is None:
             self.current_ball_pos = self._get_real_ball_position()
             if self.current_ball_pos is None:
-                # Fallback observation if no ball detected
                 return np.zeros(7, dtype=np.float32)
         
         target_pos = self.path[self.current_waypoint_idx]
         distance_to_target = np.linalg.norm(self.current_ball_pos - target_pos)
         
-        # Calculate angle to target
         diff = target_pos - self.current_ball_pos
         angle_to_target = np.arctan2(diff[1], diff[0])
         
@@ -159,8 +151,6 @@ class RealTimePathFollowerEnv(gym.Env):
         
         self.current_ball_pos = new_ball_pos
         
-        # Convert action to target position
-        # Action is relative movement, so add to current position
         target_position = self.current_ball_pos + action
         
         # Send position command to hardware controller
@@ -259,7 +249,6 @@ class HardwareTrainingCallback(BaseCallback):
         self.waypoints_reached = []
     
     def _on_step(self) -> bool:
-        # Log training progress
         if len(self.locals.get('infos', [])) > 0:
             info = self.locals['infos'][0]
             if 'current_waypoint' in info:
@@ -273,10 +262,6 @@ class HardwareTrainingCallback(BaseCallback):
 
 
 class RealTimePathFollower:
-    """
-    Real-time path follower that trains PPO while controlling actual hardware.
-    """
-    
     def __init__(self, 
                  path_array: List[Tuple[float, float]], 
                  controller: positionController.Controller,
@@ -298,7 +283,6 @@ class RealTimePathFollower:
         
         self.env = DummyVecEnv([make_env])
         
-        # Create PPO agent with conservative settings for hardware training
         self.agent = PPO(
             policy="MlpPolicy",
             env=self.env,
@@ -308,24 +292,20 @@ class RealTimePathFollower:
             n_epochs=5,          # Fewer epochs per update
             gamma=0.95,
             gae_lambda=0.9,
-            clip_range=0.1,      # More conservative clipping
+            clip_range=0.1,
             ent_coef=0.01,
             vf_coef=0.5,
             max_grad_norm=0.5,
             verbose=1,
             policy_kwargs=dict(
-                net_arch=dict(pi=[128, 128], vf=[128, 128])  # Smaller networks
+                net_arch=dict(pi=[128, 128], vf=[128, 128])
             )
         )
         
-        # Setup training callback
         self.callback = HardwareTrainingCallback(verbose=1)
-        
-        # Start training
         self._start_training(total_training_steps)
     
     def _start_training(self, total_steps: int):
-        """Start training the agent with real hardware."""
         print(f"Starting real-time training with hardware for {total_steps} steps...")
         print("WARNING: This will actively control your hardware!")
         
@@ -336,7 +316,6 @@ class RealTimePathFollower:
                 progress_bar=True
             )
             
-            # Save the trained model
             self.agent.save(self.agent_path)
             print(f"Training completed! Agent saved to {self.agent_path}")
             
@@ -354,7 +333,6 @@ class RealTimePathFollower:
                 print("Could not save partial training")
     
     def follow_path_realtime(self, max_episodes: int = 5) -> bool:
-        """Use the trained agent to follow the path in real-time."""
         print(f"Starting real-time path following for up to {max_episodes} episodes...")
         
         for episode in range(max_episodes):
@@ -460,7 +438,6 @@ class SimpleRealTimePathFollower:
                 print("Path completed!")
                 return None
         
-        # Use AI control if available, otherwise fall back to basic control
         if self.use_ai_control and hasattr(self, 'ppo_follower'):
             try:
                 # This would need to be implemented in the PPO follower
