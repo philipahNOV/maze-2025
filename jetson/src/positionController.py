@@ -36,8 +36,8 @@ class Controller:
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = -0.0055 # Offset for x-axis orientation (BEST SO FAR: -0.01)
-        self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+        self.x_offset = -0.0075 # Offset for x-axis orientation (BEST SO FAR: -0.01)
+        self.y_offset = 0.0015  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
 
@@ -54,15 +54,15 @@ class Controller:
 
         #Best so far (pathfollowing)
         self.kp_x = 0.00007
-        self.kd_x = 0.00007
+        self.kd_x = 0.00006
         self.kp_y = 0.00007
-        self.kd_y = 0.00007
+        self.kd_y = 0.00006
         self.ki_y = 0.0007
         self.ki_x = 0.0007
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 30
+        self.pos_tol = 60
         self.vel_tol = 10
 
         #Axis control
@@ -114,7 +114,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.8
+        alpha = 0.85
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
