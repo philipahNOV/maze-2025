@@ -12,7 +12,6 @@ def main():
     def plot_waypoints(frame, pathFollower):
         """Plot waypoints on the frame with current target highlighted."""
         for n in range(pathFollower.path_length):
-            # Use different colors for current target vs other waypoints
             if n == pathFollower.current_waypoint_idx:
                 color = (0, 255, 255)  # Yellow for current target
                 radius = 8

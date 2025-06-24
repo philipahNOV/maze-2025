@@ -15,7 +15,7 @@ class PathFollower:
         self.prev_waypoint = None
         self.next_waypoint = 0
 
-        self.looping = True
+        self.looping = False
 
         if path_array:
             self.path = []
