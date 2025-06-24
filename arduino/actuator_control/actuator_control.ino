@@ -61,7 +61,8 @@ void setup() {
 
 void loop() {
     actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
-    read_serial();
+    read_serial(); // Motar data over seriel fra Jetson
+    move_speed(); // Setter motor hastighetene
 }
 
 // Funksjon for å stoppe aktuatorene
@@ -255,28 +256,29 @@ void read_serial()
         String input = Serial.readStringUntil('\n');
         input.trim();
         
-        int16_t speed1, speed2, checksum;
-        int16_t parsed = sscanf(input.c_str(), "%hd,%hd,%hd", &speed1, &speed2, &checksum);
+        int speed1, speed2, checksum;
+        int parsed = sscanf(input.c_str(), "%d,%d,%d", &speed1, &speed2, &checksum);
         
         if (parsed == 3)
         {
             // Valider checksum
-            int16_t expected_checksum = (speed1 + speed2) % 256;
+            int expected_checksum = ((speed1 + speed2) % 256 + 256) % 256;
             if (checksum == expected_checksum)
             {
                 actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
                 actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
-                Serial.println("OK");
             }
             else
             {
-                Serial.println("ERROR: Checksum mismatch");
+                Serial.print("ERROR: Checksum mismatch: Melding = ");
+                Serial.println(input);
                 clear_serial_buffer();
             }
         }
         else
         {
-            Serial.println("ERROR: Invalid format");
+            Serial.print("ERROR: Invalid format: Melding = ");
+            Serial.println(input);
             clear_serial_buffer();
         }
     }
