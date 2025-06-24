@@ -27,7 +27,7 @@ def main():
 
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
