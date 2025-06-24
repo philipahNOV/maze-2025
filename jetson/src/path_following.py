@@ -12,14 +12,13 @@ class PathFollower:
         self.controller = controller
 
         self.prev_waypoint = None
-        self.next_waypoint = None
+        self.next_waypoint = 0
 
         if path_array:
             self.path = []
             self.length = len(path_array)
             for n in range(self.length):
                 self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
-            self.next_waypoint = self.path[0]
 
         self.acceptance_radius = 30
 
