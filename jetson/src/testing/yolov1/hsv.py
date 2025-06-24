@@ -31,8 +31,8 @@ def grab_zed_frame(zed):
 
 # HSV ranges
 HSV_RANGES = {
-    # "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
-    "ball": (np.array([2, 207, 65]), np.array([8, 255, 85])),         # Red (shiny + non-shiny combined)
+    "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),      # Green
+    # "ball": (np.array([2, 207, 65]), np.array([8, 255, 85])),         # Red (shiny + non-shiny combined)
     # "ball": (np.array([0, 0, 90]), np.array([180, 60, 255])),       # Grey
     "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),  # Red
 }
@@ -156,7 +156,7 @@ def main():
                 cy = (y1 + y2) // 2
 
                 if label == "ball":
-                    if abs(cx - 390) < 100 and abs(cy - 570) < 100:
+                    if 390 <= cx <= 1120 and 10 <= cy <= 720:  # restrict to bounding box
                         roi = bgr_frame[y1:y2, x1:x2]
                         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
                         mask = cv2.inRange(hsv, *HSV_RANGES["ball"])
@@ -165,6 +165,7 @@ def main():
 
                 elif label.startswith("marker"):
                     tracked_objects[label]["position"] = (cx, cy)
+
 
             initialized = True
             continue

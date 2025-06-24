@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import testing.yolov1.hsv3 as tracking
-import arduino_connection
+import arduino_connection_2
 
 class Controller:
 
@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection.ArduinoConnection, tracker: tracking.BallTracker):
+    def __init__(self, arduinoThread: arduino_connection_2.ArduinoConnection, tracker: tracking.BallTracker):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None
@@ -28,9 +28,7 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
-        self.prev_dir_x = 2
         self.prev_vel_x = 0
-        self.prev_dir_y = 2
         self.prev_vel_y = 0
 
         self.prev_command_time = time.time()
@@ -58,8 +56,8 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 10
-        self.vel_tol = 1
+        self.pos_tol = 30
+        self.vel_tol = 10
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
@@ -69,8 +67,8 @@ class Controller:
     def set_ball_pos(self, pos):
         self.pos = pos
 
-    def significant_motor_change(self, dir_x, dir_y, vel_x, vel_y):
-        if dir_x == self.prev_dir_x and dir_y == self.prev_dir_y:
+    def significant_motor_change(self, vel_x, vel_y):
+        if np.sign(vel_x) == np.sign(self.prev_vel_x) and np.sign(vel_y) == np.sign(self.prev_vel_y):
             if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
                 print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
                 return False
@@ -155,7 +153,7 @@ class Controller:
             print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
-            self.arduinoThread.send_target_positions(120, 120, 120, 120)
+            self.arduinoThread.send_target_positions(0, 0)
             self.prevTime = time.time()
             time.sleep(self.command_delay)
             return
@@ -195,30 +193,22 @@ class Controller:
         e_x = theta_x - ref[0]
         e_y = theta_y - ref[1]
         if abs(e_x) < tol:
-            dir_x = 2
-        elif e_x > 0:
-            dir_x = 3
-        elif e_x < 0:
-            dir_x = 1
+            vel_x = 0
+        else:
+            vel_x = min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), 255)
+            vel_x *= - np.sign(e_x)
+
         if abs(e_y) < tol:
-            dir_y = 2
-        elif e_y > 0:
-            dir_y = 3
-        elif e_y < 0:
-            dir_y = 1
+            vel_y = 0
+        else:
+            vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), 255)
+            vel_y = - np.sign(e_y) * vel_y
 
-        vel_x = min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), 255)
-        vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), 255)
-        #dir_y = 2
-        #print(f"e_x: {e_x}, theta_x: {theta_x}, dir_x: {dir_x}, vel_x: {vel_x}")
-
-        if self.significant_motor_change(dir_x, dir_y, vel_x, vel_y):
-            self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+        if self.significant_motor_change(vel_x, vel_y):
+            self.arduinoThread.send_target_positions(vel_x, vel_y)
             self.prev_command_time = time.time()
         
-        self.prev_dir_x = dir_x
         self.prev_vel_x = vel_x
-        self.prev_dir_y = dir_y
         self.prev_vel_y = vel_y
 
 
@@ -237,7 +227,7 @@ class Controller:
         
         kp = 700 # Proportional gain for the control loop
         deadline = time.time() + timeLimit
-        self.arduinoThread.send_target_positions(120, 120, 120, 120)  # Stop motors initially
+        self.arduinoThread.send_target_positions(0, 0)  # Stop motors initially
 
         while time.time() < deadline:
             orientation = self.tracker.get_orientation()
@@ -249,25 +239,22 @@ class Controller:
 
             if abs(theta_x) < tol and abs(theta_y) < tol:
                 print("Orientation is within tolerance, stopping motors.")
-                self.arduinoThread.send_target_positions(120, 120, 120, 120)
+                self.arduinoThread.send_target_positions(0, 0)
                 return
             if abs(theta_x) < tol:
-                dir_x = 2
-            elif theta_x > 0:
-                dir_x = 3
-            elif theta_x < 0:
-                dir_x = 1
-            if abs(theta_y) < tol:
-                dir_y = 2
-            elif theta_y > 0:
-                dir_y = 3
-            elif theta_y < 0:
-                dir_y = 1
+                vel_x = 0
+            else:
+                vel_x = min(max(int(kp * abs(theta_x)), self.min_velocity), 255)
+                vel_x *= - np.sign(theta_x)
 
-            print(f"{theta_x}, {theta_y}, {dir_x}, {dir_y}")
-            vel_x = max(int(kp * abs(theta_x)), self.min_velocity)
-            vel_y = max(int(kp * abs(theta_y)), self.min_velocity)
-            self.arduinoThread.send_target_positions(dir_x, dir_y, vel_x, vel_y)
+            if abs(theta_y) < tol:
+                vel_y = 0
+            else:
+                vel_y = min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
+                vel_y *= - np.sign(theta_y)
+
+            print(f"{theta_x}, {theta_y}")
+            self.arduinoThread.send_target_positions(vel_x, vel_y)
             time.sleep(self.command_delay)
         print("Deadline reached, stopping motors.")
         
