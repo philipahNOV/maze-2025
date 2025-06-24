@@ -314,7 +314,7 @@ class RealTimePathFollower:
             max_grad_norm=0.5,
             verbose=1,
             policy_kwargs=dict(
-                net_arch=[dict(pi=[128, 128], vf=[128, 128])]  # Smaller networks
+                net_arch=dict(pi=[128, 128], vf=[128, 128])  # Smaller networks
             )
         )
         
