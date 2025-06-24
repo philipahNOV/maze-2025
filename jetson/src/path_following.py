@@ -15,6 +15,8 @@ class PathFollower:
         self.prev_waypoint = None
         self.next_waypoint = 0
 
+        self.looping = True
+
         if path_array:
             self.path = []
             self.length = len(path_array)
@@ -24,10 +26,21 @@ class PathFollower:
         self.acceptance_radius = self.controller.pos_tol
 
     def follow_path(self, ballPos):
+        
         self.controller.posControl(self.path[self.next_waypoint])
 
         if np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
+
+            if self.next_waypoint == self.length:
+                if self.looping:
+                    self.prev_waypoint = None
+                    self.next_waypoint = 0
+                    print("Loop completed, starting from first waypoint")
+                    return
+                print("Done following path")
+                return
+            
             self.next_waypoint = self.next_waypoint + 1
 
     
