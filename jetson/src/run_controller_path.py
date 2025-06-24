@@ -45,14 +45,20 @@ def main():
     #path_array = [(50, 50), (150, 50), (250, 50), (350, 50), (450, 50), (450, 150), (450, 250), (450, 350), (450, 450)]
     #path_array = [(100, 100), (600, 100), (600, 600), (100, 600), (100, 100)]
     path_array = [
-    (100, 100),              # Start (top-left)
-    (350, 100),              # Midpoint between (100,100) and (600,100)
-    (600, 100),              # Top-right
-    (350, 350),              # Midpoint between (600,100) and (100,600)
-    (100, 600),              # Bottom-left
-    (350, 600),              # Midpoint between (100,600) and (600,600)
-    (600, 600)               # Bottom-right
-]
+    (100, 100),
+    (225, 100),     # Between (100, 100) and (350, 100)
+    (350, 100),
+    (475, 100),     # Between (350, 100) and (600, 100)
+    (600, 100),
+    (475, 225),     # Between (600, 100) and (350, 350)
+    (350, 350),
+    (225, 475),     # Between (350, 350) and (100, 600)
+    (100, 600),
+    (225, 600),     # Between (100, 600) and (350, 600)
+    (350, 600),
+    (475, 600),     # Between (350, 600) and (600, 600)
+    (600, 600)
+    ]
     pathFollower = path_following.PathFollower(path_array, controller)
     time.sleep(1)
     controller.horizontal()
