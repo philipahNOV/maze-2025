@@ -127,8 +127,8 @@ class Controller:
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
 
-        if abs(edot_x) > 20: self.e_x_int = 0
-        if abs(edot_y) > 20: self.e_y_int = 0
+        if abs(edot_x) > 20 or abs(e_x) > 70: self.e_x_int = 0
+        if abs(edot_y) > 20 or abs(e_y) > 70: self.e_y_int = 0
         
         print(edot_x)
         print(edot_y)
