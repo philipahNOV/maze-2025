@@ -10,7 +10,7 @@ def main():
 
     def plot_waypoints(frame, path_obj: path.Path):
         for n in range(path_obj.length):
-            cv2.circle(frame, path_obj[n], 5, (0, 0, 255), -1)
+            cv2.circle(frame, path_obj.path[n], 5, (0, 0, 255), -1)
 
 
     def initialize_component(component, name, retries=5, delay=2):
