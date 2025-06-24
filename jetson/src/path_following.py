@@ -1,4 +1,5 @@
 import positionController
+import numpy as np
 
 class PathFollower:
     def __init__(self, path_array, controller: positionController.Controller):
@@ -25,7 +26,7 @@ class PathFollower:
     def follow_path(self, ballPos):
         self.controller.posControl(self.path[self.next_waypoint])
 
-        if abs(ballPos - self.path[self.next_waypoint]) < self.acceptance_radius:
+        if np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
             self.next_waypoint = self.next_waypoint + 1
 
