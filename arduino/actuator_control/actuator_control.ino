@@ -256,7 +256,7 @@ void read_serial()
         input.trim();
         
         int16_t speed1, speed2, checksum;
-        int16_t parsed = sscanf(input.c_str(), "%d,%d,%d", &speed1, &speed2, &checksum);
+        int16_t parsed = sscanf(input.c_str(), "%hd,%hd,%hd", &speed1, &speed2, &checksum);
         
         if (parsed == 3)
         {
