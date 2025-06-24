@@ -21,7 +21,7 @@ class PathFollower:
             for n in range(self.length):
                 self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
 
-        self.acceptance_radius = 30
+        self.acceptance_radius = self.controller.pos_tol
 
     def follow_path(self, ballPos):
         self.controller.posControl(self.path[self.next_waypoint])

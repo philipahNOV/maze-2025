@@ -36,7 +36,7 @@ class Controller:
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = -0.01 # Offset for x-axis orientation (BEST SO FAR: -0.01)
+        self.x_offset = -0.005 # Offset for x-axis orientation (BEST SO FAR: -0.01)
         self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
@@ -44,7 +44,7 @@ class Controller:
         #TUNING PARAMETERS
         #Pos control
 
-        #Best so far:
+        #Best so far (setpoint):
         #self.kp_x = 0.00008
         #self.kd_x = 0.00005
         #self.kp_y = 0.00008
@@ -52,10 +52,10 @@ class Controller:
         #self.ki_y = 0.0006
         #self.ki_x = 0.0006
 
-        self.kp_x = 0.00008
-        self.kd_x = 0.00005
-        self.kp_y = 0.00008
-        self.kd_y = 0.00005
+        self.kp_x = 0.00007
+        self.kd_x = 0.00007
+        self.kp_y = 0.00007
+        self.kd_y = 0.00007
         self.ki_y = 0.0006
         self.ki_x = 0.0006
         self.deadzone_pos_tol = 30
