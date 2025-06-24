@@ -10,8 +10,8 @@ class Path:
 
         if path_array:
             self.path = []
-            for n in range(path_array):
-                self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
             self.length = len(path_array)
+            for n in range(self.length):
+                self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
 
         self.acceptance_radius = 20
