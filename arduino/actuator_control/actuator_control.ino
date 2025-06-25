@@ -25,7 +25,9 @@ namespace actuators {
 namespace lift_servo {
     Servo lift; // Servo for heis
     const uint8_t servo_pin = 2; // Pinne for servo
-    const int pos_low = 110; // Lav posisjon for heis
+    const uint8_t lift_down = 180; // Lav posisjon for heis
+    const uint8_t lift_up = 0; // Høy posisjon for heis
+    const uint8_t lift_stop = 90; // Stopp posisjon for heis
 }
 
 // Navnerom for globale variabler
@@ -181,12 +183,12 @@ void get_ball()
 {
     // Funksjon for å kontrollere heisen
     lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-    // lift_state: 0 = stopp, 1 = opp, 2 = ned
-    lift_servo::lift.write(0); // Setter heisen til høy posisjon
-    delay(2000); // Venter i 2 sekunder for å la heisen bevege seg opp
-    lift_servo::lift.write(lift_servo::pos_low); // Setter heisen til lav posisjon
-    delay(2000); // Venter i 2 sekunder for å la heisen bevege seg ned
-    lift_servo::lift.write(0); // Setter heisen til høy posisjon
+    lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
+    delay(100); // Venter 100 ms for at heisen skal nå ned
+    lift_servo::lift.write(lift_servo::lift_stop); // Setter heisen til høy posisjon
+    delay(1000); // Venter 1 sekund for at baller kan renne på heisen
+    lift_servo::lift.write(lift_servo::lift_up); // Setter heisen
+    delay(100); // Venter 100 ms for at heisen skal nå opp
     lift_servo::lift.detach(); // Frakobler servoen
 }
 

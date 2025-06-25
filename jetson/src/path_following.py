@@ -47,7 +47,8 @@ class PathFollower:
         self.prev_time = None
         self.prev_ball_pos = None
 
-        self.vel_threshold = 30
+        self.vel_threshold = 50
+
         self.prev_progress_time = None
         self.stuck_retry_time = 3
 
@@ -71,6 +72,8 @@ class PathFollower:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
                 self.prev_time = time.time()
                 self.prev_ball_pos = ballPos
+            
+        print(vel)
 
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:

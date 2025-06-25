@@ -74,7 +74,7 @@ class Controller:
     def significant_motor_change(self, vel_x, vel_y):
         if np.sign(vel_x) == np.sign(self.prev_vel_x) and np.sign(vel_y) == np.sign(self.prev_vel_y):
             if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
-                print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
+                #print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
                 return False
         return True
     
@@ -129,8 +129,8 @@ class Controller:
         if abs(edot_x) > 80: self.e_x_int = 0
         if abs(edot_y) > 80: self.e_y_int = 0
         
-        print(edot_x)
-        print(edot_y)
+        #print(edot_x)
+        #print(edot_y)
 
         if abs(e_x) < self.pos_tol: #at target → STOP
             theta_x = 0
@@ -164,7 +164,7 @@ class Controller:
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
         pos = self.tracker.get_position()
-        print(f"\nBall position: {pos}\n")
+        #print(f"\nBall position: {pos}\n")
 
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
