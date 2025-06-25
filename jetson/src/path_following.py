@@ -69,8 +69,8 @@ class PathFollower:
             dt = time.time() - self.prev_time
             if dt > 0.000001:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
-                self.prev_time = time.time()
-                self.prev_ball_pos = ballPos
+        self.prev_time = time.time()
+        self.prev_ball_pos = ballPos
             
         print(vel)
 
