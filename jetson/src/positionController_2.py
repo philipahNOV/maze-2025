@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import testing.yolov1.hsv3 as tracking
-import arduino_connection_2
+import arduino_connection_test
 
 class Controller:
 
@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection_2.ArduinoConnection, tracker: tracking.BallTracker):
+    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker, path_following=True):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None
@@ -28,35 +28,41 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
+        self.path_following = path_following
+
         self.prev_vel_x = 0
         self.prev_vel_y = 0
 
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = -0.01 # Offset for x-axis orientation (tested -0.008)
-        self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+        self.x_offset = 0.01 # Offset for x-axis orientation (BEST SO FAR: -0.01)
+        self.y_offset = 0.002  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
 
         #TUNING PARAMETERS
         #Pos control
-        self.kp_x = 0.00008
-        self.kd_x = 0.00005
-        self.kp_y = 0.00008
-        self.kd_y = 0.00005
-        self.ki_y = 0.0006
-        self.ki_x = 0.0006
-        #self.kp_x = 0.00009796
-        #self.kd_x = 0.00004655
-        #self.kp_y = 0.00005752
-        #self.kd_y = 0.00004655
-        #self.ki_y = 0.00002805
-        #self.ki_x = 0.00003344
+
+        #Best so far (setpoint):
+        #self.kp_x = 0.00008
+        #self.kd_x = 0.00005
+        #self.kp_y = 0.00008
+        #self.kd_y = 0.00005
+        #self.ki_y = 0.0006
+        #self.ki_x = 0.0006
+
+        #Best so far (pathfollowing)
+        self.kp_x = 0.00007
+        self.kd_x = 0.00006
+        self.kp_y = 0.00007
+        self.kd_y = 0.00006
+        self.ki_y = 0.0007
+        self.ki_x = 0.0007
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 30
+        self.pos_tol = 40
         self.vel_tol = 10
 
         #Axis control
@@ -70,7 +76,7 @@ class Controller:
     def significant_motor_change(self, vel_x, vel_y):
         if np.sign(vel_x) == np.sign(self.prev_vel_x) and np.sign(vel_y) == np.sign(self.prev_vel_y):
             if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
-                print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
+                #print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
                 return False
         return True
     
@@ -108,7 +114,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.55
+        alpha = 0.85
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
@@ -122,11 +128,11 @@ class Controller:
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
 
-        if abs(edot_x) > 20: self.e_x_int = 0
-        if abs(edot_y) > 20: self.e_y_int = 0
+        if abs(edot_x) > 80: self.e_x_int = 0
+        if abs(edot_y) > 80: self.e_y_int = 0
         
-        print(edot_x)
-        print(edot_y)
+        #print(edot_x)
+        #print(edot_y)
 
         if abs(e_x) < self.pos_tol: #at target → STOP
             theta_x = 0
@@ -153,14 +159,15 @@ class Controller:
             print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
-            self.arduinoThread.send_target_positions(0, 0)
+            if not self.path_following:
+                self.arduinoThread.send_target_positions(0, 0)
+                time.sleep(self.command_delay)
             self.prevTime = time.time()
-            time.sleep(self.command_delay)
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
         pos = self.tracker.get_position()
-        print(f"\nBall position: {pos}\n")
+        #print(f"\nBall position: {pos}\n")
 
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
