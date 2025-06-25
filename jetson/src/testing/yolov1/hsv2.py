@@ -56,7 +56,7 @@ class BallDetector:
         # 3. Lab mask on 'a' channel
         lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         a = lab[:,:,1]
-        mask_lab = cv2.inRange(a, 120, 150)
+        mask_lab = cv2.inRange(a, 80, 150)
 
         # 4. combined mask + cleanup
         mask = cv2.bitwise_and(mask_hsv, mask_lab)
@@ -84,12 +84,6 @@ class BallDetector:
     def draw(self, frame: np.ndarray, center, radius: int):
         if center and radius:
             cv2.circle(frame, center, radius, (0,0,255), 2)
-
-# Main application(self, frame: np.ndarray, center, radius: int):
-        if center and radius:
-            cv2.circle(frame, center, radius, (0,0,255), 2)
-
-# Main application
 
 def main():
     zed = init_zed_camera()
