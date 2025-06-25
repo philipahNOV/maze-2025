@@ -67,8 +67,9 @@ class ArduinoConnection(threading.Thread):
         """
         with self.condition:
 
-            checksum = (speed1 + speed2) % 256  # Checksum calculation
-            self.command_var = f"{speed1},{speed2},{checksum}\n"
+            speed1 = int(speed1)
+            speed2 = int(speed2)
+            self.command_var = f"{speed1},{speed2}\n"
             self.condition.notify()
 
 
