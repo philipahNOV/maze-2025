@@ -18,7 +18,7 @@ class PathFollower:
         self.prev_waypoint = None
         self.next_waypoint = 0
 
-        self.looping = True
+        self.looping = False
 
         if path_array:
             self.path = []
@@ -34,10 +34,11 @@ class PathFollower:
         
         self.controller.posControl(self.path[self.next_waypoint])
 
+
         if np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
 
-            if self.next_waypoint == self.length:
+            if self.next_waypoint == self.length-1:
                 if self.looping:
                     self.prev_waypoint = None
                     self.next_waypoint = 0
@@ -47,5 +48,12 @@ class PathFollower:
                 return
             
             self.next_waypoint = self.next_waypoint + 1
+        else:
+            for wpt in reversed(self.path):
+                if np.linalg.norm(np.array(ballPos) - np.array(wpt)) < self.acceptance_radius:
+
+                    self.prev_waypoint = self.path.index(wpt)
+                    self.next_waypoint = self.prev_waypoint + 1
+                    return
 
     
