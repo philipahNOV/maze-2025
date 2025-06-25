@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import testing.yolov1.hsv3 as tracking
-import arduino_connection_2
+import arduino_connection_test
 
 class Controller:
 
@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection_2.ArduinoConnection, tracker: tracking.BallTracker):
+    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None
@@ -34,7 +34,7 @@ class Controller:
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = -0.01 # Offset for x-axis orientation (tested -0.008)
+        self.x_offset = -0 # Offset for x-axis orientation (tested -0.008)
         self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5

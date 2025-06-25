@@ -2,7 +2,7 @@ import testing.yolov1.hsv3 as tracking
 import time
 import cv2
 import positionController_2
-import arduino_connection_2
+import arduino_connection_test
 import lowPassFilter
 
 def main():
@@ -19,7 +19,7 @@ def main():
         raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
     try:
-        arduino_thread = initialize_component(arduino_connection_2.ArduinoConnection, "ArduinoConnection")
+        arduino_thread = initialize_component(arduino_connection_test.ArduinoConnection, "ArduinoConnection")
         time.sleep(10)
     except Exception as e:
         print(e)
