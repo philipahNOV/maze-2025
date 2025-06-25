@@ -108,7 +108,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.55
+        alpha = 0.85
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
@@ -122,8 +122,8 @@ class Controller:
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
 
-        if abs(edot_x) > 20: self.e_x_int = 0
-        if abs(edot_y) > 20: self.e_y_int = 0
+        if abs(edot_x) > 80: self.e_x_int = 0
+        if abs(edot_y) > 80: self.e_y_int = 0
         
         print(edot_x)
         print(edot_y)
