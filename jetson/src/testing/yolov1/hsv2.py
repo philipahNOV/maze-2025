@@ -56,7 +56,7 @@ class BallDetector:
         # 3. Lab mask on 'a' channel
         lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
         a = lab[:,:,1]
-        mask_lab = cv2.inRange(a, 60, 150)
+        mask_lab = cv2.inRange(a, 0, 150)
 
         # 4. combined mask + cleanup
         mask = cv2.bitwise_and(mask_hsv, mask_lab)
