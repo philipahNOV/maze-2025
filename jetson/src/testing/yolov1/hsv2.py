@@ -3,7 +3,31 @@ import cv2
 import pyzed.sl as sl
 
 # BallDetector locks onto largest circular blob within HSV range
+def init_zed_camera():
+    zed = sl.Camera()
+    params = sl.InitParameters()
+    params.camera_resolution = sl.RESOLUTION.HD720
+    params.camera_fps = 30
+    params.coordinate_units = sl.UNIT.MILLIMETER
+    if zed.open(params) != sl.ERROR_CODE.SUCCESS:
+        print("Failed to open ZED camera.")
+        exit(1)
+    return zed
+
+# Grab left image from ZED, return BGR
+
+def grab_zed_frame(zed):
+    mat = sl.Mat()
+    if zed.grab() != sl.ERROR_CODE.SUCCESS:
+        return None
+    zed.retrieve_image(mat, sl.VIEW.LEFT)
+    bgr = mat.get_data()
+    return bgr
+
 class BallDetector:
+    """
+    Detector that locks onto the largest circular blob (green ball) via HSV masking.
+    """
     DEFAULT_HSV_BALL = (
         (44, 90),   # hue min, max
         (40, 255),  # sat min, max
@@ -22,36 +46,14 @@ class BallDetector:
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5,5),np.uint8))
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
         if not contours:
-            return None, None, mask
+            return None, None
         cnt = max(contours, key=cv2.contourArea)
         (x, y), r = cv2.minEnclosingCircle(cnt)
-        return (int(x), int(y)), int(r), mask
+        return (int(x), int(y)), int(r)
 
-    def draw(self, frame, center, radius):
+    def draw(self, frame: np.ndarray, center, radius: int):
         if center and radius:
             cv2.circle(frame, center, radius, (0,0,255), 2)
-
-# ZED camera setup
-
-def init_zed_camera():
-    zed = sl.Camera()
-    params = sl.InitParameters()
-    params.camera_resolution = sl.RESOLUTION.HD720
-    params.camera_fps = 30
-    params.coordinate_units = sl.UNIT.MILLIMETER
-    if zed.open(params) != sl.ERROR_CODE.SUCCESS:
-        print("Failed to open ZED camera.")
-        exit(1)
-    return zed
-
-# Grab left image from ZED
-
-def grab_zed_frame(zed):
-    mat = sl.Mat()
-    if zed.grab() != sl.ERROR_CODE.SUCCESS:
-        return None
-    zed.retrieve_image(mat, sl.VIEW.LEFT)
-    return mat.get_data()
 
 # Main application
 
@@ -63,9 +65,8 @@ def main():
         frame = grab_zed_frame(zed)
         if frame is None:
             break
-        center, radius, mask = detector.process_frame(frame)
+        center, radius = detector.process_frame(frame)
         detector.draw(frame, center, radius)
-
         cv2.imshow('Tracking', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
