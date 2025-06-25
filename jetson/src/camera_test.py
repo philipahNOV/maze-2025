@@ -32,8 +32,7 @@ time.sleep(3)
 print("TEST")
 print("Camera thread started")
 img = camera_thread.latest_frame
-n = 1
-while(n>0):
+while(True):
     img = camera_thread.latest_frame
     if img is not None:
         cv2.imshow("Test Image", img)
