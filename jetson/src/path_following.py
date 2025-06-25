@@ -3,6 +3,29 @@ import numpy as np
 import time
 
 class PathFollower:
+
+    """
+    PathFollower handles navigation along a predefined path of 2D waypoints using a position controller.
+
+    Attributes:
+        path (list of tuple): A list of (x, y) waypoints defining the navigation path.
+        controller (positionController.Controller): The external controller used for position control.
+        prev_waypoint (int): Index of the last successfully reached waypoint.
+        next_waypoint (int): Index of the current target waypoint.
+        looping (bool): If True, the path loops back to the start upon completion.
+        prev_time (float): Timestamp of the previous position update (used to compute velocity).
+        prev_ball_pos (tuple): Last known position of the ball.
+        vel_threshold (float): Minimum velocity considered as progress; below this may trigger "stuck" detection.
+        prev_progress_time (float): Timestamp of when the ball last showed insufficient progress.
+        stuck_retry_time (float): Time (in seconds) before triggering a step back to a previous waypoint if stuck.
+        acceptance_radius (float): Distance threshold to consider a waypoint as "reached".
+
+    Methods:
+        follow_path(ballPos):
+            Drives the controller toward the next waypoint. Handles path following, progress tracking, and 
+            automatic recovery if the object is stuck or goes behind a previously visited waypoint.
+    """
+
     def __init__(self, path_array, controller: positionController.Controller):
 
         self.path = None
@@ -32,8 +55,8 @@ class PathFollower:
             self.path = []
             self.length = len(path_array)
             for n in range(self.length):
-                # self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
-                self.path.append((path_array[n][0], path_array[n][1]))
+                self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
+                #self.path.append((path_array[n][0], path_array[n][1]))
 
 
         self.acceptance_radius = self.controller.pos_tol
