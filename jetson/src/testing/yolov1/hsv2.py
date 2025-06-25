@@ -78,21 +78,7 @@ class BallDetector:
                 best = ((int(x),int(y)),int(r),area)
         center,radius,_ = best
 
-        if center is None:
-            self.miss_count += 1
-        else:
-            # reset on a hit
-            self.last_center = center
-            self.last_radius = radius
-            self.miss_count = 0
-
-        # if you’ve only “missed” for a handful of frames, keep showing the old one
-        if self.miss_count < 3 and self.last_center is not None:
-            return self.last_center, self.last_radius
-        else:
-            return None, 0
-
-        #return center, radius
+        return center, radius
 
 
     def draw(self, frame: np.ndarray, center, radius: int):
