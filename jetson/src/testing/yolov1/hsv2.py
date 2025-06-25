@@ -86,7 +86,7 @@ class BallDetector:
 def main():
     zed      = init_zed_camera()
     detector = BallDetector()
-    tracker  = cv2.TrackerMOSSE_create()
+    tracker  = cv2.TrackerKCF_create()
     initialized = False
 
     while True:
