@@ -91,9 +91,9 @@ def main():
     (422, 250),
     (430, 132),
     (558, 140),
-    (626, 157),
-    (860, 160)
-    ]
+    (606, 57),
+    (830, 60)
+    ] 
 
 
     pathFollower = path_following.PathFollower(path_array, controller)
