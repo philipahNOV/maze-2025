@@ -18,14 +18,20 @@ def init_zed_camera():
 
 def grab_zed_frame(zed):
     mat = sl.Mat()
-    # retrieve U8 RGBA image
     if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None
-    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C4)
-    rgba = mat.get_data()
-    # convert RGBA to BGR
-    bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
-    return bgr
+
+    # — grab a 3-channel BGR image directly (no RGBA, no conversions) —
+    zed.retrieve_image(
+        mat,
+        sl.VIEW.LEFT,
+        sl.MEM.CPU,
+        sl.MAT_TYPE.U8_C3
+    )
+    frame = mat.get_data()   # shape (H, W, 3), dtype uint8, [B,G,R]
+
+    return frame
+
 
 class BallDetector:
     DEFAULT_HSV_BALL = (
