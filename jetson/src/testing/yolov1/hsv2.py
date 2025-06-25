@@ -40,35 +40,46 @@ class BallDetector:
     def __init__(self, hsv_params=None):
         self.hsv_params = hsv_params or BallDetector.DEFAULT_HSV_BALL
 
-    def process_frame(self, frame: np.ndarray):
+    def process_frame(self, frame):
+        # 1. equalize V
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        mn = np.array([self.hsv_params[0][0], self.hsv_params[1][0], self.hsv_params[2][0]])
-        mx = np.array([self.hsv_params[0][1], self.hsv_params[1][1], self.hsv_params[2][1]])
-        mask = cv2.inRange(hsv, mn, mx)
-        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
-        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5,5),np.uint8))
-        contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        best = None
-        best_score = 0
-        # select most circular large blob
+        h, s, v = cv2.split(hsv)
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8,8))
+        v_eq = clahe.apply(v)
+        hsv_eq = cv2.merge((h, s, v_eq))
+
+        # 2. HSV mask
+        mn = np.array([44, 40, 0])
+        mx = np.array([90, 255, 255])
+        mask_hsv = cv2.inRange(hsv_eq, mn, mx)
+
+        # 3. Lab mask on 'a' channel
+        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+        a = lab[:,:,1]
+        mask_lab = cv2.inRange(a, 120, 150)
+
+        # 4. combined mask + cleanup
+        mask = cv2.bitwise_and(mask_hsv, mask_lab)
+        kernel = np.ones((5,5),np.uint8)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+        mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+
+        # 5. find largest circular blob as before
+        contours,_ = cv2.findContours(mask,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
+        best = (None,0,0)
         for cnt in contours:
             area = cv2.contourArea(cnt)
-            if area < 500:  # ignore small blobs
-                continue
-            perimeter = cv2.arcLength(cnt, True)
-            if perimeter == 0:
-                continue
-            circularity = 4 * np.pi * area / (perimeter * perimeter)
-            if circularity < 0.6:
-                continue
-            ((x, y), r) = cv2.minEnclosingCircle(cnt)
-            score = area  # could weight by circularity
-            if score > best_score:
-                best_score = score
-                best = ((int(x), int(y)), int(r))
-        if best is None:
-            return None, None
-        return best
+            if area<500: continue
+            peri = cv2.arcLength(cnt,True)
+            circ = 4*np.pi*area/(peri*peri) if peri else 0
+            if circ<0.6: continue
+            (x,y),r = cv2.minEnclosingCircle(cnt)
+            if area>best[2]:
+                best = ((int(x),int(y)),int(r),area)
+        center,radius,_ = best
+
+        return center, radius
+
 
     def draw(self, frame: np.ndarray, center, radius: int):
         if center and radius:
