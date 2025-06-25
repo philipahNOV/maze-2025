@@ -1,3 +1,6 @@
+// Inkluderer nødvendige biblioteker
+#include <Servo.h> // For servo kontroll
+
 // Initialiserer variabler
 // Navnerom for aktuatorene
 namespace actuators {
@@ -19,8 +22,15 @@ namespace actuators {
     ActuatorData actuator_2 = {11, 12, A3, 0, 0}; // PWM oppover = 11, PWM nedover = 12, Potensjometer = A3
 }
 
+namespace lift_servo {
+    Servo lift; // Servo for heis
+    const uint8_t servo_pin = 2; // Pinne for servo
+    const int pos_low = 110; // Lav posisjon for heis
+}
+
 // Navnerom for globale variabler
 namespace {
+    // Struct for hastigheter til aktuatorene TODO: Flytt til ett felt i ActuatorData
     struct Speeds
     {
         int16_t speed_actuator_1; // Fart for aktuator en
@@ -55,6 +65,11 @@ void setup() {
     analogWrite(actuators::actuator_1.pwm_down, 0); // Setter PWM pinne for aktuator en nedover til 0
     analogWrite(actuators::actuator_2.pwm_up, 0); // Setter PWM pinne for aktuator to oppover til 0
     analogWrite(actuators::actuator_2.pwm_down, 0); // Setter PWM pinne for aktuator to nedover til 0
+
+    // Initialiserer heis servo
+    lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
+    lift_servo::lift.write(0); // Setter heisen til lav posisjon
+    lift_servo::lift.detach(); // Frakobler servoen
 }
 
 void loop() {
@@ -160,6 +175,19 @@ void move_speed()
         analogWrite(actuators::actuator_2.pwm_up, 0);
         analogWrite(actuators::actuator_2.pwm_down, 0);
     }
+}
+
+void get_ball()
+{
+    // Funksjon for å kontrollere heisen
+    lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
+    // lift_state: 0 = stopp, 1 = opp, 2 = ned
+    lift_servo::lift.write(0); // Setter heisen til høy posisjon
+    delay(2000); // Venter i 2 sekunder for å la heisen bevege seg opp
+    lift_servo::lift.write(lift_servo::pos_low); // Setter heisen til lav posisjon
+    delay(2000); // Venter i 2 sekunder for å la heisen bevege seg ned
+    lift_servo::lift.write(0); // Setter heisen til høy posisjon
+    lift_servo::lift.detach(); // Frakobler servoen
 }
 
 // Funksjon for å lese innkommende seriedata
