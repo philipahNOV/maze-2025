@@ -48,13 +48,33 @@ class BallDetector:
         mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, np.ones((5,5),np.uint8))
         mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((5,5),np.uint8))
         contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        if not contours:
+        best = None
+        best_score = 0
+        # select most circular large blob
+        for cnt in contours:
+            area = cv2.contourArea(cnt)
+            if area < 500:  # ignore small blobs
+                continue
+            perimeter = cv2.arcLength(cnt, True)
+            if perimeter == 0:
+                continue
+            circularity = 4 * np.pi * area / (perimeter * perimeter)
+            if circularity < 0.6:
+                continue
+            ((x, y), r) = cv2.minEnclosingCircle(cnt)
+            score = area  # could weight by circularity
+            if score > best_score:
+                best_score = score
+                best = ((int(x), int(y)), int(r))
+        if best is None:
             return None, None
-        cnt = max(contours, key=cv2.contourArea)
-        (x, y), r = cv2.minEnclosingCircle(cnt)
-        return (int(x), int(y)), int(r)
+        return best
 
     def draw(self, frame: np.ndarray, center, radius: int):
+        if center and radius:
+            cv2.circle(frame, center, radius, (0,0,255), 2)
+
+# Main application(self, frame: np.ndarray, center, radius: int):
         if center and radius:
             cv2.circle(frame, center, radius, (0,0,255), 2)
 
