@@ -36,8 +36,8 @@ class Controller:
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = 0 # Offset for x-axis orientation (BEST SO FAR: -0.01)
-        self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+        self.x_offset = 0.01 # Offset for x-axis orientation (BEST SO FAR: -0.01)
+        self.y_offset = 0.002  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
 
@@ -62,7 +62,7 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 60
+        self.pos_tol = 40
         self.vel_tol = 10
 
         #Axis control
