@@ -2,6 +2,7 @@ import tkinter as tk
 from other_modules.ui.screen1 import Screen1
 from other_modules.ui.screen2 import Screen2
 from other_modules.ui.screen3 import Screen3
+from other_modules.ui.testscreen import ScreenTemplate
 from other_modules.ui.loading_path import LoadingPath
 from other_modules.ui.need_path import NeedPath
 from other_modules.ui.elManuel import elManuel
@@ -35,7 +36,7 @@ class MainApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (BootScreen, Screen1, Screen2, Screen3, NeedPath, LoadingPath, elManuel):
+        for F in (BootScreen, ScreenTemplate, Screen1, Screen2, Screen3, NeedPath, LoadingPath, elManuel):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
