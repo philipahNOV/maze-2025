@@ -66,7 +66,6 @@ def main():
         center, radius, mask = detector.process_frame(frame)
         detector.draw(frame, center, radius)
 
-        cv2.imshow('Mask', mask)
         cv2.imshow('Tracking', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
