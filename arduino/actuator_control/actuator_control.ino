@@ -13,10 +13,10 @@ namespace actuators {
     };
 
     // Aktuator en
-    ActuatorData actuator_1 = {9, 10, A4, 0, 0};
+    ActuatorData actuator_1 = {9, 10, A4, 0, 0}; // PWM oppover = 9, PWM nedover = 10, Potensjometer = A4
 
     // Aktuator to
-    ActuatorData actuator_2 = {11, 12, A3, 0, 0};
+    ActuatorData actuator_2 = {11, 12, A3, 0, 0}; // PWM oppover = 11, PWM nedover = 12, Potensjometer = A3
 }
 
 // Navnerom for globale variabler
@@ -32,7 +32,6 @@ namespace {
 }
 
 // Initialiserer funksjoner
-void stop_actuator(uint8_t actuator); // Funksjon for å stoppe aktuatoren
 void actuator_position(); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
 void move_speed(); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
@@ -51,30 +50,17 @@ void setup() {
     pinMode(actuators::actuator_2.pwm_up, OUTPUT); // Setter PWM pinne for aktuator to oppover
     pinMode(actuators::actuator_2.pwm_down, OUTPUT); // Setter PWM pinne for aktuator to nedover
 
-    // Setter analog pinnene til null for at motorene ikke skal bevege seg når programmet starter
-    stop_actuator(1); // Stopper aktuator en
-    stop_actuator(2); // Stopper aktuator to
+    // Setter analog pinnene til null for at motorene ikke bevege seg når programmet starter
+    analogWrite(actuators::actuator_1.pwm_up, 0); // Setter PWM pinne for aktuator en oppover til 0
+    analogWrite(actuators::actuator_1.pwm_down, 0); // Setter PWM pinne for aktuator en nedover til 0
+    analogWrite(actuators::actuator_2.pwm_up, 0); // Setter PWM pinne for aktuator to oppover til 0
+    analogWrite(actuators::actuator_2.pwm_down, 0); // Setter PWM pinne for aktuator to nedover til 0
 }
 
 void loop() {
     actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
     read_serial(); // Motar data over seriel fra Jetson
     move_speed(); // Setter motor hastighetene
-}
-
-// Funksjon for å stoppe aktuatorene
-void stop_actuator(uint8_t actuator)
-{
-    if (actuator == 1)
-    {
-        analogWrite(actuators::actuator_1.pwm_up, 0);
-        analogWrite(actuators::actuator_1.pwm_down, 0);
-    }
-    else if (actuator == 2)
-    {
-        analogWrite(actuators::actuator_2.pwm_up, 0);
-        analogWrite(actuators::actuator_2.pwm_down, 0);
-    }
 }
 
 // Funksjon for å returnere posisjonen til aktuatoren
@@ -84,11 +70,13 @@ void actuator_position() // Tar inn en peker til potensjometer pinnen
     const float adc_max_hight{1018.0}; // ADC verdien for maks lengde
     const float adc_min_hight{2.0}; // ADC verdi for minimum lengde
 
-    actuators::actuator_1.position = (float(analogRead(actuators::actuator_1.pot_feedback)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight); // Kalkulerer distansen
-    actuators::actuator_2.position = (float(analogRead(actuators::actuator_2.pot_feedback)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight); // Kalkulerer distansen
+    // Kalkulerer distansen til aktuator en
+    actuators::actuator_1.position = (float(analogRead(actuators::actuator_1.pot_feedback)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
+    // Kalkulerer distansen til aktuator to
+    actuators::actuator_2.position = (float(analogRead(actuators::actuator_2.pot_feedback)) - adc_min_hight) * act_max_stroke / (adc_max_hight - adc_min_hight);
 }
 
-// Returnerer: 0 = OK å bevege seg, 1 = for høyt (ikke beveg opp), -1 = for lavt (ikke beveg ned)
+// Funksjon for å sjekke om aktuatorene er over eller under grensen
 void actuator_limit_check()
 {   
     limit_check_counter++; // Øker telleren for hvor ofte grensen sjekkes
@@ -135,9 +123,10 @@ void actuator_limit_check()
     }
 }
 
+// Funksjon for å sette hastighetene til aktuatorene basert på actuator_speeds
 void move_speed()
 {
-    // Setter hastighetene for aktuatorene basert på actuator_speeds
+    // Setter hastighetene for aktuatorene fra actuator_speeds
     // Aktuator 1
     if (actuator_speeds.speed_actuator_1 > 0 && actuators::actuator_1.distance_status != 1) // Hvis aktuator en skal bevege seg oppover og ikke er for høyt
     {
@@ -173,10 +162,10 @@ void move_speed()
     }
 }
 
-
+// Funksjon for å lese innkommende seriedata
 void read_serial()
 {
-    if (Serial.available() >= 6)
+    if (Serial.available() >= 3)
     {
         char buffer[64]; // Buffer for å lese innkommende data
         int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser inn data til linjeskift eller buffer er fullt
@@ -184,7 +173,8 @@ void read_serial()
         
         int speed1, speed2; // Variabler for å lagre hastigheter og checksum
         
-        if (sscanf(buffer, "%d,%d", &speed1, &speed2) == 2)
+        // Leser inn hastigheter fra buffer
+        if (sscanf(buffer, "%d,%d", &speed1, &speed2) == 2) 
         {
             actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
             actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
