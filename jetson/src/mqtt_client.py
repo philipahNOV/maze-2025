@@ -16,8 +16,8 @@ class MQTTClientJetson(threading.Thread):
         
         self.thread = threading.Thread(target=self.client.loop_forever)
         self.thread.start()
-        #self.jetson_state = "None"
-        self.jetson_state = "0.0"
+        self.jetson_state = "None"
+        #self.jetson_state = "0.0"
         self.elevator = 0
 
 
