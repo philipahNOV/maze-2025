@@ -47,7 +47,7 @@ class PathFollower:
         self.prev_time = None
         self.prev_ball_pos = None
 
-        self.vel_threshold = 10
+        self.vel_threshold = 30
         self.prev_progress_time = None
         self.stuck_retry_time = 3
 
