@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker):
+    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker, path_following=True):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None
@@ -27,6 +27,8 @@ class Controller:
         self.tracker = tracker
         self.e_x_int = 0
         self.e_y_int = 0
+
+        self.path_following = path_following
 
         self.prev_vel_x = 0
         self.prev_vel_y = 0
@@ -157,9 +159,10 @@ class Controller:
             print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
-            self.arduinoThread.send_target_positions(0, 0)
+            if not self.path_following:
+                self.arduinoThread.send_target_positions(0, 0)
+                time.sleep(self.command_delay)
             self.prevTime = time.time()
-            time.sleep(self.command_delay)
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
