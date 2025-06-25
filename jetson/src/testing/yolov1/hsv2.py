@@ -24,7 +24,7 @@ def grab_zed_frame(zed):
     zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C4)
     rgba = mat.get_data()
     # convert RGBA to BGR
-    bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2BGR)
+    bgr = cv2.cvtColor(rgba, cv2.COLOR_RGBA2RGB)
     return bgr
 
 class BallDetector:
