@@ -37,7 +37,7 @@ class Screen1(tk.Frame):
             activebackground="#4B4C4C",  # Match on press
             command=self.on_button_click,
         )
-        self.example_button.place(x=380, y=315, width=243, height=74)  # Absolute placement        
+        self.example_button.place(x=390, y=385, width=243, height=74)  # Absolute placement        
 
     def show(self):
         """Make this frame visible"""
