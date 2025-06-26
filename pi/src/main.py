@@ -10,6 +10,7 @@ from other_modules.ui.elManuel import elManuel
 #from other_modules.ui.boot_screen import BootScreen
 from other_modules.ui.boot_screen_1 import BootScreen
 
+import subprocess
 from other_modules.mqtt_client import MQTTClientPi
 from other_modules.data_handler import DataHandler
 
@@ -83,9 +84,11 @@ class MainApp(tk.Tk):
         self.destroy()  # This exits mainloop()
 
     def _do_restart(self):
-        print("Re-executing main.py...")
+        print("Re-launching main.py...")
         python = sys.executable
-        os.execl(python, python, *sys.argv)
+        subprocess.Popen([python] + sys.argv)
+        self.quit()        # Stop the Tkinter event loop
+        sys.exit(0)        # Exit the current process cleanly
 
 def signal_handler(sig, frame):
     print('Signal received:', sig)
