@@ -1,7 +1,6 @@
 import cv2
 import pyzed.sl as sl
 import time
-import numpy as np
 
 def init_zed_camera():
     zed = sl.Camera()
@@ -17,7 +16,7 @@ def grab_frame(zed):
     mat = sl.Mat()
     if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None
-    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
+    zed.retrieve_image(mat, sl.VIEW.LEFT)
     return mat.get_data()
 
 def main():
@@ -42,11 +41,9 @@ def main():
             gray   = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
 
-            bin_bgr = cv2.cvtColor(binary, cv2.COLOR_GRAY2BGR)
-            combo = np.hstack((frame, bin_bgr))
-
-            # show in one window
-            cv2.imshow("ZED View (Orig | Binary)", combo)
+            # show both
+            cv2.imshow(win_orig, frame)
+            cv2.imshow(win_bin,  binary)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
