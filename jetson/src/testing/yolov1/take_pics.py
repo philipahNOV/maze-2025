@@ -16,7 +16,7 @@ def main():
         print(f"Error: {status}")
         exit(1)
 
-    save_dir = "img2"
+    save_dir = "img3"
     os.makedirs(save_dir, exist_ok=True)
 
     img_count = 0
