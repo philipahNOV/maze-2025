@@ -24,6 +24,7 @@ class MQTTClientJetson(threading.Thread):
         self.elevator = 0
         self.command = None
         self.states = ["0.0", "1.0", "2.0"]
+        self.stop_control = False
 
 
     def on_connect(self, client, userdata, flags, rc, *args):
@@ -57,6 +58,8 @@ class MQTTClientJetson(threading.Thread):
             if msg.payload.decode() in self.states:
                 self.jetson_state = msg.payload.decode()
                 self.client.publish("pi/state", msg.payload.decode(), 0)
+            elif msg.payload.decode() == "Stop_control":
+                self.stop_control = True
             else:
                 self.command = msg.payload.decode()
         elif msg.topic == "handshake/request":

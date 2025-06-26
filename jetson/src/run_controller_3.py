@@ -5,8 +5,9 @@ import positionController_2
 import arduino_connection_test
 import lowPassFilter
 import path_following
+from mqtt_client import MQTTClientJetson
 
-def main(tracker: tracking.BallTracker, controller: positionController_2.Controller):
+def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
@@ -87,6 +88,10 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             # Use path following instead of static control
             pathFollower.follow_path(ball_pos)
+
+            if mqtt_client.stop_control:
+                mqtt_client.stop_control = False
+                return
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
