@@ -54,9 +54,9 @@ class Tuning(tk.Frame):
 
         
 
-        self.entry1 = self.create_input(self.input_frame, "x offset", 0)
-        self.entry2 = self.create_input(self.input_frame, "y offset:", 1)
-        self.entry3 = self.create_input(self.input_frame, "Kp x:", 2)
+        self.entry1 = self.create_input(self.input_frame, "x offset", 0, 0)
+        self.entry2 = self.create_input(self.input_frame, "y offset:", 1, 0)
+        self.entry3 = self.create_input(self.input_frame, "Kp x:", 2, 0)
 
         self.exit_button = tk.Button(
             self,
