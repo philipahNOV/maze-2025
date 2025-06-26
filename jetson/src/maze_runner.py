@@ -86,7 +86,7 @@ def main():
                 continue
 
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            _, binary = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
+            _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
             cv2.imshow(bin_win, binary)
 
             plot_waypoints(frame, follower)
