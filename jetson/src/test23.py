@@ -16,7 +16,7 @@ def grab_frame(zed):
     mat = sl.Mat()
     if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None
-    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
+    zed.retrieve_image(mat, sl.VIEW.LEFT)
     return mat.get_data()
 
 def main():
