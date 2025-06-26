@@ -10,9 +10,9 @@ class BootScreen(tk.Frame):
 
         # Image cycling state
         self.image_paths = [
-            "../../data/boot_image_1.png",
-            "../../data/boot_image_2.png",
-            "../../data/boot_image_3.png"
+            "../data/boot_image_1.png",
+            "../data/boot_image_2.png",
+            "../data/boot_image_3.png"
         ]
         self.images = [ImageTk.PhotoImage(Image.open(path)) for path in self.image_paths]
         self.image_index = 0
