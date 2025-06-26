@@ -45,7 +45,7 @@ def main():
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord(' '):  # SPACE: save BGR so colors stay correct
-                fn = os.path.join(save_dir, f"img_{img_count:03d}.jpg")
+                fn = os.path.join(save_dir, f"img_{img_count+1}.jpg")
                 cv2.imwrite(fn, bgr)
                 print("Saved", fn)
                 img_count += 1
