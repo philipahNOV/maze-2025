@@ -59,7 +59,13 @@ def main():
 
     # --- 4) Build occupancy grid & run A*
     mask0 = get_board(frame0)
-    grid  = (mask0 == 0).astype(np.uint8)
+    grid  = (mask0 != 0).astype(np.uint8)
+
+    sx, sy = start
+    gx, gy = goal
+    print("start occupancy:", grid[sy, sx])
+    print("goal occupancy: ", grid[gy, gx])
+
 
     path = astar(start, goal, grid)
     if not path:
