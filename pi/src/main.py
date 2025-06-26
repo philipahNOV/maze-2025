@@ -68,12 +68,8 @@ class MainApp(tk.Tk):
             self.mqtt_client.shut_down()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
-        import threading
-        print("\n[DEBUG] Threads at shutdown:")
-        for t in threading.enumerate():
-            print(f" - {t.name} (daemon={t.daemon})")
         self.destroy()
-        sys.exit(0)
+        os._exit(0)
 
     def restart_program(self):
         print("Restart requested...")
@@ -84,7 +80,7 @@ class MainApp(tk.Tk):
 
         self._do_restart()     # ← Run the restart first
         self.destroy()         # Then close the GUI
-        sys.exit(0)            # Exit this instance
+        os._exit(0)            # Exit this instance
 
     def _do_restart(self):
         print("Re-launching main.py...")
