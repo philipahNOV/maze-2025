@@ -61,7 +61,7 @@ while True:
         arduino_thread.send_target_positions(0, 0, "Idle")
         mqtt_client.command = None
     elif command == "Control":
-        run_controller_3.main(tracker, controller)
+        run_controller_3.main(tracker, controller, mqtt_client)
         mqtt_client.command = None
     elif command == "Horizontal":
         controller.horizontal()

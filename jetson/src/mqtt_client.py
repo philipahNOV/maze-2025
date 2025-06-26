@@ -62,6 +62,8 @@ class MQTTClientJetson(threading.Thread):
                 self.stop_control = True
             else:
                 self.command = msg.payload.decode()
+                if self.command == "Control":
+                    self.stop_control = False
         elif msg.topic == "handshake/request":
             if msg.payload.decode() == "pi":
                 print("Received handshake request from Pi")
