@@ -193,7 +193,6 @@ class Screen1(tk.Frame):
 
         self.speed_slider = tk.Scale(
             self,
-            orient="horizontal",
             from_=0,
             to=255,
             orient="horizontal",        # or "vertical"
