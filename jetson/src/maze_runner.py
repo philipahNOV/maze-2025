@@ -1,5 +1,6 @@
 import time
 import cv2
+import numpy as np
 from astar_test import astar
 import arduino_connection_test
 import testing.yolov1.hsv3 as tracking
@@ -57,7 +58,8 @@ def main():
     _, binary0 = cv2.threshold(gray0, 100, 255, cv2.THRESH_BINARY)
     H, W = binary0.shape
     # grid[y][x] = 1 for obstacle, 0 for free
-    grid = [[1 if binary0[y, x] == 0 else 0 for x in range(W)] for y in range(H)]
+    grid_list = [[1 if binary0[y, x] == 0 else 0 for x in range(W)] for y in range(H)]
+    grid = np.array(grid_list, dtype=np.uint8)  # ← changed here
 
     # 4) compute path
     path = astar(start, goal, grid)
