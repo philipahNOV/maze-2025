@@ -7,6 +7,7 @@ from automatic import Automatic
 import run_controller_3
 import positionController_2
 import testing.yolov1.hsv3 as tracking
+import queue
 
 from manual_part.manuel_main import elManuel
 
@@ -48,9 +49,15 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
-    command = mqtt_client.command
+    #command = mqtt_client.command
 
-    if not command:
+    #if not command:
+    #    time.sleep(0.1)
+    #    continue
+
+    try:
+        command = mqtt_client.command_queue.get_nowait()
+    except queue.Empty:
         time.sleep(0.1)
         continue
 

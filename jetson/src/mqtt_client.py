@@ -1,6 +1,7 @@
 import threading
 import paho.mqtt.client as mqtt
 from arduino_connection_test import ArduinoConnection
+from queue import Queue
 
 
 class MQTTClientJetson(threading.Thread):
@@ -25,6 +26,7 @@ class MQTTClientJetson(threading.Thread):
         self.command = None
         self.states = ["0.0", "1.0", "2.0"]
         self.stop_control = False
+        self.command_queue = Queue()
 
 
     def on_connect(self, client, userdata, flags, rc, *args):
@@ -61,7 +63,8 @@ class MQTTClientJetson(threading.Thread):
             elif msg.payload.decode() == "Stop_control":
                 self.stop_control = True
             else:
-                self.command = msg.payload.decode()
+                #self.command = msg.payload.decode()
+                self.command_queue.put(msg.payload.decode())
                 if self.command == "Control":
                     self.stop_control = False
         elif msg.topic == "handshake/request":
