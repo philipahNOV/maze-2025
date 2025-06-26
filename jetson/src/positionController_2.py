@@ -75,6 +75,7 @@ class Controller:
         for i, name in enumerate(param_names):
             if params[i] != "pass":
                 setattr(self, name, params[i])
+        print("test")
 
     def set_ball_pos(self, pos):
         self.pos = pos
