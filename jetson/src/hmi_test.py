@@ -1,7 +1,7 @@
 from mqtt_client import MQTTClientJetson
 from math_part.math_main import State1_3
 from ai_part.ai_main import State2_3
-from arduino_connection import ArduinoConnection
+from arduino_connection_test import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
 import run_controller_2
@@ -21,6 +21,13 @@ def initialize_component(component, name, retries=5, delay=2):
             print(f"Failed to initialize {name} on attempt {attempt + 1}: {e}")
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
+
+try:
+    arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
+    time.sleep(10)
+except Exception as e:
+    print(e)
+    exit(1)
 
 try:
     mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
