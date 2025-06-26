@@ -234,7 +234,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.controller.restart_program
         )
-        self.restart_button.place(x=80, y=80, width=100, height=50)
+        self.restart_button.place(x=80, y=20, width=100, height=50)
 
     def show(self):
         """Make this frame visible"""

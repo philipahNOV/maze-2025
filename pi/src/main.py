@@ -72,7 +72,10 @@ class MainApp(tk.Tk):
 
     def restart_program(self):
         print("Cleaning up and restarting...")
-        self.on_close()  # Shut down threads and MQTT cleanly
+        self.after(100, self._do_restart)  # Let Tk shutdown finish first
+        self.on_close()
+
+    def _do_restart(self):
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
