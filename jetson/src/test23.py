@@ -2,20 +2,20 @@ import cv2
 import pyzed.sl as sl
 import time
 
-def init_camera(self):
-    self.zed = sl.Camera()
+def init_camera():
+    zed = sl.Camera()
     init_params = sl.InitParameters()
     init_params.camera_resolution = sl.RESOLUTION.HD720
     init_params.camera_fps = 30
     init_params.depth_mode = sl.DEPTH_MODE.NONE
     init_params.coordinate_units = sl.UNIT.MILLIMETER
-    if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+    if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         raise RuntimeError("ZED camera failed to open")
 
-def grab_frame(self):
+def grab_frame(zed):
     image = sl.Mat()
-    if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
-        self.zed.retrieve_image(image, sl.VIEW.LEFT)
+    if zed.grab() == sl.ERROR_CODE.SUCCESS:
+        zed.retrieve_image(image, sl.VIEW.LEFT)
         bgr = image.get_data()  # ZED returns BGR directly (720, 1280, 3)
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         return rgb, bgr
