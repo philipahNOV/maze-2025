@@ -4,6 +4,7 @@ from ai_part.ai_main import State2_3
 from arduino_connection import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
+import run_controller_2
 
 from manual_part.manuel_main import elManuel
 
@@ -32,3 +33,6 @@ while mqtt_client.jetson_state != "0.0":
     time.sleep(1)
 
 print("Connected!")
+
+if mqtt_client.jetson_state == "1.0":
+    run_controller_2.main()
