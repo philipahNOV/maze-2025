@@ -5,7 +5,7 @@ from tkinter import font as tkfont
 import time
 
 
-class Screen1(tk.Frame):
+class Tuning(tk.Frame):
     def __init__(self, parent, controller, mqtt_client):
         super().__init__(parent)
         self.controller = controller
@@ -96,6 +96,21 @@ class Screen1(tk.Frame):
             command=self.controller.restart_program
         )
         self.restart_button.place(x=80, y=20, width=100, height=50)
+
+        self.tune_pid_button = tk.Button(
+            self,
+            text="DEV TOOLS",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=lambda: self.controller.show_frame("Screen1")
+        )
+        self.tune_pid_button.place(x=600, y=100, width=180, height=60)
 
     def show(self):
         """Make this frame visible"""

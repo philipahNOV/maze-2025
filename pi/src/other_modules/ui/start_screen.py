@@ -236,6 +236,21 @@ class Screen1(tk.Frame):
         )
         self.restart_button.place(x=80, y=20, width=100, height=50)
 
+        self.tune_pid_button = tk.Button(
+            self,
+            text="TUNE PID",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=lambda: self.controller.show_frame("Tuning")
+        )
+        self.tune_pid_button.place(x=600, y=100, width=180, height=60)
+
     def show(self):
         """Make this frame visible"""
         self.pack(expand=True, fill=tk.BOTH)
