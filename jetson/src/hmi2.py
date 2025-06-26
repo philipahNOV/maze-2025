@@ -5,7 +5,7 @@ from arduino_connection_test import ArduinoConnection
 from zed_main import ZEDCamera
 import run_controller_3
 import positionController_2
-import testing.yolov1.hsv3 as tracking
+import testing.yolov1.hsv4 as tracking
 
 from manual_part.manuel_main import elManuel
 
@@ -66,13 +66,13 @@ while True:
 
     if cmd == "Idle":
         arduino_thread.send_target_positions(0, 0, "Idle")
-
+        mqtt_client.command = None
     elif cmd == "Elevator":
         arduino_thread.send_target_positions(0, 0, "Get_ball")
-
+        mqtt_client.command = None
     elif cmd == "Horizontal":
-        if controller:
-            controller.horizontal()
+        controller.horizontal()
+        mqtt_client.command = None
 
     elif cmd == "Control":
         if tracker is None:
@@ -81,6 +81,6 @@ while True:
             controller = positionController_2.Controller(arduino_thread, tracker)
             print("Tracker + Controller initialized.")
         run_controller_3.main(tracker, controller, mqtt_client)
+        mqtt_client.command = None
 
-    mqtt_client.command = None
     time.sleep(0.1)
