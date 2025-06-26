@@ -32,10 +32,11 @@ class MQTTClientPi(threading.Thread):
         while not self.connected:
             try:
                 self.client.connect(self.broker_address, self.port, 60)
+                self.client.loop_start()
                 self.connected = True
                 print("Successfully connected to broker")
-                self.thread = threading.Thread(target=self.client.loop_forever, daemon=True)
-                self.thread.start()
+                #self.thread = threading.Thread(target=self.client.loop_forever, daemon=True)
+                #self.thread.start()
             except Exception as e:
                 print(f"Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
                 time.sleep(self.retry_interval)
@@ -99,6 +100,7 @@ class MQTTClientPi(threading.Thread):
         threading.Thread(target=handshake_loop, daemon=True).start()
     
     def shut_down(self):
+        self.client.loop_stop(force=True)
         self.client.disconnect()
-        self.thread.join()
+        #self.thread.join()
         print("Disconnected from broker and stopped the thread")
