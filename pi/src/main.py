@@ -26,7 +26,7 @@ class MainApp(tk.Tk):
         self.attributes("-fullscreen", True)
         self.current_screen = None
 
-        self.data_handler = DataHandler(self.get_current_screen)
+        #self.data_handler = DataHandler(self.get_current_screen)
 
         self.current_frame = "BootScreen"
 
@@ -60,8 +60,8 @@ class MainApp(tk.Tk):
         frame.tkraise()
 
     def on_close(self):
-        self.frames["Screen3"].stop_update_camera_feed_thread()
-        self.data_handler.close_resources()
+        #self.frames["Screen3"].stop_update_camera_feed_thread()
+        #self.data_handler.close_resources()
         try:
             self.mqtt_client.shut_down()
         except Exception as e:
