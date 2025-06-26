@@ -37,7 +37,8 @@ class Tuning(tk.Frame):
             self.entry4.get(),
             self.entry5.get(),
             self.entry6.get(),
-            self.entry7.get()
+            self.entry7.get(),
+            self.entry8.get()
         ]
         command_string = "PID:"
         for entry in entries:
@@ -77,7 +78,7 @@ class Tuning(tk.Frame):
         self.entry5 = self.create_input(self.input_frame, "Kd x:", 4, 0)
         self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0)
         self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0)
-        self.entry8 = self.create_input(self.input_frame, "Kp y:", 7, 0)
+        self.entry8 = self.create_input(self.input_frame, "Ki y:", 7, 0)
 
         self.exit_button = tk.Button(
             self,
