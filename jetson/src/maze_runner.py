@@ -8,6 +8,54 @@ import lowPassFilter
 import positionController_2
 import path_following
 
+def get_board(img):
+    """
+    Applies image processing techniques to the input image and returns a masked image.
+
+    Parameters:
+    img (numpy.ndarray): The input image.
+
+    Returns:
+    numpy.ndarray: The masked image.
+    """
+    width = int(img.shape[1])
+    height = int(img.shape[0])
+    dim = (width, height)
+
+    # Resize the image
+    resized_img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    img_gray = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
+
+    # Apply median blur
+    img_blurred = cv2.medianBlur(img_gray, 5)
+
+    # Initial bounds
+    lower_bound_init = 0
+    upper_bound_init = 60
+
+    # Create the mask based on the initial bounds
+    mask = np.ones_like(img_blurred) * 255
+    mask[(img_blurred >= lower_bound_init) & (img_blurred <= upper_bound_init)] = 0
+
+    mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+    return mask_bgr
+
+def get_mm_per_pixel(img):
+    """
+    Returns the size of the board in the input image.
+
+    Returns:
+    list: The size of the board [mm per pixel in x, mm per pixel in y].
+    """
+    if img is None:
+        return [0, 0]
+    board_size = 280  # mm
+    img_size_x = img.shape[0]  # height in pixels
+    img_size_y = img.shape[1]  # width in pixels
+    mm_per_pixel_x = board_size / img_size_x
+    mm_per_pixel_y = board_size / img_size_y
+    return [mm_per_pixel_x, mm_per_pixel_y]
 
 def main():
     def initialize_component(component, name, retries=5, delay=2):
@@ -21,6 +69,7 @@ def main():
                 time.sleep(delay)
         raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
+    # --- Arduino setup ---
     try:
         arduino_thread = initialize_component(
             arduino_connection_test.ArduinoConnection, "ArduinoConnection"
@@ -30,15 +79,17 @@ def main():
         print(e)
         exit(1)
 
+    # helper to draw the planned path
     def plot_waypoints(frame, pathFollower: path_following.PathFollower):
         for pt in pathFollower.path:
             cv2.circle(frame, pt, 5, (0, 0, 255), -1)
 
+    # --- Tracker & smoother ---
     tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
     tracker.start()
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
-    # wait for YOLO
+    # wait for YOLO to spin up
     while not tracker.initialized:
         time.sleep(0.1)
 
@@ -48,18 +99,23 @@ def main():
     start = (738, 699)
     goal  = (830,  60)
 
-    # 3) grab one frame and threshold it
+    # 3) grab one frame, mask it, compute mm/pixel
     frame0 = None
     while frame0 is None:
         frame0 = tracker.frame
         time.sleep(0.05)
-    gray0   = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
-    _, binary0 = cv2.threshold(gray0, 100, 255, cv2.THRESH_BINARY)
 
-    # build a NumPy occupancy grid: 1=wall, 0=free
-    grid = (binary0 == 0).astype(np.uint8)
+    # apply get_board to produce a binary-style mask
+    board_mask_bgr = get_board(frame0)
+    board_mask_gray = cv2.cvtColor(board_mask_bgr, cv2.COLOR_BGR2GRAY)
+    # walls are the zeroed regions (== 0)
+    grid = (board_mask_gray == 0).astype(np.uint8)
 
-    # 4) compute path
+    # compute physical scale (mm per pixel)
+    mm_per_pixel = get_mm_per_pixel(frame0)
+    print(f"Scale: {mm_per_pixel[0]:.3f} mm/px (x), {mm_per_pixel[1]:.3f} mm/px (y)")
+
+    # 4) compute path via A*
     path = astar(start, goal, grid)
     if not path:
         raise RuntimeError("A* failed to find a path")
@@ -79,7 +135,7 @@ def main():
 
     # 7) display loop
     win     = "Maze View"
-    bin_win = "Binary View"
+    bin_win = "Board Mask"
     cv2.namedWindow(win,     cv2.WINDOW_NORMAL)
     cv2.resizeWindow(win,     960, 540)
     cv2.namedWindow(bin_win,  cv2.WINDOW_NORMAL)
@@ -92,10 +148,9 @@ def main():
             if frame is None:
                 continue
 
-            # live binary view
-            gray   = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
-            cv2.imshow(bin_win, binary)
+            # live board mask view
+            mask_live = get_board(frame)
+            cv2.imshow(bin_win, mask_live)
 
             # draw planned waypoints on color frame
             plot_waypoints(frame, follower)
@@ -123,7 +178,6 @@ def main():
         tracker.stop()
         cv2.destroyAllWindows()
         print("[INFO] Shutdown complete.")
-
 
 if __name__ == "__main__":
     main()
