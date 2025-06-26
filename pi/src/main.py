@@ -68,6 +68,10 @@ class MainApp(tk.Tk):
             self.mqtt_client.shut_down()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
+        import threading
+        print("\n[DEBUG] Threads at shutdown:")
+        for t in threading.enumerate():
+            print(f" - {t.name} (daemon={t.daemon})")
         self.destroy()
         sys.exit(0)
 
