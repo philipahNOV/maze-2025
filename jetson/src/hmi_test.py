@@ -68,6 +68,7 @@ while True:
             if params[i] != "pass":
                 params[i] = float(params[i])
         controller.set_pid_parameters(params)
+        print("test")
         mqtt_client.command = None
 
     if command == "Elevator":

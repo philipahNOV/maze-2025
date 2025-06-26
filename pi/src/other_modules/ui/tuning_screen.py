@@ -45,8 +45,8 @@ class Tuning(tk.Frame):
                 command_string += ",pass"
             else:
                 try:
-                    float(entry)
-                    command_string += ",entry"
+                    val = float(entry)
+                    command_string += f",{val}"
                 except ValueError:
                     command_string += ",pass"
 
