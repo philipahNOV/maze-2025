@@ -66,5 +66,18 @@ while True:
     elif command == "Horizontal":
         controller.horizontal()
         mqtt_client.command = None
+    elif command.startswith("Motor_"):
+        dir = command.split("_")[1]
+        if dir == "up":
+            arduino_thread.send_target_positions(40, 0)
+        if dir == "down":
+            arduino_thread.send_target_positions(-40, 0)
+        if dir == "left":
+            arduino_thread.send_target_positions(0, 40)
+        if dir == "right":
+            arduino_thread.send_target_positions(0, -40)
+        if dir == "stop":
+            arduino_thread.send_target_positions(0, 0)
+            mqtt_client.command = None
 
     time.sleep(0.1)
