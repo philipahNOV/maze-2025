@@ -1,1 +1,0 @@
-send_images = False
