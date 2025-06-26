@@ -34,7 +34,7 @@ def compute_repulsion_cost(grid):
     repulse = 1.0 - (dist / max_d)
     return repulse
 
-def astar_with_repulsion(grid, start, goal, repulsion_weight=5.0):
+def astar(grid, start, goal, repulsion_weight=5.0):
     """
     A* on a binary np.ndarray grid:
       grid[r,c]==0 is free, 1 is obstacle.
