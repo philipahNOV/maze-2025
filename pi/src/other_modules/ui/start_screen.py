@@ -17,9 +17,9 @@ class Screen1(tk.Frame):
         self.create_widgets()
 
     def on_button_click(self):
-        self.mqtt_client.client.publish("jetson/command", "1.0")
+        self.mqtt_client.client.publish("jetson/command", "test")
         #self.controller.show_frame("elManuel")
-        print("Send command: 1.0")
+        print("Sent command: 1.0")
 
     def create_widgets(self):
         self.update()
