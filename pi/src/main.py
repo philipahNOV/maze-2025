@@ -1,12 +1,14 @@
 import tkinter as tk
-from other_modules.ui.screen1 import Screen1
+#from other_modules.ui.screen1 import Screen1
+from other_modules.ui.start_screen import Screen1
 from other_modules.ui.screen2 import Screen2
 from other_modules.ui.screen3 import Screen3
 from other_modules.ui.testscreen import ScreenTemplate
 from other_modules.ui.loading_path import LoadingPath
 from other_modules.ui.need_path import NeedPath
 from other_modules.ui.elManuel import elManuel
-from other_modules.ui.boot_screen import BootScreen
+#from other_modules.ui.boot_screen import BootScreen
+from other_modules.ui.boot_screen_1 import BootScreen
 
 from other_modules.mqtt_client import MQTTClientPi
 from other_modules.data_handler import DataHandler

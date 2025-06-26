@@ -49,8 +49,11 @@ class MQTTClientJetson(threading.Thread):
         if msg.topic == "jetson/state":
             self.jetson_state = msg.payload.decode()   
         elif msg.topic == "jetson/command":
-            self.jetson_state = msg.payload.decode()
-            self.client.publish("pi/state", msg.payload.decode(), 0)
+            if msg.payload.decode() == "test":
+                print("TETETETETETE")
+            else:
+                self.jetson_state = msg.payload.decode()
+                self.client.publish("pi/state", msg.payload.decode(), 0)
         elif msg.topic == "handshake/request":
             if msg.payload.decode() == "pi":
                 print("Received handshake request from Pi")

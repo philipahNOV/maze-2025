@@ -2,53 +2,59 @@ import os
 import cv2
 import pyzed.sl as sl
 
-def main():
-    # Create a ZED camera object
+def init_zed_camera():
     zed = sl.Camera()
+    params = sl.InitParameters()
+    params.camera_resolution = sl.RESOLUTION.HD720
+    params.camera_fps = 30
+    params.coordinate_units = sl.UNIT.MILLIMETER
+    if zed.open(params) != sl.ERROR_CODE.SUCCESS:
+        print("ZED failed to open"); exit(1)
+    return zed
 
-    # Set configuration parameters
-    init_params = sl.InitParameters()
-    init_params.camera_resolution = sl.RESOLUTION.HD720  # or other resolution
-    init_params.camera_fps = 30
+def grab_zed_frame(zed):
+    mat = sl.Mat()
+    if zed.grab() != sl.ERROR_CODE.SUCCESS:
+        return None, None
+    # 1) grab 3-channel BGR
+    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
+    bgr = mat.get_data()
+    # 2) make an RGB copy if you need it elsewhere
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    return rgb, bgr
 
-    status = zed.open(init_params)
-    if status != sl.ERROR_CODE.SUCCESS:
-        print(f"Error: {status}")
-        exit(1)
-
-    save_dir = "img2"
+def main():
+    zed = init_zed_camera()
+    save_dir = "captures"
     os.makedirs(save_dir, exist_ok=True)
+    img_count = 26
 
-    img_count = 0
-    print("Press SPACE to take a picture.")
-    print("Press 'q' to quit.")
+    # create a small, resizable window
+    win_name = "ZED View"
+    cv2.namedWindow(win_name, cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(win_name, 1280, 720)  # half of 1280×720
 
-    image = sl.Mat()
+    try: 
+        while True:
+            rgb, bgr = grab_zed_frame(zed)
+            if bgr is None:
+                print("Frame grab failed"); break
 
-    while True:
-        if zed.grab() == sl.ERROR_CODE.SUCCESS:
-            zed.retrieve_image(image, sl.VIEW.LEFT)
-            frame = image.get_data()
-            # Convert RGBA to BGR for OpenCV
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
-            cv2.imshow("ZED Camera Feed", frame_bgr)
+            # Display the BGR image directly:
+            cv2.imshow(win_name, bgr)
 
             key = cv2.waitKey(1) & 0xFF
-
-            if key == ord(' '):  # SPACE pressed
-                filename = os.path.join(save_dir, f"image_{img_count:03d}.jpg")
-                cv2.imwrite(filename, frame_bgr)
-                print(f"Saved {filename}")
+            if key == ord(' '):  # SPACE: save BGR so colors stay correct
+                fn = os.path.join(save_dir, f"img_{img_count+1}.jpg")
+                cv2.imwrite(fn, bgr)
+                print("Saved", fn)
                 img_count += 1
-
             elif key == ord('q'):  # Quit
                 break
-        else:
-            print("Error: Failed to grab frame.")
-            break
-
-    zed.close()
-    cv2.destroyAllWindows()
+    finally:            
+        zed.close()
+        cv2.destroyAllWindows()
+        
 
 if __name__ == "__main__":
     main()

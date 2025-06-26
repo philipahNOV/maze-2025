@@ -48,6 +48,7 @@ class PathFollower:
         self.prev_ball_pos = None
 
         self.vel_threshold = 50
+
         self.prev_progress_time = None
         self.stuck_retry_time = 3
 
@@ -69,8 +70,8 @@ class PathFollower:
             dt = time.time() - self.prev_time
             if dt > 0.000001:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
-                self.prev_time = time.time()
-                self.prev_ball_pos = ballPos
+        self.prev_time = time.time()
+        self.prev_ball_pos = ballPos
             
         print(vel)
 
@@ -78,9 +79,11 @@ class PathFollower:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
         elif vel:
-            if vel > self.vel_threshold:
+            if not self.prev_progress_time:
+                pass
+            elif vel > self.vel_threshold:
                 self.prev_progress_time = None
-            if time.time() - self.prev_progress_time > self.stuck_retry_time:
+            elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
                 self.next_waypoint = max(self.next_waypoint - 1, 0)
                 self.prev_waypoint = max(self.prev_waypoint - 1, 0)

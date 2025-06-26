@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker):
+    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker, path_following=True):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None
@@ -28,14 +28,16 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
+        self.path_following = path_following
+
         self.prev_vel_x = 0
         self.prev_vel_y = 0
 
         self.prev_command_time = time.time()
 
         #ARDUINO PARAMETERS
-        self.x_offset = -0.0075 # Offset for x-axis orientation (BEST SO FAR: -0.01)
-        self.y_offset = 0.0015  # Offset for y-axis orientation (tested -0.0015)
+        self.x_offset = 0.01 # Offset for x-axis orientation (BEST SO FAR: -0.01)
+        self.y_offset = 0.002  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
 
@@ -60,7 +62,7 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 60
+        self.pos_tol = 40
         self.vel_tol = 10
 
         #Axis control
@@ -157,9 +159,10 @@ class Controller:
             print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
-            self.arduinoThread.send_target_positions(0, 0)
+            if not self.path_following:
+                self.arduinoThread.send_target_positions(0, 0)
+                time.sleep(self.command_delay)
             self.prevTime = time.time()
-            time.sleep(self.command_delay)
             return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")

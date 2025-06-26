@@ -57,31 +57,20 @@ class ArduinoConnection(threading.Thread):
                 return port.device
         return None
     
-    def send_target_positions(self, speed1, speed2, state = "Control"):
+    def send_target_positions(self, speed1, speed2, state = 2):
         """
         Sends target positions and speeds to the Arduino.
 
         Args:
             speed1 (int): The speed for motor 1.
             speed2 (int): The speed for motor 2.
-            state (str, optional): The state of the robot. Defaults to "Control". Options are "Idle", "Get_ball", and "Control". TODO change default to "Idle".
         """
         with self.condition:
 
             speed1 = int(speed1)
             speed2 = int(speed2)
-            
-            if state == "Idle":
-                state_send = int(0)
-            elif state == "Get_ball":
-                state_send = int(1)
-            elif state == "Control":
-                state_send = int(2)
-            else:
-                raise ValueError("Invalid state. Must be 'Idle', 'Get_ball', or 'Control'.")
-
-
-            self.command_var = f"{speed1},{speed2},{state_send}\n"
+            state = int(state)
+            self.command_var = f"{speed1},{speed2},{state}\n"
             self.condition.notify()
 
 
