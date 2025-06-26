@@ -73,19 +73,19 @@ class MainApp(tk.Tk):
 
     def restart_program(self):
         print("Restart requested...")
-        # Gracefully shut down but don't exit
         try:
             self.mqtt_client.shut_down()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
 
-        # Schedule restart after window is closed
-        self.after(100, self._do_restart)
-        self.destroy()  # This exits mainloop()
+        self._do_restart()     # ← Run the restart first
+        self.destroy()         # Then close the GUI
+        sys.exit(0)            # Exit this instance
 
     def _do_restart(self):
         print("Re-launching main.py...")
         python = sys.executable
+        print("Launching:", [sys.executable] + sys.argv)
         subprocess.Popen([python] + sys.argv)
         self.quit()        # Stop the Tkinter event loop
         sys.exit(0)        # Exit the current process cleanly
