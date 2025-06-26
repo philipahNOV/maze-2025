@@ -207,7 +207,7 @@ class Screen1(tk.Frame):
             command=self.on_speed_change  # Called when slider moves
         )
         self.speed_slider.set(100)  # Optional default value
-        self.speed_slider.place(x=165, y=220)  
+        self.speed_slider.place(x=90, y=220)  
 
         self.exit_button = tk.Button(
             self,

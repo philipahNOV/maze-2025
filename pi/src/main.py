@@ -63,8 +63,7 @@ class MainApp(tk.Tk):
         self.frames["Screen3"].stop_update_camera_feed_thread()
         self.data_handler.close_resources()
         try:
-            self.mqtt_client.client.loop_stop(force=True)
-            self.mqtt_client.client.disconnect()
+            self.mqtt_client.shut_down()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
         self.destroy()
