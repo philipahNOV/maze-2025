@@ -79,7 +79,7 @@ while True:
             arduino_thread.send_target_positions(0, 0)
             mqtt_client.command = None
             continue
-        speed = command.split("_")[2]
+        speed = int(command.split("_")[2])
         if dir == "up":
             arduino_thread.send_target_positions(speed, 0)
         if dir == "down":
