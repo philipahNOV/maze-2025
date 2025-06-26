@@ -11,6 +11,7 @@ def init_camera():
     init_params.coordinate_units = sl.UNIT.MILLIMETER
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         raise RuntimeError("ZED camera failed to open")
+    return zed 
 
 def grab_frame(zed):
     image = sl.Mat()
