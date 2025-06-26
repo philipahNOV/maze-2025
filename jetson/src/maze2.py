@@ -15,7 +15,7 @@ def get_board(img):
     gray    = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.medianBlur(gray, 5)
 
-    lb, ub = 0, 60
+    lb, ub = 0, 140
     mask = np.full_like(blurred, 255)
     mask[(blurred >= lb) & (blurred <= ub)] = 0
     return mask
@@ -54,8 +54,8 @@ def main():
 
     # --- 3) Define start & goal (pixel coords)
     # Adjust these to your scene or compute interactively.
-    start = (50, h - 50)
-    goal  = (w - 50, 50)
+    start = (738, 699)
+    goal  = (830,  60)
 
     # --- 4) Build occupancy grid & run A*
     mask0 = get_board(frame0)
