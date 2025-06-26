@@ -64,6 +64,7 @@ while True:
 
     if command.startswith("PID:"):
         params = command.split(":")[1].split(",")
+        params.pop(0)
         for i in range(len(params)):
             if params[i] != "pass":
                 params[i] = float(params[i])
