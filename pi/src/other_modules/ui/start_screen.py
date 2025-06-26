@@ -132,10 +132,10 @@ class Screen1(tk.Frame):
             background="#EE3229",     # Match image color or use transparent if supported
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.on_button_click_motor("up"),
         )
         self.up_button.place(x=250, y=320, width=74, height=74)
         self.up_button.bind("<ButtonRelease-1>", self.on_release)
+        self.up_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))
 
         self.down_button = tk.Button(
             self,
@@ -147,10 +147,10 @@ class Screen1(tk.Frame):
             background="#EE3229",     # Match image color or use transparent if supported
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.on_button_click_motor("down"),
         )
         self.down_button.place(x=250, y=480, width=74, height=74)       
-        self.down_button.bind("<ButtonRelease-1>", self.on_release) 
+        self.down_button.bind("<ButtonRelease-1>", self.on_release)
+        self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up")) 
 
         self.left_button = tk.Button(
             self,
@@ -162,10 +162,10 @@ class Screen1(tk.Frame):
             background="#EE3229",     # Match image color or use transparent if supported
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.on_button_click_motor("left"),
         )
         self.left_button.place(x=170, y=400, width=74, height=74)   
-        self.left_button.bind("<ButtonRelease-1>", self.on_release)     
+        self.left_button.bind("<ButtonRelease-1>", self.on_release)    
+        self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up")) 
 
         self.right_button = tk.Button(
             self,
@@ -177,10 +177,10 @@ class Screen1(tk.Frame):
             background="#EE3229",     # Match image color or use transparent if supported
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.on_button_click_motor("right"),
         )
         self.right_button.place(x=330, y=400, width=74, height=74)   
-        self.right_button.bind("<ButtonRelease-1>", self.on_release)             
+        self.right_button.bind("<ButtonRelease-1>", self.on_release)     
+        self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))        
 
     def show(self):
         """Make this frame visible"""
