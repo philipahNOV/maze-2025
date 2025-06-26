@@ -78,17 +78,14 @@ class MainApp(tk.Tk):
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
 
-        self._do_restart()     # ← Run the restart first
-        self.destroy()         # Then close the GUI
-        os._exit(0)            # Exit this instance
-
-    def _do_restart(self):
-        print("Re-launching main.py...")
+        # Launch a new process first
         python = sys.executable
-        print("Launching:", [sys.executable] + sys.argv)
-        subprocess.Popen([python] + sys.argv)
-        self.quit()        # Stop the Tkinter event loop
-        sys.exit(0)        # Exit the current process cleanly
+        script = os.path.abspath(sys.argv[0])
+        print(f"Launching new process: {python} {script}")
+        subprocess.Popen([python, script])
+
+        # Exit immediately (no self.quit(), no self.destroy())
+        os._exit(0)
 
 def signal_handler(sig, frame):
     print('Signal received:', sig)
