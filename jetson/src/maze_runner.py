@@ -21,12 +21,13 @@ def main():
         raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
     try:
-        arduino_thread = initialize_component(arduino_connection_test.ArduinoConnection, "ArduinoConnection")
+        arduino_thread = initialize_component(
+            arduino_connection_test.ArduinoConnection, "ArduinoConnection"
+        )
         time.sleep(10)
     except Exception as e:
         print(e)
         exit(1)
-
 
     def plot_waypoints(frame, pathFollower: path_following.PathFollower):
         for pt in pathFollower.path:
@@ -46,10 +47,17 @@ def main():
     start = (738, 699)
     goal  = (830,  60)
 
-    # 3) build free grid
-    max_x = max(start[0], goal[0]) + 1
-    max_y = max(start[1], goal[1]) + 1
-    grid  = [[0] * (max_x+1) for _ in range(max_y+1)]
+    # 3) sample one frame, threshold it, and build occupancy grid
+    #    (binary==0 → wall, 255→free)
+    frame0 = None
+    while frame0 is None:
+        frame0 = tracker.frame
+        time.sleep(0.05)
+    gray0   = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
+    _, binary0 = cv2.threshold(gray0, 100, 255, cv2.THRESH_BINARY)
+    H, W = binary0.shape
+    # grid[y][x] = 1 for obstacle, 0 for free
+    grid = [[1 if binary0[y, x] == 0 else 0 for x in range(W)] for y in range(H)]
 
     # 4) compute path
     path = astar(start, goal, grid)
@@ -70,12 +78,11 @@ def main():
     time.sleep(2)
 
     # 7) display loop
-    win = "Maze View"
-    cv2.namedWindow(win, cv2.WINDOW_NORMAL)
-    cv2.resizeWindow(win, 960, 540)
-
+    win     = "Maze View"
     bin_win = "Binary View"
-    cv2.namedWindow(bin_win, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(win,     cv2.WINDOW_NORMAL)
+    cv2.resizeWindow(win,     960, 540)
+    cv2.namedWindow(bin_win,  cv2.WINDOW_NORMAL)
     cv2.resizeWindow(bin_win, 960, 540)
 
     print("[INFO] Press 'q' to quit.")
@@ -85,17 +92,24 @@ def main():
             if frame is None:
                 continue
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            # live binary view
+            gray   = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             _, binary = cv2.threshold(gray, 100, 255, cv2.THRESH_BINARY)
             cv2.imshow(bin_win, binary)
 
+            # draw planned waypoints on color frame
             plot_waypoints(frame, follower)
 
+            # draw and label ball
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
             if ball_pos:
                 cv2.circle(frame, ball_pos, 8, (0,255,0), -1)
-                cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2)
+                cv2.putText(
+                    frame, "Ball",
+                    (ball_pos[0]+10, ball_pos[1]),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0,255,0), 2
+                )
 
             cv2.imshow(win, frame)
 
@@ -104,10 +118,12 @@ def main():
 
             if ball_pos:
                 follower.follow_path(ball_pos)
+
     finally:
         tracker.stop()
         cv2.destroyAllWindows()
         print("[INFO] Shutdown complete.")
+
 
 if __name__ == "__main__":
     main()
