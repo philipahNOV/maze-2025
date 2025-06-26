@@ -77,7 +77,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_stop_control,
         )
-        self.example_button.place(x=925, y=235, width=100, height=74)
+        self.example_button.place(x=933, y=235, width=70, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -110,7 +110,7 @@ class Screen1(tk.Frame):
         self.title_label = tk.Label(
             self,
             text="Dev Tools",
-            font=("Jockey One", 4),   # or any font you prefer
+            font=("Jockey One", 40),   # or any font you prefer
             fg="#EE3229",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
