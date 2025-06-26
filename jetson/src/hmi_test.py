@@ -34,5 +34,7 @@ while mqtt_client.jetson_state != "0.0":
 
 print("Connected!")
 
-if mqtt_client.jetson_state == "1.0":
-    run_controller_2.main()
+while mqtt_client.jetson_state != "1.0":
+    time.sleep(0.1)
+
+run_controller_2.main()
