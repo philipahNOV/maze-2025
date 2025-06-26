@@ -57,7 +57,7 @@ class ArduinoConnection(threading.Thread):
                 return port.device
         return None
     
-    def send_target_positions(self, speed1, speed2):
+    def send_target_positions(self, speed1, speed2, state = 2):
         """
         Sends target positions and speeds to the Arduino.
 
@@ -69,7 +69,8 @@ class ArduinoConnection(threading.Thread):
 
             speed1 = int(speed1)
             speed2 = int(speed2)
-            self.command_var = f"{speed1},{speed2}\n"
+            state = int(state)
+            self.command_var = f"{speed1},{speed2},{state}\n"
             self.condition.notify()
 
 
