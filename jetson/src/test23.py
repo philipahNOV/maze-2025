@@ -12,14 +12,12 @@ def init_zed_camera():
         raise RuntimeError("Unable to open ZED camera")
     return zed
 
-def grab_frame(self):
-        image = sl.Mat()
-        if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
-            self.zed.retrieve_image(image, sl.VIEW.LEFT)
-            bgr = image.get_data()  # ZED returns BGR directly (720, 1280, 3)
-            rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-            return rgb, bgr
+def grab_frame(zed):
+    mat = sl.Mat()
+    if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None
+    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
+    return mat.get_data()
 
 def main():
     zed = init_zed_camera()
