@@ -2,8 +2,6 @@ import sys
 import cv2
 import numpy as np
 from astar_test import astar
-
-# ZED SDK imports
 import pyzed.sl as sl
 
 def get_board(img):
@@ -11,14 +9,37 @@ def get_board(img):
     Applies image processing techniques to the input image and returns a single-channel mask.
     Walls are black (0), free space white (255).
     """
-    h, w = img.shape[:2]
-    gray    = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    width = int(img.shape[1])
+    height = int(img.shape[0])
+    dim = (width, height)
+
+    resized_img = cv2.resize(img, dim, interpolation=cv2.INTER_AREA)
+    gray    = cv2.cvtColor(resized_img, cv2.COLOR_BGR2GRAY)
     blurred = cv2.medianBlur(gray, 5)
 
     lb, ub = 0, 140
-    mask = np.full_like(blurred, 255)
+    mask = np.ones_like(blurred) * 255
     mask[(blurred >= lb) & (blurred <= ub)] = 0
-    return mask
+    mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+
+    return mask_bgr
+
+def get_mm_per_pixel(img):
+    """
+    Returns the size of the board in the input image.
+
+    Returns:
+    list: The size of the board.
+
+    """
+    if img is None:
+        return [0, 0]
+    board_size = 280  # mm
+    img_size_x = img.shape[0]  # pixels
+    img_size_y = img.shape[1]  # pixels
+    mm_per_pixel_x = board_size / img_size_x
+    mm_per_pixel_y = board_size / img_size_y
+    return [mm_per_pixel_x, mm_per_pixel_y]
 
 def draw_path(frame, path, color=(0,0,255), thickness=2):
     """Overlay the A* path on the BGR frame."""
@@ -58,8 +79,14 @@ def main():
     goal  = (830,  60)
 
     # --- 4) Build occupancy grid & run A*
-    mask0 = get_board(frame0)
-    grid  = (mask0 == 0).astype(np.uint8)
+    mask0 = get_board(frame0)[...,0]        # take just one channel
+    grid      = (mask0 != 0).astype(np.uint8)
+
+    sx, sy = start
+    gx, gy = goal
+    print("start occupancy:", grid[sy, sx])
+    print("goal occupancy: ", grid[gy, gx])
+
 
     path = astar(start, goal, grid)
     if not path:
