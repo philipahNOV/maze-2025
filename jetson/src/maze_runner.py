@@ -46,25 +46,12 @@ def main():
     start = (738, 699)
     goal  = (830,  60)
 
-    # # 3) build free grid
-    # max_x = max(start[0], goal[0]) + 1
-    # max_y = max(start[1], goal[1]) + 1
-    # grid  = [[0] * (max_x+1) for _ in range(max_y+1)]
+    # 3) build free grid
+    max_x = max(start[0], goal[0]) + 1
+    max_y = max(start[1], goal[1]) + 1
+    grid  = [[0] * (max_x+1) for _ in range(max_y+1)]
 
-     # 3) grab one frame and threshold it to produce an occupancy mask
-    frame0 = None
-    while frame0 is None:
-        frame0 = tracker.frame
-        time.sleep(0.05)
-        gray       = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
-        _, binary  = cv2.threshold(gray, 120, 255, cv2.THRESH_BINARY)
-
-    # 4) build occupancy grid from binary mask:
-    #    1 = obstacle (binary==0), 0 = free (binary==255)
-    H, W = binary.shape
-    grid = [[1 if binary[y,x] == 0 else 0 for x in range(W)] for y in range(H)]
-
-    # 5) compute path
+    # 4) compute path
     path = astar(start, goal, grid)
     if not path:
         raise RuntimeError("A* failed to find a path")
