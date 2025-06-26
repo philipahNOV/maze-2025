@@ -42,6 +42,7 @@ class Tuning(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.bg_label.lower()
 
         self.title_label = tk.Label(
             self,
