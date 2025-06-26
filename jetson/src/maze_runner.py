@@ -48,18 +48,16 @@ def main():
     start = (738, 699)
     goal  = (830,  60)
 
-    # 3) sample one frame, threshold it, and build occupancy grid
-    #    (binary==0 → wall, 255→free)
+    # 3) grab one frame and threshold it
     frame0 = None
     while frame0 is None:
         frame0 = tracker.frame
         time.sleep(0.05)
     gray0   = cv2.cvtColor(frame0, cv2.COLOR_BGR2GRAY)
     _, binary0 = cv2.threshold(gray0, 100, 255, cv2.THRESH_BINARY)
-    H, W = binary0.shape
-    # grid[y][x] = 1 for obstacle, 0 for free
-    grid_list = [[1 if binary0[y, x] == 0 else 0 for x in range(W)] for y in range(H)]
-    grid = np.array(grid_list, dtype=np.uint8)  # ← changed here
+
+    # build a NumPy occupancy grid: 1=wall, 0=free
+    grid = (binary0 == 0).astype(np.uint8)
 
     # 4) compute path
     path = astar(start, goal, grid)
@@ -67,11 +65,11 @@ def main():
         raise RuntimeError("A* failed to find a path")
     print(f"A* found path with {len(path)} waypoints")
 
-    # 5) split & print sections
+    # 5) split & print into 4 sections
     n = len(path)
-    sections = [path[i*n//4:(i+1)*n//4] for i in range(4)]
-    for i, sec in enumerate(sections, start=1):
-        print(f" Section {i}: {len(sec)} points, from {sec[0]} to {sec[-1]}")
+    for i in range(4):
+        sec = path[i * n//4 : (i+1) * n//4]
+        print(f" Section {i+1}: {len(sec)} points, from {sec[0]} to {sec[-1]}")
 
     # 6) controller & follower
     follower = path_following.PathFollower(path, controller)
