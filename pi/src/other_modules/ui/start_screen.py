@@ -10,6 +10,8 @@ class Screen1(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.motor_speed = 100
+        self.dir = None
 
         self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
 
@@ -32,10 +34,17 @@ class Screen1(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Stop_control")
 
     def on_button_click_motor(self, dir):
-        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir)
+        self.dir = dir
+        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir + "_" + str(self.motor_speed))
 
     def on_release(self, event):
+        self.dir = None
         self.mqtt_client.client.publish("jetson/command", "Motor_stop")
+
+    def on_speed_change(self, value):
+        self.motor_speed = int(value)
+        if self.dir:
+            self.on_button_click_motor(self.dir)
 
     def create_widgets(self):
         self.update()
@@ -150,7 +159,7 @@ class Screen1(tk.Frame):
         )
         self.down_button.place(x=250, y=480, width=74, height=74)       
         self.down_button.bind("<ButtonRelease-1>", self.on_release)
-        self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up")) 
+        self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("down")) 
 
         self.left_button = tk.Button(
             self,
@@ -165,7 +174,7 @@ class Screen1(tk.Frame):
         )
         self.left_button.place(x=170, y=400, width=74, height=74)   
         self.left_button.bind("<ButtonRelease-1>", self.on_release)    
-        self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up")) 
+        self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("left")) 
 
         self.right_button = tk.Button(
             self,
@@ -180,7 +189,26 @@ class Screen1(tk.Frame):
         )
         self.right_button.place(x=330, y=400, width=74, height=74)   
         self.right_button.bind("<ButtonRelease-1>", self.on_release)     
-        self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))        
+        self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("right"))     
+
+        self.speed_slider = tk.Scale(
+            self,
+            orient="horizontal",
+            from_=0,
+            to=255,
+            orient="horizontal",        # or "vertical"
+            length=255,
+            label="Motor Speed",
+            font=("Jockey One", 14),
+            bg="#D9D9D9",
+            fg="#000000",
+            highlightthickness=0,
+            troughcolor="#60666C",
+            activebackground="#EE3229",
+            command=self.on_speed_change  # Called when slider moves
+        )
+        self.speed_slider.set(100)  # Optional default value
+        self.speed_slider.place(x=165, y=220)   
 
     def show(self):
         """Make this frame visible"""
