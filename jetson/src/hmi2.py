@@ -55,9 +55,10 @@ except RuntimeError as e:
 tracker    = None
 controller = None
 
-while True:
-    controller = positionController_2.Controller(arduino_thread)
+controller = positionController_2.Controller(arduino_thread)
 
+
+while True:
     frame = zed_cam.grab_frame()
     # if frame is not None:
     #     cv2.imshow("ZED Live", frame)
