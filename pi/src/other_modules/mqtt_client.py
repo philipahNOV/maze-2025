@@ -100,7 +100,7 @@ class MQTTClientPi(threading.Thread):
         threading.Thread(target=handshake_loop, daemon=True).start()
     
     def shut_down(self):
-        self.client.loop_stop(force=True)
         self.client.disconnect()
+        self.client.loop_stop()
         #self.thread.join()
         print("Disconnected from broker and stopped the thread")
