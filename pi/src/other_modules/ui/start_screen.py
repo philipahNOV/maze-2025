@@ -28,9 +28,17 @@ class Screen1(tk.Frame):
 
         self.example_button = tk.Button(
             self,
+            text="START",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
             command=self.on_button_click,
         )
-        self.example_button.place(x=280, y=285, width=243, height=74)  # Absolute placement        
+        self.example_button.place(x=390, y=385, width=243, height=74)  # Absolute placement        
 
     def show(self):
         """Make this frame visible"""
