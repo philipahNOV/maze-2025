@@ -1,13 +1,16 @@
 import threading
 import paho.mqtt.client as mqtt
+from arduino_connection_test import ArduinoConnection
 
 
 class MQTTClientJetson(threading.Thread):
-    def __init__(self, broker_address="192.168.1.3", port=1883):
+    def __init__(self, arduino_connection: ArduinoConnection = None, broker_address="192.168.1.3", port=1883):
         super().__init__()
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2) # type: ignore
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
+        if arduino_connection:
+            self.arduino_connection = arduino_connection
 
         try:
             self.client.connect(broker_address, port, 60)
@@ -19,6 +22,8 @@ class MQTTClientJetson(threading.Thread):
         self.jetson_state = "None"
         #self.jetson_state = "0.0"
         self.elevator = 0
+        self.command = None
+        self.states = ["0.0", "1.0", "2.0"]
 
 
     def on_connect(self, client, userdata, flags, rc, *args):
@@ -49,11 +54,11 @@ class MQTTClientJetson(threading.Thread):
         if msg.topic == "jetson/state":
             self.jetson_state = msg.payload.decode()   
         elif msg.topic == "jetson/command":
-            if msg.payload.decode() == "test":
-                print("TETETETETETE")
-            else:
+            if msg.payload.decode() in self.states:
                 self.jetson_state = msg.payload.decode()
                 self.client.publish("pi/state", msg.payload.decode(), 0)
+            else:
+                self.command = msg.payload.decode()
         elif msg.topic == "handshake/request":
             if msg.payload.decode() == "pi":
                 print("Received handshake request from Pi")
