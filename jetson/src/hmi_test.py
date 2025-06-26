@@ -58,7 +58,7 @@ while True:
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
-        time.sleep(0.1)
+        time.sleep(0.01)
         continue
 
     if command == "Elevator":
@@ -89,4 +89,4 @@ while True:
         if dir == "right":
             arduino_thread.send_target_positions(0, -speed)
 
-    time.sleep(0.1)
+    time.sleep(0.01)

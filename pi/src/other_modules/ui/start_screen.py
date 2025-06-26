@@ -207,7 +207,21 @@ class Screen1(tk.Frame):
             command=self.on_speed_change  # Called when slider moves
         )
         self.speed_slider.set(100)  # Optional default value
-        self.speed_slider.place(x=165, y=220)   
+        self.speed_slider.place(x=165, y=220)  
+
+        self.exit_button = tk.Button(
+            self,
+            text="X",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",              # Red exit button
+            activebackground="#B82F27",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.controller.on_close  # or self.controller.destroy
+        )
+        self.exit_button.place(x=20, y=20, width=50, height=50) 
 
     def show(self):
         """Make this frame visible"""
