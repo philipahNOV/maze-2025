@@ -4,7 +4,7 @@ from astar_test import astar
 import arduino_connection_test
 import testing.yolov1.hsv3 as tracking
 import lowPassFilter
-import positionController
+import positionController_2
 import path_following
 
 
@@ -40,7 +40,7 @@ def main():
     while not tracker.initialized:
         time.sleep(0.1)
 
-    controller = positionController.Controller(arduino_thread, tracker)
+    controller = positionController_2.Controller(arduino_thread, tracker)
 
     # 2) define start/goal
     start = (738, 699)
