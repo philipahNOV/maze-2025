@@ -1,9 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import font as tkfont
-
 import time
-
 
 class Screen1(tk.Frame):
     def __init__(self, parent, controller, mqtt_client):
@@ -11,9 +9,7 @@ class Screen1(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
-        self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
-
-        # Layout the widgets including the logo
+        self.image = ImageTk.PhotoImage(Image.open('../img/start_screen.png'))
         self.create_widgets()
 
     def on_button_click_elevator(self):
@@ -50,7 +46,7 @@ class Screen1(tk.Frame):
         )
         #self.example_button.place(x=390, y=385, width=243, height=74)  # (Centered under logo)
         self.example_button.place(x=690, y=150, width=243, height=74)
-
+        
         self.example_button = tk.Button(
             self,
             text="CONTROL",

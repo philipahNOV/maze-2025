@@ -1,4 +1,4 @@
-# nov-maze-2024
+# maze-2025
 
 * IP: 192.168.1.113
 * Username: maze

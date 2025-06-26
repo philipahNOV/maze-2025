@@ -25,7 +25,7 @@ def get_board(img):
 
     # Initial bounds
     lower_bound_init = 0
-    upper_bound_init = 60
+    upper_bound_init = 110
 
     # Create the mask based on the initial bounds
     mask = np.ones_like(img_blurred) * 255
