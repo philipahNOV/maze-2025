@@ -32,6 +32,17 @@ namespace lift_servo {
 
 // Navnerom for globale variabler
 namespace {
+
+    // Enum for tilstander i programmet
+    enum class State
+    {
+        IDLE, // Tilstand for å vente på kommandoer
+        GET_BALL, // Tilstand for å hente ball
+        CONTROL // Tilstand for å kontrollere aktuatorene
+    };
+
+    State state = State::CONTROL; // Initialiserer tilstanden til CONTROL TODO : Endre til IDLE
+
     // Struct for hastigheter til aktuatorene TODO: Flytt til ett felt i ActuatorData
     struct Speeds
     {
@@ -40,13 +51,17 @@ namespace {
     };
 
     Speeds actuator_speeds = {0, 0}; // Initialiserer hastighetene for aktuatorene
-    uint8_t limit_check_counter = 0; // Teller hvor ofte grensen sjekkes for aktuatorene
+
+    // Teller for hvor ofte grensen sjekkes for aktuatorene
+    uint8_t limit_check_counter = 0;
 }
 
 // Initialiserer funksjoner
+void stop_actuators(); // Funksjon for å stoppe aktuatorene
 void actuator_position(); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
 void move_speed(); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
+void get_ball(); // Funksjon for å kontrollere heisen for å hente ball
 void read_serial(); // Funksjon for å lese innkommende seriedata
 
 void setup() {
@@ -63,10 +78,7 @@ void setup() {
     pinMode(actuators::actuator_2.pwm_down, OUTPUT); // Setter PWM pinne for aktuator to nedover
 
     // Setter analog pinnene til null for at motorene ikke bevege seg når programmet starter
-    analogWrite(actuators::actuator_1.pwm_up, 0); // Setter PWM pinne for aktuator en oppover til 0
-    analogWrite(actuators::actuator_1.pwm_down, 0); // Setter PWM pinne for aktuator en nedover til 0
-    analogWrite(actuators::actuator_2.pwm_up, 0); // Setter PWM pinne for aktuator to oppover til 0
-    analogWrite(actuators::actuator_2.pwm_down, 0); // Setter PWM pinne for aktuator to nedover til 0
+    stop_actuators(); // Stopper aktuatorene
 
     // Initialiserer heis servo
     lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
@@ -75,9 +87,36 @@ void setup() {
 }
 
 void loop() {
-    actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
     read_serial(); // Motar data over seriel fra Jetson
-    move_speed(); // Setter motor hastighetene
+
+    switch (state) // Sjekker hvilken tilstand programmet er i
+    {
+        case State::GET_BALL: // Tilstand 0: Heis klar til å hente ball
+            get_ball(); // Henter ballen
+            state = State::CONTROL; // Går til neste tilstand
+            break;
+        case State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
+            actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
+            move_speed(); // Setter motor hastighetene
+            break;
+        default: // Standard tilstand: Ingen handling
+            stop_actuators(); // Stopper aktuatorene
+            break;
+    }
+}
+
+void stop_actuators()
+{
+    // Funksjon for å stoppe aktuatorene
+    // Aktuator en
+    analogWrite(actuators::actuator_1.pwm_up, 0); // Setter PWM pinne for aktuator en oppover til 0
+    analogWrite(actuators::actuator_1.pwm_down, 0); // Setter PWM pinne for aktuator en nedover til 0
+    actuators::actuator_1.position = 0; // Nullstiller posisjonen til aktuator en
+
+    // Aktuator to
+    analogWrite(actuators::actuator_2.pwm_up, 0); // Setter PWM pinne for aktuator to oppover til 0
+    analogWrite(actuators::actuator_2.pwm_down, 0); // Setter PWM pinne for aktuator to nedover til 0
+    actuators::actuator_2.position = 0; // Nullstiller posisjonen til aktuator to
 }
 
 // Funksjon for å returnere posisjonen til aktuatoren
@@ -96,8 +135,10 @@ void actuator_position() // Tar inn en peker til potensjometer pinnen
 // Funksjon for å sjekke om aktuatorene er over eller under grensen
 void actuator_limit_check()
 {   
+    const uint8_t limit_check_interval = 10; // Sjekk grenser kun hver 10. loop
+
     limit_check_counter++; // Øker telleren for hvor ofte grensen sjekkes
-    if (limit_check_counter < 10) // Sjekker ikke grensen for ofte
+    if (limit_check_counter < limit_check_interval) // Sjekker ikke grensen for ofte
     {
         return; // Ikke sjekk grensen
     }
@@ -183,31 +224,46 @@ void get_ball()
 {
     // Funksjon for å kontrollere heisen
     lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
+
+    // 1. Kjør heisen ned for å hente ballen
     lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
     delay(100); // Venter 100 ms for at heisen skal nå ned
+
+    // 2. Stoper heisen for å la ballen renne ned
     lift_servo::lift.write(lift_servo::lift_stop); // Setter heisen til høy posisjon
     delay(1000); // Venter 1 sekund for at baller kan renne på heisen
+
+    // 3. Kjør heisen opp med ballen
     lift_servo::lift.write(lift_servo::lift_up); // Setter heisen
     delay(100); // Venter 100 ms for at heisen skal nå opp
+
     lift_servo::lift.detach(); // Frakobler servoen
 }
 
 // Funksjon for å lese innkommende seriedata
 void read_serial()
 {
-    if (Serial.available() >= 3)
+    // Leser innkommende seriedata fra Jetson
+    if (Serial.available() > 0)
     {
-        char buffer[64]; // Buffer for å lese innkommende data
-        int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser inn data til linjeskift eller buffer er fullt
-        buffer[len] = '\0'; // Null-terminer strengen
-        
-        int speed1, speed2; // Variabler for å lagre hastigheter og checksum
-        
-        // Leser inn hastigheter fra buffer
-        if (sscanf(buffer, "%d,%d", &speed1, &speed2) == 2) 
-        {
-            actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
-            actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
+        char buffer[64]; // Buffer for å lagre innkommende data
+        int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser data til linjeskift eller buffer er fullt
+
+        // Legg til sjekk for å sikre at vi faktisk leste noe før vi parser
+        if (len > 0) {
+            buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
+            
+            int speed1, speed2, incoming_state; // Variabler for å lagre hastigheter og tilstand
+            
+            // Parser innkommende data for hastigheter og tilstand
+            if (sscanf(buffer, "%d,%d,%d", &speed1, &speed2, &incoming_state) == 3)
+            {
+                actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
+                actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
+                if (incoming_state >= 0 && incoming_state <= 2) {
+                    state = static_cast<State>(incoming_state); // Oppdaterer tilstanden basert på innkommende data, IDLE = 0, GET_BALL = 1, CONTROL = 2
+                }
+            }
         }
     }
 }

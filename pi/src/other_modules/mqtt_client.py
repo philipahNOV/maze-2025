@@ -25,8 +25,7 @@ class MQTTClientPi(threading.Thread):
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
         
-        #self.connect_to_broker()
-        threading.Thread(target=self.connect_to_broker, daemon=True).start()
+        self.connect_to_broker()
 
     def connect_to_broker(self):
         while not self.connected:
