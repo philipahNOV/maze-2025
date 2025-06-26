@@ -26,7 +26,7 @@ class Tuning(tk.Frame):
 
     def create_input(self, parent, label, row, col):
         tk.Label(parent, text=label, font=("Jockey One", 14)).grid(row=row, column=col, sticky="e", padx=5, pady=5)
-        entry = tk.Entry(parent, font=("Jockey One", 14), width=25)
+        entry = tk.Entry(parent, font=("Jockey One", 14), width=10)
         entry.grid(row=row, column=col+1, padx=5, pady=5)
         return entry
     
@@ -58,6 +58,11 @@ class Tuning(tk.Frame):
         self.entry1 = self.create_input(self.input_frame, "x offset", 0, 0)
         self.entry2 = self.create_input(self.input_frame, "y offset:", 1, 0)
         self.entry3 = self.create_input(self.input_frame, "Kp x:", 2, 0)
+        self.entry4 = self.create_input(self.input_frame, "Kp y:", 3, 0)
+        self.entry5 = self.create_input(self.input_frame, "Kd x:", 4, 0)
+        self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0)
+        self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0)
+        self.entry8 = self.create_input(self.input_frame, "Kp y:", 7, 0)
 
         self.exit_button = tk.Button(
             self,
@@ -98,10 +103,10 @@ class Tuning(tk.Frame):
         )
         self.restart_button.place(x=80, y=20, width=100, height=50)
 
-        self.tune_pid_button = tk.Button(
+        self.start_screen_button = tk.Button(
             self,
             text="DEV TOOLS",
-            font=("Jockey One", 20),
+            font=("Jockey One", 30),
             fg="white",
             bg="#EE3229",           
             activebackground="#B82F27",
@@ -111,7 +116,7 @@ class Tuning(tk.Frame):
             relief="flat",
             command=lambda: self.controller.show_frame("Screen1")
         )
-        self.tune_pid_button.place(x=600, y=100, width=180, height=60)
+        self.start_screen_button.place(x=690, y=65, width=243, height=74)
 
     def show(self):
         """Make this frame visible"""

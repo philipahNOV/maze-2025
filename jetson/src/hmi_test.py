@@ -8,6 +8,7 @@ import run_controller_3
 import positionController_2
 import testing.yolov1.hsv3 as tracking
 import queue
+import threading
 
 from manual_part.manuel_main import elManuel
 
@@ -68,7 +69,18 @@ while True:
         arduino_thread.send_target_positions(0, 0, "Idle")
         mqtt_client.command = None
     elif command == "Control":
-        run_controller_3.main(tracker, controller, mqtt_client)
+        #run_controller_3.main(tracker, controller, mqtt_client)
+        #mqtt_client.command = None
+        if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
+            mqtt_client.stop_control = False
+            mqtt_client.control_thread = threading.Thread(
+                target=run_controller_3.main,
+                args=(tracker, controller, mqtt_client),
+                daemon=True
+            )
+            mqtt_client.control_thread.start()
+        else:
+            print("[INFO] Control loop already running")
         mqtt_client.command = None
     elif command == "Horizontal":
         controller.horizontal()

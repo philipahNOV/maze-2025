@@ -239,7 +239,7 @@ class Screen1(tk.Frame):
         self.tune_pid_button = tk.Button(
             self,
             text="TUNE PID",
-            font=("Jockey One", 20),
+            font=("Jockey One", 30),
             fg="white",
             bg="#EE3229",           
             activebackground="#B82F27",
@@ -249,7 +249,7 @@ class Screen1(tk.Frame):
             relief="flat",
             command=lambda: self.controller.show_frame("Tuning")
         )
-        self.tune_pid_button.place(x=600, y=100, width=180, height=60)
+        self.tune_pid_button.place(x=690, y=65, width=243, height=74)
 
     def show(self):
         """Make this frame visible"""
