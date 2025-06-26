@@ -12,6 +12,7 @@ from other_modules.ui.boot_screen_1 import BootScreen
 
 from other_modules.mqtt_client import MQTTClientPi
 from other_modules.data_handler import DataHandler
+import threading
 
 import signal
 import sys
@@ -66,6 +67,9 @@ class MainApp(tk.Tk):
             self.mqtt_client.shut_down()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
+        print("\n--- ACTIVE THREADS ON EXIT ---")
+        for t in threading.enumerate():
+            print(f"Thread: {t.name}, Daemon: {t.daemon}")
         self.destroy()
         sys.exit(0)
 
