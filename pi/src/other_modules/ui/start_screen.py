@@ -16,7 +16,22 @@ class Screen1(tk.Frame):
         # Layout the widgets including the logo
         self.create_widgets()
 
-    def on_button_click(self):
+    def on_button_click_elevator(self):
+        self.mqtt_client.client.publish("jetson/command", "test")
+        #self.controller.show_frame("elManuel")
+        print("Sent command: 1.0")
+
+    def on_button_click_control(self):
+        self.mqtt_client.client.publish("jetson/command", "test")
+        #self.controller.show_frame("elManuel")
+        print("Sent command: 1.0")
+
+    def on_button_click_horizontal(self):
+        self.mqtt_client.client.publish("jetson/command", "test")
+        #self.controller.show_frame("elManuel")
+        print("Sent command: 1.0")
+
+    def on_button_click_stop(self):
         self.mqtt_client.client.publish("jetson/command", "test")
         #self.controller.show_frame("elManuel")
         print("Sent command: 1.0")
@@ -28,7 +43,7 @@ class Screen1(tk.Frame):
 
         self.example_button = tk.Button(
             self,
-            text="START",
+            text="ELEVATOR",
             font=("Jockey One", 30),
             fg="white",                    # Text color
             borderwidth=0,            # No border
@@ -36,9 +51,61 @@ class Screen1(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=self.on_button_click,
+            command=self.on_button_click_elevator,
         )
-        self.example_button.place(x=390, y=385, width=243, height=74)  # Absolute placement        
+        #self.example_button.place(x=390, y=385, width=243, height=74)  # (Centered under logo)
+        self.example_button.place(x=640, y=150, width=243, height=74)
+
+        self.example_button = tk.Button(
+            self,
+            text="CONTROL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_control,
+        )
+        self.example_button.place(x=640, y=235, width=243, height=74)
+
+        self.example_button = tk.Button(
+            self,
+            text="HORIZONTAL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_horizontal,
+        )
+        self.example_button.place(x=640, y=320, width=243, height=74)
+
+        self.example_button = tk.Button(
+            self,
+            text="STOP BALL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_stop,
+        )
+        self.example_button.place(x=640, y=405, width=243, height=74)
+
+        self.title_label = tk.Label(
+            self,
+            text="Dev Tools",
+            font=("Jockey One", 40),   # or any font you prefer
+            fg="#EE3229",                # text color
+            bg="#D9D9D9"                 # background (or match your image if needed)
+        )
+        self.title_label.place(x=390, y=340)        
 
     def show(self):
         """Make this frame visible"""
