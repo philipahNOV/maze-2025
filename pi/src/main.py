@@ -1,5 +1,6 @@
 import tkinter as tk
-from other_modules.ui.screen1 import Screen1
+#from other_modules.ui.screen1 import Screen1
+from other_modules.ui.start_screen import Screen1
 from other_modules.ui.screen2 import Screen2
 from other_modules.ui.screen3 import Screen3
 from other_modules.ui.testscreen import ScreenTemplate
