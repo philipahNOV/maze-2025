@@ -3,6 +3,8 @@ from math_part.math_main import State1_3
 from ai_part.ai_main import State2_3
 from arduino_connection_test import ArduinoConnection
 from zed_main import ZEDCamera
+from camera.cam_loop import CameraThread
+from automatic import Automatic
 import run_controller_3
 import positionController_2
 import testing.yolov1.hsv4 as tracking
@@ -54,6 +56,8 @@ tracker    = None
 controller = None
 
 while True:
+    controller = positionController_2.Controller(arduino_thread)
+
     frame = zed_cam.grab_frame()
     # if frame is not None:
     #     cv2.imshow("ZED Live", frame)
