@@ -142,7 +142,7 @@ class Screen1(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.up_button.place(x=250, y=320, width=74, height=74)
+        self.up_button.place(x=175, y=320, width=74, height=74)
         self.up_button.bind("<ButtonRelease-1>", self.on_release)
         self.up_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))
 
@@ -157,7 +157,7 @@ class Screen1(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.down_button.place(x=250, y=480, width=74, height=74)       
+        self.down_button.place(x=175, y=480, width=74, height=74)       
         self.down_button.bind("<ButtonRelease-1>", self.on_release)
         self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("down")) 
 
@@ -172,7 +172,7 @@ class Screen1(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.left_button.place(x=170, y=400, width=74, height=74)   
+        self.left_button.place(x=95, y=400, width=74, height=74)   
         self.left_button.bind("<ButtonRelease-1>", self.on_release)    
         self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("left")) 
 
@@ -187,7 +187,7 @@ class Screen1(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.right_button.place(x=330, y=400, width=74, height=74)   
+        self.right_button.place(x=255, y=400, width=74, height=74)   
         self.right_button.bind("<ButtonRelease-1>", self.on_release)     
         self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("right"))     
 
