@@ -71,11 +71,19 @@ class MainApp(tk.Tk):
         sys.exit(0)
 
     def restart_program(self):
-        print("Cleaning up and restarting...")
-        self.after(100, self._do_restart)  # Let Tk shutdown finish first
-        self.on_close()
+        print("Restart requested...")
+        # Gracefully shut down but don't exit
+        try:
+            self.mqtt_client.shut_down()
+        except Exception as e:
+            print(f"Error stopping MQTT client: {e}")
+
+        # Schedule restart after window is closed
+        self.after(100, self._do_restart)
+        self.destroy()  # This exits mainloop()
 
     def _do_restart(self):
+        print("Re-executing main.py...")
         python = sys.executable
         os.execl(python, python, *sys.argv)
 
