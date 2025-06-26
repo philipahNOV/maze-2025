@@ -31,11 +31,26 @@ class Tuning(tk.Frame):
         return entry
     
     def handle_submit(self):
-        val1 = self.entry1.get()
-        val2 = self.entry2.get()
-        val3 = self.entry3.get()
+        entries = [self.entry1.get(),
+            self.entry2.get(),
+            self.entry3.get(),
+            self.entry4.get(),
+            self.entry5.get(),
+            self.entry6.get(),
+            self.entry7.get()
+        ]
+        command_string = "PID:"
+        for entry in entries:
+            if entry == "":
+                command_string += ",pass"
+            else:
+                try:
+                    float(entry)
+                    command_string += ",entry"
+                except ValueError:
+                    command_string += ",pass"
 
-        print(f"Submitted Values:\n  x offset: {val1}\n  y offset: {val2}\n  Kp x: {val3}")
+        self.mqtt_client.client.publish("jetson/command", command_string)
 
 
     def create_widgets(self):
@@ -89,7 +104,7 @@ class Tuning(tk.Frame):
             activeforeground="white",
             command=self.handle_submit
         )
-        self.submit_button.grid(row=3, column=0, columnspan=2, pady=10)
+        self.submit_button.grid(row=8, column=0, columnspan=2, pady=10)
 
         self.restart_button = tk.Button(
             self,

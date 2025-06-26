@@ -62,6 +62,14 @@ while True:
         time.sleep(0.01)
         continue
 
+    if command.startswith("PID:"):
+        params = command.split(":")[1].split(",")
+        for i in range(len(params)):
+            if params[i] != "pass":
+                params[i] = float(params[i])
+        controller.set_pid_parameters(params)
+        mqtt_client.command = None
+
     if command == "Elevator":
         arduino_thread.send_target_positions(0, 0, "Get_ball")
         mqtt_client.command = None

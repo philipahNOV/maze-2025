@@ -70,6 +70,12 @@ class Controller:
         self.max_angle = 2.5 #Max angle in deg
         self.command_delay = 0.015
 
+    def set_pid_parameters(self, params):
+        param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y"]
+        for i, name in enumerate(param_names):
+            if params[i] != "pass":
+                setattr(self, name, params[i])
+
     def set_ball_pos(self, pos):
         self.pos = pos
 
