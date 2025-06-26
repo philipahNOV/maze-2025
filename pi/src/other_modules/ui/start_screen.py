@@ -28,6 +28,9 @@ class Screen1(tk.Frame):
     def on_button_click_stop(self):
         self.mqtt_client.client.publish("jetson/command", "Idle")
 
+    def on_button_click_stop_control(self):
+        self.mqtt_client.client.publish("jetson/command", "Stop_control")
+
     def create_widgets(self):
         self.update()
         self.bg_label = tk.Label(self, image=self.image)
@@ -46,7 +49,7 @@ class Screen1(tk.Frame):
             command=self.on_button_click_elevator,
         )
         #self.example_button.place(x=390, y=385, width=243, height=74)  # (Centered under logo)
-        self.example_button.place(x=660, y=150, width=243, height=74)
+        self.example_button.place(x=690, y=150, width=243, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -60,7 +63,21 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_control,
         )
-        self.example_button.place(x=660, y=235, width=243, height=74)
+        self.example_button.place(x=690, y=235, width=243, height=74)
+
+        self.example_button = tk.Button(
+            self,
+            text="STOP",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#EE3229",     # Match image color or use transparent if supported
+            activebackground="#B82F27",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_stop_control,
+        )
+        self.example_button.place(x=925, y=235, width=100, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -74,7 +91,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_horizontal,
         )
-        self.example_button.place(x=660, y=320, width=243, height=74)
+        self.example_button.place(x=690, y=320, width=243, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -88,16 +105,16 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_stop,
         )
-        self.example_button.place(x=660, y=405, width=243, height=74)
+        self.example_button.place(x=690, y=405, width=243, height=74)
 
         self.title_label = tk.Label(
             self,
             text="Dev Tools",
-            font=("Jockey One", 40),   # or any font you prefer
+            font=("Jockey One", 4),   # or any font you prefer
             fg="#EE3229",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title_label.place(x=400, y=340)        
+        self.title_label.place(x=410, y=340)        
 
     def show(self):
         """Make this frame visible"""
