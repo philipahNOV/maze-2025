@@ -6,7 +6,7 @@ from camera.cam_loop import CameraThread
 from automatic import Automatic
 import run_controller_3
 import positionController_2
-import testing.yolov1.hsv3 as tracking
+import YOLO_tracking.hsv3 as tracking
 
 from manual_part.manuel_main import elManuel
 
@@ -43,7 +43,7 @@ while mqtt_client.jetson_state != "0.0":
 
 print("Connected!")
 
-tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
+tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
 tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
