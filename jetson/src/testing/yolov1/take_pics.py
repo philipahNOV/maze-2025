@@ -30,7 +30,7 @@ def main():
             zed.retrieve_image(image, sl.VIEW.LEFT)
             frame = image.get_data()
             # Convert RGBA to BGR for OpenCV
-            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_RGBA2BGR)
+            frame_bgr = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             cv2.imshow("ZED Camera Feed", frame_bgr)
 
             key = cv2.waitKey(1) & 0xFF
