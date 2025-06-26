@@ -5,7 +5,7 @@ import numpy as np
 def create_kalman_filter():
     kf = KalmanFilter(dim_x=4, dim_z=2)
     
-    dt = 1.  # time step (in seconds)
+    dt = 1
 
     # State transition matrix
     kf.F = np.array([[1, 0, dt, 0],
