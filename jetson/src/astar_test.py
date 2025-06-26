@@ -3,14 +3,6 @@
 import heapq
 
 def astar(start, goal, grid):
-    """
-    Perform A* search on a 2D occupancy grid.
-    grid: either a NumPy 2D array or a Python list-of-lists where
-          0 = free space, 1 = obstacle
-    start, goal: (row, col) tuples
-    Returns a list of (row, col) from start to goal inclusive, or [] if no path.
-    """
-    # Determine grid dimensions in a way that works for both lists and NumPy arrays
     try:
         H, W = grid.shape
     except AttributeError:

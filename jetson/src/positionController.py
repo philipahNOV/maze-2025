@@ -1,6 +1,6 @@
 import time
 import numpy as np
-import testing.yolov1.hsv3 as tracking
+import YOLO_tracking.hsv3 as tracking
 import arduino_connection
 
 class Controller:
