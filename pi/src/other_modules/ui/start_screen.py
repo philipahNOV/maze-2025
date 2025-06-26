@@ -29,7 +29,7 @@ class Screen1(tk.Frame):
         self.example_button = tk.Button(
             self,
             text="START",
-            font=("Jockey One", 20),
+            font=("Jockey One", 30),
             fg="white",                    # Text color
             borderwidth=0,            # No border
             highlightthickness=0,     # No highlight border
