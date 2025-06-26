@@ -35,6 +35,7 @@ class Screen1(tk.Frame):
             highlightthickness=0,     # No highlight border
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
             command=self.on_button_click,
         )
         self.example_button.place(x=390, y=385, width=243, height=74)  # Absolute placement        
