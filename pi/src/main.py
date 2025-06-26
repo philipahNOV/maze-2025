@@ -73,7 +73,7 @@ class MainApp(tk.Tk):
         for t in threading.enumerate():
             print(f" - {t.name} (daemon={t.daemon})")
         self.destroy()
-        sys.exit(0)
+        os._exit(0)
 
     def restart_program(self):
         print("Restart requested...")
