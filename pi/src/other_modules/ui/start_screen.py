@@ -216,12 +216,25 @@ class Screen1(tk.Frame):
             fg="white",
             bg="#EE3229",              # Red exit button
             activebackground="#B82F27",
+            activeforeground="#DFDFDF",
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
             command=self.controller.on_close  # or self.controller.destroy
         )
         self.exit_button.place(x=20, y=20, width=50, height=50) 
+
+        self.restart_button = tk.Button(
+            self,
+            text="RESTART",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            command=self.controller.restart_program
+        )
+        self.restart_button.place(x=80, y=80, width=100, height=50)
 
     def show(self):
         """Make this frame visible"""
