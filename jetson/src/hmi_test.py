@@ -4,7 +4,9 @@ from ai_part.ai_main import State2_3
 from arduino_connection_test import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
-import run_controller_2
+import run_controller_3
+import positionController_2
+import testing.yolov1.hsv3 as tracking
 
 from manual_part.manuel_main import elManuel
 
@@ -41,7 +43,28 @@ while mqtt_client.jetson_state != "0.0":
 
 print("Connected!")
 
-while mqtt_client.jetson_state != "1.0":
-    time.sleep(0.1)
+tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
+tracker.start()
+controller = positionController_2.Controller(arduino_thread, tracker)
 
-run_controller_2.main()
+while True:
+    command = mqtt_client.command
+
+    if not command:
+        time.sleep(0.1)
+        continue
+
+    if command == "Elevator":
+        arduino_thread.send_target_positions(0, 0, "Get_ball")
+        mqtt_client.command = None
+    elif command == "Idle":
+        arduino_thread.send_target_positions(0, 0, "Idle")
+        mqtt_client.command = None
+    elif command == "Control":
+        run_controller_3.main(tracker, controller)
+        mqtt_client.command = None
+    elif command == "Horizontal":
+        controller.horizontal()
+        mqtt_client.command = None
+
+    time.sleep(0.1)

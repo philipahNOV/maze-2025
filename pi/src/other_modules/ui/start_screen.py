@@ -17,24 +17,16 @@ class Screen1(tk.Frame):
         self.create_widgets()
 
     def on_button_click_elevator(self):
-        self.mqtt_client.client.publish("jetson/command", "test")
-        #self.controller.show_frame("elManuel")
-        print("Sent command: 1.0")
+        self.mqtt_client.client.publish("jetson/command", "Elevator")
 
     def on_button_click_control(self):
-        self.mqtt_client.client.publish("jetson/command", "test")
-        #self.controller.show_frame("elManuel")
-        print("Sent command: 1.0")
+        self.mqtt_client.client.publish("jetson/command", "Control")
 
     def on_button_click_horizontal(self):
-        self.mqtt_client.client.publish("jetson/command", "test")
-        #self.controller.show_frame("elManuel")
-        print("Sent command: 1.0")
+        self.mqtt_client.client.publish("jetson/command", "Horizontal")
 
     def on_button_click_stop(self):
-        self.mqtt_client.client.publish("jetson/command", "test")
-        #self.controller.show_frame("elManuel")
-        print("Sent command: 1.0")
+        self.mqtt_client.client.publish("jetson/command", "Idle")
 
     def create_widgets(self):
         self.update()
@@ -54,7 +46,7 @@ class Screen1(tk.Frame):
             command=self.on_button_click_elevator,
         )
         #self.example_button.place(x=390, y=385, width=243, height=74)  # (Centered under logo)
-        self.example_button.place(x=640, y=150, width=243, height=74)
+        self.example_button.place(x=660, y=150, width=243, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -68,7 +60,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_control,
         )
-        self.example_button.place(x=640, y=235, width=243, height=74)
+        self.example_button.place(x=660, y=235, width=243, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -82,7 +74,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_horizontal,
         )
-        self.example_button.place(x=640, y=320, width=243, height=74)
+        self.example_button.place(x=660, y=320, width=243, height=74)
 
         self.example_button = tk.Button(
             self,
@@ -96,7 +88,7 @@ class Screen1(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_stop,
         )
-        self.example_button.place(x=640, y=405, width=243, height=74)
+        self.example_button.place(x=660, y=405, width=243, height=74)
 
         self.title_label = tk.Label(
             self,
@@ -105,7 +97,7 @@ class Screen1(tk.Frame):
             fg="#EE3229",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title_label.place(x=390, y=340)        
+        self.title_label.place(x=400, y=340)        
 
     def show(self):
         """Make this frame visible"""
