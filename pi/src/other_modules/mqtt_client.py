@@ -77,6 +77,7 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode().startswith("PID:"):
                 params = msg.payload.decode().split(":")[1].split(",")
                 tuning_screen.Tuning.params = params
+                tuning_screen.Tuning.load_params(params, -1)
             self.client.publish("jetson/state", msg.payload.decode(), 0)
             print(f"Jetson state: {self.pi_state}")
         elif msg.topic == "handshake/response":
@@ -85,8 +86,6 @@ class MQTTClientPi(threading.Thread):
                 print("Handshake completed with Jetson")
 
                 self.client.publish("jetson/command", "Get_pid")
-                time.sleep(0.2)
-                tuning_screen.Tuning.load_params(tuning_screen.Tuning.params, -1)
         elif msg.topic == "jetson/path":
             self.jetson_path = msg.payload.decode()
         elif msg.topic == "ball/info":
