@@ -15,7 +15,7 @@ class Tuning(tk.Frame):
         self.has_been_shown = False
 
         self.input_frame = tk.Frame(self)
-        self.input_frame.place(x=100, y=170)
+        self.input_frame.place(x=100, y=130)
 
         self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
 
@@ -65,7 +65,7 @@ class Tuning(tk.Frame):
     def load_params(self, params, index):
         entries = [
             self.entry1, self.entry2, self.entry3, self.entry4,
-            self.entry5, self.entry6, self.entry7, self.entry8
+            self.entry5, self.entry6, self.entry7, self.entry8, self.entry9, self.entry10
         ]
 
         if not any(params):
@@ -137,8 +137,8 @@ class Tuning(tk.Frame):
         self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0, 5)
         self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0, 6)
         self.entry8 = self.create_input(self.input_frame, "Ki y:", 7, 0, 7)
-        self.entry8 = self.create_input(self.input_frame, "Kf x:", 8, 0, 8)
-        self.entry8 = self.create_input(self.input_frame, "Kf y:", 9, 0, 9)
+        self.entry9 = self.create_input(self.input_frame, "Kf x:", 8, 0, 8)
+        self.entry10 = self.create_input(self.input_frame, "Kf y:", 9, 0, 9)
 
         self.exit_button = tk.Button(
             self,
