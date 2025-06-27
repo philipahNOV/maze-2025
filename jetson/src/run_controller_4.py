@@ -86,6 +86,18 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     # start = (55, 840)
     # goal = (680, 790)
 
+    cv2.circle(gray, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
+    cv2.circle(gray, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
+    cv2.imshow("grey Mask", gray)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+    cv2.circle(binary_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
+    cv2.circle(binary_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
+    cv2.imshow("binary Mask", binary_mask)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
     cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
     cv2.imshow("Safe Mask", safe_mask)
