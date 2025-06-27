@@ -11,7 +11,6 @@ class Tuning(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
         self.params = None
-        self.load_params(self.params, -1)
 
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=100)
@@ -22,6 +21,8 @@ class Tuning(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
+
+        self.load_params(self.params, -1)
 
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
