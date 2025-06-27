@@ -78,8 +78,11 @@ class MQTTClientPi(threading.Thread):
             self.pi_state = (msg.payload.decode())
         elif msg.topic == "pi/command":
             if msg.payload.decode().startswith("PID:"):
-                params = msg.payload.decode().split(":")[1].split(",")
-                self.app.frames["Tuning"].params = params
+                values = msg.payload.decode().split(":")[1].split(",")
+                if self.app and "Tuning" in self.app.frames:
+                    tuning = self.app.frames["Tuning"]
+                    tuning.params = values
+                    tuning.params_recieved = False  # so poll_for_params() reloads
                 return
             self.pi_state = (msg.payload.decode())
             self.client.publish("jetson/state", msg.payload.decode(), 0)
