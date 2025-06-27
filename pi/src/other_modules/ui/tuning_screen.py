@@ -20,7 +20,7 @@ class Tuning(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
-        #self.wait_for_params()
+        self.wait_for_params()
 
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
@@ -41,10 +41,12 @@ class Tuning(tk.Frame):
 
         return entry
     
-    def wait_for_params(self):
-        while not params:
-            time.sleep(0.2)
-        self.load_params(params, -1)
+    def poll_for_params(self):
+        if params and not self.params_recieved:
+            self.params_recieved = True
+            self.load_params(params, -1)
+        else:
+            self.after(200, self.poll_for_params)  # Try again in 200ms
     
     def load_params(self, params, index):
         entries = [self.entry1,
@@ -169,6 +171,7 @@ class Tuning(tk.Frame):
     def show(self):
         """Make this frame visible"""
         self.pack(expand=True, fill=tk.BOTH)
+        self.poll_for_params()
 
     def hide(self):
         """Hide this frame"""
