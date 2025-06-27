@@ -1,4 +1,4 @@
-import positionController
+import positionController_2
 import numpy as np
 import time
 
@@ -26,7 +26,7 @@ class PathFollower:
             automatic recovery if the object is stuck or goes behind a previously visited waypoint.
     """
 
-    def __init__(self, path_array, controller: positionController.Controller):
+    def __init__(self, path_array, controller: positionController_2.Controller):
 
         self.path = None
         self.length = 0
@@ -99,9 +99,7 @@ class PathFollower:
                     self.prev_waypoint = None
                     self.next_waypoint = 0
                     print("Loop completed, starting from first waypoint")
-                    return
                 print("Done following path")
-                return
             
             self.next_waypoint = self.next_waypoint + 1
         else:
@@ -111,6 +109,14 @@ class PathFollower:
 
                     self.prev_waypoint = i
                     self.next_waypoint = i+1
-                    return
+
+        dx = self.path[self.next_waypoint][0] - ballPos[0]
+        dy = self.path[self.next_waypoint][1] - ballPos[1]
+
+        norm = np.linalg.norm((dx, dy))
+        if norm > 0:
+            self.controller.feedforward_vector = (dx / norm, dy / norm)
+        else:
+            self.controller.feedforward_vector = (0, 0)
 
     

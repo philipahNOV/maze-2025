@@ -94,7 +94,9 @@ class Tuning(tk.Frame):
             self.entry5.get(),
             self.entry6.get(),
             self.entry7.get(),
-            self.entry8.get()
+            self.entry8.get(),
+            self.entry9.get(),
+            self.entry10.get()
         ]
         command_string = "PID:"
         for entry in entries:
@@ -135,6 +137,8 @@ class Tuning(tk.Frame):
         self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0, 5)
         self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0, 6)
         self.entry8 = self.create_input(self.input_frame, "Ki y:", 7, 0, 7)
+        self.entry8 = self.create_input(self.input_frame, "Kf x:", 8, 0, 8)
+        self.entry8 = self.create_input(self.input_frame, "Kf y:", 9, 0, 9)
 
         self.exit_button = tk.Button(
             self,
@@ -161,7 +165,7 @@ class Tuning(tk.Frame):
             activeforeground="white",
             command=self.handle_submit
         )
-        self.submit_button.grid(row=8, column=0, columnspan=2, pady=10)
+        self.submit_button.grid(row=10, column=0, columnspan=2, pady=10)
 
         self.restart_button = tk.Button(
             self,
