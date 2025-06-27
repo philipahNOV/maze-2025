@@ -86,16 +86,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     # start = (55, 840)
     # goal = (680, 790)
 
-    scale = 0.5
-    small_mask = cv2.resize(safe_mask, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-    start_small = (int(start[0]*scale), int(start[1]*scale))
-    goal_small = (int(goal[0]*scale), int(goal[1]*scale))
-
-    path_small = astar(small_mask, start_small, goal_small, repulsion_weight=5.0)
-    path = [(int(y/scale), int(x/scale)) for y, x in path_small]
-
-
-    #path = astar(safe_mask, start, goal, repulsion_weight=5.0)
+    path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
     print(path)
