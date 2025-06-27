@@ -34,7 +34,7 @@ class Tuning(tk.Frame):
             text="↺",  # or "Reset"
             font=("Jockey One", 12),
             width=2,
-            command=lambda: self.load_params(self.params, param_index)
+            command=lambda idx=param_index: self.load_params(self.params, idx)
         )
         reset_btn.grid(row=row, column=col+2, padx=2)
 
