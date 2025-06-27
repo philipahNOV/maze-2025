@@ -82,6 +82,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
+    cv2.circle(safe_mask, (738, 699), 5, (0, 255, 0), -1)
     cv2.imshow("Safe Mask", safe_mask)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
