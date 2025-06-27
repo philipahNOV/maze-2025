@@ -28,6 +28,8 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
+        self.use_feedforward = False
+
         self.path_following = path_following
 
         self.prev_vel_x = 0
