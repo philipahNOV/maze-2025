@@ -101,6 +101,7 @@ def main():
     global app
     mqtt_client = MQTTClientPi()
     app = MainApp(mqtt_client)
+    mqtt_client.set_app(app)
     app.protocol("WM_DELETE_WINDOW", app.on_close)
     app.mainloop()    
 

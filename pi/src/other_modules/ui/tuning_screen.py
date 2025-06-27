@@ -4,14 +4,14 @@ from tkinter import font as tkfont
 
 import time
 
-params = None
-
 
 class Tuning(tk.Frame):
     def __init__(self, parent, controller, mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.params = None
+        self.params_recieved = False
 
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=100)
@@ -170,6 +170,7 @@ class Tuning(tk.Frame):
     def show(self):
         """Make this frame visible"""
         self.pack(expand=True, fill=tk.BOTH)
+        self.mqtt_client.publish("jetson/command", "Get_pid")
         self.poll_for_params()
 
     def hide(self):

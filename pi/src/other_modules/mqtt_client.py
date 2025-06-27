@@ -5,6 +5,7 @@ import base64
 import numpy as np
 #import cv
 from other_modules.ui import tuning_screen
+import main
 
 class MQTTClientPi(threading.Thread):
     def __init__(self, broker_address='192.168.1.3', port=1883):
@@ -16,6 +17,7 @@ class MQTTClientPi(threading.Thread):
         self.broker_address = broker_address
         self.port = port
         
+        self.app = None
         self.handshake_complete = False
         self.pi_state = "None"
         self.img = None
@@ -42,6 +44,9 @@ class MQTTClientPi(threading.Thread):
                 print(f"Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
                 time.sleep(self.retry_interval)
                 self.retry_interval = min(self.retry_interval * 2, 60)  # Exponential backoff up to 60 seconds
+
+    def set_app(self, app):
+        self.app = app
 
     def on_connect(self, client, userdata, flags, rc, *args):
         if rc == 0:
@@ -75,7 +80,7 @@ class MQTTClientPi(threading.Thread):
         elif msg.topic == "pi/command":
             if msg.payload.decode().startswith("PID:"):
                 params = msg.payload.decode().split(":")[1].split(",")
-                tuning_screen.params = params
+                self.app.frames["Tuning"].params = params
                 return
             self.pi_state = (msg.payload.decode())
             self.client.publish("jetson/state", msg.payload.decode(), 0)
@@ -84,8 +89,6 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True
                 print("Handshake completed with Jetson")
-
-                self.client.publish("jetson/command", "Get_pid")
         elif msg.topic == "jetson/path":
             self.jetson_path = msg.payload.decode()
         elif msg.topic == "ball/info":
