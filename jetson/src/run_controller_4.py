@@ -16,7 +16,7 @@ def dilate_mask(mask, iterations=2):
 
 def sample_waypoints(path):
     if not path or len(path) < 2:
-        return path
+        return path or []
 
     total_length = sum(
         math.hypot(p2[0] - p1[0], p2[1] - p1[1])
@@ -44,6 +44,24 @@ def sample_waypoints(path):
 
     return waypoints
 
+def draw_path(image, path, waypoints, start, goal):
+    out = image.copy()
+    h, w = out.shape[:2]
+
+    for y, x in path or []:
+        if 0 <= y < h and 0 <= x < w:
+            out[y, x] = (0, 0, 255)
+
+    for y, x in waypoints or []:
+        if 0 <= y < h and 0 <= x < w:
+            cv2.circle(out, (x, y), 2, (0, 255, 255), -1)
+
+    if start:
+        cv2.circle(out, (start[1], start[0]), 5, (0, 255, 0), -1)
+    if goal:
+        cv2.circle(out, (goal[1], goal[0]), 5, (255, 0, 0), -1)
+
+    return out
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
@@ -54,7 +72,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
         time.sleep(0.1)
 
     print("[INFO] Tracking started. Press 'q' to quit.")
-    # Wait for a clear maze view before solving
     print("[INFO] Capturing maze for A* planning...")
     while tracker.frame is None:
         time.sleep(0.1)
@@ -64,12 +81,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
-    start = (738, 699)  # Or get dynamically
+    start = (738, 699)
     goal = (830, 60)
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
-    waypoints = sample_waypoints(path)  # Dynamic spacing version
-    path_array = [(x, y) for y, x in waypoints]  # Convert to (x, y) for OpenCV use
+    waypoints = sample_waypoints(path)
+    path_array = [(x, y) for y, x in waypoints]
 
     # Pass path to your PathFollower
     pathFollower = path_following.PathFollower(path_array, controller)
@@ -81,10 +98,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if frame is None:
                 continue
 
-            for x, y in pathFollower.path:
-                cv2.circle(frame, (x, y), 3, (0, 0, 255), -1)
-
-
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
 
@@ -93,6 +106,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
+            frame = draw_path(frame, path, waypoints, start, goal)
 
             cv2.imshow("Ball & Marker Tracking", frame)
 
