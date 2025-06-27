@@ -83,6 +83,8 @@ while True:
             + "," + str(controller.kp_y) + "," + str(controller.kd_x) + "," + str(controller.kd_y)
             + "," + str(controller.ki_x) + "," + str(controller.ki_y)
         )
+
+        mqtt_client.publish("pi/command", pid_str)
         
     elif command == "Control":
         #run_controller_3.main(tracker, controller, mqtt_client)
