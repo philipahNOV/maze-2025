@@ -73,7 +73,6 @@ class PathFollower:
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
             
-        print(vel)
 
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:

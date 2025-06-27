@@ -76,7 +76,6 @@ class Controller:
         for i, name in enumerate(param_names):
             if params[i] != "pass":
                 setattr(self, name, params[i])
-        print("test")
 
     def set_ball_pos(self, pos):
         self.pos = pos
@@ -140,6 +139,9 @@ class Controller:
 
         if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
         if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
+
+        if self.e_x_int > 0 or self.e_y_int > 0: print("Integral term active")
+
 
         if abs(e_x) < self.pos_tol: #at target → STOP
             theta_x = 0
