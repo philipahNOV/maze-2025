@@ -22,6 +22,8 @@ class Tuning(tk.Frame):
         # Layout the widgets including the logo
         self.create_widgets()
 
+        time.sleep(0.2)
+
         self.load_params(self.params, -1)
 
     #def on_button_click_elevator(self):
