@@ -3,7 +3,8 @@ import numpy as np
 import cv2
 
 def heuristic(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+    #return abs(a[0] - b[0]) + abs(a[1] - b[1]) #Manhattan
+    return np.linalg.norm(np.array(a)-np.array(b)) #Euclidean
 
 def compute_repulsion_cost(array):
     dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
