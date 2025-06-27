@@ -64,7 +64,6 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
-
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
     print("[INFO] Waiting for YOLO initialization...")
@@ -82,12 +81,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
-    start = (55, 840)
-    goal = (680, 790)
+    start = (840, 55)
+    goal = (790, 680)
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
-    path_array = [(x, y) for y, x in waypoints]
+    path_array = [(x, y) for x, y in waypoints]
     print(path)
     print(waypoints)
     print(path_array)

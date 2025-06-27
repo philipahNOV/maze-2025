@@ -16,7 +16,7 @@ def compute_repulsion_cost(array):
 
 def astar(array, start, goal, repulsion_weight=5.0):
     neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
-    rows, cols = array.shape
+    cols, rows = array.shape
     repulsion_map = compute_repulsion_cost(array)
 
     close_set = set()
