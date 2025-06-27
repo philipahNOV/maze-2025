@@ -62,6 +62,10 @@ class MainApp(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
+        # If the frame has a custom `show()` method, call it
+        if hasattr(frame, "show"):
+            frame.show()
+
     def on_close(self):
         #self.frames["Screen3"].stop_update_camera_feed_thread()
         #self.data_handler.close_resources()
