@@ -56,6 +56,8 @@ while True:
     #    time.sleep(0.1)
     #    continue
 
+    print(f"[JETSON] Received command: '{command}'")
+
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
