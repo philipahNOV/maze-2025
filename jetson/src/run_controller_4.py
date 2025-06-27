@@ -86,13 +86,16 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     # start = (55, 840)
     # goal = (680, 790)
 
-    cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
-    cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
-    cv2.imshow("Safe Mask", safe_mask)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    scale = 0.5
+    small_mask = cv2.resize(safe_mask, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+    start_small = (int(start[0]*scale), int(start[1]*scale))
+    goal_small = (int(goal[0]*scale), int(goal[1]*scale))
 
-    path = astar(safe_mask, start, goal, repulsion_weight=5.0)
+    path_small = astar(small_mask, start_small, goal_small, repulsion_weight=5.0)
+    path = [(int(y/scale), int(x/scale)) for y, x in path_small]
+
+
+    #path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
     print(path)
