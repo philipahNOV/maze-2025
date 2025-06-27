@@ -44,7 +44,7 @@ class Controller:
         #TUNING PARAMETERS
         #Pos control
 
-        #Best so far (setpoint):
+        #Best so far (setpoint ):
         #self.kp_x = 0.00008
         #self.kd_x = 0.00005
         #self.kp_y = 0.00008
