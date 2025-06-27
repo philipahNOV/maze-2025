@@ -7,7 +7,7 @@ import numpy as np
 from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
-    def __init__(self, broker_address='192.168.1.2', port=1883):
+    def __init__(self, broker_address='192.168.1.3', port=1883):
         super().__init__()
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2) # type: ignore
         self.client.on_connect = self.on_connect
