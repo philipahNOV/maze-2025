@@ -20,7 +20,7 @@ class Tuning(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
-        self.wait_for_params()
+        #self.wait_for_params()
 
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
