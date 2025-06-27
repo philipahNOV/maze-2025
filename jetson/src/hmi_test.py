@@ -83,7 +83,7 @@ while True:
             + "," + str(controller.kp_y) + "," + str(controller.kd_x) + "," + str(controller.kd_y)
             + "," + str(controller.ki_x) + "," + str(controller.ki_y)
         )
-
+        print("test1")
         mqtt_client.publish("pi/command", pid_str)
         
     elif command == "Control":
