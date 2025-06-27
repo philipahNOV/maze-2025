@@ -4,13 +4,14 @@ from tkinter import font as tkfont
 
 import time
 
+params = None
+
 
 class Tuning(tk.Frame):
     def __init__(self, parent, controller, mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-        self.params = None
 
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=100)
@@ -19,6 +20,7 @@ class Tuning(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
+        self.wait_for_params()
 
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
@@ -33,11 +35,16 @@ class Tuning(tk.Frame):
             text="↺",  # or "Reset"
             font=("Jockey One", 12),
             width=2,
-            command=lambda: self.load_params(self.params, param_index)
+            command=lambda: self.load_params(params, param_index)
         )
         reset_btn.grid(row=row, column=col+2, padx=2)
 
         return entry
+    
+    def wait_for_params(self):
+        while not params:
+            time.sleep(0.2)
+        self.load_params(params, -1)
     
     def load_params(self, params, index):
         entries = [self.entry1,

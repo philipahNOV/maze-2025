@@ -75,10 +75,7 @@ class MQTTClientPi(threading.Thread):
         elif msg.topic == "pi/command":
             if msg.payload.decode().startswith("PID:"):
                 params = msg.payload.decode().split(":")[1].split(",")
-                print("test")
-                tuning_screen.Tuning.params = params
-                print(params)
-                tuning_screen.Tuning.load_params(params, -1)
+                tuning_screen.params = params
                 return
             self.pi_state = (msg.payload.decode())
             self.client.publish("jetson/state", msg.payload.decode(), 0)
