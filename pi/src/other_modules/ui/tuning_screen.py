@@ -10,8 +10,9 @@ class Tuning(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-        self.params = None
+        self.params = [""] * 8
         self.params_recieved = False
+        self.has_been_shown = False
 
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=100)
@@ -38,10 +39,24 @@ class Tuning(tk.Frame):
         )
         reset_btn.grid(row=row, column=col+2, padx=2)
 
+        save_btn = tk.Button(
+            parent,
+            text="💾",  # Save icon
+            font=("Jockey One", 12),
+            width=2,
+            command=lambda idx=param_index, e=entry: self.save_param_value(e, idx)
+        )
+        save_btn.grid(row=row, column=col+3, padx=2)
+
         return entry
     
+    def save_param_value(self, entry_widget, index):
+        value = entry_widget.get().strip()
+
+        self.params[index] = value
+    
     def poll_for_params(self):
-        if self.params and not self.params_recieved:
+        if any(self.params) and not self.params_recieved:
             self.params_recieved = True
             self.load_params(self.params, -1)
         else:
@@ -53,7 +68,7 @@ class Tuning(tk.Frame):
             self.entry5, self.entry6, self.entry7, self.entry8
         ]
 
-        if not params:
+        if not any(params):
             print("[WARN] load_params called with no params")
             return
 
@@ -178,9 +193,10 @@ class Tuning(tk.Frame):
     def show(self):
         """Make this frame visible"""
         #self.pack(expand=True, fill=tk.BOTH)
-        print(f"[PI] MQTT connected? {self.mqtt_client.connected}")
-        self.mqtt_client.client.publish("jetson/command", "Get_pid")
-        self.poll_for_params()
+        if not self.has_been_shown:
+            self.mqtt_client.client.publish("jetson/command", "Get_pid")
+            self.poll_for_params()
+            self.has_been_shown = True
 
     def hide(self):
         """Hide this frame"""
