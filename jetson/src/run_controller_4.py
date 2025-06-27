@@ -75,7 +75,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     while tracker.frame is None:
         time.sleep(0.1)
 
-    time.sleep(0.5)
     maze_frame = tracker.frame.copy()
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
