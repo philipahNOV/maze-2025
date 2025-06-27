@@ -85,7 +85,7 @@ while True:
             + "," + str(controller.ki_x) + "," + str(controller.ki_y)
         )
         print("test1")
-        mqtt_client.publish("pi/command", pid_str)
+        mqtt_client.client.publish("pi/command", pid_str)
         
     elif command == "Control":
         #run_controller_3.main(tracker, controller, mqtt_client)
