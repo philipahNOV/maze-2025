@@ -15,7 +15,7 @@ class Tuning(tk.Frame):
         self.has_been_shown = False
 
         self.input_frame = tk.Frame(self)
-        self.input_frame.place(x=100, y=100)
+        self.input_frame.place(x=100, y=170)
 
         self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
 
@@ -161,7 +161,7 @@ class Tuning(tk.Frame):
             activeforeground="white",
             command=self.handle_submit
         )
-        self.submit_button.grid(row=8, column=0, columnspan=2, pady=10)
+        self.submit_button.grid(row=9, column=0, columnspan=2, pady=10)
 
         self.restart_button = tk.Button(
             self,
