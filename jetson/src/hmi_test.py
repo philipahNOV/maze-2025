@@ -62,7 +62,6 @@ while True:
         time.sleep(0.01)
         continue
 
-    print(f"[JETSON] Received command: '{command}'")
 
     if command.startswith("PID:"):
         params = command.split(":")[1].split(",")
