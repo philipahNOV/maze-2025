@@ -3,7 +3,8 @@ import paho.mqtt.client as mqtt
 import time
 import base64
 import numpy as np
-import cv2
+#import cv
+from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
     def __init__(self, broker_address='192.168.1.3', port=1883):
@@ -62,15 +63,21 @@ class MQTTClientPi(threading.Thread):
     def on_message(self, client, userdata, msg):
         # Delegate to the appropriate handler based on the topic
         if msg.topic == "camera/feed":
-            image_data = base64.b64decode(msg.payload)
-            nparr = np.frombuffer(image_data, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            self.img = frame
+            #image_data = base64.b64decode(msg.payload)
+            #nparr = np.frombuffer(image_data, np.uint8)
+            #frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            #self.img = frame
+            pass
         elif msg.topic == "data/updates":
             pass
         elif msg.topic == "pi/state":
             self.pi_state = (msg.payload.decode())
         elif msg.topic == "pi/command":
+            if msg.payload.decode().startswith("PID:"):
+                params = msg.payload.decode().split(":")[1].split(",")
+                tuning_screen.Tuning.params = params
+                tuning_screen.Tuning.load_params(params, -1)
+                return
             self.pi_state = (msg.payload.decode())
             self.client.publish("jetson/state", msg.payload.decode(), 0)
             print(f"Jetson state: {self.pi_state}")
@@ -78,6 +85,8 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True
                 print("Handshake completed with Jetson")
+
+                self.client.publish("jetson/command", "Get_pid")
         elif msg.topic == "jetson/path":
             self.jetson_path = msg.payload.decode()
         elif msg.topic == "ball/info":
