@@ -69,15 +69,19 @@ while True:
             if params[i] != "pass":
                 params[i] = float(params[i])
         controller.set_pid_parameters(params)
-        print("test")
         mqtt_client.command = None
 
-    if command == "Elevator":
+    elif command == "Elevator":
         arduino_thread.send_target_positions(0, 0, "Get_ball")
         mqtt_client.command = None
     elif command == "Idle":
         arduino_thread.send_target_positions(0, 0, "Idle")
         mqtt_client.command = None
+    elif command == "Get_pid":
+        pid_str = "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," +  str(controller.kp_x) 
+        + "," +  str(controller.kp_y) + "," +  str(controller.kd_x) + "," +  str(controller.kd_y) + "," +  str(controller.ki_x) + "," +  str(controller.ki_y)
+        mqtt_client.client.publish("jetson/command", pid_str)
+        
     elif command == "Control":
         #run_controller_3.main(tracker, controller, mqtt_client)
         #mqtt_client.command = None

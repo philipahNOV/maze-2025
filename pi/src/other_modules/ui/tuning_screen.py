@@ -10,13 +10,15 @@ class Tuning(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-        self.motor_speed = 100
-        self.dir = None
+        self.params = None
+        self.load_params(self.params, -1)
 
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=100)
 
         self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
+
+        self.mqtt_client.client.publish("jetson/command", "Get_pid")
 
         # Layout the widgets including the logo
         self.create_widgets()
@@ -24,11 +26,37 @@ class Tuning(tk.Frame):
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
 
-    def create_input(self, parent, label, row, col):
+    def create_input(self, parent, label, row, col, param_index):
         tk.Label(parent, text=label, font=("Jockey One", 14)).grid(row=row, column=col, sticky="e", padx=5, pady=5)
         entry = tk.Entry(parent, font=("Jockey One", 14), width=10)
         entry.grid(row=row, column=col+1, padx=5, pady=5)
+
+        reset_btn = tk.Button(
+            parent,
+            text="↺",  # or "Reset"
+            font=("Jockey One", 12),
+            width=2,
+            command=lambda: self.request_param_refresh(param_index)
+        )
+        reset_btn.grid(row=row, column=col+2, padx=2)
+
         return entry
+    
+    def load_params(self, params, index):
+        entries = [self.entry1,
+            self.entry2,
+            self.entry3,
+            self.entry4,
+            self.entry5,
+            self.entry6,
+            self.entry7,
+            self.entry8
+        ]
+        if index == -1:
+            for i in range(len(entries)):
+                entries[i].insert(0, params[i])
+        else:
+            entries[index].insert(0, params[index])
     
     def handle_submit(self):
         entries = [self.entry1.get(),
@@ -71,14 +99,14 @@ class Tuning(tk.Frame):
 
         
 
-        self.entry1 = self.create_input(self.input_frame, "x offset", 0, 0)
-        self.entry2 = self.create_input(self.input_frame, "y offset:", 1, 0)
-        self.entry3 = self.create_input(self.input_frame, "Kp x:", 2, 0)
-        self.entry4 = self.create_input(self.input_frame, "Kp y:", 3, 0)
-        self.entry5 = self.create_input(self.input_frame, "Kd x:", 4, 0)
-        self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0)
-        self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0)
-        self.entry8 = self.create_input(self.input_frame, "Ki y:", 7, 0)
+        self.entry1 = self.create_input(self.input_frame, "x offset", 0, 0, 0)
+        self.entry2 = self.create_input(self.input_frame, "y offset:", 1, 0, 1)
+        self.entry3 = self.create_input(self.input_frame, "Kp x:", 2, 0, 2)
+        self.entry4 = self.create_input(self.input_frame, "Kp y:", 3, 0, 3)
+        self.entry5 = self.create_input(self.input_frame, "Kd x:", 4, 0, 4)
+        self.entry6 = self.create_input(self.input_frame, "Kd y:", 5, 0, 5)
+        self.entry7 = self.create_input(self.input_frame, "Ki x:", 6, 0, 6)
+        self.entry8 = self.create_input(self.input_frame, "Ki y:", 7, 0, 7)
 
         self.exit_button = tk.Button(
             self,

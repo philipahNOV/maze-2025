@@ -3,7 +3,8 @@ import paho.mqtt.client as mqtt
 import time
 import base64
 import numpy as np
-import cv2
+import cv
+from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
     def __init__(self, broker_address='192.168.1.3', port=1883):
@@ -72,6 +73,9 @@ class MQTTClientPi(threading.Thread):
             self.pi_state = (msg.payload.decode())
         elif msg.topic == "pi/command":
             self.pi_state = (msg.payload.decode())
+            if msg.payload.decode().startswith("PID:"):
+                params = msg.payload.decode().split(":")[1].split(",")
+                tuning_screen.Tuning.params = params
             self.client.publish("jetson/state", msg.payload.decode(), 0)
             print(f"Jetson state: {self.pi_state}")
         elif msg.topic == "handshake/response":
