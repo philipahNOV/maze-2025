@@ -17,14 +17,8 @@ class Tuning(tk.Frame):
 
         self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
 
-        self.mqtt_client.client.publish("jetson/command", "Get_pid")
-
         # Layout the widgets including the logo
         self.create_widgets()
-
-        time.sleep(0.2)
-
-        self.load_params(self.params, -1)
 
     #def on_button_click_elevator(self):
         #self.mqtt_client.client.publish("jetson/command", "Elevator")
