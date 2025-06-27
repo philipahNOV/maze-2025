@@ -40,6 +40,7 @@ class Controller:
         self.y_offset = 0.002  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
+        self.vel_max = 150
 
         #TUNING PARAMETERS
         #Pos control
@@ -129,17 +130,16 @@ class Controller:
                 edot_y = (e_y - self.prevError[1]) / dt
                 edot_x = alpha * edot_x + (1 - alpha) * self.prevVelError[0]
                 edot_y = alpha * edot_y + (1 - alpha) * self.prevVelError[1]
+                edot_x = max(min(edot_x, 300), -300)
+                edot_y = max(min(edot_y, 300), -300)
         else:
             dt = 0
 
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
 
-        if abs(edot_x) > 80: self.e_x_int = 0
-        if abs(edot_y) > 80: self.e_y_int = 0
-        
-        #print(edot_x)
-        #print(edot_y)
+        if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
+        if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
 
         if abs(e_x) < self.pos_tol: #at target → STOP
             theta_x = 0
@@ -209,13 +209,13 @@ class Controller:
         if abs(e_x) < tol:
             vel_x = 0
         else:
-            vel_x = min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), 255)
+            vel_x = min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), self.vel_max)
             vel_x *= - np.sign(e_x)
 
         if abs(e_y) < tol:
             vel_y = 0
         else:
-            vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), 255)
+            vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
             vel_y = - np.sign(e_y) * vel_y
 
         if self.significant_motor_change(vel_x, vel_y):
