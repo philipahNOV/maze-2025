@@ -88,7 +88,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
     cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
-    cv2.imshow("Safe Mask",)
+    cv2.imshow("Safe Mask", safe_mask)
     cv2.waitKey(0)
     cv2.destroyAllWindows()
 
