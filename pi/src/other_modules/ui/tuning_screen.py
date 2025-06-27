@@ -52,18 +52,24 @@ class Tuning(tk.Frame):
             self.entry1, self.entry2, self.entry3, self.entry4,
             self.entry5, self.entry6, self.entry7, self.entry8
         ]
-        
+
         if not params:
             print("[WARN] load_params called with no params")
             return
 
+        def format_val(val):
+            try:
+                return f"{float(val):.6f}".rstrip("0").rstrip(".")
+            except ValueError:
+                return val  # fallback if value isn't float
+
         if index == -1:
             for i in range(len(entries)):
                 entries[i].delete(0, tk.END)
-                entries[i].insert(0, params[i])
+                entries[i].insert(0, format_val(params[i]))
         else:
             entries[index].delete(0, tk.END)
-            entries[index].insert(0, params[index])
+            entries[index].insert(0, format_val(params[index]))
     
     def handle_submit(self):
         entries = [self.entry1.get(),
