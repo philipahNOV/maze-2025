@@ -47,7 +47,7 @@ class BootScreen(tk.Frame):
             self.after(200, self.check_pi_state)  # Check again after 0.2 seconds
 
     def show(self):
-        self.pack(expand=True, fill=tk.BOTH)
+        #self.pack(expand=True, fill=tk.BOTH)
         self.check_pi_state()  # Ensure periodic check restarts
 
     def hide(self):
