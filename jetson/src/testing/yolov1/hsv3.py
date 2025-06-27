@@ -60,6 +60,8 @@ class BallTracker:
     def producer_loop(self):
         while self.running:
             frames = self.grab_frame()
+            if frames is None:
+                continue
             if frames is not None:
                 rgb_frame, bgr_frame = frames
                 with self.lock:

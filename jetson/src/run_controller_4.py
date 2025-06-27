@@ -87,6 +87,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
+    print(waypoints)
+    print(path_array)
 
     # Pass path to your PathFollower
     pathFollower = path_following.PathFollower(path_array, controller)
