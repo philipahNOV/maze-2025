@@ -84,7 +84,7 @@ class MQTTClientPi(threading.Thread):
                 self.handshake_complete = True
                 print("Handshake completed with Jetson")
 
-                self.mqtt_client.client.publish("jetson/command", "Get_pid")
+                self.client.publish("jetson/command", "Get_pid")
                 time.sleep(0.2)
                 tuning_screen.Tuning.load_params(tuning_screen.Tuning.params, -1)
         elif msg.topic == "jetson/path":
