@@ -56,13 +56,13 @@ while True:
     #    time.sleep(0.1)
     #    continue
 
-    print(f"[JETSON] Received command: '{command}'")
-
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
         time.sleep(0.01)
         continue
+
+    print(f"[JETSON] Received command: '{command}'")
 
     if command.startswith("PID:"):
         params = command.split(":")[1].split(",")
