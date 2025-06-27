@@ -253,7 +253,7 @@ class Screen1(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
-        self.pack(expand=True, fill=tk.BOTH)
+        #self.pack(expand=True, fill=tk.BOTH)
 
     def hide(self):
         """Hide this frame"""

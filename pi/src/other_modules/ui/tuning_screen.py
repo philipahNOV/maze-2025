@@ -169,7 +169,7 @@ class Tuning(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
-        self.pack(expand=True, fill=tk.BOTH)
+        #self.pack(expand=True, fill=tk.BOTH)
         print(f"[PI] MQTT connected? {self.mqtt_client.connected}")
         self.mqtt_client.publish("jetson/command", "Get_pid")
         self.poll_for_params()
