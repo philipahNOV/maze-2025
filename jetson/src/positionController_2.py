@@ -28,7 +28,8 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
-        self.use_feedforward = False
+        self.use_feedforward = True
+        self.feedforward_vector = (0, 0)
 
         self.path_following = path_following
 
@@ -62,6 +63,8 @@ class Controller:
         self.kd_y = 0.0001
         self.ki_y = 0.001
         self.ki_x = 0.001
+        self.kf_x = 0.00002
+        self.kf_y = 0.00002
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
@@ -74,7 +77,7 @@ class Controller:
         self.command_delay = 0.015
 
     def set_pid_parameters(self, params):
-        param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y"]
+        param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_x", "kf_y"]
         for i, name in enumerate(param_names):
             if params[i] != "pass":
                 setattr(self, name, params[i])
@@ -139,6 +142,13 @@ class Controller:
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
 
+        ff_x = 0
+        ff_y = 0
+        if self.use_feedforward:
+            ff_x = self.kf_x * self.feedforward_vector[0]
+            ff_y = self.kf_y * self.feedforward_vector[1]
+
+
         if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
         if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
 
@@ -154,7 +164,7 @@ class Controller:
             print("Escaping")
         else:
             # Ball is far → USE CONTROL
-            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int)
+            theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int + ff_x)
 
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             # Ball is at target → STOP
@@ -165,7 +175,7 @@ class Controller:
             print("Escaping")
         else:
             # Ball is far → USE CONTROL
-            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int)
+            theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int + ff_y)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
             print("Target reached!")
