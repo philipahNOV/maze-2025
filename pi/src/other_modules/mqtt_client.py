@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import time
 import base64
 import numpy as np
-import cv
+#import cv
 from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
@@ -63,10 +63,11 @@ class MQTTClientPi(threading.Thread):
     def on_message(self, client, userdata, msg):
         # Delegate to the appropriate handler based on the topic
         if msg.topic == "camera/feed":
-            image_data = base64.b64decode(msg.payload)
-            nparr = np.frombuffer(image_data, np.uint8)
-            frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            self.img = frame
+            #image_data = base64.b64decode(msg.payload)
+            #nparr = np.frombuffer(image_data, np.uint8)
+            #frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            #self.img = frame
+            pass
         elif msg.topic == "data/updates":
             pass
         elif msg.topic == "pi/state":
