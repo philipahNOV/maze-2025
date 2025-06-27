@@ -39,7 +39,7 @@ class PathFollower:
 
         self.controller = controller
 
-        self.prev_waypoint = None
+        self.prev_waypoint = 0
         self.next_waypoint = 0
 
         self.looping = False
@@ -85,7 +85,11 @@ class PathFollower:
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
                 self.next_waypoint = max(self.next_waypoint - 1, 0)
-                self.prev_waypoint = max(self.prev_waypoint - 1, 0)
+                if self.prev_waypoint is None:
+                    self.prev_waypoint = max(self.next_waypoint - 1, 0)
+                else:
+                    self.prev_waypoint = max(self.prev_waypoint - 1, 0)
+
                 self.prev_progress_time = None
 
         
