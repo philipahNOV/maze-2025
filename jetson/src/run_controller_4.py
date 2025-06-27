@@ -46,6 +46,11 @@ def sample_waypoints(path):
 
 def draw_path(image, path, waypoints, start, goal):
     out = image.copy()
+    if len(out.shape) == 2 or out.shape[2] == 1:
+        out = cv2.cvtColor(out, cv2.COLOR_GRAY2BGR)
+    elif out.shape[2] == 4:
+        out = cv2.cvtColor(out, cv2.COLOR_BGRA2BGR)
+
     h, w = out.shape[:2]
 
     for y, x in path or []:
