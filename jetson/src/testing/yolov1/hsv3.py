@@ -190,24 +190,24 @@ class BallTracker:
         with self.lock:
             return self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
-    # def get_orientation(self):
-    #     sensors_data = sl.SensorsData()
-    #     if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
-    #         return None
+    def get_orientation(self):
+        sensors_data = sl.SensorsData()
+        if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+            return None
 
-    #     imu_data = sensors_data.get_imu_data()
-    #     zed_imu_pose = sl.Transform()
-    #     imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
-    #     ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
-    #     dir1 = ox + ow
-    #     dir2 = oy - oz
+        imu_data = sensors_data.get_imu_data()
+        zed_imu_pose = sl.Transform()
+        imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+        ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+        dir1 = ox + ow
+        dir2 = oy - oz
 
-    #     import math
-    #     sinr_cosp = 2 * (ow * ox + oy * oz)
-    #     cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
-    #     roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
+        import math
+        sinr_cosp = 2 * (ow * ox + oy * oz)
+        cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
+        roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
 
-    #     sinp = 2 * (ow * oy - oz * ox)
-    #     pitch = math.degrees(math.copysign(math.pi / 2, sinp)) if abs(sinp) >= 1 else math.degrees(math.asin(sinp))
+        sinp = 2 * (ow * oy - oz * ox)
+        pitch = math.degrees(math.copysign(math.pi / 2, sinp)) if abs(sinp) >= 1 else math.degrees(math.asin(sinp))
 
-    #     return [-dir2, dir1]
+        return [-dir2, dir1]
