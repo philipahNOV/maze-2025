@@ -12,7 +12,7 @@ import numpy as np
 
 clicked_goal = None
 
-def on_mouse_click(event, x, y):
+def on_mouse_click(event, x, y, flags, param):
     global clicked_goal
     if event == cv2.EVENT_LBUTTONDOWN:
         clicked_goal = (y, x)
