@@ -63,8 +63,8 @@ class Controller:
         self.kd_y = 0.00009
         self.ki_y = 0.0002
         self.ki_x = 0.0002
-        self.kf_x = 0.012
-        self.kf_y = 0.012
+        self.kf_min = 0.02
+        self.kf_max = 0.005
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
@@ -77,7 +77,7 @@ class Controller:
         self.command_delay = 0.015
 
     def set_pid_parameters(self, params):
-        param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_x", "kf_y"]
+        param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
         for i, name in enumerate(param_names):
             if params[i] != "pass":
                 setattr(self, name, params[i])
@@ -144,8 +144,20 @@ class Controller:
         ff_x = 0
         ff_y = 0
         if self.use_feedforward:
-            ff_x = self.kf_x * self.feedforward_vector[0]
-            ff_y = self.kf_y * self.feedforward_vector[1]
+            # Compute distance between ball and next target (used as scaling factor)
+            dx = self.ref[0] - self.pos[0]
+            dy = self.ref[1] - self.pos[1]
+            distance = np.linalg.norm((dx, dy))
+
+            # Normalize distance to a 0–1 range (assume 0–500 pixels is typical range)
+            distance_norm = min(distance / 500, 1.0)
+
+            # Interpolate gain
+            kf_dynamic = self.kf_min + (self.kf_max - self.kf_min) * distance_norm
+
+            # Apply dynamic gain to unit direction vector
+            ff_x = kf_dynamic * self.feedforward_vector[0]
+            ff_y = kf_dynamic * self.feedforward_vector[1]
 
 
         if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0

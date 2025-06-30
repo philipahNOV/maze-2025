@@ -4,8 +4,28 @@ import cv2
 import positionController_2
 import arduino_connection_test
 import lowPassFilter
-import path_following
+import path_following_lookahead
 from mqtt_client import MQTTClientJetson
+import numpy as np
+
+
+def densify_path(path_array, step_size=30):
+    dense_path = []
+
+    for i in range(len(path_array) - 1):
+        p1 = np.array(path_array[i])
+        p2 = np.array(path_array[i + 1])
+        segment = p2 - p1
+        dist = np.linalg.norm(segment)
+        num_steps = max(int(dist // step_size), 1)
+        for j in range(num_steps):
+            t = j / num_steps
+            interp_point = tuple(np.round(p1 + t * segment).astype(int))
+            dense_path.append(interp_point)
+
+    # Append the final point
+    dense_path.append(path_array[-1])
+    return dense_path
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
@@ -51,18 +71,20 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     (606, 57),
     (830, 60)
     ] 
-    pathFollower = path_following.PathFollower(path_array, controller)
+    path_array = densify_path(path_array)
+    pathFollower = path_following_lookahead.PathFollower(path_array, controller)
     time.sleep(1)
     controller.horizontal()
     time.sleep(2)
 
-    def plot_waypoints(frame, pathFollower: path_following.PathFollower):  # Draw waypoints on frame
+    def plot_waypoints(frame, pathFollower: path_following_lookahead.PathFollower):  # Draw waypoints on frame
         for n in range(pathFollower.length):
             cv2.circle(frame, pathFollower.path[n], 5, (0, 0, 255), -1)
 
     try:
         while True:
             frame = tracker.frame
+            pathFollower.frame = frame
             if frame is None:
                 continue
 

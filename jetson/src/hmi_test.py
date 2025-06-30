@@ -6,6 +6,7 @@ from camera.cam_loop import CameraThread
 from automatic import Automatic
 import run_controller_3
 import positionController_2
+import run_controller_3_LOS
 import testing.yolov1.hsv3 as tracking
 import queue
 import threading
@@ -93,7 +94,7 @@ while True:
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.stop_control = False
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_3.main,
+                target=run_controller_3_LOS.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
