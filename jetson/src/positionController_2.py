@@ -43,7 +43,7 @@ class Controller:
         self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
-        self.vel_max = 150
+        self.vel_max = 120
 
         #TUNING PARAMETERS
         #Pos control
@@ -86,10 +86,8 @@ class Controller:
         self.pos = pos
 
     def significant_motor_change(self, vel_x, vel_y):
-        if np.sign(vel_x) == np.sign(self.prev_vel_x) and np.sign(vel_y) == np.sign(self.prev_vel_y):
-            if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
-                #print(f"No change: abs(vel_x-self.prev_vel_x), abs(vel_y-self.prev_vel_y)")
-                return False
+        if abs(vel_x-self.prev_vel_x) < self.min_vel_diff and abs(vel_y-self.prev_vel_y) < self.min_vel_diff:
+            return False
         return True
     
     def saturate_angles(self, theta_x, theta_y):
