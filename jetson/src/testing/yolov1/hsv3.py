@@ -28,7 +28,7 @@ class BallTracker:
 
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
 
-        self.model = YOLO(model_path)
+        #self.model = YOLO(model_path)
         self.WINDOW_SIZE = 50
         self.running = False
         self.initialized = False
@@ -37,6 +37,14 @@ class BallTracker:
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+
+        print("[INFO] Loading YOLO model...")
+        self.model = YOLO(model_path)
+        self.model.fuse()
+        self.model.eval()
+        dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
+        self.model.predict(dummy, verbose=False)
+        print("[INFO] YOLO model ready.")
 
     def init_camera(self):
         self.zed = sl.Camera()
