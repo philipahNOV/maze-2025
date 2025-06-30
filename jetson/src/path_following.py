@@ -75,11 +75,13 @@ class PathFollower:
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
+                print(f"No progression, starting timer. Velocity: {vel}")
         elif vel:
             if not self.prev_progress_time:
                 pass
             elif vel > self.vel_threshold:
                 self.prev_progress_time = None
+                print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 self.next_waypoint = max(self.next_waypoint - 1, 0)
                 print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
