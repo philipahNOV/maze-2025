@@ -40,7 +40,7 @@ class Controller:
 
         #ARDUINO PARAMETERS
         self.x_offset = 0 # Offset for x-axis orientation (BEST SO FAR: -0.01)
-        self.y_offset = 0  # Offset for y-axis orientation (tested -0.0015)
+        self.y_offset = 0.004  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
         self.min_vel_diff = 5
         self.vel_max = 120
@@ -57,14 +57,14 @@ class Controller:
         #self.ki_x = 0.0006
 
         #Best so far (pathfollowing)
-        self.kp_x = 0.0002
+        self.kp_x = 0.00002
         self.kd_x = 0.0001
-        self.kp_y = 0.0002
+        self.kp_y = 0.00002
         self.kd_y = 0.0001
-        self.ki_y = 0.001
-        self.ki_x = 0.001
-        self.kf_x = 0.00002
-        self.kf_y = 0.00002
+        self.ki_y = 0.003
+        self.ki_x = 0.003
+        self.kf_x = 0.013
+        self.kf_y = 0.013
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
@@ -252,6 +252,8 @@ class Controller:
             tol (float): Angular tolerance in radians (default: 0.0015).
             timeLimit (float): Maximum duration in seconds to attempt leveling (default: 20).
         """
+
+        print("Stabilizing horizontally...")
         
         kp = 700 # Proportional gain for the control loop
         deadline = time.time() + timeLimit
@@ -281,7 +283,7 @@ class Controller:
                 vel_y = min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
                 vel_y *= - np.sign(theta_y)
 
-            print(f"{theta_x}, {theta_y}")
+            #print(f"{theta_x}, {theta_y}")
             self.arduinoThread.send_target_positions(vel_x, vel_y)
             time.sleep(self.command_delay)
         print("Deadline reached, stopping motors.")
