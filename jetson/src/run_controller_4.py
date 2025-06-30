@@ -18,11 +18,7 @@ def on_mouse_click(event, x, y, flags, param):
         clicked_goal = (y, x)
         print(f"[INFO] Clicked goal set to: {clicked_goal}")
 
-def snap_to_nearest_walkable(mask, point, max_radius=20):
-    """
-    If the point is inside a wall, find the nearest walkable pixel within max_radius.
-    `mask` must be binary: 1 = walkable, 0 = wall.
-    """
+def snap_to_nearest_walkable(mask, point, max_radius=10):
     y, x = point
     if mask[y, x] != 0:
         return point  # already walkable
@@ -39,7 +35,6 @@ def snap_to_nearest_walkable(mask, point, max_radius=20):
                 if dist[ny, nx] < min_val:
                     min_val = dist[ny, nx]
                     nearest = (ny, nx)
-    print(f"Snapped start to walkable: {nearest}")
     return nearest
 
 
