@@ -85,20 +85,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     print("Tracking started")
     print("Finding shortest path...")
-    # print("[INFO] Waiting for camera frames to stabilize...")
-    # stable_frames = 0
-    # last_frame = None
-
-    # while stable_frames < 5:
-    #     frame = tracker.frame
-    #     if frame is not None and frame.size > 0:
-    #         if last_frame is None or not np.array_equal(frame, last_frame):
-    #             stable_frames += 1
-    #             last_frame = frame.copy()
-    #     time.sleep(0.1)
-
-    # maze_frame = last_frame.copy()
-    # print("[INFO] Maze frame captured.")
 
     while tracker.frame is None:
         time.sleep(0.1)
@@ -113,7 +99,15 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
-    start = (680, 790)
+    #start = (680, 790)
+    ball_pos = tracker.get_position()
+    while ball_pos is None:
+        print("Waiting for ball position...")
+        time.sleep(0.1)
+        ball_pos = tracker.get_position()
+
+    ball_pos = smoother.update(ball_pos)
+    start = (ball_pos[1], ball_pos[0])
     #goal = (55, 840)
     global clicked_goal
     clicked_goal = None
@@ -134,7 +128,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.5)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.35)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
     print(path)
