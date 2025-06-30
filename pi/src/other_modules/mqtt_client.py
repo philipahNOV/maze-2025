@@ -79,9 +79,7 @@ class MQTTClientPi(threading.Thread):
         elif msg.topic == "pi/command":
             if msg.payload.decode().startswith("PID:"):
                 values = msg.payload.decode().split(":")[1].split(",")
-                print("test2")
                 if self.app and "Tuning" in self.app.frames:
-                    print("test3")
                     tuning = self.app.frames["Tuning"]
                     tuning.params = values
                     tuning.params_recieved = False  # so poll_for_params() reloads
