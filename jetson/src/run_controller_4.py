@@ -18,6 +18,31 @@ def on_mouse_click(event, x, y, flags, param):
         clicked_goal = (y, x)
         print(f"[INFO] Clicked goal set to: {clicked_goal}")
 
+def snap_to_nearest_walkable(mask, point, max_radius=20):
+    """
+    If the point is inside a wall, find the nearest walkable pixel within max_radius.
+    `mask` must be binary: 1 = walkable, 0 = wall.
+    """
+    y, x = point
+    if mask[y, x] != 0:
+        return point  # already walkable
+
+    dist = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
+    min_val = float('inf')
+    nearest = point
+
+    h, w = mask.shape
+    for dy in range(-max_radius, max_radius + 1):
+        for dx in range(-max_radius, max_radius + 1):
+            ny, nx = y + dy, x + dx
+            if 0 <= ny < h and 0 <= nx < w and mask[ny, nx] > 0:
+                if dist[ny, nx] < min_val:
+                    min_val = dist[ny, nx]
+                    nearest = (ny, nx)
+    print(f"Snapped start to walkable: {nearest}")
+    return nearest
+
+
 def dilate_mask(mask, iterations=2):
     kernel = np.ones((3, 3), np.uint8)
     return cv2.dilate(mask, kernel, iterations=iterations)
@@ -107,7 +132,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
         ball_pos = tracker.get_position()
 
     ball_pos = smoother.update(ball_pos)
-    start = (ball_pos[1], ball_pos[0])
+    start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
+    start = snap_to_nearest_walkable(safe_mask, start_raw)
     #goal = (55, 840)
     global clicked_goal
     clicked_goal = None
