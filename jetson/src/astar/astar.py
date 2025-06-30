@@ -3,8 +3,8 @@ import numpy as np
 import cv2
 
 def heuristic(a, b):
-    # return abs(a[0] - b[0]) + abs(a[1] - b[1]) #Manhattan
-    return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) #Manhattan
+    #return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
 
 
 def compute_repulsion_cost(array):
@@ -63,27 +63,21 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
     return False
 
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.5):
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.35):
     """
     Automatically downscale array, run A*, and upscale path to original resolution.
     """
-    # Downscale array
     small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-    small_array = (small_array > 0).astype(np.uint8)  # ensure binary
+    small_array = (small_array > 0).astype(np.uint8)
 
-    # Downscale start/goal
     start_small = (int(start[0] * scale), int(start[1] * scale))
     goal_small = (int(goal[0] * scale), int(goal[1] * scale))
 
-    # Run A* on smaller grid
     path_small = astar(small_array, start_small, goal_small, repulsion_weight)
 
     if not path_small:
         print("[ERROR] A* failed in downscaled space.")
         return []
 
-    # Upscale path
     path = [(int(y / scale), int(x / scale)) for y, x in path_small]
     return path
-
-
