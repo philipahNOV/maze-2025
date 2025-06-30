@@ -94,7 +94,7 @@ while True:
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.stop_control = False
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_3_LOS.main,
+                target=run_controller_3.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
