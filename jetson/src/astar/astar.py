@@ -3,7 +3,9 @@ import numpy as np
 import cv2
 
 def heuristic(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1]) #Manhattan
+    # return abs(a[0] - b[0]) + abs(a[1] - b[1]) #Manhattan
+    return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
+
 
 def compute_repulsion_cost(array):
     dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
@@ -19,6 +21,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
     repulsion_map = compute_repulsion_cost(array)
 
     close_set = set()
+    open_set = {start}
     came_from = {}
     gscore = {start: 0}
     fscore = {start: heuristic(start, goal)}
@@ -26,6 +29,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
     while oheap:
         _, current = heapq.heappop(oheap)
+        open_set.discard(current)
 
         if current == goal:
             path = []
@@ -39,7 +43,6 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
         for dx, dy in neighbors:
             neighbor = current[0] + dx, current[1] + dy
-
             if not (0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols):
                 continue
             if array[neighbor[0], neighbor[1]] == 0:
@@ -51,10 +54,36 @@ def astar(array, start, goal, repulsion_weight=5.0):
             if neighbor in close_set and tentative_g >= gscore.get(neighbor, float('inf')):
                 continue
 
-            if tentative_g < gscore.get(neighbor, float('inf')) or neighbor not in [x[1] for x in oheap]:
+            if tentative_g < gscore.get(neighbor, float('inf')) or neighbor not in open_set:
                 came_from[neighbor] = current
                 gscore[neighbor] = tentative_g
                 fscore[neighbor] = tentative_g + heuristic(neighbor, goal)
                 heapq.heappush(oheap, (fscore[neighbor], neighbor))
+                open_set.add(neighbor)
 
     return False
+
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.5):
+    """
+    Automatically downscale array, run A*, and upscale path to original resolution.
+    """
+    # Downscale array
+    small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+    small_array = (small_array > 0).astype(np.uint8)  # ensure binary
+
+    # Downscale start/goal
+    start_small = (int(start[0] * scale), int(start[1] * scale))
+    goal_small = (int(goal[0] * scale), int(goal[1] * scale))
+
+    # Run A* on smaller grid
+    path_small = astar(small_array, start_small, goal_small, repulsion_weight)
+
+    if not path_small:
+        print("[ERROR] A* failed in downscaled space.")
+        return []
+
+    # Upscale path
+    path = [(int(y / scale), int(x / scale)) for y, x in path_small]
+    return path
+
+
