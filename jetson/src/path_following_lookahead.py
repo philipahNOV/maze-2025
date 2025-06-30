@@ -42,6 +42,7 @@ class PathFollower:
 
         self.prev_waypoint = 0
         self.next_waypoint = 0
+        self.lookahead_target = None
 
         self.looping = False
 
@@ -146,8 +147,8 @@ class PathFollower:
                 self.prev_progress_time = None
 
         
-        lookahead_target = self.get_los_point_from_prev_along_path()
-        self.controller.posControl(lookahead_target)
+        self.lookahead_target = self.get_los_point_from_prev_along_path()
+        self.controller.posControl(self.lookahead_target)
 
         
         current_time = time.time()
