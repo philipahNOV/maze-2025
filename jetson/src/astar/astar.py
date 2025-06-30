@@ -63,7 +63,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
     return False
 
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.35):
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.55):
     """
     Automatically downscale array, run A*, and upscale path to original resolution.
     """
