@@ -58,11 +58,11 @@ class Controller:
 
         #Best so far (pathfollowing)
         self.kp_x = 0.00002
-        self.kd_x = 0.0001
+        self.kd_x = 0.00012
         self.kp_y = 0.00002
-        self.kd_y = 0.0001
-        self.ki_y = 0.003
-        self.ki_x = 0.003
+        self.kd_y = 0.00012
+        self.ki_y = 0.0005
+        self.ki_x = 0.0005
         self.kf_x = 0.013
         self.kf_y = 0.013
         self.deadzone_pos_tol = 30
