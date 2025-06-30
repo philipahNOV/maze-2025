@@ -71,14 +71,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
 
-            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
-            cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-            cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
-            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-
-            cv2.imshow("Ball & Marker Tracking", frame)
-
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
@@ -88,6 +80,17 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             # Use path following instead of static control
             pathFollower.follow_path(ball_pos)
+
+            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
+            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            for i in range(pathFollower.next_waypoint):
+                if i == pathFollower.prev_waypoint:
+                    cv2.circle(frame, path_array[i], 5, (255, 102, 255), -1)
+                    continue
+                cv2.circle(frame, ball_pos, 5, (255, 215, 0), -1)
+
+            cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
