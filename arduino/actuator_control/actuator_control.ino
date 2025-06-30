@@ -1,5 +1,6 @@
 // Inkluderer nødvendige biblioteker
 #include <Servo.h> // For servo kontroll
+#include <Adafruit_NeoPixel.h> // For styring av NeoPixel LED
 
 // Initialiserer variabler
 // Navnerom for aktuatorene
@@ -28,6 +29,12 @@ namespace lift_servo {
     const uint8_t lift_down = 180; // Lav posisjon for heis
     const uint8_t lift_up = 0; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
+}
+
+namespace led_strips {
+    const uint8_t led_pin = 30; // Pinne for LED strip
+    const uint16_t num_leds = 10; // Antall LED i stripen
+    Adafruit_NeoPixel strip = Adafruit_NeoPixel(num_leds, led_pin, NEO_GRB + NEO_KHZ800); // Initialiserer LED stripen
 }
 
 // Navnerom for globale variabler
@@ -67,6 +74,14 @@ void read_serial(); // Funksjon for å lese innkommende seriedata
 void setup() {
     // Starter seriel kominikasjon
     Serial.begin(9600);
+
+    // Initialiserer LED stripen
+    led_strips::strip.begin(); // Starter LED stripen
+    led_strips::strip.setBrightness(255); // Setter lysstyrken til stripen
+    // Setter alle LED til hvit farge
+    for (uint8_t i = 0; i < led_strips::num_leds; i++) {
+        led_strips::strip.setPixelColor(i, led_strips::strip.Color(255, 255, 255)); // Setter fargen til hvit
+    }
 
     // Setter pin modusene
     // Aktuator en
