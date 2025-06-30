@@ -75,14 +75,16 @@ class PathFollower:
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
+                print(f"No progression, starting timer. Velocity: {vel}")
         elif vel:
             if not self.prev_progress_time:
                 pass
             elif vel > self.vel_threshold:
                 self.prev_progress_time = None
+                print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
-                print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
                 self.next_waypoint = max(self.next_waypoint - 1, 0)
+                print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
                 if self.prev_waypoint is None:
                     self.prev_waypoint = max(self.next_waypoint - 1, 0)
                 else:
@@ -103,14 +105,14 @@ class PathFollower:
                     print("Loop completed, starting from first waypoint")
                 print("Done following path")
             
-            self.next_waypoint = self.next_waypoint + 1
+            self.next_waypoint = min(self.next_waypoint + 1, self.length-1)
         else:
             for i in reversed(range(len(self.path))):
                 wpt = self.path[i]
                 if np.linalg.norm(np.array(ballPos) - np.array(wpt)) < self.acceptance_radius:
 
                     self.prev_waypoint = i
-                    self.next_waypoint = i+1
+                    self.next_waypoint = min(i+1, self.length-1)
 
         dx = self.path[self.next_waypoint][0] - ballPos[0]
         dy = self.path[self.next_waypoint][1] - ballPos[1]
