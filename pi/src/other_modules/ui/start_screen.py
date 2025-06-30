@@ -41,7 +41,7 @@ class Screen1(tk.Frame):
         self.dir = None
         self.mqtt_client.client.publish("jetson/command", "Motor_stop")
 
-    def on_button_click_stop(self):
+    def on_button_click_maze(self):
         self.mqtt_client.client.publish("jetson/command", "Maze")
 
     def on_speed_change(self, value):
