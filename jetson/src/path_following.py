@@ -28,7 +28,7 @@ class PathFollower:
 
     def __init__(self, path_array, controller: positionController_2.Controller):
 
-        self.path = None
+        self.path = []
         self.length = 0
 
         # self.camera_offset_x = 420
