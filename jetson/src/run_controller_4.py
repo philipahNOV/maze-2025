@@ -5,7 +5,7 @@ import positionController_2
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
-from astar.astar import astar
+from astar.astar import astar, astar_downscaled
 from astar.brightness import get_dynamic_threshold, create_binary_mask
 import math
 import numpy as np
@@ -130,7 +130,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar(safe_mask, start, goal, repulsion_weight=5.0)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.5)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
     print(path)
