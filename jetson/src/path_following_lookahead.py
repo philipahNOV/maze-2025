@@ -48,7 +48,7 @@ class PathFollower:
 
         self.frame = None
 
-        self.lookahead_distance = 80  # Adjust based on your path density and speed
+        self.lookahead_distance = 50  # Adjust based on your path density and speed
 
         self.prev_time = None
         self.prev_ball_pos = None
@@ -201,8 +201,8 @@ class PathFollower:
         else:
             self.controller.feedforward_vector = (0, 0)
 
-        cv2.circle(self.frame, lookahead_target, 6, (255, 255, 255), 2)
-        cv2.putText(self.frame, "LOS", (lookahead_target[0] + 10, lookahead_target[1]), 
+        cv2.circle(self.frame, self.lookahead_target, 6, (255, 255, 255), 2)
+        cv2.putText(self.frame, "LOS", (self.lookahead_target[0] + 10, self.lookahead_target[1]), 
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
 
         if self.prev_waypoint is not None:
