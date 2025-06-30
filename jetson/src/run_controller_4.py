@@ -78,15 +78,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
     print("[INFO] Waiting for YOLO initialization...")
-    wait_time = 0
-    while not tracker.initialized and wait_time < 10:
+    while not tracker.initialized:
         time.sleep(0.1)
-        wait_time += 0.1
-
-    if not tracker.initialized:
-        print("[ERROR] YOLO failed to initialize in time.")
-        return
-
 
     print("[INFO] Tracking started. Press 'q' to quit.")
     print("[INFO] Capturing maze for A* planning...")
