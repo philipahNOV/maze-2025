@@ -69,7 +69,6 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker):
-
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
@@ -77,7 +76,22 @@ def main(tracker: tracking.BallTracker):
     print("[INFO] Tracking started. Press 'q' to quit.")
     print("[INFO] Capturing maze for A* planning...")
 
-    maze_frame = tracker.frame
+    # Wait for multiple distinct, valid frames
+    print("[INFO] Waiting for camera frames to stabilize...")
+    stable_frames = 0
+    last_frame = None
+
+    while stable_frames < 5:
+        frame = tracker.frame
+        if frame is not None and frame.size > 0:
+            if last_frame is None or not np.array_equal(frame, last_frame):
+                stable_frames += 1
+                last_frame = frame.copy()
+        time.sleep(0.1)
+
+    maze_frame = last_frame.copy()
+    print("[INFO] Maze frame captured.")
+
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
@@ -93,8 +107,37 @@ def main(tracker: tracking.BallTracker):
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
-    path_array = [(x, y) for x, y in waypoints]
+    #path_array = [(x, y) for x, y in waypoints]
 
+    try:
+        while True:
+            frame = tracker.frame
+            if frame is None:
+                continue
+
+            ball_pos = tracker.get_position()
+
+            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
+            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            
+            frame = draw_path(frame, path, waypoints, start, goal)
+
+            cv2.imshow("Ball & Marker Tracking", frame)
+
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            if not ball_pos:
+                print("No ball found (run_controller)")
+                continue
+
+    except KeyboardInterrupt:
+        print("\n[INFO] Interrupted by user.")
+    finally:
+        tracker.stop()
+        cv2.destroyAllWindows()
+        print("[INFO] Tracker stopped.")
 
 if __name__ == "__main__":
     main()

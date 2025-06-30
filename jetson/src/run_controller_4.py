@@ -14,6 +14,12 @@ def dilate_mask(mask, iterations=2):
     kernel = np.ones((3, 3), np.uint8)
     return cv2.dilate(mask, kernel, iterations=iterations)
 
+def on_mouse_click(event, x, y):
+    global clicked_goal
+    if event == cv2.EVENT_LBUTTONDOWN:
+        clicked_goal = (y, x)
+        print(f"[INFO] Clicked goal set to: {clicked_goal}")
+
 def sample_waypoints(path):
     if not path or len(path) < 2:
         return path or []
@@ -72,27 +78,62 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
     print("[INFO] Waiting for YOLO initialization...")
-    while not tracker.initialized:
+    wait_time = 0
+    while not tracker.initialized and wait_time < 10:
         time.sleep(0.1)
+        wait_time += 0.1
+
+    if not tracker.initialized:
+        print("[ERROR] YOLO failed to initialize in time.")
+        return
+
 
     print("[INFO] Tracking started. Press 'q' to quit.")
     print("[INFO] Capturing maze for A* planning...")
-    while tracker.frame is None:
+    # Wait for multiple distinct, valid frames
+    print("[INFO] Waiting for camera frames to stabilize...")
+    stable_frames = 0
+    last_frame = None
+
+    while stable_frames < 5:
+        frame = tracker.frame
+        if frame is not None and frame.size > 0:
+            if last_frame is None or not np.array_equal(frame, last_frame):
+                stable_frames += 1
+                last_frame = frame.copy()
         time.sleep(0.1)
 
-    maze_frame = tracker.frame
+    maze_frame = last_frame.copy()
+    print("[INFO] Maze frame captured.")
+
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
-    
-    start = (680, 790)
-    goal = (55, 840)
 
-    cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
-    cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
-    cv2.imshow("Safe Mask", safe_mask)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    start = (680, 790)
+    cv2.namedWindow("Safe Mask")
+    cv2.setMouseCallback("Safe Mask", on_mouse_click)
+
+    temp_mask = safe_mask.copy()
+    cv2.circle(temp_mask, (start[1], start[0]), 15, 127, -1)
+    cv2.imshow("Safe Mask", temp_mask)
+
+    print("[INFO] Click to select goal...")
+    while clicked_goal is None:
+        cv2.imshow("Safe Mask", temp_mask)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("[INFO] Goal selection canceled.")
+            return
+    cv2.destroyWindow("Safe Mask")
+
+    goal = clicked_goal
+
+
+    # cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
+    # cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
+    # cv2.imshow("Safe Mask", safe_mask)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
