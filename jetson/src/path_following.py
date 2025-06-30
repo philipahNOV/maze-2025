@@ -54,7 +54,7 @@ class PathFollower:
 
         self.inside_target_radius = False
         self.time_entered_radius = None
-        self.radius_dwell_time = 2.0  # seconds before allowing progress while stationary
+        self.radius_dwell_time = 0.8  # seconds before allowing progress while stationary
 
         if path_array:
             self.path = []
