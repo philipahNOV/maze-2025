@@ -88,7 +88,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if frame is None:
                 continue
 
-            plot_waypoints(frame, pathFollower)  # Draw path on frame
+            #plot_waypoints(frame, pathFollower)  # Draw path on frame
 
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
