@@ -42,7 +42,7 @@ class Controller:
         self.x_offset = 0 # Offset for x-axis orientation (BEST SO FAR: -0.01)
         self.y_offset = 0.004  # Offset for y-axis orientation (tested -0.0015)
         self.min_velocity = 22 # Minimum velocity for motors
-        self.min_vel_diff = 5
+        self.min_vel_diff = 10
         self.vel_max = 120
 
         #TUNING PARAMETERS

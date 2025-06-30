@@ -103,14 +103,14 @@ class PathFollower:
                     print("Loop completed, starting from first waypoint")
                 print("Done following path")
             
-            self.next_waypoint = min(self.next_waypoint + 1, self.length)
+            self.next_waypoint = min(self.next_waypoint + 1, self.length-1)
         else:
             for i in reversed(range(len(self.path))):
                 wpt = self.path[i]
                 if np.linalg.norm(np.array(ballPos) - np.array(wpt)) < self.acceptance_radius:
 
                     self.prev_waypoint = i
-                    self.next_waypoint = min(i+1, self.length)
+                    self.next_waypoint = min(i+1, self.length-1)
 
         dx = self.path[self.next_waypoint][0] - ballPos[0]
         dy = self.path[self.next_waypoint][1] - ballPos[1]
