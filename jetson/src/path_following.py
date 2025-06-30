@@ -56,14 +56,12 @@ class PathFollower:
             self.path = []
             self.length = len(path_array)
             for n in range(self.length):
-                self.path.append((path_array[n][0] + self.camera_offset_x, path_array[n][1] + self.camera_offset_y))
-                #self.path.append((path_array[n][0], path_array[n][1]))
+                self.path.append((path_array[n][0], path_array[n][1]))
 
 
         self.acceptance_radius = self.controller.pos_tol
 
     def follow_path(self, ballPos):
-
         vel = None
 
         if self.prev_time and self.prev_ball_pos:

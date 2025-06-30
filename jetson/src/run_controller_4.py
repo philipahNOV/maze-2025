@@ -101,7 +101,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     print(waypoints)
     print(path_array)
 
-    # Pass path to your PathFollower
     pathFollower = path_following.PathFollower(path_array, controller)
 
 
@@ -115,8 +114,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
 
             cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
-            #cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-            #cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
@@ -131,7 +128,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 print("No ball found (run_controller)")
                 continue
 
-            # Use path following instead of static control
             pathFollower.follow_path(ball_pos)
 
             if mqtt_client.stop_control:
