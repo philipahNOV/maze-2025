@@ -82,9 +82,20 @@ class PathFollower:
                 self.prev_progress_time = None
                 print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
-                print(f"Stuck for {self.stuck_retry_time} seconds. Reversing to previous waypoint.")
-                self.next_waypoint = max(self.next_waypoint - 1, 0)
-                self.prev_waypoint = max(self.prev_waypoint - 1, 0)
+                # Check if we're stuck within the current waypoint's acceptance radius
+                stuck_within_waypoint = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius
+
+                if stuck_within_waypoint and self.next_waypoint >= 2:
+                    # Actively jump back 2 waypoints
+                    self.next_waypoint = max(self.next_waypoint - 2, 0)
+                    self.prev_waypoint = max(self.next_waypoint - 1, 0)
+                    print(f"Stuck within waypoint range — jumping back 2 steps to waypoint {self.next_waypoint}")
+                else:
+                    # Normal backstep
+                    self.next_waypoint = max(self.next_waypoint - 1, 0)
+                    self.prev_waypoint = max(self.next_waypoint - 1, 0)
+                    print(f"Stuck — reverting to waypoint {self.next_waypoint}")
+
                 self.prev_progress_time = None
 
         
