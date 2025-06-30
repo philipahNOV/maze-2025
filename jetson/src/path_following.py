@@ -94,11 +94,11 @@ class PathFollower:
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
-                print(f"No progression, starting timer. Velocity: {vel}")
+                #print(f"No progression, starting timer. Velocity: {vel}")
         elif self.prev_progress_time:
             if vel and vel > self.vel_threshold:
                 self.prev_progress_time = None
-                print(f"Progressing again. Velocity: {vel}")
+                #print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 # Check if we're stuck within the current waypoint's acceptance radius
                 stuck_within_waypoint = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius
