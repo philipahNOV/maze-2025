@@ -81,14 +81,17 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             # Use path following instead of static control
             pathFollower.follow_path(ball_pos)
 
-            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
+            cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            for i in range(pathFollower.next_waypoint):
-                if i == pathFollower.prev_waypoint:
-                    cv2.circle(frame, path_array[i], 5, (255, 102, 255), -1)
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
+            for i in range(pathFollower.length):
+                if i < pathFollower.next_waypoint:
+                    cv2.circle(frame, path_array[i], 5, (0, 200, 0), -1)
                     continue
-                cv2.circle(frame, ball_pos, 5, (255, 215, 0), -1)
+                elif i == pathFollower.next_waypoint:
+                    cv2.circle(frame, path_array[i], 5, (0, 255, 255), -1)
+                else:
+                    cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
             cv2.imshow("Ball & Marker Tracking", frame)
 
