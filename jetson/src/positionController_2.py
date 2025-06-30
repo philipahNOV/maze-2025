@@ -106,6 +106,7 @@ class Controller:
         """
 
         self.pos = self.tracker.get_position()
+        print(f"Target: {ref}, Ball: {self.pos}")
         #self.pos = (pos[1], pos[0])
 
 

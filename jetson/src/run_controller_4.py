@@ -115,8 +115,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
 
             cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
-            cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
-            cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
+            #cv2.circle(frame, (770-150, 330-150), 5, (0, 0, 255), -1)
+            #cv2.circle(frame, (770+150, 330+150), 5, (0, 0, 255), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
