@@ -80,7 +80,7 @@ void setup() {
     led_strips::strip.begin(); // Starter LED stripen
     led_strips::strip.setBrightness(255); // Setter lysstyrken til stripen
     // Setter alle LED til hvit farge
-    set_led_color(0, 0, 255); // Setter fargen til blå
+    set_led_color(255, 255, 255); // Setter fargen til hvit
 
     // Setter pin modusene
     // Aktuator en
@@ -109,9 +109,9 @@ void loop() {
             set_led_color(255, 0, 0); // Setter fargen til grønn
             get_ball(); // Henter ballen
             state = State::CONTROL; // Går til neste tilstand
+            set_led_color(255, 255, 255); // Setter fargen til hvit for control tilstand
             break;
         case State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
-            set_led_color(255, 255, 255); // Setter fargen til hvit
             actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
             move_speed(); // Setter motor hastighetene
             break;
