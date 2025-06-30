@@ -70,6 +70,11 @@ def draw_path(image, path, waypoints, start, goal):
 
 def main(tracker: tracking.BallTracker):
 
+    print("[INFO] Waiting for YOLO initialization...")
+    while not tracker.initialized:
+        time.sleep(0.1)
+
+    print("[INFO] Tracking started. Press 'q' to quit.")
     print("[INFO] Capturing maze for A* planning...")
 
     maze_frame = tracker.frame
