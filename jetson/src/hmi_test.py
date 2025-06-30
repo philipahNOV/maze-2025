@@ -4,7 +4,7 @@ from ai_part.ai_main import State2_3
 from arduino_connection_test import ArduinoConnection
 from camera.cam_loop import CameraThread
 from automatic import Automatic
-import run_controller_4
+import run_controller_3
 import positionController_2
 import testing.yolov1.hsv3 as tracking
 import queue
@@ -93,7 +93,7 @@ while True:
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.stop_control = False
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_4.main,
+                target=run_controller_3.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
