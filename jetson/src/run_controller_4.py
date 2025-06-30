@@ -10,15 +10,17 @@ from astar.brightness import get_dynamic_threshold, create_binary_mask
 import math
 import numpy as np
 
-def dilate_mask(mask, iterations=2):
-    kernel = np.ones((3, 3), np.uint8)
-    return cv2.dilate(mask, kernel, iterations=iterations)
+clicked_goal = None
 
 def on_mouse_click(event, x, y, flags, param):
     global clicked_goal
     if event == cv2.EVENT_LBUTTONDOWN:
-        clicked_goal = (y, x)  # Flip to (row, col) for A*
+        clicked_goal = (y, x)
         print(f"[INFO] Clicked goal set to: {clicked_goal}")
+
+def dilate_mask(mask, iterations=2):
+    kernel = np.ones((3, 3), np.uint8)
+    return cv2.dilate(mask, kernel, iterations=iterations)
 
 def sample_waypoints(path):
     if not path or len(path) < 2:
@@ -77,40 +79,56 @@ def draw_path(image, path, waypoints, start, goal):
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
-    print("[INFO] Waiting for YOLO initialization...")
+    print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
 
-    print("[INFO] Tracking started. Press 'q' to quit.")
-    print("[INFO] Capturing maze for A* planning...")
-    # Wait for multiple distinct, valid frames
-    print("[INFO] Waiting for camera frames to stabilize...")
-    stable_frames = 0
-    last_frame = None
+    print("Tracking started")
+    print("Finding shortest path...")
+    # print("[INFO] Waiting for camera frames to stabilize...")
+    # stable_frames = 0
+    # last_frame = None
 
-    while stable_frames < 5:
-        frame = tracker.frame
-        if frame is not None and frame.size > 0:
-            if last_frame is None or not np.array_equal(frame, last_frame):
-                stable_frames += 1
-                last_frame = frame.copy()
+    # while stable_frames < 5:
+    #     frame = tracker.frame
+    #     if frame is not None and frame.size > 0:
+    #         if last_frame is None or not np.array_equal(frame, last_frame):
+    #             stable_frames += 1
+    #             last_frame = frame.copy()
+    #     time.sleep(0.1)
+
+    # maze_frame = last_frame.copy()
+    # print("[INFO] Maze frame captured.")
+
+    while tracker.frame is None:
         time.sleep(0.1)
+    maze_frame = tracker.frame
 
-    maze_frame = last_frame.copy()
-    print("[INFO] Maze frame captured.")
 
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
     start = (680, 790)
-    goal = (55, 840)
+    #goal = (55, 840)
+    global clicked_goal
+    clicked_goal = None
 
-    cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
-    cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
-    cv2.imshow("Safe Mask", safe_mask)
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
+    cv2.namedWindow("Safe Mask")
+    cv2.setMouseCallback("Safe Mask", on_mouse_click)
+
+    preview_mask = safe_mask.copy()
+    cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
+    print("Click on a goal point...")
+
+    while clicked_goal is None:
+        cv2.imshow("Safe Mask", preview_mask)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            print("Goal selection cancelled.")
+            return
+
+    cv2.destroyWindow("Safe Mask")
+    goal = clicked_goal
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
@@ -120,7 +138,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     print(path_array)
 
     pathFollower = path_following.PathFollower(path_array, controller)
-
 
     try:
         while True:
@@ -153,11 +170,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 return
 
     except KeyboardInterrupt:
-        print("\n[INFO] Interrupted by user.")
+        print("\nInterrupted by user.")
     finally:
         tracker.stop()
         cv2.destroyAllWindows()
-        print("[INFO] Tracker stopped.")
+        print("Tracker stopped.")
 
 if __name__ == "__main__":
     main()
