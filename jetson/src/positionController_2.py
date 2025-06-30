@@ -106,6 +106,7 @@ class Controller:
         """
 
         self.pos = self.tracker.get_position()
+        print(f"Target: {ref}, Ball: {self.pos}")
         #self.pos = (pos[1], pos[0])
 
 
@@ -152,8 +153,8 @@ class Controller:
         if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
         if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
 
-        if self.e_x_int > 0 or self.e_y_int > 0: print(f"Integral term active: {edot_x}, {edot_y}")
-        else: print("Integral term NOT active")
+        if self.e_x_int > 0 or self.e_y_int > 0: pass#print(f"Integral term active: {edot_x}, {edot_y}")
+        else: pass#print("Integral term NOT active")
 
 
         if abs(e_x) < self.pos_tol: #at target → STOP
