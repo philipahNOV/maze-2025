@@ -84,9 +84,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
-
-    start = (55, 840)
-    goal = (680, 790)
+    
+    start = (680, 790)
+    goal = (55, 840)
 
     cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
     cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
@@ -96,7 +96,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
-    path_array = [(x, y) for x, y in waypoints]
+    path_array = [(x, y) for y, x in waypoints]
     print(path)
     print(waypoints)
     print(path_array)
