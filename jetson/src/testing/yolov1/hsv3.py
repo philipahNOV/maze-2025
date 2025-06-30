@@ -28,7 +28,7 @@ class BallTracker:
 
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
 
-        self.model = YOLO(model_path)
+        #self.model = YOLO(model_path)
         self.WINDOW_SIZE = 50
         self.running = False
         self.initialized = False
@@ -37,6 +37,14 @@ class BallTracker:
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+
+        print("[INFO] Loading YOLO model...")
+        self.model = YOLO(model_path)
+        self.model.fuse()
+        self.model.eval()
+        dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
+        self.model.predict(dummy, verbose=False)
+        print("[INFO] YOLO model ready.")
 
     def init_camera(self):
         self.zed = sl.Camera()
@@ -182,24 +190,24 @@ class BallTracker:
         with self.lock:
             return self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
-    def get_orientation(self):
-        sensors_data = sl.SensorsData()
-        if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
-            return None
+    # def get_orientation(self):
+    #     sensors_data = sl.SensorsData()
+    #     if self.zed.get_sensors_data(sensors_data, sl.TIME_REFERENCE.CURRENT) != sl.ERROR_CODE.SUCCESS:
+    #         return None
 
-        imu_data = sensors_data.get_imu_data()
-        zed_imu_pose = sl.Transform()
-        imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
-        ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
-        dir1 = ox + ow
-        dir2 = oy - oz
+    #     imu_data = sensors_data.get_imu_data()
+    #     zed_imu_pose = sl.Transform()
+    #     imu_orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+    #     ox, oy, oz, ow = [round(v, 3) for v in imu_orientation]
+    #     dir1 = ox + ow
+    #     dir2 = oy - oz
 
-        import math
-        sinr_cosp = 2 * (ow * ox + oy * oz)
-        cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
-        roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
+    #     import math
+    #     sinr_cosp = 2 * (ow * ox + oy * oz)
+    #     cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
+    #     roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
 
-        sinp = 2 * (ow * oy - oz * ox)
-        pitch = math.degrees(math.copysign(math.pi / 2, sinp)) if abs(sinp) >= 1 else math.degrees(math.asin(sinp))
+    #     sinp = 2 * (ow * oy - oz * ox)
+    #     pitch = math.degrees(math.copysign(math.pi / 2, sinp)) if abs(sinp) >= 1 else math.degrees(math.asin(sinp))
 
-        return [-dir2, dir1]
+    #     return [-dir2, dir1]
