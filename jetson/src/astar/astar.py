@@ -76,7 +76,7 @@ def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.35):
     path_small = astar(small_array, start_small, goal_small, repulsion_weight)
 
     if not path_small:
-        print("[ERROR] A* failed in downscaled space.")
+        print("A* failed in downscaled space.")
         return []
 
     path = [(int(y / scale), int(x / scale)) for y, x in path_small]
