@@ -41,6 +41,9 @@ class Screen1(tk.Frame):
         self.dir = None
         self.mqtt_client.client.publish("jetson/command", "Motor_stop")
 
+    def on_button_click_stop(self):
+        self.mqtt_client.client.publish("jetson/command", "Maze")
+
     def on_speed_change(self, value):
         self.motor_speed = int(value)
         if self.dir:
@@ -121,6 +124,20 @@ class Screen1(tk.Frame):
             command=self.on_button_click_stop,
         )
         self.example_button.place(x=690, y=405, width=243, height=74)
+
+        self.example_button = tk.Button(
+            self,
+            text="SOLVE MAZE",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_maze,
+        )
+        self.example_button.place(x=690, y=490, width=243, height=74)
 
         self.title_label = tk.Label(
             self,

@@ -9,6 +9,7 @@ import positionController_2
 import testing.yolov1.hsv3 as tracking
 import queue
 import threading
+import maze_solver
 
 from manual_part.manuel_main import elManuel
 
@@ -103,6 +104,8 @@ while True:
     elif command == "Horizontal":
         controller.horizontal()
         mqtt_client.command = None
+    elif command == "Maze":
+        maze_solver.main(tracker)
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
