@@ -14,10 +14,10 @@ def dilate_mask(mask, iterations=2):
     kernel = np.ones((3, 3), np.uint8)
     return cv2.dilate(mask, kernel, iterations=iterations)
 
-def on_mouse_click(event, x, y):
+def on_mouse_click(event, x, y, flags, param):
     global clicked_goal
     if event == cv2.EVENT_LBUTTONDOWN:
-        clicked_goal = (y, x)
+        clicked_goal = (y, x)  # Flip to (row, col) for A*
         print(f"[INFO] Clicked goal set to: {clicked_goal}")
 
 def sample_waypoints(path):
@@ -104,29 +104,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
     start = (680, 790)
-    cv2.namedWindow("Safe Mask")
-    cv2.setMouseCallback("Safe Mask", on_mouse_click)
+    goal = (55, 840)
 
-    temp_mask = safe_mask.copy()
-    cv2.circle(temp_mask, (start[1], start[0]), 15, 127, -1)
-    cv2.imshow("Safe Mask", temp_mask)
-
-    print("[INFO] Click to select goal...")
-    while clicked_goal is None:
-        cv2.imshow("Safe Mask", temp_mask)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("[INFO] Goal selection canceled.")
-            return
-    cv2.destroyWindow("Safe Mask")
-
-    goal = clicked_goal
-
-
-    # cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
-    # cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
-    # cv2.imshow("Safe Mask", safe_mask)
-    # cv2.waitKey(0)
-    # cv2.destroyAllWindows()
+    cv2.circle(safe_mask, (start[0], start[1]), 15, 127, -1)  # start = (y, x)
+    cv2.circle(safe_mask, (goal[0], goal[1]), 15, 200, -1)    # goal = (y, x)
+    cv2.imshow("Safe Mask", safe_mask)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
 
     path = astar(safe_mask, start, goal, repulsion_weight=5.0)
     waypoints = sample_waypoints(path)
