@@ -14,6 +14,12 @@ def dilate_mask(mask, iterations=2):
     kernel = np.ones((3, 3), np.uint8)
     return cv2.dilate(mask, kernel, iterations=iterations)
 
+def on_mouse_click(event, x, y, flags, param):
+    global clicked_goal
+    if event == cv2.EVENT_LBUTTONDOWN:
+        clicked_goal = (y, x)  # Flip to (row, col) for A*
+        print(f"[INFO] Clicked goal set to: {clicked_goal}")
+
 def sample_waypoints(path):
     if not path or len(path) < 2:
         return path or []
@@ -77,14 +83,26 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     print("[INFO] Tracking started. Press 'q' to quit.")
     print("[INFO] Capturing maze for A* planning...")
-    while tracker.frame is None:
+    # Wait for multiple distinct, valid frames
+    print("[INFO] Waiting for camera frames to stabilize...")
+    stable_frames = 0
+    last_frame = None
+
+    while stable_frames < 5:
+        frame = tracker.frame
+        if frame is not None and frame.size > 0:
+            if last_frame is None or not np.array_equal(frame, last_frame):
+                stable_frames += 1
+                last_frame = frame.copy()
         time.sleep(0.1)
 
-    maze_frame = tracker.frame
+    maze_frame = last_frame.copy()
+    print("[INFO] Maze frame captured.")
+
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
-    
+
     start = (680, 790)
     goal = (55, 840)
 
