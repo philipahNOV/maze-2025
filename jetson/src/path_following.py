@@ -60,6 +60,7 @@ class PathFollower:
 
 
         self.acceptance_radius = self.controller.pos_tol
+        self.acceptance_radius_out = self.controller.pos_tol + 10
 
     def follow_path(self, ballPos):
         vel = None
@@ -76,43 +77,51 @@ class PathFollower:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
                 print(f"No progression, starting timer. Velocity: {vel}")
-        elif vel:
-            if not self.prev_progress_time:
-                pass
-            elif vel > self.vel_threshold:
+        elif self.prev_progress_time:
+            if vel and vel > self.vel_threshold:
                 self.prev_progress_time = None
                 print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
+                print(f"Stuck for {self.stuck_retry_time} seconds. Reversing to previous waypoint.")
                 self.next_waypoint = max(self.next_waypoint - 1, 0)
-                print(f"Stuck detected. Reversing to waypoint {self.next_waypoint}")
-                if self.prev_waypoint is None:
-                    self.prev_waypoint = max(self.next_waypoint - 1, 0)
-                else:
-                    self.prev_waypoint = max(self.prev_waypoint - 1, 0)
-
+                self.prev_waypoint = max(self.prev_waypoint - 1, 0)
                 self.prev_progress_time = None
 
         
         self.controller.posControl(self.path[self.next_waypoint])
 
-        if np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius:
+        
+        dist_to_next = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint]))
+
+        # === Case 1: Reached current target waypoint (within tight radius) ===
+        if dist_to_next < self.acceptance_radius:
             self.prev_waypoint = self.next_waypoint
 
-            if self.next_waypoint == self.length-1:
+            if self.next_waypoint == self.length - 1:
                 if self.looping:
+                    print("Loop completed, restarting.")
                     self.prev_waypoint = None
                     self.next_waypoint = 0
-                    print("Loop completed, starting from first waypoint")
-                print("Done following path")
-            
-            self.next_waypoint = min(self.next_waypoint + 1, self.length-1)
-        else:
-            for i in reversed(range(len(self.path))):
-                wpt = self.path[i]
-                if np.linalg.norm(np.array(ballPos) - np.array(wpt)) < self.acceptance_radius:
+                else:
+                    print("Done following path")
+            else:
+                self.next_waypoint = min(self.next_waypoint + 1, self.length - 1)
 
-                    self.prev_waypoint = i
-                    self.next_waypoint = min(i+1, self.length-1)
+        # === Case 2: Ball is near any waypoint (used to allow skipping) ===
+        else:
+            for i in reversed(range(self.length)):
+                wpt = self.path[i]
+                dist = np.linalg.norm(np.array(ballPos) - np.array(wpt))
+                
+                # Only allow skipping to earlier waypoints if:
+                # - ball is within radius
+                # - ball is *not* also within radius of current next waypoint (i.e., not oscillating)
+                if dist < self.acceptance_radius and dist_to_next > self.acceptance_radius_out:
+                    if i <= self.next_waypoint:
+                        print(f"Jumping back to waypoint {i}")
+                        self.prev_waypoint = i
+                        self.next_waypoint = min(i + 1, self.length - 1)
+                    break
 
         dx = self.path[self.next_waypoint][0] - ballPos[0]
         dy = self.path[self.next_waypoint][1] - ballPos[1]
