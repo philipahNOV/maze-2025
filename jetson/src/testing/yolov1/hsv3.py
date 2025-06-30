@@ -177,6 +177,10 @@ class BallTracker:
 
     def get_position(self):
         return self.tracked_objects["ball"]["position"]
+    
+    def get_stable_frame(self):
+        with self.lock:
+            return self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
     def get_orientation(self):
         sensors_data = sl.SensorsData()

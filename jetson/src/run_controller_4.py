@@ -102,8 +102,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     while tracker.frame is None:
         time.sleep(0.1)
-    maze_frame = tracker.frame
 
+    maze_frame = tracker.get_stable_frame()
+    while maze_frame is None:
+        print("Waiting for stable frame...")
+        time.sleep(0.1)
+        maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
