@@ -57,19 +57,34 @@ class Controller:
         #self.ki_y = 0.0006
         #self.ki_x = 0.0006
 
-        #Best so far (pathfollowing)
-        self.kp_x = 0.00003
-        self.kd_x = 0.00008
-        self.kp_y = 0.00003
-        self.kd_y = 0.00008
-        self.ki_y = 0.0002
-        self.ki_x = 0.0002
+        # #Best so far (pathfollowing)
+        # self.kp_x = 0.00003
+        # self.kd_x = 0.00008
+        # self.kp_y = 0.00003
+        # self.kd_y = 0.00008
+        # self.ki_y = 0.0002
+        # self.ki_x = 0.0002
+        # self.kf_min = 0.02
+        # self.kf_max = 0.005
+        # self.deadzone_pos_tol = 30
+        # self.deadzone_vel_tol = 10
+        # self.deadzone_tilt = np.deg2rad(0)
+        # self.pos_tol = 40
+        # self.vel_tol = 10
+
+        #testing
+        self.kp_x = 0.000015
+        self.kd_x = 0.000201
+        self.kp_y = 0.000033
+        self.kd_y = 0.000109
+        self.ki_y = 0.000165
+        self.ki_x = 0.000022
         self.kf_min = 0.02
         self.kf_max = 0.005
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 40
+        self.pos_tol = 30
         self.vel_tol = 10
 
         #Axis control
