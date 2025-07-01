@@ -9,7 +9,7 @@ def get_dynamic_threshold(image, target_brightness=130):
     return adjusted
 
 def apply_clahe(gray):
-    clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+    clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
     return clahe.apply(gray)
 
 def create_binary_mask(gray):
