@@ -151,7 +151,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
     waypoints = sample_waypoints(path)
-    pid_tuning_dual_axis(controller, waypoints, n_trials=60, start=start)
+    pid_tuning_dual_axis(controller, waypoints, n_trials=80, start=start)
     path_array = [(x, y) for y, x in waypoints]
     pathFollower = path_following.PathFollower(path_array, controller)
 

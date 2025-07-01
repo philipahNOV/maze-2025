@@ -31,13 +31,13 @@ def evaluate_controller(controller, waypoints, start=(604, 950), timeout=12):
     return duration + error + penalty
 
 
-def pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=(604,950)):
+def pid_tuning_dual_axis(controller, waypoints, n_trials=80, start=(604,950)):
     results = []
     best_score = float('inf')
     best_params = None
 
     for i in range(n_trials):
-        if i < 10 or not results:
+        if i < 30 or not results:
             kp_x = random.uniform(0.00001, 0.00005)
             kd_x = random.uniform(0.00005, 0.00015)
             ki_x = random.uniform(0.0, 0.0004)
