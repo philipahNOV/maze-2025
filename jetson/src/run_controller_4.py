@@ -136,26 +136,21 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     cv2.namedWindow("Safe Mask")
     cv2.setMouseCallback("Safe Mask", on_mouse_click)
 
-    while clicked_goal is None:
-        preview_mask = safe_mask.copy()  # ← recopy every frame
-
-        ball_pos = tracker.get_position()
-        if ball_pos:
-            ball_yx = (ball_pos[1], ball_pos[0])
-            cv2.circle(preview_mask, ball_yx, 20, 255, -1)
-
-        cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
-        cv2.imshow("Safe Mask", preview_mask)
-
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            print("Goal selection cancelled.")
-            return
-
-
-    cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
     print("Click on a goal point...")
 
     while clicked_goal is None:
+        preview_mask = safe_mask.copy()
+
+        # Force ball region to pure white in both preview and planning mask
+        ball_pos = tracker.get_position()
+        if ball_pos:
+            ball_yx = (ball_pos[1], ball_pos[0])
+            cv2.circle(safe_mask,    ball_yx, 20, 255, -1)  # A* sees walkable
+            cv2.circle(preview_mask, ball_yx, 20, 255, -1)  # You see white in window
+
+        # Optional: draw starting point
+        cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
+
         cv2.imshow("Safe Mask", preview_mask)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Goal selection cancelled.")
