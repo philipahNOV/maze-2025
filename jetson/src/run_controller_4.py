@@ -155,7 +155,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     pathFollower = path_following.PathFollower(path_array, controller)
 
     try:
-        tuning_started = False
+        #tuning_started = False
 
         while True:
             frame = tracker.frame
