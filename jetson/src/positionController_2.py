@@ -205,7 +205,9 @@ class Controller:
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
-        print(f"({self.ori[1]}, {self.ori[0]})")
+        self.ori = self.tracker.get_orientation()
+        if self.ori:
+            print(f"({self.ori[1]}, {self.ori[0]})")
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
