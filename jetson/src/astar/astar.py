@@ -14,7 +14,7 @@ def compute_repulsion_cost(array, min_safe_dist = 3):
     if max_dist == 0:
         return np.ones_like(dist_transform), mask_safe
     repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
-    return repulsion
+    return repulsion, mask_safe
 
 def astar(array, start, goal, repulsion_weight=5.0):
     neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
