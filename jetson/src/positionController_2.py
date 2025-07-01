@@ -29,6 +29,7 @@ class Controller:
         self.e_y_int = 0
 
         self.use_feedforward = True
+        self.use_feedforward_model = False
         self.feedforward_vector = (0, 0)
 
         self.path_following = path_following
@@ -159,6 +160,28 @@ class Controller:
             ff_x = kf_dynamic * self.feedforward_vector[0]
             ff_y = kf_dynamic * self.feedforward_vector[1]
 
+        elif self.use_feedforward_model:
+            # Compute distance between ball and next target (used as scaling factor)
+            dx = self.ref[0] - self.pos[0]
+            dy = self.ref[1] - self.pos[1]
+            distance = np.linalg.norm((dx, dy))
+            direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
+
+            # Estimate time to reach waypoint (tuned value or based on velocity)
+            t_estimate = 0.6  # seconds, tune this based on performance
+
+            
+            # Desired acceleration magnitude
+            a_mag = 2 * distance / (t_estimate ** 2)  # s = 0.5*a*t^2 → a = 2s/t²
+
+            # Compute acceleration vector
+            a_x = a_mag * direction[0]
+            a_y = a_mag * direction[1]
+
+            # Estimate tilt angles from model
+            a_model = 7.007  # = 5g/7
+            ff_x = a_x / a_model
+            ff_y = a_y / a_model
 
         if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
         if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
