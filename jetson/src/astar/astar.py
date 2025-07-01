@@ -7,18 +7,19 @@ def heuristic(a, b):
     #return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
 
 
-def compute_repulsion_cost(array):
+def compute_repulsion_cost(array, min_safe_dist = 3):
     dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
+    mask_safe = (dist_transform >= min_safe_dist).astype(np.uint8)
     max_dist = np.max(dist_transform)
     if max_dist == 0:
-        return np.ones_like(dist_transform)
+        return np.ones_like(dist_transform), mask_safe
     repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
     return repulsion
 
 def astar(array, start, goal, repulsion_weight=5.0):
     neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
     rows, cols = array.shape
-    repulsion_map = compute_repulsion_cost(array)
+    repulsion_map, walkable_mask = compute_repulsion_cost(array)
 
     close_set = set()
     open_set = {start}
@@ -45,7 +46,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
             neighbor = current[0] + dx, current[1] + dy
             if not (0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols):
                 continue
-            if array[neighbor[0], neighbor[1]] == 0:
+            if walkable_mask[neighbor[0], neighbor[1]] == 0:
                 continue
 
             cost = 1.0 + repulsion_weight * repulsion_map[neighbor[0], neighbor[1]]
