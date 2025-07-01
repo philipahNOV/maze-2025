@@ -6,7 +6,7 @@ import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
 from astar.astar import astar, astar_downscaled
-from astar.brightness import get_dynamic_threshold, create_binary_mask
+from astar.brightness import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
 
@@ -103,7 +103,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     while not tracker.initialized:
         time.sleep(0.1)
 
-    print("Tracking started")
+    print("Tracking started!")
     print("Finding shortest path...")
 
     while tracker.frame is None:
@@ -111,13 +111,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     maze_frame = tracker.get_stable_frame()
     while maze_frame is None:
-        print("Waiting for stable frame...")
         time.sleep(0.1)
         maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)
-    safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
+    safe_mask = dilate_mask(binary_mask)
 
     start = (604, 950)
     # ball_pos = tracker.get_position()

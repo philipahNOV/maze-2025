@@ -1,6 +1,10 @@
 import cv2
 import numpy as np
 
+def dilate_mask(mask, kernel_size=(3, 3), iterations=2):
+    kernel = np.ones(kernel_size, np.uint8)
+    return cv2.dilate(mask, kernel, iterations=iterations)
+
 def get_dynamic_threshold(image, target_brightness=130):
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     current_brightness = np.mean(gray)
