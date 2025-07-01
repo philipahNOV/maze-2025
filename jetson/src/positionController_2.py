@@ -206,13 +206,13 @@ class Controller:
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
         self.ori = self.tracker.get_orientation()
-        if self.ori:
-            print(f"({self.ori[1]}, {self.ori[0]})")
+        #if self.ori:
+        #    print(f"({self.ori[1]}, {self.ori[0]})")
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
-        self.axisControl((np.deg2rad(1.5), 0))
-        #self.axisControl(self.saturate_angles(theta_y, theta_x))
+        #self.axisControl((np.deg2rad(1.5), 0))
+        self.axisControl(self.saturate_angles(theta_y, theta_x))
 
     def axisControl(self, ref):
 
