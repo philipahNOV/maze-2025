@@ -83,7 +83,7 @@ while True:
         pid_str = (
             "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," + str(controller.kp_x)
             + "," + str(controller.kp_y) + "," + str(controller.kd_x) + "," + str(controller.kd_y)
-            + "," + str(controller.ki_x) + "," + str(controller.ki_y) + "," + str(controller.kf_x) + "," + str(controller.kf_y)
+            + "," + str(controller.ki_x) + "," + str(controller.ki_y) + "," + str(controller.kf_min) + "," + str(controller.kf_max)
         )
         mqtt_client.client.publish("pi/command", pid_str)
         
