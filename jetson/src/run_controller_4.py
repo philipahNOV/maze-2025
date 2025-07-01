@@ -119,17 +119,17 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
-    #start = (680, 790)
-    ball_pos = tracker.get_position()
-    while ball_pos is None:
-        print("Waiting for ball position...")
-        time.sleep(0.1)
-        ball_pos = tracker.get_position()
+    start = (704, 950)
+    # ball_pos = tracker.get_position()
+    # while ball_pos is None:
+    #     print("Waiting for ball position...")
+    #     time.sleep(0.1)
+    #     ball_pos = tracker.get_position()
 
-    ball_pos = smoother.update(ball_pos)
-    start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
-    start = snap_to_nearest_walkable(safe_mask, start_raw)
-    #goal = (55, 840)
+    # ball_pos = smoother.update(ball_pos)
+    # start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
+    # start = snap_to_nearest_walkable(safe_mask, start_raw)
+    #goal = (990, 704)
     global clicked_goal
     clicked_goal = None
 
