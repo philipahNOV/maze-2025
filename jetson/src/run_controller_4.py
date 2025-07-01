@@ -151,11 +151,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
     waypoints = sample_waypoints(path)
-    pid_tuning_dual_axis(controller, waypoints, n_trials=80, start=start)
     path_array = [(x, y) for y, x in waypoints]
     pathFollower = path_following.PathFollower(path_array, controller)
 
     try:
+        tuning_started = False
+
         while True:
             frame = tracker.frame
             if frame is None:
@@ -165,6 +166,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             
             frame = draw_path(frame, path, waypoints, start, goal)
+            cv2.imshow("Ball & Marker Tracking", frame)
+
+            if not tuning_started:
+                print("[INFO] Starting PID tuning...")
+                pid_tuning_dual_axis(controller, waypoints, n_trials=80, start=start)
+                tuning_started = True
+                continue  # Skip first control loop iteration
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
