@@ -119,7 +119,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     binary_mask = create_binary_mask(gray)
     safe_mask = cv2.dilate(binary_mask, np.ones((3, 3), np.uint8), iterations=2)
 
-    start = (704, 950)
+    start = (604, 950)
     # ball_pos = tracker.get_position()
     # while ball_pos is None:
     #     print("Waiting for ball position...")
