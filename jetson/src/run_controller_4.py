@@ -192,11 +192,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             cv2.imshow("Ball & Marker Tracking", frame)
 
-            if not tuning_started:
-                print("[INFO] Starting PID tuning...")
-                pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
-                tuning_started = True
-                continue  # Skip first control loop iteration
+            # if not tuning_started:
+            #     print("[INFO] Starting PID tuning...")
+            #     pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
+            #     tuning_started = True
+            #     continue  # Skip first control loop iteration
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
