@@ -73,7 +73,7 @@ class Controller:
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
-        self.max_angle = 2.5 #Max angle in deg
+        self.max_angle = 1.8 #Max angle in deg
         self.command_delay = 0.015
 
     def set_pid_parameters(self, params):
@@ -205,7 +205,9 @@ class Controller:
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
-
+        self.ori = self.tracker.get_orientation()
+        if self.ori:
+            print(f"({self.ori[1]}, {self.ori[0]})")
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
