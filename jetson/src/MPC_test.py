@@ -8,6 +8,20 @@ dt = 0.015
 N_sim = 2000  # total simulation steps
 reach_thresh = 0.002  # meters (≈ 8mm) to switch to next waypoint
 
+def create_path_with_velocity(waypoints_px, desired_speed=50):  # pixels/sec
+    path_with_vel = []
+    for i in range(len(waypoints_px)):
+        wp = np.array(waypoints_px[i])
+        if i < len(waypoints_px) - 1:
+            wp_next = np.array(waypoints_px[i + 1])
+            delta = wp_next[[0, 2]] - wp[[0, 2]]
+            direction = delta / np.linalg.norm(delta)
+            vx, vy = direction * desired_speed
+        else:
+            vx, vy = 0, 0  # stop at final point
+        path_with_vel.append([wp[0], vx, wp[2], vy])
+    return path_with_vel
+
 # Define waypoints in pixels: [x, _, y, _]
 waypoints_px = [
     [200, 0, 200, 0],
@@ -21,6 +35,9 @@ waypoints_px = [
     [400, 0, 500, 0],
     [200, 0, 400, 0]
 ]
+
+#waypoints_px = create_path_with_velocity(waypoints_px)
+
 waypoints = [np.array(wp) * px_to_m for wp in waypoints_px]
 num_waypoints = len(waypoints)
 
@@ -44,7 +61,7 @@ for t in range(N_sim):
         break
 
     # Apply system dynamics + noise
-    noise = np.random.normal(0, 0.002, size=4)
+    noise = np.random.normal(0, 0.001, size=4)
     x = mpc_controller.Ad @ x + mpc_controller.Bd @ u + noise
 
     trajectory.append(x.copy())
