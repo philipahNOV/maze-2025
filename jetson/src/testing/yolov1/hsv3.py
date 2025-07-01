@@ -60,7 +60,7 @@ class BallTracker:
         image = sl.Mat()
         if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
             self.zed.retrieve_image(image, sl.VIEW.LEFT)
-            bgr = image.get_data()  # ZED returns BGR directly (720, 1280, 3)
+            bgr = image.get_data()
             rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
             return rgb, bgr
         return None
@@ -133,22 +133,6 @@ class BallTracker:
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.initialized = True
 
-
-
-                    # if label == "ball":
-                    #     if 390 <= cx <= 1120 and 10 <= cy <= 720:
-                    #         roi = bgr_frame[y1:y2, x1:x2]
-                    #         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-                    #         mask = cv2.inRange(hsv, self.HSV_RANGES["ball"])
-                    #         if cv2.countNonZero(mask) > 100:
-                    #             self.tracked_objects["ball"]["position"] = (cx, cy)
-                    #         else:
-                    #             self.tracked_objects["ball"]["position"] = None  # mask too small
-                    #     else:
-                    #         self.tracked_objects["ball"]["position"] = None  # outside init zone
-
-
-
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
             else:
@@ -176,7 +160,6 @@ class BallTracker:
         self.consumer_thread = threading.Thread(target=self.consumer_loop)
         self.consumer_thread.daemon = True
         self.consumer_thread.start()
-
 
     def stop(self):
         self.running = False
