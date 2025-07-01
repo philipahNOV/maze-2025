@@ -170,7 +170,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             if not tuning_started:
                 print("[INFO] Starting PID tuning...")
-                pid_tuning_dual_axis(controller, waypoints, n_trials=80, start=start)
+                pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
                 tuning_started = True
                 continue  # Skip first control loop iteration
 
