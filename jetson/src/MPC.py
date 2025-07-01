@@ -33,7 +33,7 @@ class MPC_controller:
         self.x = cp.Variable((4, self.N + 1))
         self.u = cp.Variable((2, self.N))
 
-        self.Q = np.diag([1, 0.1, 1, 0.1])*10
+        self.Q = np.diag([1, 0.1, 1, 0.1])
         self.R = np.diag([0.01, 0.01])
 
         
