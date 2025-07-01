@@ -168,18 +168,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             frame = draw_path(frame, path, waypoints, start, goal)
             cv2.imshow("Ball & Marker Tracking", frame)
 
-            if not tuning_started:
-                print("[INFO] Starting PID tuning...")
-                pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
-                tuning_started = True
-                continue  # Skip first control loop iteration
-
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
             if not ball_pos:
                 print("No ball found (run_controller)")
                 continue
+
 
             pathFollower.follow_path(ball_pos)
 
@@ -196,6 +191,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
             cv2.imshow("Ball & Marker Tracking", frame)
+
+            if not tuning_started:
+                print("[INFO] Starting PID tuning...")
+                pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
+                tuning_started = True
+                continue  # Skip first control loop iteration
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
