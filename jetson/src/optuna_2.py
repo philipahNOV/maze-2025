@@ -1,9 +1,6 @@
-import csv
 import random
 import time
 import numpy as np
-
-CSV_PATH = "pid_tuning_log.csv"
 
 def evaluate_controller(controller, waypoints, start=(604, 950), timeout=12):
     from path_following import PathFollower
@@ -34,24 +31,13 @@ def evaluate_controller(controller, waypoints, start=(604, 950), timeout=12):
     return duration + error + penalty
 
 
-def initialize_csv():
-    with open(CSV_PATH, mode="w", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow(["kp_x", "kd_x", "ki_x", "kp_y", "kd_y", "ki_y", "score"])
-
-def append_to_csv(params, score):
-    with open(CSV_PATH, mode="a", newline="") as file:
-        writer = csv.writer(file)
-        writer.writerow([*params, score])
-
 def pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=(604,950)):
-    initialize_csv()
     results = []
     best_score = float('inf')
     best_params = None
 
     for i in range(n_trials):
-        if i < 10 or not results:
+        if i < 15 or not results:
             kp_x = random.uniform(0.00001, 0.00005)
             kd_x = random.uniform(0.00005, 0.00015)
             ki_x = random.uniform(0.0, 0.0004)
@@ -73,7 +59,6 @@ def pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=(604,950)):
 
         score = evaluate_controller(controller, waypoints, start=start)
         results.append((kp_x, kd_x, ki_x, kp_y, kd_y, ki_y, score))
-        append_to_csv([kp_x, kd_x, ki_x, kp_y, kd_y, ki_y], score)
 
         if score < best_score:
             best_score = score
