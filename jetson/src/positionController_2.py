@@ -211,7 +211,8 @@ class Controller:
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
-        self.axisControl(self.saturate_angles(theta_y, theta_x))
+        self.axisControl((np.deg2rad(1.5), 0))
+        #self.axisControl(self.saturate_angles(theta_y, theta_x))
 
     def axisControl(self, ref):
 
