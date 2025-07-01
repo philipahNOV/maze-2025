@@ -137,6 +137,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     cv2.setMouseCallback("Safe Mask", on_mouse_click)
 
     preview_mask = safe_mask.copy()
+
+    ball_pos = tracker.get_position()
+    if ball_pos:
+        ball_yx = (ball_pos[1], ball_pos[0])
+        cv2.circle(preview_mask, ball_yx, 20, 255, -1)  # white = walkable
+        cv2.circle(safe_mask,    ball_yx, 20, 255, -1)  # affects A*
+
     cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
     print("Click on a goal point...")
 
@@ -148,11 +155,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
-
-    ball_pos = tracker.get_position()
-    if ball_pos:
-        ball_yx = (ball_pos[1], ball_pos[0])
-        cv2.circle(safe_mask, ball_yx, radius=20, color=255, thickness=-1)
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
     waypoints = sample_waypoints(path)
