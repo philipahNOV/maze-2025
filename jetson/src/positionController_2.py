@@ -205,11 +205,11 @@ class Controller:
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
-
+        print(f"({self.ori[1]}, {self.ori[0]})")
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
-        self.axisControl(self.saturate_angles(theta_y, theta_x))
+        #self.axisControl(self.saturate_angles(theta_y, theta_x))
 
     def axisControl(self, ref):
 
