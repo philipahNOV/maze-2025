@@ -9,6 +9,7 @@ from astar.astar import astar, astar_downscaled
 from astar.brightness import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
+from optuna_2 import pid_tuning_dual_axis
 
 clicked_goal = None
 
@@ -150,11 +151,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
     waypoints = sample_waypoints(path)
+    pid_tuning_dual_axis(controller, waypoints, n_trials=50, start=start)
     path_array = [(x, y) for y, x in waypoints]
-    print(path)
-    print(waypoints)
-    print(path_array)
-
     pathFollower = path_following.PathFollower(path_array, controller)
 
     try:
