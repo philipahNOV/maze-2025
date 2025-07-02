@@ -28,8 +28,8 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
-        self.use_feedforward = True
-        self.use_feedforward_model = False
+        self.use_feedforward = False
+        self.use_feedforward_model = True
         self.feedforward_vector = (0, 0)
 
         self.path_following = path_following
@@ -179,7 +179,7 @@ class Controller:
             a_y = a_mag * direction[1]
 
             # Estimate tilt angles from model
-            a_model = 7.007  # = 5g/7
+            a_model = 5.5
             ff_x = a_x / a_model
             ff_y = a_y / a_model
 
