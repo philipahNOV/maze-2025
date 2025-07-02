@@ -120,7 +120,9 @@ class PathFollower:
         u = None
         if vel_x and vel_y:
             state = [ballPos[0], vel_x, ballPos[1], vel_y]
-            u = self.mpc.step(state, self.path[self.next_waypoint])
+            pos_ref = self.path[self.next_waypoint]
+            ref = np.array([pos_ref[0], 0.0, pos_ref[1], 0.0])  # vx=0, vy=0
+            u = self.mpc.step(state, ref)
 
         if u:
             if time.time() > self.controller.prev_command_time + self.controller.command_delay:
