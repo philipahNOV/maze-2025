@@ -51,7 +51,7 @@ def sample_waypoints(path):
         for p1, p2 in zip(path[:-1], path[1:])
     )
 
-    spacing = max(total_length, 100)
+    spacing = max(total_length * 0.35, 100)
 
     waypoints = [path[0]]
     last_point = path[0]
