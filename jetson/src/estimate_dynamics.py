@@ -68,6 +68,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if not reached:
                 #print(f"{abs(ori[1]+np.deg2rad(1.5))}, {abs(ori[0])}")
                 controller.axisControl((-np.deg2rad(1.5), 0))
+                time.sleep(0.015)
 
             #print(ori)
             # Draw guide lines
@@ -87,7 +88,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
             cv2.imshow("Ball & Marker Tracking", frame)
 
-            time.sleep(0.015)
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
