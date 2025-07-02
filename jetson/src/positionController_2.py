@@ -285,9 +285,10 @@ class Controller:
             vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
             vel_y = - np.sign(e_y) * vel_y
 
+
+        print(f"{vel_x}, {vel_y}")
+        self.arduinoThread.send_target_positions(vel_x, vel_y)
         if self.significant_motor_change(vel_x, vel_y):
-            print(f"{vel_x}, {vel_y}")
-            self.arduinoThread.send_target_positions(vel_x, vel_y)
             self.prev_command_time = time.time()
         
         self.prev_vel_x = vel_x
