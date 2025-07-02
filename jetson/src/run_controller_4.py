@@ -1,4 +1,4 @@
-import testing.yolov1.hsv4 as tracking
+import testing.yolov1.hsv3 as tracking
 import time
 import cv2
 import positionController_2
@@ -46,7 +46,7 @@ def angle_between(p1, p2, p3):
     cos_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
     return np.degrees(np.arccos(np.clip(cos_angle, -1.0, 1.0)))
 
-def is_clear_path(mask, p1, p2, kernel_size=8):
+def is_clear_path(mask, p1, p2, kernel_size=6):
     line_img = np.zeros_like(mask, dtype=np.uint8)
     cv2.line(line_img, (p1[1], p1[0]), (p2[1], p2[0]), 1, 1)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
@@ -84,11 +84,10 @@ def sample_waypoints(path, mask, target_count=20, angle_threshold=135):
                     continue
 
         if accumulated >= spacing:
-            best_idx = i
+            best_idx = last_wp_idx + 1
             for j in range(i, last_wp_idx, -1):
                 if is_clear_path(mask, path[last_wp_idx], path[j]):
                     best_idx = j
-                    break
             waypoints.append(path[best_idx])
             last_wp_idx = best_idx
             accumulated = 0.0
