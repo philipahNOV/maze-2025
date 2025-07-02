@@ -10,7 +10,7 @@ from mqtt_client import MQTTClientJetson
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.4)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
