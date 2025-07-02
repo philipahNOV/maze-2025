@@ -60,9 +60,9 @@ class Controller:
 
         #Best so far (pathfollowing)
         self.kp_x = 0.00004
-        self.kd_x = 0.00012
+        self.kd_x = 0.00015
         self.kp_y = 0.00004
-        self.kd_y = 0.00012
+        self.kd_y = 0.00015
         self.ki_y = 0.0002
         self.ki_x = 0.0002
         self.kf_min = 0.02
@@ -71,7 +71,7 @@ class Controller:
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
         self.pos_tol = 35
-        self.vel_tol = 15
+        self.vel_tol = 20
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
