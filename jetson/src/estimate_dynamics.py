@@ -22,10 +22,10 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
      # Define horizontal lines (adjust based on resolution)
     line_top_y = 600     # upper threshold line
     line_bottom_y = 100   # lower threshold line
-    state = "waiting_for_entry"
+    state = "waiting_above"
     t_entry = None
-    cooldown_frames = 10  # prevent repeated triggers
-    frame_counter = 0
+    cooldown_time = 0.5   # seconds to ignore new events after logging
+    last_event_time = 0
     try:
         while True:
             frame = tracker.frame
@@ -36,29 +36,33 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             ori = tracker.get_orientation()
 
-            ball_crossing_allowed = ball_pos is not None and isinstance(ball_pos, tuple)
+            current_time = time.time()
+            if ball_pos is not None and isinstance(ball_pos, tuple):
+                _, ball_y = ball_pos
 
-            if ball_crossing_allowed:
-                ball_x, ball_y = ball_pos
+                if state == "waiting_above" and ball_y < line_top_y:
+                    # Ball is above the top line, ready to start
+                    state = "ready_to_start"
 
-                if state == "waiting_for_entry" and ball_y < line_top_y:
-                    t_entry = time.time()
+                elif state == "ready_to_start" and ball_y >= line_top_y and ball_y < line_bottom_y:
+                    # Ball just entered the region
+                    t_entry = current_time
                     print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
-                    state = "waiting_for_exit"
-                    frame_counter = 0  # reset cooldown
+                    state = "timing"
 
-                elif state == "waiting_for_exit":
-                    # Avoid accidental re-entry or noise
-                    if ball_y > line_bottom_y and frame_counter > cooldown_frames:
-                        t_exit = time.time()
-                        time_elapsed = t_exit - t_entry
-                        print(f"[INFO] Exit detected at y={ball_y:.1f}, time={t_exit:.3f}")
-                        print(f"[RESULT] Time between lines: {time_elapsed:.3f} seconds")
-                        state = "waiting_for_entry"
-                        t_entry = None
-                        frame_counter = 0
-                    else:
-                        frame_counter += 1
+                elif state == "timing" and ball_y >= line_bottom_y:
+                    # Ball exited the region
+                    t_exit = current_time
+                    time_elapsed = t_exit - t_entry
+                    print(f"[INFO] Exit detected at y={ball_y:.1f}, time={t_exit:.3f}")
+                    print(f"[RESULT] Time between lines: {time_elapsed:.3f} seconds")
+                    last_event_time = current_time
+                    state = "cooldown"
+
+                elif state == "cooldown":
+                    if current_time - last_event_time > cooldown_time and ball_y < line_top_y:
+                        # Reset only after ball goes back above top line
+                        state = "waiting_above"
 
 
             if abs(ori[1]+np.deg2rad(1.5)) < 0.001 and abs(ori[0]) < 0.001 and not reached:
