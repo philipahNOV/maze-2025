@@ -22,7 +22,7 @@ def on_mouse_click(event, x, y, flags, param):
 def snap_to_nearest_walkable(mask, point, max_radius=10):
     y, x = point
     if mask[y, x] != 0:
-        return point  # already walkable
+        return point
 
     dist = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
     min_val = float('inf')

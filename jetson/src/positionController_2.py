@@ -72,21 +72,6 @@ class Controller:
         self.pos_tol = 40
         self.vel_tol = 10
 
-        # #testing
-        # self.kp_x = 0.000015
-        # self.kd_x = 0.000201
-        # self.kp_y = 0.000033
-        # self.kd_y = 0.000109
-        # self.ki_y = 0.000165
-        # self.ki_x = 0.000022
-        # self.kf_min = 0.02
-        # self.kf_max = 0.005
-        # self.deadzone_pos_tol = 30
-        # self.deadzone_vel_tol = 10
-        # self.deadzone_tilt = np.deg2rad(0)
-        # self.pos_tol = 30
-        # self.vel_tol = 10
-
         #Axis control
         self.kp_theta = 700  # Proportional gain for the control loop
         self.max_angle = 1.8 #Max angle in deg
