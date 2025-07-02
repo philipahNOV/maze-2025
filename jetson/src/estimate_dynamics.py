@@ -29,7 +29,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             ori = tracker.get_orientation()
 
-            if abs(ori[1]-np.deg2rad(1.5)) > 0.0015 and abs(ori[0]) > 0 and not reached:
+            if abs(ori[1]-np.deg2rad(1.5)) > 0.0015 and abs(ori[0]) > 0.0015 and not reached:
                 controller.axisControl((np.deg2rad(1.5), 0))
                 reached = True
 

@@ -88,7 +88,7 @@ class Controller:
         # self.vel_tol = 10
 
         #Axis control
-        self.kp_theta = 6500  # Proportional gain for the control loop
+        self.kp_theta = 700  # Proportional gain for the control loop
         self.max_angle = 1.8 #Max angle in deg
         self.command_delay = 0.015
 
