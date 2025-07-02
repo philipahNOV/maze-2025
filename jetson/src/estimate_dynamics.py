@@ -20,8 +20,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     reached = False
      # Define horizontal lines (adjust based on resolution)
-    line_top_y = 600     # upper threshold line
-    line_bottom_y = 100   # lower threshold line
+    line_top_y = 100     # upper threshold line
+    line_bottom_y = 600    # lower threshold line
     state = "waiting_above"
     t_entry = None
     cooldown_time = 0.5   # seconds to ignore new events after logging
@@ -70,7 +70,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 reached = True
             
             if not reached:
-                #print(f"{abs(ori[1]+np.deg2rad(1.5))}, {abs(ori[0])}")
+                print(f"{abs(ori[1]+np.deg2rad(1.5))}, {abs(ori[0])}")
                 controller.axisControl((-np.deg2rad(1.5), 0))
                 time.sleep(0.015)
 
