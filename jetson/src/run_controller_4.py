@@ -51,7 +51,7 @@ def sample_waypoints(path):
         for p1, p2 in zip(path[:-1], path[1:])
     )
 
-    spacing = max(total_length, 100)
+    spacing = max(total_length * 0.35, 100)
 
     waypoints = [path[0]]
     last_point = path[0]
@@ -151,6 +151,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
     waypoints = sample_waypoints(path)
     path_array = [(x, y) for y, x in waypoints]
+    print(waypoints)
+    print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
 
     try:
