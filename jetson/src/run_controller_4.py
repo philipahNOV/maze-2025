@@ -9,7 +9,6 @@ from astar.astar import astar, astar_downscaled
 from astar.brightness import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
-from optuna_2 import pid_tuning_dual_axis
 
 clicked_goal = None
 
