@@ -124,7 +124,7 @@ class PathFollower:
             ref = np.array([pos_ref[0], 0.0, pos_ref[1], 0.0])  # vx=0, vy=0
             u = self.mpc.step(state, ref)
 
-        if u:
+        if u is not None:
             if time.time() > self.controller.prev_command_time + self.controller.command_delay:
                 self.controller.axisControl(u)
         else:
