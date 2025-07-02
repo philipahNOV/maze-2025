@@ -21,7 +21,7 @@ class BallTracker:
         }
 
         self.HSV_RANGES = {
-            "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])), # green
+            "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])), #green
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
@@ -37,13 +37,13 @@ class BallTracker:
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
 
-        print("[INFO] Loading YOLO model...")
+        print("Loading tracking model...")
         self.model = YOLO(model_path)
         self.model.fuse()
         self.model.eval()
         dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
         self.model.predict(dummy, verbose=False)
-        print("[INFO] YOLO model ready.")
+        print("Tracking model ready.")
 
     def init_camera(self):
         self.zed = sl.Camera()
