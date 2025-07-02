@@ -71,7 +71,7 @@ class Controller:
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
         self.pos_tol = 40
-        self.vel_tol = 15
+        self.vel_tol = 20
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
@@ -244,10 +244,10 @@ class Controller:
             self.stuck = False
 
         if self.stuck:
-            theta_x += np.sign(e_x) * np.deg2rad(0.7) * np.sin(time.time() * 10)  # 20 Hz oscillation
-            theta_y += np.sign(e_y) * np.deg2rad(0.7) * np.sin(time.time() * 10)  # 20 Hz oscillation
-            self.axisControl((theta_y, theta_x))
-            return
+            theta_x += np.sign(e_x) * np.deg2rad(0.8) * np.sin(time.time() * 10)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.8) * np.sin(time.time() * 10)  # 20 Hz oscillation
+            #self.axisControl((theta_y, theta_x))
+            #return
         #self.axisControl((np.deg2rad(1.5), 0))
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
