@@ -22,8 +22,10 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
      # Define horizontal lines (adjust based on resolution)
     line_top_y = 600     # upper threshold line
     line_bottom_y = 100   # lower threshold line
-    crossed_state = "waiting_for_entry"
+    state = "waiting_for_entry"
     t_entry = None
+    cooldown_frames = 10  # prevent repeated triggers
+    frame_counter = 0
     try:
         while True:
             frame = tracker.frame
@@ -34,21 +36,29 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             ori = tracker.get_orientation()
 
-            if ball_pos is not None:
+            ball_crossing_allowed = ball_pos is not None and isinstance(ball_pos, tuple)
+
+            if ball_crossing_allowed:
                 ball_x, ball_y = ball_pos
 
-                if crossed_state == "waiting_for_entry" and ball_y <= line_top_y:
+                if state == "waiting_for_entry" and ball_y < line_top_y:
                     t_entry = time.time()
-                    print(f"[INFO] Ball crossed top line at y={ball_y}, time={t_entry:.3f}")
-                    crossed_state = "waiting_for_exit"
+                    print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
+                    state = "waiting_for_exit"
+                    frame_counter = 0  # reset cooldown
 
-                elif crossed_state == "waiting_for_exit" and ball_y >= line_bottom_y:
-                    t_exit = time.time()
-                    time_elapsed = t_exit - t_entry if t_entry else None
-                    if time_elapsed is not None:
-                        print(f"[INFO] Ball crossed bottom line at y={ball_y}, time={t_exit:.3f}")
+                elif state == "waiting_for_exit":
+                    # Avoid accidental re-entry or noise
+                    if ball_y > line_bottom_y and frame_counter > cooldown_frames:
+                        t_exit = time.time()
+                        time_elapsed = t_exit - t_entry
+                        print(f"[INFO] Exit detected at y={ball_y:.1f}, time={t_exit:.3f}")
                         print(f"[RESULT] Time between lines: {time_elapsed:.3f} seconds")
-                    crossed_state = "done"  # or reset to "waiting_for_entry" if repeatable
+                        state = "waiting_for_entry"
+                        t_entry = None
+                        frame_counter = 0
+                    else:
+                        frame_counter += 1
 
 
             if abs(ori[1]+np.deg2rad(1.5)) < 0.002 and abs(ori[0]) < 0.002 and not reached:
