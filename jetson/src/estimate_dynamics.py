@@ -17,6 +17,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     print("[INFO] Tracking started. Press 'q' to quit.")
 
+    reached = False
     try:
         while True:
             frame = tracker.frame
@@ -27,8 +28,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             ori = tracker.get_orientation()
 
-            if abs(ori[1]) > 0.0015 and abs(ori[0]) > 0:
+            if abs(ori[1]) > 0.0015 and abs(ori[0]) > 0 and not reached:
                 controller.axisControl((0.0015, 0))
+                reached = True
 
             print(ori)
 
