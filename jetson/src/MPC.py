@@ -10,7 +10,7 @@ class MPC_controller:
 
         g = 9.81
         #a = 5 * g / 7  # ≈ 7.007
-        a = 6.3 # from experiments
+        a = 5.5 # from experiments
 
         A = np.array([
             [0, 1, 0, 0],
