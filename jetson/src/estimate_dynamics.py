@@ -82,7 +82,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 controller.axisControl((np.deg2rad(1.5), 0))
                 time.sleep(0.015)
 
-            prev_ball_y = tracker.get_position()
+            prev_ball_y = tracker.get_position()[1]
 
             #print(ori)
             # Draw guide lines
