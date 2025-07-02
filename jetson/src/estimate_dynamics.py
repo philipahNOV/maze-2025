@@ -42,17 +42,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if ball_pos is not None and isinstance(ball_pos, tuple):
                 _, ball_y = ball_pos
 
-                if state == "waiting_above" and ball_y < line_top_y:
-                    # Ball is above the top line, ready to start
-                    state = "ready_to_start"
 
-                elif state == "ready_to_start":
-                    if prev_ball_y is not None:
-                        dy = ball_y - prev_ball_y
-                        if ball_y >= line_top_y and ball_y < line_bottom_y and dy > vertical_motion_thresh:
-                            t_entry = current_time
-                            print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
-                            state = "timing"
+                if state == "waiting_above":
+                    if prev_ball_y is not None and prev_ball_y < line_top_y and ball_y >= line_top_y and ball_y < line_bottom_y:
+                        # Ball moved from above to inside the region
+                        t_entry = current_time
+                        entry_y = ball_y
+                        print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
+                        state = "timing"
 
                 elif state == "timing" and ball_y >= line_bottom_y:
                     # Ball exited the region
@@ -61,16 +58,19 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     exit_ori = tracker.get_orientation()
                     ori_x_deg = exit_ori[0]
                     ori_y_deg = exit_ori[1]
-                    print(f"[INFO] Exit detected at y={ball_y:.1f}, time={t_exit:.3f}")
-                    print(f"[INFO] Orientation at exit: X={ori_x_deg:.2f}°, Y={ori_y_deg:.2f}°")
-                    print(f"[RESULT] Time between lines: {time_elapsed:.3f} seconds")
-                    last_event_time = current_time
-                    state = "cooldown"
+                    exit_y = ball_y
+                    dy_pixels = exit_y - entry_y
+                    pixels_per_meter = 500  # <-- Your calibrated value
+                    dy_meters = dy_pixels / pixels_per_meter
 
-                elif state == "cooldown":
-                    if current_time - last_event_time > cooldown_time and ball_y < line_top_y:
-                        # Reset only after ball goes back above top line
-                        state = "waiting_above"
+                    a_est = 2 * dy_meters / (time_elapsed ** 2)
+
+                    print(f"[INFO] Exit detected at y={exit_y:.1f}, time={t_exit:.5f}")
+                    print(f"[INFO] Orientation at exit: X={ori_x_deg:.5f}°, Y={ori_y_deg:.5f}°")
+                    print(f"[RESULT] Time between entry and exit: {time_elapsed:.5f} seconds")
+                    print(f"[RESULT] Pixel distance: {dy_pixels:.1f} px → {dy_meters:.4f} m")
+                    print(f"[ESTIMATE] Acceleration: {a_est:.4f} m/s² at Y-angle ≈ {ori_y_deg:.5f}°")
+
 
 
             if abs(ori[1]-np.deg2rad(1.5)) < 0.001 and abs(ori[0]) < 0.001 and not reached:
