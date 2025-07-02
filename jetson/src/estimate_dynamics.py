@@ -20,8 +20,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     reached = False
      # Define horizontal lines (adjust based on resolution)
-    line_top_y = 700      # upper threshold line
-    line_bottom_y = 200   # lower threshold line
+    line_top_y = 600     # upper threshold line
+    line_bottom_y = 100   # lower threshold line
     crossed_state = "waiting_for_entry"
     t_entry = None
     try:
@@ -52,6 +52,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
 
             if abs(ori[1]+np.deg2rad(1.5)) < 0.002 and abs(ori[0]) < 0.002 and not reached:
+                controller.arduinoThread.send_target_positions(0, 0)
                 reached = True
             
             if not reached:
