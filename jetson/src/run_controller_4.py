@@ -106,13 +106,23 @@ def draw_path(image, path, waypoints, start, goal):
 
     h, w = out.shape[:2]
 
-    for y, x in path or []:
-        if 0 <= y < h and 0 <= x < w:
-            out[y, x] = (0, 0, 255)
+    # for y, x in path or []:
+    #     if 0 <= y < h and 0 <= x < w:
+    #         out[y, x] = (0, 0, 255)
+
+    # for y, x in waypoints or []:
+    #     if 0 <= y < h and 0 <= x < w:
+    #         cv2.circle(out, (x, y), 2, (0, 255, 255), -1)
+
+    if waypoints and len(waypoints) > 1:
+        for i in range(1, len(waypoints)):
+            pt1 = (waypoints[i - 1][1], waypoints[i - 1][0])  # (x, y)
+            pt2 = (waypoints[i][1], waypoints[i][0])
+            cv2.line(out, pt1, pt2, (255, 255, 255), 1, lineType=cv2.LINE_AA)  # white line
 
     for y, x in waypoints or []:
         if 0 <= y < h and 0 <= x < w:
-            cv2.circle(out, (x, y), 2, (0, 255, 255), -1)
+            cv2.circle(out, (x, y), 2, (0, 255, 255), -1)  # yellow
 
     if start:
         cv2.circle(out, (start[1], start[0]), 5, (0, 255, 0), -1)
