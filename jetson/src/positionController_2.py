@@ -59,10 +59,10 @@ class Controller:
         #self.ki_x = 0.0006
 
         #Best so far (pathfollowing)
-        self.kp_x = 0.00004
-        self.kd_x = 0.00015
-        self.kp_y = 0.00004
-        self.kd_y = 0.00015
+        self.kp_x = 0.00003
+        self.kd_x = 0.00013
+        self.kp_y = 0.00003
+        self.kd_y = 0.00013
         self.ki_y = 0.0002
         self.ki_x = 0.0002
         self.kf_min = 0.02
@@ -70,8 +70,8 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 35
-        self.vel_tol = 20
+        self.pos_tol = 40
+        self.vel_tol = 15
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
@@ -235,8 +235,8 @@ class Controller:
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
-
-        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and (abs(e_x) > self.pos_tol or abs(e_y) > self.pos_tol):
+        dist = np.linalg.norm(np.array(pos) - np.array(ref))
+        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and dist > self.pos_tol:
             self.stuck = True
             print("STUCK")
         else:
@@ -244,8 +244,8 @@ class Controller:
             self.stuck = False
 
         if self.stuck:
-            theta_x += np.sign(e_x) * np.deg2rad(0.7) * np.sin(time.time() * 30)  # 20 Hz oscillation
-            theta_y += np.sign(e_y) * np.deg2rad(0.7) * np.sin(time.time() * 30)  # 20 Hz oscillation
+            theta_x += np.sign(e_x) * np.deg2rad(0.7) * np.sin(time.time() * 10)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.7) * np.sin(time.time() * 10)  # 20 Hz oscillation
             self.axisControl((theta_y, theta_x))
             return
         #self.axisControl((np.deg2rad(1.5), 0))
