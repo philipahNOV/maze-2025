@@ -30,8 +30,10 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ori = tracker.get_orientation()
 
             if abs(ori[1]-np.deg2rad(1.5)) < 0.0015 and abs(ori[0]) < 0.0015 and not reached:
-                controller.axisControl((np.deg2rad(1.5), 0))
                 reached = True
+            
+            if not reached:
+                controller.axisControl((np.deg2rad(1.5), 0))
 
             #print(ori)
 
