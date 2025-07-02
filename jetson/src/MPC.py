@@ -26,7 +26,7 @@ class MPC_controller:
             [0, a]
         ])
 
-        dt = 0.015  # sample time (same as your loop)
+        dt = 0.04  # sample time (same as your loop)
 
         self.Ad, self.Bd, _, _, _ = cont2discrete((A, B, np.eye(4), np.zeros((4, 2))), dt)
 
@@ -34,14 +34,14 @@ class MPC_controller:
         self.x = cp.Variable((4, self.N + 1))
         self.u = cp.Variable((2, self.N))
 
-        self.Q = np.diag([1, 0.1, 1, 0.1])
+        self.Q = np.diag([1, 0.1, 1, 0.1])*10
         self.R = np.diag([0.01, 0.01])
 
         
         self.x0 = cp.Parameter(4)
         self.x_ref = cp.Parameter(4)
 
-        Q_terminal = self.Q * 10
+        #Q_terminal = self.Q * 10
 
         # Build cost and constraints once
         cost = 0
@@ -53,7 +53,7 @@ class MPC_controller:
             constraints += [self.x[:, k + 1] == self.Ad @ self.x[:, k] + self.Bd @ self.u[:, k]]
             constraints += [cp.abs(self.u[:, k]) <= 0.0314]  # ~1.8°
 
-        cost += cp.quad_form(self.x[:, self.N] - self.x_ref, Q_terminal)
+        cost += cp.quad_form(self.x[:, self.N+1] - self.x_ref)
 
         self.problem = cp.Problem(cp.Minimize(cost), constraints)
 
