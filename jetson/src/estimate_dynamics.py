@@ -61,15 +61,15 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                         frame_counter += 1
 
 
-            if abs(ori[1]+np.deg2rad(1.5)) < 0.002 and abs(ori[0]) < 0.002 and not reached:
+            if abs(ori[1]+np.deg2rad(1.5)) < 0.001 and abs(ori[0]) < 0.001 and not reached:
                 controller.arduinoThread.send_target_positions(0, 0)
                 reached = True
             
             if not reached:
-                print(f"{abs(ori[1]+np.deg2rad(1.5))}, {abs(ori[0])}")
+                #print(f"{abs(ori[1]+np.deg2rad(1.5))}, {abs(ori[0])}")
                 controller.axisControl((-np.deg2rad(1.5), 0))
 
-            print(ori)
+            #print(ori)
             # Draw guide lines
             cv2.line(frame, (0, line_top_y), (frame.shape[1], line_top_y), (0, 255, 0), 2)
             cv2.line(frame, (0, line_bottom_y), (frame.shape[1], line_bottom_y), (0, 0, 255), 2)
