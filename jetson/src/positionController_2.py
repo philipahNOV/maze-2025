@@ -168,7 +168,7 @@ class Controller:
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
 
             # Estimate time to reach waypoint (tuned value or based on velocity)
-            t_estimate = 4.5  # seconds, tune this based on performance
+            t_estimate = 4.7  # seconds, tune this based on performance
 
             
             # Desired acceleration magnitude
