@@ -11,6 +11,7 @@ import testing.yolov1.hsv3 as tracking
 import queue
 import threading
 import maze_solver
+import estimate_dynamics
 
 from manual_part.manuel_main import elManuel
 
@@ -94,7 +95,7 @@ while True:
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.stop_control = False
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_3.main,
+                target=estimate_dynamics.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
