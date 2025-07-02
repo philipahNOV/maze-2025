@@ -54,7 +54,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     # Ball exited the region
                     t_exit = current_time
                     time_elapsed = t_exit - t_entry
+                    exit_ori = tracker.get_orientation()
+                    ori_x_deg = exit_ori[0]
+                    ori_y_deg = exit_ori[1]
                     print(f"[INFO] Exit detected at y={ball_y:.1f}, time={t_exit:.3f}")
+                    print(f"[INFO] Orientation at exit: X={ori_x_deg:.2f}°, Y={ori_y_deg:.2f}°")
                     print(f"[RESULT] Time between lines: {time_elapsed:.3f} seconds")
                     last_event_time = current_time
                     state = "cooldown"
