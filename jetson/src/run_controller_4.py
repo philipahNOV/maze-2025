@@ -191,7 +191,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             
             frame = draw_path(frame, path, waypoints, start, goal)
-            cv2.imshow("Ball & Marker Tracking", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
