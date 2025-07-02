@@ -27,6 +27,7 @@ class Controller:
         self.tracker = tracker
         self.e_x_int = 0
         self.e_y_int = 0
+        self.stuck = False
 
         self.use_feedforward = False
         self.use_feedforward_model = True
@@ -58,9 +59,9 @@ class Controller:
         #self.ki_x = 0.0006
 
         #Best so far (pathfollowing)
-        self.kp_x = 0.00003
+        self.kp_x = 0.00004
         self.kd_x = 0.00012
-        self.kp_y = 0.00003
+        self.kp_y = 0.00004
         self.kd_y = 0.00012
         self.ki_y = 0.0002
         self.ki_x = 0.0002
@@ -234,6 +235,16 @@ class Controller:
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
+
+        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol:
+            self.stuck = True
+        else:
+            self.stuck = False
+
+        if self.stuck:
+            theta_x += np.sign(e_x) * np.deg2rad(0.3) * np.sin(time.time() * 20)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.3) * np.sin(time.time() * 20)  # 20 Hz oscillation
+            self.axisControl((theta_y, theta_x))
         #self.axisControl((np.deg2rad(1.5), 0))
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
@@ -270,6 +281,9 @@ class Controller:
             vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
             vel_y = - np.sign(e_y) * vel_y
 
+        if self.stuck:
+            self.arduinoThread.send_target_positions(vel_x, vel_y)
+            self.prev_command_time = time.time()
         if self.significant_motor_change(vel_x, vel_y):
             self.arduinoThread.send_target_positions(vel_x, vel_y)
             self.prev_command_time = time.time()
