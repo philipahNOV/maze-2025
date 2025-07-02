@@ -60,7 +60,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     ori_y_deg = exit_ori[1]
                     exit_y = ball_y
                     dy_pixels = exit_y - entry_y
-                    pixels_per_meter = 500  # <-- Your calibrated value
+                    pixels_per_meter = 2890  # <-- Your calibrated value
                     dy_meters = dy_pixels / pixels_per_meter
 
                     a_est = 2 * dy_meters / (time_elapsed ** 2)
@@ -70,6 +70,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     print(f"[RESULT] Time between entry and exit: {time_elapsed:.5f} seconds")
                     print(f"[RESULT] Pixel distance: {dy_pixels:.1f} px → {dy_meters:.4f} m")
                     print(f"[ESTIMATE] Acceleration: {a_est:.4f} m/s² at Y-angle ≈ {ori_y_deg:.5f}°")
+
+                    last_event_time = current_time
+                    state = "cooldown"
 
 
 
