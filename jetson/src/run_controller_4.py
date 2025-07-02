@@ -1,4 +1,4 @@
-import testing.yolov1.hsv3 as tracking
+import testing.yolov1.hsv4 as tracking
 import time
 import cv2
 import positionController_2
@@ -36,11 +36,6 @@ def snap_to_nearest_walkable(mask, point, max_radius=10):
                     min_val = dist[ny, nx]
                     nearest = (ny, nx)
     return nearest
-
-
-def dilate_mask(mask, iterations=2):
-    kernel = np.ones((3, 3), np.uint8)
-    return cv2.dilate(mask, kernel, iterations=iterations)
 
 def sample_waypoints(path):
     if not path or len(path) < 2:
@@ -173,7 +168,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if not ball_pos:
                 print("No ball found (run_controller)")
                 continue
-
 
             pathFollower.follow_path(ball_pos)
 
