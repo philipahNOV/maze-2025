@@ -47,6 +47,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                         cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
             cv2.imshow("Ball & Marker Tracking", frame)
 
+            time.sleep(0.015)
+
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 return
