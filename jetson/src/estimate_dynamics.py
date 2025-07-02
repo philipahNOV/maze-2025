@@ -74,6 +74,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     last_event_time = current_time
                     state = "cooldown"
 
+                elif state == "cooldown":
+                    if current_time - last_event_time > cooldown_time and ball_y < line_top_y:
+                        state = "waiting_above"
+                        print("[INFO] System reset — ready for new measurement.")
+
 
 
             if abs(ori[1]-np.deg2rad(1.5)) < 0.001 and abs(ori[0]) < 0.001 and not reached:
