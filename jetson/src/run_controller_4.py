@@ -175,7 +175,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     goal = clicked_goal
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
-    waypoints = sample_waypoints(path)
+    waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
     print(waypoints)
     print(path_array)
