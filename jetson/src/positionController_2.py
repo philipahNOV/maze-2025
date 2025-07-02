@@ -240,11 +240,12 @@ class Controller:
             self.stuck = True
             print("STUCK")
         else:
+            print(np.sqrt(edot_x**2+edot_y**2))
             self.stuck = False
 
         if self.stuck:
-            theta_x += np.sign(e_x) * np.deg2rad(0.5) * np.sin(time.time() * 20)  # 20 Hz oscillation
-            theta_y += np.sign(e_y) * np.deg2rad(0.5) * np.sin(time.time() * 20)  # 20 Hz oscillation
+            theta_x += np.sign(e_x) * np.deg2rad(0.3) * np.sin(time.time() * 40)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.3) * np.sin(time.time() * 40)  # 20 Hz oscillation
             self.axisControl((theta_y, theta_x))
             return
         #self.axisControl((np.deg2rad(1.5), 0))
