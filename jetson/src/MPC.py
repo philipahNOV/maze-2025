@@ -53,7 +53,7 @@ class MPC_controller:
             constraints += [self.x[:, k + 1] == self.Ad @ self.x[:, k] + self.Bd @ self.u[:, k]]
             constraints += [cp.abs(self.u[:, k]) <= 0.0314]  # ~1.8°
 
-        cost += cp.quad_form(self.x[:, self.N+1] - self.x_ref)
+        #cost += cp.quad_form(self.x[:, self.N] - self.x_ref)
 
         self.problem = cp.Problem(cp.Minimize(cost), constraints)
 
