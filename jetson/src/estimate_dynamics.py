@@ -60,8 +60,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     t_exit = current_time
                     time_elapsed = t_exit - t_entry
                     exit_ori = tracker.get_orientation()
-                    ori_x_deg = exit_ori[0]
-                    ori_y_deg = exit_ori[1]
+                    ori_x_deg = exit_ori[1]
+                    ori_y_deg = exit_ori[0]
                     exit_y = ball_y
                     dy_pixels = exit_y - entry_y
                     pixels_per_meter = 2890  # <-- Your calibrated value
