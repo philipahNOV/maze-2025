@@ -28,6 +28,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     last_event_time = 0
     prev_ball_y = None
     vertical_motion_thresh = 2  # pixels/frame to avoid noise
+    was_above = False
     try:
         while True:
             frame = tracker.frame
@@ -44,12 +45,15 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
 
                 if state == "waiting_above":
-                    if prev_ball_y is not None and prev_ball_y < line_top_y and ball_y >= line_top_y and ball_y < line_bottom_y:
-                        # Ball moved from above to inside the region
+                    if not was_above and ball_y < line_top_y:
+                        was_above = True  # Ball is now above
+
+                    elif state == "waiting_above" and was_above and line_top_y <= ball_y < line_bottom_y:
                         t_entry = current_time
                         entry_y = ball_y
                         print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
                         state = "timing"
+                        was_above = False  # reset after valid transition
 
                 elif state == "timing" and ball_y >= line_bottom_y:
                     # Ball exited the region
