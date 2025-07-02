@@ -69,7 +69,7 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 40
+        self.pos_tol = 20
         self.vel_tol = 10
 
         #Axis control
@@ -168,7 +168,7 @@ class Controller:
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
 
             # Estimate time to reach waypoint (tuned value or based on velocity)
-            t_estimate = 4.7  # seconds, tune this based on performance
+            t_estimate = 5  # seconds, tune this based on performance
 
             
             # Desired acceleration magnitude
