@@ -129,7 +129,7 @@ class PathFollower:
             dist = np.linalg.norm(np.array(ballPos) - np.array(wpt))
             
             if dist < self.acceptance_radius and dist_to_next > self.acceptance_radius_out:
-                print(f"[SKIP] Ball near waypoint {i} → skipping back")
+                #print(f"[SKIP] Ball near waypoint {i} → skipping back")
                 self.prev_waypoint = i
                 self.next_waypoint = min(i + 1, self.length - 1)
                 self.inside_target_radius = False

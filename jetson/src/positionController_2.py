@@ -27,6 +27,7 @@ class Controller:
         self.tracker = tracker
         self.e_x_int = 0
         self.e_y_int = 0
+        self.stuck = False
 
         self.use_feedforward = False
         self.use_feedforward_model = True
@@ -58,10 +59,10 @@ class Controller:
         #self.ki_x = 0.0006
 
         #Best so far (pathfollowing)
-        self.kp_x = 0.00003
-        self.kd_x = 0.00008
-        self.kp_y = 0.00003
-        self.kd_y = 0.00008
+        self.kp_x = 0.00004
+        self.kd_x = 0.00012
+        self.kp_y = 0.00004
+        self.kd_y = 0.00012
         self.ki_y = 0.0002
         self.ki_x = 0.0002
         self.kf_min = 0.02
@@ -69,8 +70,8 @@ class Controller:
         self.deadzone_pos_tol = 30
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
-        self.pos_tol = 40
-        self.vel_tol = 10
+        self.pos_tol = 35
+        self.vel_tol = 25
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
@@ -168,7 +169,7 @@ class Controller:
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
 
             # Estimate time to reach waypoint (tuned value or based on velocity)
-            t_estimate = 4.2  # seconds, tune this based on performance
+            t_estimate = 5  # seconds, tune this based on performance
 
             
             # Desired acceleration magnitude
@@ -195,7 +196,7 @@ class Controller:
         elif abs(e_x) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
             theta_x = np.sign(e_x) * self.deadzone_tilt
-            print("Escaping")
+            #print("Escaping")
         else:
             # Ball is far → USE CONTROL
             theta_x = (self.kp_x * e_x  + self.kd_x * edot_x + self.ki_x * self.e_x_int + ff_x)
@@ -206,20 +207,20 @@ class Controller:
         elif abs(e_y) < self.deadzone_pos_tol and abs(edot_y) < self.deadzone_vel_tol:
             # Ball is close, but needs help moving → ESCAPE DEAD ZONE
             theta_y = -np.sign(e_y) * self.deadzone_tilt
-            print("Escaping")
+            #print("Escaping")
         else:
             # Ball is far → USE CONTROL
             theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int + ff_y)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
-            print("Target reached!")
+            #print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
             if not self.path_following:
                 self.arduinoThread.send_target_positions(0, 0)
                 time.sleep(self.command_delay)
             self.prevTime = time.time()
-            return
+            #return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
         pos = self.tracker.get_position()
@@ -234,6 +235,18 @@ class Controller:
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
+
+        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and (e_x > self.pos_tol or e_y > self.pos_tol):
+            self.stuck = True
+            print("STUCK")
+        else:
+            self.stuck = False
+
+        if self.stuck:
+            theta_x += np.sign(e_x) * np.deg2rad(0.5) * np.sin(time.time() * 20)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.5) * np.sin(time.time() * 20)  # 20 Hz oscillation
+            self.axisControl((theta_y, theta_x))
+            return
         #self.axisControl((np.deg2rad(1.5), 0))
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
@@ -270,6 +283,9 @@ class Controller:
             vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
             vel_y = - np.sign(e_y) * vel_y
 
+        if self.stuck:
+            self.arduinoThread.send_target_positions(vel_x, vel_y)
+            self.prev_command_time = time.time()
         if self.significant_motor_change(vel_x, vel_y):
             self.arduinoThread.send_target_positions(vel_x, vel_y)
             self.prev_command_time = time.time()
