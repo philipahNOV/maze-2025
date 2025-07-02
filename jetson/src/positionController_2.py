@@ -236,7 +236,7 @@ class Controller:
             return
 
 
-        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol:
+        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and (e_x > self.pos_tol or e_y > self.pos_tol):
             self.stuck = True
             print("STUCK")
         else:
