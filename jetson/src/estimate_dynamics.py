@@ -31,9 +31,10 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             if abs(ori[1]-np.deg2rad(1.5)) < 0.0015 and abs(ori[0]) < 0.0015 and not reached:
                 reached = True
+                print("done")
             
             if not reached:
-                controller.axisControl((0, -np.deg2rad(1.5)))
+                controller.axisControl((-np.deg2rad(1.5), 0))
 
             print(ori)
 
