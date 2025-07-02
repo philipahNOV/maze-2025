@@ -71,7 +71,7 @@ class Controller:
         self.deadzone_vel_tol = 10
         self.deadzone_tilt = np.deg2rad(0)
         self.pos_tol = 35
-        self.vel_tol = 15
+        self.vel_tol = 25
 
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
@@ -213,14 +213,14 @@ class Controller:
             theta_y = (self.kp_y * e_y  + self.kd_y * edot_y + self.ki_y * self.e_y_int + ff_y)
             
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
-            print("Target reached!")
+            #print("Target reached!")
             self.e_x_int = 0
             self.e_y_int = 0
             if not self.path_following:
                 self.arduinoThread.send_target_positions(0, 0)
                 time.sleep(self.command_delay)
             self.prevTime = time.time()
-            return
+            #return
         
         #print(f"e_x: {e_x}, theta_x: {theta_x}, theta_y: {theta_y}, edot_x: {edot_x}, edot_y: {edot_y}")
         pos = self.tracker.get_position()
