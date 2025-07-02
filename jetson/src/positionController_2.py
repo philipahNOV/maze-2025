@@ -75,7 +75,7 @@ class Controller:
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
         self.max_angle = 1.8 #Max angle in deg
-        self.command_delay = 0.04
+        self.command_delay = 0.015
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
