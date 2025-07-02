@@ -168,7 +168,7 @@ class Controller:
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
 
             # Estimate time to reach waypoint (tuned value or based on velocity)
-            t_estimate = 100  # seconds, tune this based on performance
+            t_estimate = 0.7  # seconds, tune this based on performance
 
             
             # Desired acceleration magnitude
@@ -179,7 +179,7 @@ class Controller:
             a_y = a_mag * direction[1]
 
             # Estimate tilt angles from model
-            a_model = 5.5
+            a_model = 5.5 * 0.0122
             ff_x = a_x / a_model
             ff_y = a_y / a_model
 
