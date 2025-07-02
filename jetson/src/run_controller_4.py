@@ -37,7 +37,24 @@ def snap_to_nearest_walkable(mask, point, max_radius=10):
                     nearest = (ny, nx)
     return nearest
 
-def sample_waypoints(path):
+def angle_between(p1, p2, p3):
+    a = np.array(p1)
+    b = np.array(p2)
+    c = np.array(p3)
+    ba = a - b
+    bc = c - b
+    cos_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    return np.degrees(np.arccos(np.clip(cos_angle, -1.0, 1.0)))
+
+def is_clear_path(mask, p1, p2, kernel_size=8):
+    line_img = np.zeros_like(mask, dtype=np.uint8)
+    cv2.line(line_img, (p1[1], p1[0]), (p2[1], p2[0]), 1, 1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+    corridor = cv2.dilate(line_img, kernel)
+    return np.all(mask[corridor.astype(bool)] > 0)
+
+
+def sample_waypoints(path, mask, target_count=20, angle_threshold=135):
     if not path or len(path) < 2:
         return path or []
 
@@ -45,22 +62,36 @@ def sample_waypoints(path):
         math.hypot(p2[0] - p1[0], p2[1] - p1[1])
         for p1, p2 in zip(path[:-1], path[1:])
     )
-
-    spacing = max(total_length * 0.35, 100)
+    spacing = total_length / target_count
 
     waypoints = [path[0]]
-    last_point = path[0]
+    last_wp_idx = 0
     accumulated = 0.0
 
-    for point in path[1:]:
-        dy = point[0] - last_point[0]
-        dx = point[1] - last_point[1]
-        dist = math.hypot(dy, dx)
-        accumulated += dist
+    for i in range(1, len(path)):
+        p1 = path[i - 1]
+        p2 = path[i]
+        step_dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        accumulated += step_dist
+
+        if i < len(path) - 1:
+            angle = angle_between(path[last_wp_idx], path[i], path[i + 1])
+            if angle < angle_threshold and accumulated >= spacing / 2:
+                if is_clear_path(mask, path[last_wp_idx], path[i]):
+                    waypoints.append(path[i])
+                    last_wp_idx = i
+                    accumulated = 0.0
+                    continue
+
         if accumulated >= spacing:
-            waypoints.append(point)
+            best_idx = i
+            for j in range(i, last_wp_idx, -1):
+                if is_clear_path(mask, path[last_wp_idx], path[j]):
+                    best_idx = j
+                    break
+            waypoints.append(path[best_idx])
+            last_wp_idx = best_idx
             accumulated = 0.0
-            last_point = point
 
     if waypoints[-1] != path[-1]:
         waypoints.append(path[-1])
@@ -144,7 +175,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     goal = clicked_goal
 
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
-    waypoints = sample_waypoints(path)
+    waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
     print(waypoints)
     print(path_array)
@@ -160,7 +191,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
             
             frame = draw_path(frame, path, waypoints, start, goal)
-            cv2.imshow("Ball & Marker Tracking", frame)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
