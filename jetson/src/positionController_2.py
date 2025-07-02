@@ -236,7 +236,7 @@ class Controller:
             return
 
 
-        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and (e_x > self.pos_tol or e_y > self.pos_tol):
+        if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and (abs(e_x) > self.pos_tol or abs(e_y) > self.pos_tol):
             self.stuck = True
             print("STUCK")
         else:
@@ -244,8 +244,8 @@ class Controller:
             self.stuck = False
 
         if self.stuck:
-            theta_x += np.sign(e_x) * np.deg2rad(0.3) * np.sin(time.time() * 40)  # 20 Hz oscillation
-            theta_y += np.sign(e_y) * np.deg2rad(0.3) * np.sin(time.time() * 40)  # 20 Hz oscillation
+            theta_x += np.sign(e_x) * np.deg2rad(0.5) * np.sin(time.time() * 30)  # 20 Hz oscillation
+            theta_y += np.sign(e_y) * np.deg2rad(0.5) * np.sin(time.time() * 30)  # 20 Hz oscillation
             self.axisControl((theta_y, theta_x))
             return
         #self.axisControl((np.deg2rad(1.5), 0))
