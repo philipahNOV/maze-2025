@@ -5,6 +5,7 @@ import positionController_2
 import arduino_connection_test
 import lowPassFilter
 import path_following
+import path_following_mpc
 from mqtt_client import MQTTClientJetson
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
@@ -59,7 +60,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
         (454, 629), (454, 538), (530, 479), (612, 425), (640, 321),
         (583, 243), (552, 143), (572, 49), (687, 49), (763, 49)
     ]
-    pathFollower = path_following.PathFollower(path_array, controller)
+    pathFollower = path_following_mpc.PathFollower(path_array, controller)
     time.sleep(1)
     controller.horizontal()
     time.sleep(2)

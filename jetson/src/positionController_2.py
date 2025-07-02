@@ -88,7 +88,7 @@ class Controller:
         # self.vel_tol = 10
 
         #Axis control
-        self.kp_theta = 700  # Proportional gain for the control loop
+        self.kp_theta = 6500  # Proportional gain for the control loop
         self.max_angle = 1.8 #Max angle in deg
         self.command_delay = 0.015
 
@@ -285,10 +285,8 @@ class Controller:
             vel_y = min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
             vel_y = - np.sign(e_y) * vel_y
 
-
-        #print(f"{vel_x}, {vel_y}")
-        self.arduinoThread.send_target_positions(vel_x, vel_y)
         if self.significant_motor_change(vel_x, vel_y):
+            self.arduinoThread.send_target_positions(vel_x, vel_y)
             self.prev_command_time = time.time()
         
         self.prev_vel_x = vel_x

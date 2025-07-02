@@ -9,7 +9,8 @@ class MPC_controller:
     def __init__(self):
 
         g = 9.81
-        a = 5 * g / 7  # ≈ 7.007
+        #a = 5 * g / 7  # ≈ 7.007
+        a = 6.3 # from experiments
 
         A = np.array([
             [0, 1, 0, 0],
@@ -50,7 +51,7 @@ class MPC_controller:
             cost += cp.quad_form(self.x[:, k] - self.x_ref, self.Q)
             cost += cp.quad_form(self.u[:, k], self.R)
             constraints += [self.x[:, k + 1] == self.Ad @ self.x[:, k] + self.Bd @ self.u[:, k]]
-            constraints += [cp.abs(self.u[:, k]) <= 0.1]  # ~5.7°
+            constraints += [cp.abs(self.u[:, k]) <= 0.0314]  # ~1.8°
 
         cost += cp.quad_form(self.x[:, self.N] - self.x_ref, Q_terminal)
 
