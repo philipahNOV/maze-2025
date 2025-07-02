@@ -33,7 +33,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 controller.axisControl((np.deg2rad(1.5), 0))
                 reached = True
 
-            print(ori)
+            #print(ori)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
