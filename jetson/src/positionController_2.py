@@ -179,7 +179,7 @@ class Controller:
             a_y = a_mag * direction[1]
 
             # Estimate tilt angles from model
-            a_model = 5.5 * 0.0122
+            a_model = 5.5 / 0.0122
             ff_x = a_x / a_model
             ff_y = a_y / a_model
 
