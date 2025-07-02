@@ -28,8 +28,8 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
 
-        self.use_feedforward = False
-        self.use_feedforward_model = True
+        self.use_feedforward = True
+        self.use_feedforward_model = False
         self.feedforward_vector = (0, 0)
 
         self.path_following = path_following
