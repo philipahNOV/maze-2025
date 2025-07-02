@@ -26,12 +26,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     t_entry = None
     cooldown_time = 0.5   # seconds to ignore new events after logging
     last_event_time = 0
+    prev_ball_y = None
+    vertical_motion_thresh = 2  # pixels/frame to avoid noise
     try:
         while True:
             frame = tracker.frame
             if frame is None:
                 continue
-
+            
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
             ori = tracker.get_orientation()
@@ -44,11 +46,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     # Ball is above the top line, ready to start
                     state = "ready_to_start"
 
-                elif state == "ready_to_start" and ball_y >= line_top_y and ball_y < line_bottom_y:
-                    # Ball just entered the region
-                    t_entry = current_time
-                    print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
-                    state = "timing"
+                elif state == "ready_to_start":
+                    if prev_ball_y is not None:
+                        dy = ball_y - prev_ball_y
+                        if ball_y >= line_top_y and ball_y < line_bottom_y and dy > vertical_motion_thresh:
+                            t_entry = current_time
+                            print(f"[INFO] Entry detected at y={ball_y:.1f}, time={t_entry:.3f}")
+                            state = "timing"
 
                 elif state == "timing" and ball_y >= line_bottom_y:
                     # Ball exited the region
@@ -77,6 +81,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 print(f"{abs(ori[1]-np.deg2rad(1.5))}, {abs(ori[0])}")
                 controller.axisControl((np.deg2rad(1.5), 0))
                 time.sleep(0.015)
+
+            prev_ball_y = tracker.get_position()
 
             #print(ori)
             # Draw guide lines
