@@ -2,7 +2,7 @@ import threading
 import paho.mqtt.client as mqtt
 from arduino_connection_test import ArduinoConnection
 from queue import Queue
-
+import datetime
 
 class MQTTClientJetson(threading.Thread):
     def __init__(self, arduino_connection: ArduinoConnection = None, broker_address="192.168.1.3", port=1883):
@@ -55,6 +55,7 @@ class MQTTClientJetson(threading.Thread):
             None
         """
         print("Message received on topic '{}': {}".format(msg.topic, msg.payload.decode()))
+        #print(f"[{datetime.datetime.now()}] Jetson received command: {msg.payload.decode()}")
         if msg.topic == "jetson/state":
             self.jetson_state = msg.payload.decode()   
         elif msg.topic == "jetson/command":
