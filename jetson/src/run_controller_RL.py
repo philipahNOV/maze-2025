@@ -242,8 +242,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             cv2.imshow("Ball & Marker Tracking", frame)
 
             if done:
-                print(f"[Episode {logger.episode_counter}] Done. Waiting for 10s to reset ball...")
-                time.sleep(10)
+                print(f"[Episode {logger.episode_counter}] Done. Waiting for 20s to reset ball...")
+                time.sleep(20)
                 return
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
