@@ -18,8 +18,9 @@ class MQTTClientJetson(threading.Thread):
         except Exception as e:
             raise ConnectionError(f"Failed to connect to MQTT broker: {e}")
         
-        self.thread = threading.Thread(target=self.client.loop_forever)
-        self.thread.start()
+        #self.thread = threading.Thread(target=self.client.loop_forever)
+        #self.thread.start()
+        self.client.loop_start()
         self.jetson_state = "None"
         #self.jetson_state = "0.0"
         self.elevator = 0
