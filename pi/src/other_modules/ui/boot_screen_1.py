@@ -38,6 +38,21 @@ class BootScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.images[self.image_index])
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
+        self.exit_button = tk.Button(
+            self,
+            text="✖",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",              # Red exit button
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.controller.on_close  # or self.controller.destroy
+        )
+        self.exit_button.place(x=964, y=10, width=50, height=50)
+
     def cycle_images(self):
         # Change to next image
         self.image_index = (self.image_index + 1) % len(self.images)
