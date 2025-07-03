@@ -93,7 +93,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 continue
 
             # Use path following instead of static control
+            print("BEFORE")
             pathFollower.follow_path(ball_pos)
+            print("AFTER")
 
             cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
@@ -112,7 +114,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
-                cv2.destroyAllWindows()
                 break
 
     except KeyboardInterrupt:
@@ -122,6 +123,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     finally:
         #tracker.stop()
         cv2.destroyAllWindows()
+        cv2.waitKey(1)
+        time.sleep(0.2)
         print("[INFO] Control thread exited.")
 
 if __name__ == "__main__":
