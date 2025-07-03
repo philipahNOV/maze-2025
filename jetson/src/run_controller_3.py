@@ -112,6 +112,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             #cv2.imshow("Ball & Marker Tracking", frame)
             if not frame_queue.full():
+                print(frame.size)
                 frame_queue.put_nowait(frame.copy())
 
             if mqtt_client.stop_control:
