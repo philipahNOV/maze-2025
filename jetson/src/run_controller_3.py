@@ -72,6 +72,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     frame_warned = False
     try:
         while True:
+            print("running")
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
@@ -116,6 +117,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
+    except Exception as e:
+        print(f"[ERROR] Control loop crashed: {e}")
     finally:
         #tracker.stop()
         cv2.destroyAllWindows()
