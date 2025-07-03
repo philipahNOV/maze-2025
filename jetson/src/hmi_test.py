@@ -53,9 +53,6 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
-    if run_controller_3.frame != None:
-        cv2.imshow("Ball & Marker Tracking", run_controller_3.frame)
-
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
@@ -121,6 +118,13 @@ while True:
         if dir == "right":
             arduino_thread.send_target_positions(0, -speed)
 
-    time.sleep(0.01)
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+    # === Display frame from control thread, if any ===
+    try:
+        frame = run_controller_3.frame_queue.get_nowait()
+        cv2.imshow("Ball & Marker Tracking", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break  # or trigger shutdown
+    except queue.Empty:
+        pass
+
+    time.sleep(0.015)

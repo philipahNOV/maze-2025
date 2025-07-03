@@ -7,8 +7,9 @@ import lowPassFilter
 import path_following
 import path_following_mpc
 from mqtt_client import MQTTClientJetson
+import queue
 
-frame = None
+frame_queue = queue.Queue(maxsize=1)
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
@@ -74,7 +75,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     frame_warned = False
     try:
         while True:
-            global frame
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
@@ -96,9 +96,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 continue
 
             # Use path following instead of static control
-            print("BEFORE")
             pathFollower.follow_path(ball_pos)
-            print("AFTER")
 
             cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
@@ -113,10 +111,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
             #cv2.imshow("Ball & Marker Tracking", frame)
+            if not frame_queue.full():
+                frame_queue.put_nowait(frame.copy())
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
+                cv2.destroyAllWindows()
                 break
 
     except KeyboardInterrupt:
