@@ -60,7 +60,7 @@ class BootScreen(tk.Frame):
         self.after(500, self.cycle_images)  # Change image every 0.5 seconds
 
     def check_pi_state(self):
-        if self.mqtt_client.pi_state == "0.0":
+        if self.mqtt_client.handshake_complete:
             self.controller.show_frame("Screen1")
         else:
             self.after(200, self.check_pi_state)  # Check again after 0.2 seconds
