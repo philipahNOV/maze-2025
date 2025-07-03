@@ -11,8 +11,6 @@ import queue
 import threading
 import maze_solver
 
-from manual_part.manuel_main import elManuel
-
 import time
 import cv2
 
@@ -40,23 +38,17 @@ except Exception as e:
     print(e)
     exit(1)
 
-while mqtt_client.jetson_state != "0.0":
-    print("Waiting for handshake from Pi...")
+print("Waiting for handshake from Pi...")
+while not mqtt_client.handshake_complete:
     time.sleep(1)
 
-print("Connected!")
+print("Connected to Pi!")
 
 tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
 tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
-    #command = mqtt_client.command
-
-    #if not command:
-    #    time.sleep(0.1)
-    #    continue
-
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
