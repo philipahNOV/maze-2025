@@ -72,11 +72,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     frame_warned = False
     try:
         while True:
+            print("running")
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
                     print("[WARN] Tracker returned empty frame. Waiting...")
                     frame_warned = True
+                print("[WARN] Tracker returned empty frame. Waiting...")
                 time.sleep(0.015)
                 continue
 
@@ -86,6 +88,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
+                print("HEEEEEELP")
                 break
 
             if not ball_pos:
@@ -110,12 +113,15 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
+                print("HEEEELP 2")
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
                 break
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
+    except Exception as e:
+        print(f"[ERROR] Control loop crashed: {e}")
     finally:
         #tracker.stop()
         cv2.destroyAllWindows()

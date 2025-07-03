@@ -232,8 +232,6 @@ class Controller:
         self.ori = self.tracker.get_orientation()
         #if self.ori:
         #    print(f"({self.ori[1]}, {self.ori[0]})")
-        if time.time() < self.prev_command_time + self.command_delay:
-            return
 
         dist = np.linalg.norm(np.array(pos) - np.array(ref))
         if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and dist > self.pos_tol:
@@ -257,6 +255,9 @@ class Controller:
         Sends directional commands to the Arduino to tilt the platform toward the target angles.
         Uses proportional control based on orientation error to determine motor direction and velocity.
         """
+
+        if time.time() < self.prev_command_time + self.command_delay:
+            return
 
         tol = 0.001
 
