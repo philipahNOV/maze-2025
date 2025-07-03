@@ -25,9 +25,17 @@ class MainApp(tk.Tk):
     def __init__(self, mqtt_client):
         super().__init__()
         self.title("Raspberry Pi Application")
-        self.geometry("800x480") # This is the wrong reselution for the pi screen
+        self.geometry("1024x600") # This is the wrong reselution for the pi screen
         self.attributes("-fullscreen", True)
         self.current_screen = None
+        self.nov_red = "#EE3229"
+        self.nov_grey = "#60666C"
+        self.nov_background = "#D9D9D9"
+
+        self.script_dir = os.path.dirname(os.path.abspath(__file__))
+        self.image_path = os.path.abspath(os.path.join(self.script_dir, '..', 'data'))
+        self.logo_path = os.path.join(self.image_path, 'logo.png')
+        self.background_path = os.path.join(self.image_path, 'background.png')
 
         #self.data_handler = DataHandler(self.get_current_screen)
 

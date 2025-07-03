@@ -3,17 +3,21 @@ from PIL import Image, ImageTk
 from tkinter import font as tkfont
 import datetime
 import time
+import os
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import MainApp
 
 
 class Screen1(tk.Frame):
-    def __init__(self, parent, controller, mqtt_client):
+    def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
         self.motor_speed = 100
         self.dir = None
 
-        self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
+        self.image = ImageTk.PhotoImage(Image.open(os.path.join(controller.image_path, 'start_screen.png')))
 
         # Layout the widgets including the logo
         self.create_widgets()

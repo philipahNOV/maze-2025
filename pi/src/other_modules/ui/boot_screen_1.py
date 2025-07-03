@@ -1,18 +1,22 @@
 
 import tkinter as tk
 from PIL import Image, ImageTk
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import MainApp
+import os
 
 class BootScreen(tk.Frame):
-    def __init__(self, parent, controller, mqtt_client):
+    def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
 
         # Image cycling state
         self.image_paths = [
-            "../data/boot_image_1.png",
-            "../data/boot_image_2.png",
-            "../data/boot_image_3.png"
+            os.path.join(controller.image_path, 'boot_image_1.png'),
+            os.path.join(controller.image_path, 'boot_image_2.png'),
+            os.path.join(controller.image_path, 'boot_image_3.png')
         ]
         self.images = [ImageTk.PhotoImage(Image.open(path)) for path in self.image_paths]
         self.image_index = 0
