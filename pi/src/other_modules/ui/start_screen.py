@@ -35,8 +35,7 @@ class Screen1(tk.Frame):
 
     def on_button_click_motor(self, dir):
         self.dir = dir
-        print(f"[{datetime.datetime.now()}] Button pressed: Maze")
-        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir + "_" + str(self.motor_speed), qos=1)
+        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir + "_" + str(self.motor_speed))
         
 
     def on_release(self, event):

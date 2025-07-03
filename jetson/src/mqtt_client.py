@@ -54,8 +54,8 @@ class MQTTClientJetson(threading.Thread):
         Raises:
             None
         """
-        #print("Message received on topic '{}': {}".format(msg.topic, msg.payload.decode()))
-        print(f"[{datetime.datetime.now()}] Jetson received command: {msg.payload.decode()}")
+        print("Message received on topic '{}': {}".format(msg.topic, msg.payload.decode()))
+        #print(f"[{datetime.datetime.now()}] Jetson received command: {msg.payload.decode()}")
         if msg.topic == "jetson/state":
             self.jetson_state = msg.payload.decode()   
         elif msg.topic == "jetson/command":

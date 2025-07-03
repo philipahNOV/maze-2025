@@ -33,38 +33,36 @@ class MQTTClientPi(threading.Thread):
     def connect_to_broker(self):
         while not self.connected:
             try:
-                self.client.connect(self.broker_address, self.port, 60)
+                print(f"[MQTT] Attempting to connect to {self.broker_address}:{self.port}...")
+                self.client.connect(self.broker_address, self.port, keepalive=60)
                 self.client.loop_start()
-                print("Threads:", threading.enumerate())
-                self.connected = True
-                print("Successfully connected to broker")
-                #self.thread = threading.Thread(target=self.client.loop_forever, daemon=True)
-                #self.thread.start()
+                print("[MQTT] Connected. Waiting for on_connect callback...")
+                # Do not set self.connected = True here!
+                return  # Let on_connect() set it
             except Exception as e:
-                print(f"Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
+                print(f"[MQTT] Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
                 time.sleep(self.retry_interval)
-                self.retry_interval = min(self.retry_interval * 2, 60)  # Exponential backoff up to 60 seconds
+                self.retry_interval = min(self.retry_interval * 2, 30)  # backoff
 
     def set_app(self, app):
         self.app = app
 
     def on_connect(self, client, userdata, flags, rc, *args):
         if rc == 0:
-            print("Connected with result code " + str(rc))
+            print("[MQTT] on_connect: Success")
             self.connected = True
-            self.retry_interval = 1  # Reset retry interval after successful connection
-            # Subscribe to all necessary topics
+            self.retry_interval = 1
+            self.client.subscribe("handshake/response", qos=1)
+            self.client.subscribe("pi/command", qos=1)
             self.client.subscribe("camera/feed")
             self.client.subscribe("data/updates")
-            self.client.subscribe("pi/command")
             self.client.subscribe("pi/state")
-            self.client.subscribe("handshake/response")
             self.client.subscribe("jetson/path")
             #self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
-            self.connected = False
-            self.connect_to_broker()
+            #self.connected = False
+            #self.connect_to_broker()
 
     def on_message(self, client, userdata, msg):
         # Delegate to the appropriate handler based on the topic
