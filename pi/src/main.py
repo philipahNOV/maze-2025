@@ -74,7 +74,7 @@ class MainApp(tk.Tk):
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
         self.destroy()
-        os._exit(0)
+        sys.exit(0)
 
     def restart_program(self):
         print("Restart requested...")
@@ -88,9 +88,7 @@ class MainApp(tk.Tk):
         script = os.path.abspath(sys.argv[0])
         print(f"Launching new process: {python} {script}")
         subprocess.Popen([python, script], start_new_session=True)
-
-        # Exit immediately (no self.quit(), no self.destroy())
-        os._exit(0)
+        sys.exit(0)
 
 def signal_handler(sig, frame):
     print('Signal received:', sig)

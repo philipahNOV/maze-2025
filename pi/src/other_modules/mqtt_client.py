@@ -58,7 +58,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("data/updates")
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
-            #self.initiate_handshake()
+            self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
             #self.connected = False
@@ -104,7 +104,7 @@ class MQTTClientPi(threading.Thread):
     def initiate_handshake(self):
         print("[Pi] Starting handshake thread...")
         def handshake_loop():
-            time.sleep(3)
+            time.sleep(10)
             while not self.handshake_complete:
                 print("Initiating handshake with Jetson")
                 self.handshake("handshake/request", "pi")
