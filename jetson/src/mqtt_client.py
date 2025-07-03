@@ -19,8 +19,10 @@ class MQTTClientJetson(threading.Thread):
         self.arduino_connection = arduino_connection
         self.command_queue = Queue()
         self.running = True
-
         self.handshake_complete = False
+        self.stop_control = False
+        self.elevator = 0
+        self.pi_state = "None"
 
         try:
             self.client.connect(broker_address, port, 60)
@@ -28,7 +30,7 @@ class MQTTClientJetson(threading.Thread):
             raise ConnectionError(f"Failed to connect to MQTT broker: {e}")
 
         self.client.loop_start()
-        self.start()  # Start the thread that processes the command queue
+        self.start()  # Start background thread (optional if you want to process queue here)
 
     def on_connect(self, client, userdata, flags, rc, *args):
         print("Connected with result code " + str(rc))
@@ -62,34 +64,26 @@ class MQTTClientJetson(threading.Thread):
 
         elif topic == "jetson/command":
             self.command_queue.put(payload)
+            if payload == CMD_CONTROL:
+                self.stop_control = False
+            elif payload == CMD_STOP:
+                self.stop_control = True
 
         elif topic == "arduino/elevator":
-            print(f"Elevator value received: {payload}")
+            self.elevator = payload
 
         elif topic == "pi/response":
-            print(f"Pi response received: {payload}")
+            self.pi_state = payload
 
     def run(self):
+        # Optional: background thread that processes command queue (if you use this internally)
         while self.running:
             try:
                 command = self.command_queue.get(timeout=1)
-                self.process_command(command)
+                print(f"Command dequeued (from background thread): {command}")
+                # You could pass this to another handler here, or let your main script process it
             except Empty:
                 continue
-
-    def process_command(self, command):
-        print(f"Processing command: {command}")
-
-        if command == CMD_CONTROL:
-            print("Control resumed.")
-            # Example: self.arduino_connection.resume()
-        elif command == CMD_STOP:
-            print("Stop control activated.")
-            # Example: self.arduino_connection.stop()
-        else:
-            print(f"Forwarding custom command to Arduino: {command}")
-            if self.arduino_connection:
-                self.arduino_connection.send_command(command)
 
     def publish_image(self, image):
         self.client.publish("camera/feed", image, qos=0)
