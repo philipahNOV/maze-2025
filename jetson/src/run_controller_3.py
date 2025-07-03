@@ -8,6 +8,8 @@ import path_following
 import path_following_mpc
 from mqtt_client import MQTTClientJetson
 
+frame = None
+
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
@@ -72,6 +74,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     frame_warned = False
     try:
         while True:
+            global frame
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
@@ -85,8 +88,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
+            #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #    break
 
             if not ball_pos:
                 print("No ball found (run_controller)")
@@ -109,7 +112,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
-            cv2.imshow("Ball & Marker Tracking", frame)
+            #cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
