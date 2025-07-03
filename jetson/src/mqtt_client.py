@@ -75,16 +75,6 @@ class MQTTClientJetson(threading.Thread):
         elif topic == "pi/response":
             self.pi_state = payload
 
-    def run(self):
-        # Optional: background thread that processes command queue (if you use this internally)
-        while self.running:
-            try:
-                command = self.command_queue.get(timeout=1)
-                print(f"Command dequeued (from background thread): {command}")
-                # You could pass this to another handler here, or let your main script process it
-            except Empty:
-                continue
-
     def publish_image(self, image):
         self.client.publish("camera/feed", image, qos=0)
 
