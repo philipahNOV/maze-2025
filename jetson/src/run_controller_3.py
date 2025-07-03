@@ -93,9 +93,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 continue
 
             # Use path following instead of static control
-            print("BEFORE")
             pathFollower.follow_path(ball_pos)
-            print("AFTER")
 
             cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
@@ -109,7 +107,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
-            #cv2.imshow("Ball & Marker Tracking", frame)
+            cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
