@@ -48,7 +48,7 @@ class MainApp(tk.Tk):
         
         print("Frames initialized:", self.frames)
 
-        self.show_frame("BootScreen")
+        #self.show_frame("BootScreen")
 
         #self.mqtt_client.screen2_instance = self.frames["Screen2"]
 
