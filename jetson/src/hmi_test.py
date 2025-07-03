@@ -54,7 +54,7 @@ controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
     if run_controller_3.frame != None:
-        cv2.imshow(run_controller_3.frame, "test")
+        cv2.imshow("Ball & Marker Tracking", run_controller_3.frame)
 
     try:
         command = mqtt_client.command_queue.get_nowait()
