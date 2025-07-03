@@ -30,7 +30,7 @@ class MQTTClientJetson(threading.Thread):
             raise ConnectionError(f"Failed to connect to MQTT broker: {e}")
 
         self.client.loop_start()
-        self.start()  # Start background thread (optional if you want to process queue here)
+        self.start()
 
     def on_connect(self, client, userdata, flags, rc, *args):
         print("Connected with result code " + str(rc))
