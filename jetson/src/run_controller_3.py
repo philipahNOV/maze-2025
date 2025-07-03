@@ -72,13 +72,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     frame_warned = False
     try:
         while True:
-            print("running")
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
                     print("[WARN] Tracker returned empty frame. Waiting...")
                     frame_warned = True
-                print("[WARN] Tracker returned empty frame. Waiting...")
                 time.sleep(0.015)
                 continue
 
@@ -88,7 +86,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             ball_pos = smoother.update(ball_pos)
 
             if cv2.waitKey(1) & 0xFF == ord('q'):
-                print("HEEEEEELP")
                 break
 
             if not ball_pos:
@@ -96,7 +93,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 continue
 
             # Use path following instead of static control
+            print("BEFORE")
             pathFollower.follow_path(ball_pos)
+            print("AFTER")
 
             cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
             cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
@@ -113,7 +112,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
-                print("HEEEELP 2")
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
                 break
