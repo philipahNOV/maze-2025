@@ -34,7 +34,8 @@ class MainApp(tk.Tk):
 
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.image_path = os.path.abspath(os.path.join(self.script_dir, '..', 'data'))
-        self.logo_path = os.path.join(self.image_path, 'Logo.png')
+        self.logo_path = os.path.join(self.image_path, 'logo.png')
+        self.background_path = os.path.join(self.image_path, 'background.png')
 
         #self.data_handler = DataHandler(self.get_current_screen)
 
