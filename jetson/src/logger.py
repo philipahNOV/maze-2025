@@ -1,38 +1,31 @@
-import time
+# rl_logger.py
+import json
 import os
-import pickle
 
-class DataLogger:
-    def __init__(self, save_dir="ORL/logged_data", episode_id=None):
-        os.makedirs(save_dir, exist_ok=True)
-        self.save_dir = save_dir
-        self.episode = []
-        self.last_progress = 0
-        self.episode_id = episode_id or int(time.time())
+class OfflineLogger:
+    def __init__(self, save_path="ORL/rl_data", episode_limit=100):
+        self.episode_limit = episode_limit
+        self.current_episode = []
+        self.episodes = []
+        self.episode_counter = 0
+        os.makedirs(save_path, exist_ok=True)
+        self.save_path = save_path
 
-    def compute_reward(self, progress, goal_reached, wrong_way=False, fell=False, timeout=False):
-        if goal_reached:
-            return 1.0
-        elif fell or timeout:
-            return -1.0
-        elif wrong_way:
-            return -0.1
-        else:
-            delta_progress = progress - self.last_progress
-            self.last_progress = progress
-            return delta_progress - 0.01
-
-    def record(self, state, action, reward, next_state, done):
-        self.episode.append({
+    def log_step(self, state, action, reward, next_state, done):
+        self.current_episode.append({
             "state": state,
             "action": action,
             "reward": reward,
             "next_state": next_state,
             "done": done
         })
+        if done:
+            self.episodes.append(self.current_episode)
+            self.episode_counter += 1
+            self.save_episode()
+            self.current_episode = []
 
-    def save(self):
-        filename = os.path.join(self.save_dir, f"episode_{self.episode_id}.pkl")
-        with open(filename, 'wb') as f:
-            pickle.dump(self.episode, f)
-        print(f"[LOGGER] Saved {len(self.episode)} transitions to {filename}")
+    def save_episode(self):
+        path = os.path.join(self.save_path, f"episode_{self.episode_counter:03}.json")
+        with open(path, 'w') as f:
+            json.dump(self.episodes[-1], f, indent=2)
