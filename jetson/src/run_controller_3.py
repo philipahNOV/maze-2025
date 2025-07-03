@@ -69,10 +69,15 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
         for n in range(pathFollower.length):
             cv2.circle(frame, pathFollower.path[n], 5, (0, 0, 255), -1)
 
+    frame_warned = False
     try:
         while True:
             frame = tracker.frame
             if frame is None:
+                if not frame_warned:
+                    print("[WARN] Tracker returned empty frame. Waiting...")
+                    frame_warned = True
+                time.sleep(0.015)
                 continue
 
             #plot_waypoints(frame, pathFollower)  # Draw path on frame
@@ -106,6 +111,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
+                controller.arduinoThread.send_target_positions(0, 0)
                 break
 
     except KeyboardInterrupt:
@@ -113,7 +119,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     finally:
         #tracker.stop()
         cv2.destroyAllWindows()
-        print("[INFO] Tracker stopped.")
+        print("[INFO] Control thread exited.")
 
 if __name__ == "__main__":
     main()
