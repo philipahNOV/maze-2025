@@ -1,20 +1,24 @@
 import threading
 import paho.mqtt.client as mqtt
 from arduino_connection_test import ArduinoConnection
+from queue import Queue, Empty
 import time
 
 # Constants
 CMD_CONTROL = "Control"
 CMD_STOP = "Stop_control"
 
-class MQTTClientJetson:
+class MQTTClientJetson(threading.Thread):
     def __init__(self, arduino_connection: ArduinoConnection = None, broker_address="192.168.1.3", port=1883):
+        super().__init__()
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)  # type: ignore
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
         self.client.on_disconnect = self.on_disconnect
 
         self.arduino_connection = arduino_connection
+        self.command_queue = Queue()
+        self.running = True
 
         try:
             self.client.connect(broker_address, port, 60)
@@ -22,17 +26,12 @@ class MQTTClientJetson:
             raise ConnectionError(f"Failed to connect to MQTT broker: {e}")
 
         self.client.loop_start()
-
-        self.stop_control = False
-        self.elevator = 0
-        self.jetson_state = "None"
-        self.pi_state = "None"
+        self.start()  # Start the thread that processes the command queue
 
     def on_connect(self, client, userdata, flags, rc, *args):
         print("Connected with result code " + str(rc))
         self.client.subscribe("handshake/request")
         self.client.subscribe("jetson/command")
-        self.client.subscribe("jetson/state")
         self.client.subscribe("arduino/elevator")
         self.client.subscribe("pi/response")
 
@@ -59,25 +58,35 @@ class MQTTClientJetson:
                 self.client.publish("pi/command", "booted", qos=1)
 
         elif topic == "jetson/command":
-            if payload == CMD_STOP:
-                self.stop_control = True
-                print("Stop control activated.")
-            elif payload == CMD_CONTROL:
-                self.stop_control = False
-                print("Control resumed.")
-            else:
-                print(f"Executing custom command: {payload}")
-                # Execute or forward command immediately here if needed
-                # Example: self.arduino_connection.send_command(payload)
-
-        elif topic == "jetson/state":
-            self.jetson_state = payload
-
-        elif topic == "pi/response":
-            self.pi_state = payload
+            self.command_queue.put(payload)
 
         elif topic == "arduino/elevator":
-            self.elevator = payload
+            print(f"Elevator value received: {payload}")
+
+        elif topic == "pi/response":
+            print(f"Pi response received: {payload}")
+
+    def run(self):
+        while self.running:
+            try:
+                command = self.command_queue.get(timeout=1)
+                self.process_command(command)
+            except Empty:
+                continue
+
+    def process_command(self, command):
+        print(f"Processing command: {command}")
+
+        if command == CMD_CONTROL:
+            print("Control resumed.")
+            # Example: self.arduino_connection.resume()
+        elif command == CMD_STOP:
+            print("Stop control activated.")
+            # Example: self.arduino_connection.stop()
+        else:
+            print(f"Forwarding custom command to Arduino: {command}")
+            if self.arduino_connection:
+                self.arduino_connection.send_command(command)
 
     def publish_image(self, image):
         self.client.publish("camera/feed", image, qos=0)
@@ -87,5 +96,6 @@ class MQTTClientJetson:
 
     def stop(self):
         print("Stopping Jetson MQTT client...")
+        self.running = False
         self.client.loop_stop()
         self.client.disconnect()
