@@ -42,10 +42,11 @@ except Exception as e:
     print(e)
     exit(1)
 
-print("Waiting for command from Pi...")
-while mqtt_client.command_queue.empty():
-    time.sleep(0.1)
-print("Connected to Pi via MQTT!")
+print("Waiting for handshake from Pi...")
+while not mqtt_client.handshake_complete:
+    time.sleep(1)
+
+print("Connected to Pi!")
 
 tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
 tracker.start()
