@@ -104,7 +104,7 @@ class MQTTClientPi(threading.Thread):
     def initiate_handshake(self):
         print("[Pi] Starting handshake thread...")
         def handshake_loop():
-            time.sleep(10)
+            time.sleep(3)
             while not self.handshake_complete:
                 print("Initiating handshake with Jetson")
                 self.handshake("handshake/request", "pi")
