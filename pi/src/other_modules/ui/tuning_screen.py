@@ -1,12 +1,13 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import font as tkfont
-
+import os
+from main import MainApp
 import time
 
 
 class Tuning(tk.Frame):
-    def __init__(self, parent, controller, mqtt_client):
+    def __init__(self, parent, controller: MainApp, mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
@@ -17,7 +18,7 @@ class Tuning(tk.Frame):
         self.input_frame = tk.Frame(self)
         self.input_frame.place(x=100, y=130)
 
-        self.image = ImageTk.PhotoImage(Image.open('../data/start_screen.png'))
+        self.image = ImageTk.PhotoImage(Image.open(os.path.join(controller.image_path, 'start_screen.png')))
 
         # Layout the widgets including the logo
         self.create_widgets()
