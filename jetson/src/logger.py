@@ -3,7 +3,7 @@ import json
 import os
 
 class OfflineLogger:
-    def __init__(self, save_path="rl_data", episode_limit=100):
+    def __init__(self, save_path="ORL/rl_data", episode_limit=100):
         self.episode_limit = episode_limit
         self.current_episode = []
         self.episodes = []
