@@ -109,11 +109,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
-            #cv2.imshow("Ball & Marker Tracking", frame)
+            cv2.imshow("Ball & Marker Tracking", frame)
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
+                cv2.destroyAllWindows()
                 break
 
     except KeyboardInterrupt:
