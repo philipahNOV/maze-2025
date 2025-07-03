@@ -53,6 +53,9 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
+    if run_controller_3.frame != None:
+        cv2.imshow(run_controller_3.frame, "test")
+
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
@@ -119,3 +122,5 @@ while True:
             arduino_thread.send_target_positions(0, -speed)
 
     time.sleep(0.01)
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
