@@ -126,8 +126,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     finally:
         #tracker.stop()
         cv2.destroyAllWindows()
-        cv2.waitKey(1)
-        time.sleep(0.2)
         print("[INFO] Control thread exited.")
 
 if __name__ == "__main__":
