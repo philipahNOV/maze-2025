@@ -7,7 +7,7 @@ if TYPE_CHECKING:
 import os
 
 class BootScreen(tk.Frame):
-    def __init__(self, parent, controller: MainApp, mqtt_client):
+    def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
