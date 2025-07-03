@@ -4,7 +4,9 @@ from tkinter import font as tkfont
 import datetime
 import time
 import os
-from main import MainApp
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from main import MainApp
 
 
 class Screen1(tk.Frame):
