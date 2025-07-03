@@ -20,6 +20,8 @@ class MQTTClientJetson(threading.Thread):
         self.command_queue = Queue()
         self.running = True
 
+        self.handshake_complete = False
+
         try:
             self.client.connect(broker_address, port, 60)
         except Exception as e:
@@ -56,6 +58,7 @@ class MQTTClientJetson(threading.Thread):
                 print("Received handshake request from Pi")
                 self.client.publish("handshake/response", "ack", qos=1)
                 self.client.publish("pi/command", "booted", qos=1)
+                self.handshake_complete = True
 
         elif topic == "jetson/command":
             self.command_queue.put(payload)
