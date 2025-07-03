@@ -106,12 +106,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
-                return
+                break
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
     finally:
-        tracker.stop()
+        #tracker.stop()
         cv2.destroyAllWindows()
         print("[INFO] Tracker stopped.")
 
