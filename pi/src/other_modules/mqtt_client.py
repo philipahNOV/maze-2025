@@ -35,6 +35,7 @@ class MQTTClientPi(threading.Thread):
             try:
                 self.client.connect(self.broker_address, self.port, 60)
                 self.client.loop_start()
+                print("Threads:", threading.enumerate())
                 self.connected = True
                 print("Successfully connected to broker")
                 #self.thread = threading.Thread(target=self.client.loop_forever, daemon=True)
@@ -59,7 +60,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("pi/state")
             self.client.subscribe("handshake/response")
             self.client.subscribe("jetson/path")
-            self.initiate_handshake()
+            #self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
             self.connected = False

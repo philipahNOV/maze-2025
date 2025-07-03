@@ -1,7 +1,7 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from tkinter import font as tkfont
-
+import datetime
 import time
 
 
@@ -35,7 +35,9 @@ class Screen1(tk.Frame):
 
     def on_button_click_motor(self, dir):
         self.dir = dir
-        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir + "_" + str(self.motor_speed))
+        print(f"[{datetime.datetime.now()}] Button pressed: Maze")
+        self.mqtt_client.client.publish("jetson/command", "Motor_" + dir + "_" + str(self.motor_speed), qos=1)
+        
 
     def on_release(self, event):
         self.dir = None
