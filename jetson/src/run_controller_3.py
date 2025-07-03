@@ -112,6 +112,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
+                cv2.destroyAllWindows()
                 break
 
     except KeyboardInterrupt:
