@@ -1,1 +1,20 @@
 # nov-maze-2024
+Server listening on 5201
+-----------------------------------------------------------
+Accepted connection from 192.168.1.2, port 38106
+[  5] local 192.168.1.3 port 5201 connected to 192.168.1.2 port 38114
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-1.00   sec   107 MBytes   895 Mbits/sec                  
+[  5]   1.00-2.00   sec   111 MBytes   933 Mbits/sec                  
+[  5]   2.00-3.00   sec  6.35 MBytes  53.2 Mbits/sec                  
+[  5]   3.00-4.00   sec  5.35 MBytes  44.9 Mbits/sec                  
+[  5]   4.00-5.00   sec   112 MBytes   938 Mbits/sec                  
+[  5]   5.00-6.00   sec   112 MBytes   938 Mbits/sec                  
+[  5]   6.00-7.00   sec   111 MBytes   934 Mbits/sec                  
+[  5]   7.00-8.00   sec   112 MBytes   939 Mbits/sec                  
+[  5]   8.00-9.00   sec   112 MBytes   939 Mbits/sec                  
+[  5]   9.00-10.00  sec   112 MBytes   940 Mbits/sec                  
+[  5]  10.00-10.04  sec  4.45 MBytes   941 Mbits/sec                  
+- - - - - - - - - - - - - - - - - - - - - - - - -
+[ ID] Interval           Transfer     Bitrate
+[  5]   0.00-10.04  sec   905 MBytes   756 Mbits/sec                  receiver
