@@ -69,7 +69,7 @@ class ArduinoConnection(threading.Thread):
         """Internal method to format and queue a command."""
         with self.condition:
             # Lager en kommando-streng fra alle argumentene pluss state
-            command_parts = [str(state.value)] + list(map(str, args))
+            command_parts = list(map(str, args)) + [str(state.value)]
             self.command_to_send = ",".join(command_parts) + "\n"
             self.condition.notify()
     
