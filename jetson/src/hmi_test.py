@@ -54,7 +54,7 @@ controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
     # === Display frame from control thread, if any ===
-    if mqtt_client.control_thread and mqtt_client.control_thread.is_alive():
+    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
         try:
             frame = run_controller_3.frame_queue.get_nowait()
             print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
