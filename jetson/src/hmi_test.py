@@ -84,6 +84,7 @@ while True:
         dt = now - last_frame_time
         if dt > 0.0001:
             fps = 0.9 * fps + 0.1 * (1.0 / dt)  # exponential smoothing
+        last_frame_time = now
         cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
             cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
         
