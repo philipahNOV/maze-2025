@@ -1,4 +1,4 @@
-import testing.yolov1.hsv3 as tracking
+import testing.yolov1.hsv4 as tracking
 import time
 import cv2
 import positionController_2
@@ -81,13 +81,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 time.sleep(0.015)
                 continue
 
-            #now = time.time()
-            #dt = now - last_frame_time
-            #if dt > 0.00001:
-            #    fps = 0.9 * fps + 0.1 * (1.0 / dt)  # Smooth update
-            #last_frame_time = now
-            #cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
-            #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+            now = time.time()
+            dt = now - last_frame_time
+            if dt > 0.00001:
+                fps = 0.9 * fps + 0.1 * (1.0 / dt)  # Smooth update
+            last_frame_time = now
+            cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
             ball_pos = tracker.get_position()
 
@@ -114,13 +114,9 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
-            cv2.imshow("Ball & Marker Tracking", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
             #cv2.imshow("Ball & Marker Tracking", frame)
-            #if not frame_queue.full():
-                #frame_queue.put_nowait(frame.copy())
+            if not frame_queue.full():
+                frame_queue.put_nowait(frame.copy())
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
