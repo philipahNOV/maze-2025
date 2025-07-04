@@ -33,7 +33,6 @@ def main(tracker: tracking.BallTracker,
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.4)
     image_controller = ImageController()
-    blinker_stop_event = threading.Event()
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
@@ -77,20 +76,15 @@ def main(tracker: tracking.BallTracker,
             ball_pos = tracker.get_position()
 
             if ball_pos is not None:
-                if hasattr(mqtt_client, "blinker_thread") and mqtt_client.blinker_thread.is_alive():
-                    blinker_stop_event.set()  # tells the thread to exit
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
             else:
-                if not hasattr(mqtt_client, "blinker_thread") or not mqtt_client.blinker_thread.is_alive():
-                    blinker_stop_event.clear()
-                    mqtt_client.blinker_thread = threading.Thread(
-                        target=light_controller.blinking_red,
-                        args=(controller.arduinoThread, blinker_stop_event),
-                        daemon=True
-                    )
-                    mqtt_client.blinker_thread.start()
+                threading.Thread(
+                    target=light_controller.blinking_red,
+                    args=(controller.arduinoThread,),
+                    daemon=True
+                ).start()
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
