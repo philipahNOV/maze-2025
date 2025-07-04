@@ -5,6 +5,7 @@ import datetime
 import time
 import os
 from typing import TYPE_CHECKING
+import cv2
 if TYPE_CHECKING:
     from main import MainApp
 
@@ -18,6 +19,7 @@ class Screen1(tk.Frame):
         self.dir = None
 
         self.image = ImageTk.PhotoImage(Image.open(os.path.join(controller.image_path, 'start_screen.png')))
+        self.update_image()
 
         # Layout the widgets including the logo
         self.create_widgets()
@@ -53,6 +55,15 @@ class Screen1(tk.Frame):
         self.motor_speed = int(value)
         if self.dir:
             self.on_button_click_motor(self.dir)
+
+    def update_image(self):
+        if self.mqtt_client.img is not None:
+            frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.image_label.imgtk = imgtk
+            self.image_label.config(image=imgtk)
+        self.after(200, self.update_image)  # update every 200 ms
 
     def create_widgets(self):
         self.update()

@@ -3,7 +3,7 @@ import paho.mqtt.client as mqtt
 import time
 import base64
 import numpy as np
-#import cv
+import cv2
 from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
@@ -23,6 +23,7 @@ class MQTTClientPi(threading.Thread):
         self.jetson_path = "None"
         self.screen2_instance = None
         self.ball_info = None
+        self.img = None
         
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
@@ -54,7 +55,7 @@ class MQTTClientPi(threading.Thread):
             self.retry_interval = 1
             self.client.subscribe("handshake/response", qos=1)
             self.client.subscribe("pi/command", qos=1)
-            self.client.subscribe("camera/feed")
+            self.client.subscribe("pi/camera")
             self.client.subscribe("data/updates")
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
@@ -95,6 +96,14 @@ class MQTTClientPi(threading.Thread):
             self.jetson_path = msg.payload.decode()
         elif msg.topic == "ball/info":
             self.ball_info = msg.payload.decode()
+        elif msg.topic == "pi/camera":
+            try:
+                image_data = base64.b64decode(msg.payload)
+                nparr = np.frombuffer(image_data, np.uint8)
+                frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                self.img = frame
+            except Exception as e:
+                print(f"[ERROR] Failed to decode image: {e}")
         else:
             print(f"Received message on unhandled topic: {msg.topic}")  # Debugging line
 

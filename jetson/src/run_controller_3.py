@@ -68,10 +68,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     controller.horizontal()
     time.sleep(2)
 
-    def plot_waypoints(frame, pathFollower: path_following.PathFollower):  # Draw waypoints on frame
-        for n in range(pathFollower.length):
-            cv2.circle(frame, pathFollower.path[n], 5, (0, 0, 255), -1)
-
     frame_warned = False
     try:
         while True:

@@ -54,6 +54,12 @@ def get_frame(mqtt_client, frame_queue):
             pass
     return None
 
+def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
+        _, buffer = cv2.imencode('.jpg', frame)
+        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+
+        mqtt_client.client.publish("pi/camera", jpg_as_text)
+
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(1)
@@ -63,11 +69,15 @@ print("Connected to Pi!")
 tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
 tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
-
+last_sent_frame_time = time.time()
+frame_send_hz = 5
 while True:
 
     frame = get_frame(mqtt_client, run_controller_3.frame_queue)
     if frame is not None:
+        if time.time() > last_sent_frame_time + 1/frame_send_hz:
+            send_frame_to_pi(mqtt_client, frame)
+            last_sent_frame_time = time.time()
         cv2.imshow("Ball & Marker Tracking", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
