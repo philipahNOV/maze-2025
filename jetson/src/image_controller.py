@@ -3,11 +3,11 @@ import cv2
 
 class ImageController():
     def __init__(self):
-        self.frame_corners = [[(390, 10), (1120, 10)], [(390, 720), (390, 1120)]]
+        self.frame_corners = [[(390, 10), (1120, 10)], [(390, 720), (1120, 720)]]
         self.frame = None
 
     def draw_waypoints(self, pathFollower: PathFollower):
-        if self.frame == None: return
+        if self.frame is None: return
 
         for i in range(pathFollower.length):
                 if i < pathFollower.next_waypoint:
