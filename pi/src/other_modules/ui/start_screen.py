@@ -60,7 +60,7 @@ class Screen1(tk.Frame):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
-            img = img.resize((320, 240), Image.ANTIALIAS)
+            img = img.resize((320, 240), Image.Resampling.LANCZOS)
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
