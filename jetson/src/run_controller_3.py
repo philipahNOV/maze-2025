@@ -84,7 +84,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             now = time.time()
             dt = now - last_frame_time
             if dt > 0.00001:
-                fps = 1.0 / dt
+                fps = 0.9 * fps + 0.1 * (1.0 / dt)  # Smooth update
             last_frame_time = now
             cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
@@ -103,6 +103,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                             cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
             else:
                 controller.arduinoThread.send_target_positions(0, 0)
+                ball_pos = smoother.update(ball_pos)
 
             for i in range(pathFollower.length):
                 if i < pathFollower.next_waypoint:
@@ -115,7 +116,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
 
             #cv2.imshow("Ball & Marker Tracking", frame)
             if not frame_queue.full():
-                print(frame.size)
                 frame_queue.put_nowait(frame.copy())
 
             if mqtt_client.stop_control:
