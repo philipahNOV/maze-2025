@@ -54,13 +54,14 @@ controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
     # === Display frame from control thread, if any ===
-    if mqtt_client.control_thread and mqtt_client.control_thread.is_alive():
+    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
         try:
             frame = run_controller_3.frame_queue.get_nowait()
-            print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
-            cv2.imshow("Ball & Marker Tracking", frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break  # or trigger shutdown
+            if frame.mean() > 1:
+                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
+                cv2.imshow("Ball & Marker Tracking", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  # or trigger shutdown
         except queue.Empty:
             pass
     else:
