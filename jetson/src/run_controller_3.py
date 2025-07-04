@@ -68,11 +68,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     controller.horizontal()
     time.sleep(2)
 
-    last_frame_time = time.time()
-    fps = 0.0
+    
+    TARGET_HZ = 60
+    LOOP_DT = 1.0 / TARGET_HZ
     frame_warned = False
     try:
         while True:
+            loop_start = time.time()
+
             frame = tracker.frame
             if frame is None:
                 if not frame_warned:
@@ -81,19 +84,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 time.sleep(0.015)
                 continue
 
-            #now = time.time()
-            #dt = now - last_frame_time
-            #if dt > 0.00001:
-            #    fps = 0.9 * fps + 0.1 * (1.0 / dt)  # Smooth update
-            #last_frame_time = now
-            #cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
-            #    cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-
             ball_pos = tracker.get_position()
-
-            #if not ball_pos:
-            #    print("No ball found (run_controller)")
-            #    continue
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
@@ -118,7 +109,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
-            #cv2.imshow("Ball & Marker Tracking", frame)
             #if not frame_queue.full():
                 #frame_queue.put_nowait(frame.copy())
 
@@ -127,6 +117,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 controller.arduinoThread.send_target_positions(0, 0)
                 cv2.destroyAllWindows()
                 break
+
+            # === Maintain 60 Hz ===
+            loop_duration = time.time() - loop_start
+            sleep_time = LOOP_DT - loop_duration
+            print(sleep_time)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
     except KeyboardInterrupt:
         print("\n[INFO] Interrupted by user.")
