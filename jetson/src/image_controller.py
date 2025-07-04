@@ -84,5 +84,5 @@ class ImageController:
         self.draw_waypoints(pathFollower)
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
-        self.send_frame_to_pi(mqtt_client)
+        #self.send_frame_to_pi(mqtt_client)
         return self.cropped_frame
