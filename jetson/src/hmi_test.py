@@ -2,11 +2,9 @@ from mqtt_client import MQTTClientJetson
 from arduino_connection_test import ArduinoConnection
 import run_controller_3
 import positionController_2
-import testing.yolov1.hsv3 as tracking
+import YOLO_tracking.hsv3 as tracking
 import queue
 import threading
-import maze_solver
-from manual_part.manuel_main import elManuel
 import time
 import cv2
 import base64

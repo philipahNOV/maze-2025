@@ -1,15 +1,10 @@
 from mqtt_client import MQTTClientJetson
-from math_part.math_main import State1_3
-from ai_part.ai_main import State2_3
 from arduino_connection_test import ArduinoConnection
-from camera.cam_loop import CameraThread
-from automatic import Automatic
 import run_controller_4
 import positionController_2
-import testing.yolov1.hsv3 as tracking
+import YOLO_tracking.hsv3 as tracking
 import queue
 import threading
-import maze_solver
 
 import time
 import cv2
@@ -96,8 +91,6 @@ while True:
     elif command == "Horizontal":
         controller.horizontal()
         mqtt_client.command = None
-    elif command == "Maze":
-        maze_solver.main(tracker)
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
