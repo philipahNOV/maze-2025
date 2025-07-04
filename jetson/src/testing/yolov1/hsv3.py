@@ -63,7 +63,7 @@ class BallTracker:
         init_params.depth_mode = sl.DEPTH_MODE.NONE
         init_params.coordinate_units = sl.UNIT.MILLIMETER
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
-            raise RuntimeError("ZED camera failed to open")
+            raise RuntimeError("ZED camera failed to open.")
 
     def grab_frame(self):
         image = sl.Mat()
@@ -138,8 +138,8 @@ class BallTracker:
     def consumer_loop(self):
         while self.running:
             with self.lock:
-                rgb_frame = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
-                bgr_frame = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
+                rgb_frame = self.latest_rgb_frame#.copy() if self.latest_rgb_frame is not None else None
+                bgr_frame = self.latest_bgr_frame#.copy() if self.latest_bgr_frame is not None else None
 
             if rgb_frame is None or bgr_frame is None:
                 time.sleep(0.01)
@@ -165,7 +165,6 @@ class BallTracker:
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
             else:
-                # --- Ball tracking with HSV ---
                 label = "ball"
                 hsv_lower, hsv_upper = self.HSV_RANGES["ball"]
                 prev_pos = self.tracked_objects[label]["position"]
@@ -183,10 +182,16 @@ class BallTracker:
                             with self.yolo_lock:
                                 self.yolo_request = True
 
-                            time.sleep(0.05)  # Small pause to let yolo_thread respond
-                            with self.yolo_lock:
-                                results = self.yolo_result
-                                self.yolo_result = None
+                            # Poll for YOLO result (max wait: 50ms)
+                            wait_start = time.time()
+                            results = None
+                            while time.time() - wait_start < 0.05:
+                                with self.yolo_lock:
+                                    if self.yolo_result is not None:
+                                        results = self.yolo_result
+                                        self.yolo_result = None
+                                        break
+                                time.sleep(0.001)
 
                             if results:
                                 for box in results.boxes:
@@ -203,7 +208,7 @@ class BallTracker:
                         else:
                             self.tracked_objects["ball"]["position"] = None
 
-                # --- Marker tracking ---
+
                 for label in self.tracked_objects:
                     if label == "ball":
                         continue
@@ -218,7 +223,6 @@ class BallTracker:
 
             self.frame = bgr_frame
             time.sleep(0.005)
-
 
     def start(self):
         self.init_camera()
