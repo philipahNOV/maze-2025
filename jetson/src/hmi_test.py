@@ -51,6 +51,7 @@ print("Connected to Pi!")
 tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
 tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
+window_open = False
 
 while True:
     # === Display frame from control thread, if any ===
@@ -59,12 +60,14 @@ while True:
             frame = run_controller_3.frame_queue.get_nowait()
             print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
             cv2.imshow("Ball & Marker Tracking", frame)
+            window_open = True
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break  # or trigger shutdown
         except queue.Empty:
             pass
-    else:
+    elif window_open:
         cv2.destroyWindow("Ball & Marker Tracking")
+        window_open = False
 
     try:
         command = mqtt_client.command_queue.get_nowait()
