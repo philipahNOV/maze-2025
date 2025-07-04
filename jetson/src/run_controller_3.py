@@ -13,7 +13,8 @@ import base64
 frame_queue = queue.Queue(maxsize=1)
 
 def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
-        _, buffer = cv2.imencode('.jpg', frame)
+        resized = cv2.resize(frame, (320, 240), interpolation=cv2.INTER_AREA)
+        _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
         jpg_as_text = base64.b64encode(buffer).decode('utf-8')
 
         mqtt_client.client.publish("pi/camera", jpg_as_text)
@@ -77,7 +78,7 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     time.sleep(2)
 
     last_sent_frame_time = time.time()
-    frame_send_hz = 5
+    frame_send_hz = 10
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
     frame_warned = False
@@ -114,11 +115,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
+            x1, y1, x2, y2 = 390, 10, 1120, 720
+            cropped_frame = frame[y1:y2, x1:x2]
+
             if time.time() > last_sent_frame_time + 1/frame_send_hz:
-                send_frame_to_pi(mqtt_client, frame)
+                send_frame_to_pi(mqtt_client, cropped_frame)
                 last_sent_frame_time = time.time()
 
-            cv2.imshow("Ball & Marker Tracking", frame)
+            cv2.imshow("Ball & Marker Tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
