@@ -93,7 +93,7 @@ class ArduinoConnection(threading.Thread):
             speed1 (int): The speed for motor 1.
             speed2 (int): The speed for motor 2.
         """
-        self._send_command(ArduinoState.CONTROL, speed1, speed2)
+        self._send_command(ArduinoState.CONTROL, int(speed1), int(speed2))
 
     def send_color(self, r: int, g: int, b: int):
         """
@@ -104,7 +104,7 @@ class ArduinoConnection(threading.Thread):
             g (int): The green component of the color.
             b (int): The blue component of the color.
         """
-        self._send_command(ArduinoState.SET_COLOR, r, g, b)
+        self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b))
 
     def run(self):
         """
