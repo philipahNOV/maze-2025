@@ -33,31 +33,6 @@ except Exception as e:
     print(e)
     exit(1)
 
-def get_frame(mqtt_client, frame_queue):
-    # === Display frame from control thread, if any ===
-    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
-        try:
-            frame = frame_queue.get_nowait()
-
-            # Check if frame has meaningful content
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
-                return frame
-        except queue.Empty:
-            pass
-    else:
-        try:
-            cv2.destroyWindow("Ball & Marker Tracking")
-        except:
-            pass
-    return None
-
-def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
-        _, buffer = cv2.imencode('.jpg', frame)
-        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-
-        mqtt_client.client.publish("pi/camera", jpg_as_text)
-
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(1)
@@ -67,11 +42,6 @@ print("Connected to Pi!")
 tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
 tracker.start()
 controller = position_controller.Controller(arduino_thread, tracker)
-last_sent_frame_time = time.time()
-frame_send_hz = 5
-
-target_fps = 60
-target_frame_time = 1.0 / target_fps  # ~16.67ms
 
 
 while True:
@@ -90,14 +60,11 @@ while True:
             if params[i] != "pass":
                 params[i] = float(params[i])
         controller.set_pid_parameters(params)
-        mqtt_client.command = None
 
     elif command == "Elevator":
-        arduino_thread.send_speed(0, 0, "Get_ball")
-        mqtt_client.command = None
+        arduino_thread.send_get_ball()
     elif command == "Idle":
-        arduino_thread.send_speed(0, 0, "Idle")
-        mqtt_client.command = None
+        arduino_thread.send_idle()
     elif command == "Get_pid":
         pid_str = (
             "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," + str(controller.kp_x)
@@ -107,8 +74,6 @@ while True:
         mqtt_client.client.publish("pi/command", pid_str)
         
     elif command == "Control":
-        #run_controller_3.main(tracker, controller, mqtt_client)
-        #mqtt_client.command = None
         mqtt_client.stop_control = False
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
@@ -119,15 +84,12 @@ while True:
             mqtt_client.control_thread.start()
         else:
             print("[INFO] Control loop already running")
-        mqtt_client.command = None
     elif command == "Horizontal":
         controller.horizontal()
-        mqtt_client.command = None
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
             arduino_thread.send_speed(0, 0)
-            mqtt_client.command = None
             continue
         speed = int(command.split("_")[2])
         if dir == "up":
