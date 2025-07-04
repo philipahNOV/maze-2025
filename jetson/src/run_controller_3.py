@@ -8,8 +8,21 @@ import path_following
 import path_following_mpc
 from mqtt_client import MQTTClientJetson
 import queue
+import base64
 
 frame_queue = queue.Queue(maxsize=1)
+
+def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
+        scale = 0.5  # 50% of original size
+        height, width = frame.shape[:2]
+        new_size = (int(width * scale), int(height * scale))
+
+        resized = cv2.resize(frame, new_size, interpolation=cv2.INTER_AREA)
+        _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+
+        mqtt_client.client.publish("pi/camera", jpg_as_text)
+
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
@@ -68,10 +81,12 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     controller.horizontal()
     time.sleep(2)
 
-    
+    last_sent_frame_time = time.time()
+    frame_send_hz = 5
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
     frame_warned = False
+    x1, y1, x2, y2 = 390, 10, 1120, 720
     try:
         while True:
             loop_start = time.time()
@@ -105,7 +120,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
 
-            cv2.imshow("Ball & Marker Tracking", frame)
+            cropped_frame = frame[y1:y2, x1:x2]
+            cropped_frame = cv2.rotate(cropped_frame, cv2.ROTATE_180)
+
+            if time.time() > last_sent_frame_time + 1/frame_send_hz:
+                send_frame_to_pi(mqtt_client, cropped_frame)
+                last_sent_frame_time = time.time()
+
+            cv2.imshow("Ball & Marker Tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 

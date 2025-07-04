@@ -60,6 +60,7 @@ class Screen1(tk.Frame):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
+            #img = img.resize((320, 240), Image.Resampling.LANCZOS)
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
@@ -71,7 +72,7 @@ class Screen1(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.image_label = tk.Label(self)
-        self.image_label.place(x=30, y=50, width=320, height=240)
+        self.image_label.place(x=30, y=50, width=320, height=320)
 
         self.example_button = tk.Button(
             self,
