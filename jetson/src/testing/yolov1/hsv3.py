@@ -38,8 +38,9 @@ class BallTracker:
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
 
-        self.lost_counters = {label: 0 for label in self.tracked_objects}
-        self.lost_threshold = 5
+        self.hsv_fail_counter = 0
+        self.hsv_fail_threshold = 3
+
 
         print("Loading tracking model...")
         self.model = YOLO(model_path)
@@ -91,6 +92,11 @@ class BallTracker:
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
         return (cx, cy)
+    
+    def global_hsv_search(self, frame, hsv_lower, hsv_upper):
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+        return self.get_center_of_mass(mask)
 
     def hsv_tracking(self, frame, prev_pos, hsv_lower, hsv_upper):
         h, w = frame.shape[:2]
@@ -109,36 +115,6 @@ class BallTracker:
             cx, cy = local_center
             return (x_min + cx, y_min + cy)
         return None
-    
-    def track_or_redetect(self, label, bgr_frame, rgb_frame):
-        is_ball = "ball" in label
-        hsv_lower, hsv_upper = self.HSV_RANGES["ball" if is_ball else "marker"]
-        prev_pos = self.tracked_objects[label]["position"]
-
-        # test
-        new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
-
-        if new_pos:
-            self.tracked_objects[label]["position"] = new_pos
-            self.lost_counters[label] = 0
-        else:
-            self.lost_counters[label] += 1
-
-            # lost here
-            if self.lost_counters[label] >= self.lost_threshold:
-                self.tracked_objects[label]["position"] = None  # hmmm
-                results = self.model.predict(source=rgb_frame, conf=0.6)[0]
-                for box in results.boxes:
-                    cls = int(box.cls[0])
-                    yolo_label = self.model.names[cls]
-                    if yolo_label == label:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cx = (x1 + x2) // 2
-                        cy = (y1 + y2) // 2
-                        self.tracked_objects[label]["position"] = (cx, cy)
-                        self.lost_counters[label] = 0
-                        break
-
 
     def consumer_loop(self):
         while self.running:
@@ -160,7 +136,8 @@ class BallTracker:
                     cy = (y1 + y2) // 2
 
                     if label == "ball":
-                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
+                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
+                        self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
                             self.ball_confirm_counter += 1
                             self.tracked_objects["ball"]["position"] = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
@@ -169,9 +146,38 @@ class BallTracker:
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
             else:
-                # use HSV tracking after ball has been initialized
+                label = "ball"
+                hsv_lower, hsv_upper = self.HSV_RANGES["ball"]
+                prev_pos = self.tracked_objects[label]["position"]
+                new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
+
+                if new_pos:
+                    self.tracked_objects[label]["position"] = new_pos
+                    self.hsv_fail_counter = 0
+                else:
+                    self.hsv_fail_counter += 1
+
+                    if self.hsv_fail_counter >= self.hsv_fail_threshold:
+                        global_pos = self.global_hsv_search(bgr_frame, hsv_lower, hsv_upper)
+                        if global_pos:
+                            results = self.model.predict(source=rgb_frame, conf=0.6)[0]
+                            for box in results.boxes:
+                                cls = int(box.cls[0])
+                                yolo_label = self.model.names[cls]
+                                if yolo_label == "ball":
+                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                    cx = (x1 + x2) // 2
+                                    cy = (y1 + y2) // 2
+                                    self.tracked_objects["ball"]["position"] = (cx, cy)
+                                    self.hsv_fail_counter = 0
+                                    break
+                        else:
+                            self.tracked_objects["ball"]["position"] = None
+
                 for label in self.tracked_objects:
-                    hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
+                    if label == "ball":
+                        continue
+                    hsv_lower, hsv_upper = self.HSV_RANGES["marker"]
                     prev_pos = self.tracked_objects[label]["position"]
                     new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
                     if new_pos:
@@ -179,7 +185,6 @@ class BallTracker:
 
             self.frame = bgr_frame
             time.sleep(0.005)
-
 
     def start(self):
         self.init_camera()
