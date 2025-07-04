@@ -138,7 +138,6 @@ def draw_path(image, path, waypoints, start, goal):
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
-
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
