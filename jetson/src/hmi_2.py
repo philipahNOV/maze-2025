@@ -1,7 +1,7 @@
 from mqtt_client import MQTTClientJetson
-from arduino_connection_test import ArduinoConnection
-import run_controller_4
-import positionController_2
+from arduino_connection import ArduinoConnection
+import run_controller_astar
+import position_controller
 import YOLO_tracking.hsv3 as tracking
 import queue
 import threading
@@ -41,7 +41,7 @@ print("Connected to Pi!")
 
 tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
 tracker.start()
-controller = positionController_2.Controller(arduino_thread, tracker)
+controller = position_controller.Controller(arduino_thread, tracker)
 
 while True:
     try:
@@ -80,7 +80,7 @@ while True:
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.stop_control = False
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_4.main,
+                target=run_controller_astar.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )

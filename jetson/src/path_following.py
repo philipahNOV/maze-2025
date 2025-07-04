@@ -1,4 +1,4 @@
-import positionController_2
+import position_controller
 import numpy as np
 import time
 
@@ -26,7 +26,7 @@ class PathFollower:
             automatic recovery if the object is stuck or goes behind a previously visited waypoint.
     """
 
-    def __init__(self, path_array, controller: positionController_2.Controller):
+    def __init__(self, path_array, controller: position_controller.Controller):
 
         self.path = []
         self.length = 0
