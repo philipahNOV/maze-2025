@@ -1,7 +1,7 @@
 from mqtt_client import MQTTClientJetson
-from arduino_connection_test import ArduinoConnection
+from arduino_connection import ArduinoConnection
 import run_controller
-import positionController_2
+import position_controller
 import YOLO_tracking.hsv3 as tracking
 import queue
 import threading
@@ -66,7 +66,7 @@ print("Connected to Pi!")
 
 tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
 tracker.start()
-controller = positionController_2.Controller(arduino_thread, tracker)
+controller = position_controller.Controller(arduino_thread, tracker)
 last_sent_frame_time = time.time()
 frame_send_hz = 5
 

@@ -1,6 +1,6 @@
 import threading
 import paho.mqtt.client as mqtt
-from arduino_connection_test import ArduinoConnection
+from arduino_connection import ArduinoConnection
 from queue import Queue, Empty
 import time
 

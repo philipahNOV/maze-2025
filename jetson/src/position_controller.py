@@ -1,7 +1,7 @@
 import time
 import numpy as np
 import YOLO_tracking.hsv3 as tracking
-import arduino_connection_test
+import arduino_connection
 
 class Controller:
 
@@ -13,7 +13,7 @@ class Controller:
     and sends commands to the Arduino to actuate motors accordingly.
     """
 
-    def __init__(self, arduinoThread: arduino_connection_test.ArduinoConnection, tracker: tracking.BallTracker, path_following=True):
+    def __init__(self, arduinoThread: arduino_connection.ArduinoConnection, tracker: tracking.BallTracker, path_following=True):
         self.arduinoThread = arduinoThread
         self.prevPos = None
         self.pos = None

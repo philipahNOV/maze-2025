@@ -1,7 +1,7 @@
 import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
-import positionController_2
+import position_controller
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
@@ -22,7 +22,7 @@ def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
         mqtt_client.client.publish("pi/camera", jpg_as_text)
 
 
-def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
+def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
 
