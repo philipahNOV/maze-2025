@@ -2,7 +2,7 @@ from mqtt_client import MQTTClientJetson
 from arduino_connection_test import ArduinoConnection
 import run_controller_3
 import positionController_2
-import testing.yolov1.hsv4 as tracking
+import testing.yolov1.hsv3 as tracking
 import queue
 import threading
 import maze_solver
@@ -78,15 +78,15 @@ target_frame_time = 1.0 / target_fps  # ~16.67ms
 
 while True:
 
-    #frame = get_frame(mqtt_client, run_controller_3.frame_queue)
-    #if frame is not None:
-    #    if time.time() > last_sent_frame_time + 1/frame_send_hz:
-            #send_frame_to_pi(mqtt_client, frame)
-    #        last_sent_frame_time = time.time()
+    # frame = get_frame(mqtt_client, run_controller_3.frame_queue)
+    # if frame is not None:
+    #     if time.time() > last_sent_frame_time + 1/frame_send_hz:
+    #         #send_frame_to_pi(mqtt_client, frame)
+    #         last_sent_frame_time = time.time()
                 
-    #    cv2.imshow("Ball & Marker Tracking", frame)
-    #    if cv2.waitKey(1) & 0xFF == ord('q'):
-    #        break
+        # cv2.imshow("Ball & Marker Tracking", frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     try:
         command = mqtt_client.command_queue.get_nowait()

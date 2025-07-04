@@ -182,10 +182,16 @@ class BallTracker:
                             with self.yolo_lock:
                                 self.yolo_request = True
 
-                            time.sleep(0.05)
-                            with self.yolo_lock:
-                                results = self.yolo_result
-                                self.yolo_result = None
+                            # Poll for YOLO result (max wait: 50ms)
+                            wait_start = time.time()
+                            results = None
+                            while time.time() - wait_start < 0.05:
+                                with self.yolo_lock:
+                                    if self.yolo_result is not None:
+                                        results = self.yolo_result
+                                        self.yolo_result = None
+                                        break
+                                time.sleep(0.001)
 
                             if results:
                                 for box in results.boxes:
