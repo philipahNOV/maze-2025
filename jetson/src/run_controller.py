@@ -125,7 +125,7 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
                 send_frame_to_pi(mqtt_client, cropped_frame)
                 last_sent_frame_time = time.time()
 
-            cv2.imshow("Ball & Marker Tracking", cropped_frame)
+            cv2.imshow("Ball tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 

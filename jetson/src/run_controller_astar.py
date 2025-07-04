@@ -106,17 +106,9 @@ def draw_path(image, path, waypoints, start, goal):
 
     h, w = out.shape[:2]
 
-    # for y, x in path or []:
-    #     if 0 <= y < h and 0 <= x < w:
-    #         out[y, x] = (0, 0, 255)
-
-    # for y, x in waypoints or []:
-    #     if 0 <= y < h and 0 <= x < w:
-    #         cv2.circle(out, (x, y), 2, (0, 255, 255), -1)
-
     if waypoints and len(waypoints) > 1:
         for i in range(1, len(waypoints)):
-            pt1 = (waypoints[i - 1][1], waypoints[i - 1][0])  # (x, y)
+            pt1 = (waypoints[i - 1][1], waypoints[i - 1][0])
             pt2 = (waypoints[i][1], waypoints[i][0])
             cv2.line(out, pt1, pt2, (255, 255, 255), 1, lineType=cv2.LINE_AA)  # white line
 
@@ -153,16 +145,16 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
 
-    start = (604, 950)
-    # ball_pos = tracker.get_position()
-    # while ball_pos is None:
-    #     print("Waiting for ball position...")
-    #     time.sleep(0.1)
-    #     ball_pos = tracker.get_position()
+    #start = (604, 950)
+    ball_pos = tracker.get_position()
+    while ball_pos is None:
+        print("Waiting for ball position...")
+        time.sleep(0.1)
+        ball_pos = tracker.get_position()
 
-    # ball_pos = smoother.update(ball_pos)
-    # start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
-    # start = snap_to_nearest_walkable(safe_mask, start_raw)
+    ball_pos = smoother.update(ball_pos)
+    start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
+    start = snap_to_nearest_walkable(safe_mask, start_raw)
     #goal = (990, 704)
     global clicked_goal
     clicked_goal = None
@@ -189,15 +181,37 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     print(waypoints)
     print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
+    time.sleep(1)
+    controller.horizontal()
+    time.sleep(2)
+
+    last_sent_frame_time = time.time()
+    frame_send_hz = 5
+    TARGET_HZ = 60
+    LOOP_DT = 1.0 / TARGET_HZ
+    frame_warned = False
+    x1, y1, x2, y2 = 390, 10, 1120, 720
 
     try:
         while True:
+            loop_start = time.time()
+
             frame = tracker.frame
             if frame is None:
+                if not frame_warned:
+                    print("[WARN] Tracker returned empty frame. Waiting...")
+                    frame_warned = True
+                time.sleep(0.015)
                 continue
 
             ball_pos = tracker.get_position()
-            ball_pos = smoother.update(ball_pos)
+            if ball_pos is not None:
+                ball_pos = smoother.update(ball_pos)
+                pathFollower.follow_path(ball_pos)
+                cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
+            else:
+                controller.arduinoThread.send_target_positions(0, 0)
+                ball_pos = smoother.update(ball_pos)
             
             frame = draw_path(frame, path, waypoints, start, goal)
 
@@ -210,9 +224,6 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
 
             pathFollower.follow_path(ball_pos)
 
-            cv2.circle(frame, ball_pos, 8, (0, 255, 0), -1)
-            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             for i in range(pathFollower.length):
                 if i < pathFollower.next_waypoint:
                     cv2.circle(frame, path_array[i], 5, (0, 200, 0), -1)
@@ -221,12 +232,29 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
                     cv2.circle(frame, path_array[i], 5, (0, 255, 255), -1)
                 else:
                     cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
+            
+            cropped_frame = frame[y1:y2, x1:x2]
+            cropped_frame = cv2.rotate(cropped_frame, cv2.ROTATE_180)
 
-            cv2.imshow("Ball & Marker Tracking", frame)
+            if time.time() > last_sent_frame_time + 1/frame_send_hz:
+                #send_frame_to_pi(mqtt_client, cropped_frame)
+                last_sent_frame_time = time.time()
+
+            cv2.imshow("Ball tracking", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
 
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
-                return
+                controller.arduinoThread.send_target_positions(0, 0)
+                cv2.destroyAllWindows()
+                break
+
+            loop_duration = time.time() - loop_start
+            sleep_time = LOOP_DT - loop_duration
+            print(sleep_time)
+            if sleep_time > 0:
+                time.sleep(sleep_time)
 
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
