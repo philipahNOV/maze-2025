@@ -64,7 +64,7 @@ while not mqtt_client.handshake_complete:
 
 print("Connected to Pi!")
 
-tracker = tracking.BallTracker(model_path="testing/yolov1/best.pt")
+tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
 tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 last_sent_frame_time = time.time()
@@ -133,8 +133,6 @@ while True:
     elif command == "Horizontal":
         controller.horizontal()
         mqtt_client.command = None
-    elif command == "Maze":
-        maze_solver.main(tracker)
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
