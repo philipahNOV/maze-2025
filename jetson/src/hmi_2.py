@@ -90,14 +90,11 @@ while True:
             if params[i] != "pass":
                 params[i] = float(params[i])
         controller.set_pid_parameters(params)
-        mqtt_client.command = None
 
     elif command == "Elevator":
-        arduino_thread.send_speed(0, 0, "Get_ball")
-        mqtt_client.command = None
+        arduino_thread.send_get_ball()
     elif command == "Idle":
-        arduino_thread.send_speed(0, 0, "Idle")
-        mqtt_client.command = None
+        arduino_thread.send_idle()
     elif command == "Get_pid":
         pid_str = (
             "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," + str(controller.kp_x)
@@ -107,27 +104,22 @@ while True:
         mqtt_client.client.publish("pi/command", pid_str)
         
     elif command == "Control":
-        #run_controller_3.main(tracker, controller, mqtt_client)
-        #mqtt_client.command = None
         mqtt_client.stop_control = False
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller.main,
+                target=run_controller_astar.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
             mqtt_client.control_thread.start()
         else:
             print("[INFO] Control loop already running")
-        mqtt_client.command = None
     elif command == "Horizontal":
         controller.horizontal()
-        mqtt_client.command = None
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
             arduino_thread.send_speed(0, 0)
-            mqtt_client.command = None
             continue
         speed = int(command.split("_")[2])
         if dir == "up":
