@@ -6,7 +6,7 @@ import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
 from astar.astar import astar, astar_downscaled
-from jetson.src.astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
+from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
 
