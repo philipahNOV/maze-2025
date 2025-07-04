@@ -2,6 +2,7 @@ import tkinter as tk
 from other_modules.ui.start_screen import Screen1
 from other_modules.ui.boot_screen_1 import BootScreen
 from other_modules.ui.tuning_screen import Tuning
+from other_modules.ui.control_screen import ControlScreen
 
 import subprocess
 from other_modules.mqtt_client import MQTTClientPi
@@ -37,7 +38,7 @@ class MainApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (BootScreen, Screen1, Tuning):
+        for F in (BootScreen, Screen1, Tuning, ControlScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
