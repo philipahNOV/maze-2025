@@ -68,6 +68,8 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     controller.horizontal()
     time.sleep(2)
 
+    last_frame_time = time.time()
+    fps = 0.0
     frame_warned = False
     try:
         while True:
@@ -78,6 +80,14 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                     frame_warned = True
                 time.sleep(0.015)
                 continue
+
+            now = time.time()
+            dt = now - last_frame_time
+            if dt > 0.00001:
+                fps = 1.0 / dt
+            last_frame_time = now
+            cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
 
             ball_pos = tracker.get_position()
 
