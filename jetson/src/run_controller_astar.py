@@ -9,6 +9,8 @@ from astar.astar import astar, astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
+import queue
+import base64
 
 clicked_goal = None
 
@@ -17,6 +19,17 @@ def on_mouse_click(event, x, y, flags, param):
     if event == cv2.EVENT_LBUTTONDOWN:
         clicked_goal = (y, x)
         print(f"[INFO] Clicked goal set to: {clicked_goal}")
+
+def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
+        scale = 0.5
+        height, width = frame.shape[:2]
+        new_size = (int(width * scale), int(height * scale))
+
+        resized = cv2.resize(frame, new_size, interpolation=cv2.INTER_AREA)
+        _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+
+        mqtt_client.client.publish("pi/camera", jpg_as_text)
 
 def snap_to_nearest_walkable(mask, point, max_radius=10):
     y, x = point
@@ -145,16 +158,16 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
 
-    start = (604, 950)
-    # ball_pos = tracker.get_position()
-    # while ball_pos is None:
-    #     print("Waiting for ball position...")
-    #     time.sleep(0.1)
-    #     ball_pos = tracker.get_position()
+    #start = (604, 950)
+    ball_pos = tracker.get_position()
+    while ball_pos is None:
+        print("Waiting for ball position...")
+        time.sleep(0.1)
+        ball_pos = tracker.get_position()
 
-    # ball_pos = smoother.update(ball_pos)
-    # start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
-    # start = snap_to_nearest_walkable(safe_mask, start_raw)
+    ball_pos = smoother.update(ball_pos)
+    start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
+    start = snap_to_nearest_walkable(safe_mask, start_raw)
     #goal = (990, 704)
     global clicked_goal
     clicked_goal = None
@@ -181,9 +194,8 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     print(waypoints)
     print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
-    time.sleep(1)
     controller.horizontal()
-    time.sleep(2)
+    time.sleep(1)
 
     last_sent_frame_time = time.time()
     frame_send_hz = 5
@@ -237,10 +249,10 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
             cropped_frame = cv2.rotate(cropped_frame, cv2.ROTATE_180)
 
             if time.time() > last_sent_frame_time + 1/frame_send_hz:
-                #send_frame_to_pi(mqtt_client, cropped_frame)
+                send_frame_to_pi(mqtt_client, cropped_frame)
                 last_sent_frame_time = time.time()
 
-            cv2.imshow("Ball tracking", frame)
+            cv2.imshow("Ball tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
