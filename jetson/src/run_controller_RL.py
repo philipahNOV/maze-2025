@@ -1,12 +1,12 @@
-import testing.yolov1.hsv3 as tracking
+import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
-import positionController_2
+import position_controller
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
 from astar.astar import astar, astar_downscaled
-from astar.brightness import get_dynamic_threshold, create_binary_mask, dilate_mask
+from jetson.src.astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
 from logger import OfflineLogger
@@ -132,7 +132,7 @@ def draw_path(image, path, waypoints, start, goal):
 
     return out
 
-def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
+def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     logger = OfflineLogger()  # <-- NEW
     prev_state = None
