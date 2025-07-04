@@ -44,12 +44,9 @@ def get_frame(mqtt_client, frame_queue):
             # Check if frame has meaningful content
             gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
             if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
-                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
                 return frame
-            else:
-                print("[DEBUG] Frame rejected: too black or flat")
         except queue.Empty:
-            print("[DEBUG] Frame queue empty")
+            pass
     else:
         try:
             cv2.destroyWindow("Ball & Marker Tracking")

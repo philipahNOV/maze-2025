@@ -84,13 +84,13 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 continue
 
             ball_pos = tracker.get_position()
-            ball_pos = smoother.update(ball_pos)
 
             #if not ball_pos:
             #    print("No ball found (run_controller)")
             #    continue
 
             if ball_pos is not None:
+                ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
                 cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
                 cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
