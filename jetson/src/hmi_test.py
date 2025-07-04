@@ -28,7 +28,26 @@ def initialize_component(component, name, retries=5, delay=2):
             print(f"Failed to initialize {name} on attempt {attempt + 1}: {e}")
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
-    
+
+def get_frame():
+    # === Display frame from control thread, if any ===
+    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
+        try:
+            frame = run_controller_3.frame_queue.get_nowait()
+
+            # Check if frame has meaningful content
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
+                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
+                return frame
+        except queue.Empty:
+            pass
+    else:
+        try:
+            cv2.destroyWindow("Ball & Marker Tracking")
+        except:
+            pass
+    return None
 
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
@@ -43,6 +62,28 @@ except Exception as e:
     print(e)
     exit(1)
 
+def get_frame(mqtt_client, frame_queue):
+    # === Display frame from control thread, if any ===
+    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
+        try:
+            frame = frame_queue.get_nowait()
+
+            # Check if frame has meaningful content
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
+                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
+                return frame
+            else:
+                print("[DEBUG] Frame rejected: too black or flat")
+        except queue.Empty:
+            print("[DEBUG] Frame queue empty")
+    else:
+        try:
+            cv2.destroyWindow("Ball & Marker Tracking")
+        except:
+            pass
+    return None
+
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(1)
@@ -54,25 +95,12 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
-    # === Display frame from control thread, if any ===
-    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
-        try:
-            frame = run_controller_3.frame_queue.get_nowait()
 
-            # Check if frame has meaningful content
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
-                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
-                cv2.imshow("Ball & Marker Tracking", frame)
-                if cv2.waitKey(1) & 0xFF == ord('q'):
-                    break  # or trigger shutdown
-        except queue.Empty:
-            pass
-    else:
-        try:
-            cv2.destroyWindow("Ball & Marker Tracking")
-        except:
-            pass
+    frame = get_frame(mqtt_client, run_controller_3.frame_queue)
+    if frame is not None:
+        cv2.imshow("Ball & Marker Tracking", frame)
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
 
     try:
         command = mqtt_client.command_queue.get_nowait()
