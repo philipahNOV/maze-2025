@@ -145,12 +145,12 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
 
-    #start = (604, 950)
-    ball_pos = tracker.get_position()
-    while ball_pos is None:
-        print("Waiting for ball position...")
-        time.sleep(0.1)
-        ball_pos = tracker.get_position()
+    start = (604, 950)
+    # ball_pos = tracker.get_position()
+    # while ball_pos is None:
+    #     print("Waiting for ball position...")
+    #     time.sleep(0.1)
+    #     ball_pos = tracker.get_position()
 
     ball_pos = smoother.update(ball_pos)
     start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
