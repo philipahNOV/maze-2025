@@ -249,6 +249,11 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
 
+            if mqtt_client.stop_control:
+                mqtt_client.stop_control = False
+                controller.arduinoThread.send_target_positions(0, 0)
+                break
+
     except KeyboardInterrupt:
         print("\nInterrupted by user.")
     finally:
