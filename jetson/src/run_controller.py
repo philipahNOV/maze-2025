@@ -7,6 +7,7 @@ import path_following
 from mqtt_client import MQTTClientJetson
 import queue
 import base64
+from image_controller import ImageController
 
 frame_queue = queue.Queue(maxsize=1)
 
@@ -24,7 +25,8 @@ def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.3)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.4)
+    image_controller = ImageController()
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:
@@ -62,27 +64,21 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
                 time.sleep(0.015)
                 continue
 
+            image_controller.frame = frame.copy()
+
             ball_pos = tracker.get_position()
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
+                image_controller.draw_ball(ball_pos)
             else:
                 controller.arduinoThread.send_target_positions(0, 0)
                 ball_pos = smoother.update(ball_pos)
 
-            for i in range(pathFollower.length):
-                if i < pathFollower.next_waypoint:
-                    cv2.circle(frame, path_array[i], 5, (0, 200, 0), -1)
-                    continue
-                elif i == pathFollower.next_waypoint:
-                    cv2.circle(frame, path_array[i], 5, (0, 255, 255), -1)
-                else:
-                    cv2.circle(frame, path_array[i], 5, (0, 0, 255), -1)
+            image_controller.draw_waypoints(pathFollower)
 
-            cropped_frame = frame[y1:y2, x1:x2]
-            cropped_frame = cv2.rotate(cropped_frame, cv2.ROTATE_180)
+            cropped_frame = image_controller.get_fixed_frame()
 
             if time.time() > last_sent_frame_time + 1/frame_send_hz:
                 send_frame_to_pi(mqtt_client, cropped_frame)
