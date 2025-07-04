@@ -30,11 +30,21 @@ def create_binary_mask(gray):
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8), iterations=1)
 
     if shared_masking.__original_color_frame__ is not None:
-        hsv = cv2.cvtColor(shared_masking.__original_color_frame__, cv2.COLOR_BGR2HSV)
-        ball_lower = np.array([35, 80, 80])
-        ball_upper = np.array([85, 255, 255])
+        color_frame = shared_masking.__original_color_frame__
+        hsv = cv2.cvtColor(color_frame, cv2.COLOR_BGR2HSV)
+        ball_lower = np.array([30, 50, 50])
+        ball_upper = np.array([90, 255, 255])
         ball_mask = cv2.inRange(hsv, ball_lower, ball_upper)
-        ball_mask = cv2.dilate(ball_mask, np.ones((3, 3), np.uint8), iterations=1)
-        final_mask = cv2.bitwise_or(final_mask, ball_mask)
+
+        kernel = np.ones((9, 9), np.uint8)
+        ball_mask = cv2.morphologyEx(ball_mask, cv2.MORPH_CLOSE, kernel, iterations=5)
+        ball_mask = cv2.dilate(ball_mask, kernel, iterations=2)
+
+        final_mask[ball_mask > 0] = 255
+
+        launch_pad_center = (1030, 630)
+        launch_pad_radius = 70
+
+        cv2.circle(final_mask, launch_pad_center, launch_pad_radius, 255, -1)  # force white
 
     return final_mask
