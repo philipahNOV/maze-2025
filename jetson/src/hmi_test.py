@@ -29,26 +29,6 @@ def initialize_component(component, name, retries=5, delay=2):
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
-def get_frame():
-    # === Display frame from control thread, if any ===
-    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
-        try:
-            frame = run_controller_3.frame_queue.get_nowait()
-
-            # Check if frame has meaningful content
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
-                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
-                return frame
-        except queue.Empty:
-            pass
-    else:
-        try:
-            cv2.destroyWindow("Ball & Marker Tracking")
-        except:
-            pass
-    return None
-
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
     time.sleep(10)
@@ -73,12 +53,25 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 
 while True:
+    # === Display frame from control thread, if any ===
+    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
+        try:
+            frame = run_controller_3.frame_queue.get_nowait()
 
-    frame = get_frame()
-    if frame:
-        cv2.imshow("Ball & Marker Tracking", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break  # or trigger shutdown
+            # Check if frame has meaningful content
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
+                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
+                cv2.imshow("Ball & Marker Tracking", frame)
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    break  # or trigger shutdown
+        except queue.Empty:
+            pass
+    else:
+        try:
+            cv2.destroyWindow("Ball & Marker Tracking")
+        except:
+            pass
 
     try:
         command = mqtt_client.command_queue.get_nowait()
