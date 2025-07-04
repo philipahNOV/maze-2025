@@ -7,6 +7,8 @@ import path_following
 from mqtt_client import MQTTClientJetson
 import queue
 from image_controller import ImageController
+import light_controller
+import threading
 
 frame_queue = queue.Queue(maxsize=1)
 
@@ -78,9 +80,16 @@ def main(tracker: tracking.BallTracker,
                 pathFollower.follow_path(ball_pos)
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
             else:
+                blinker_thread = threading.Thread(
+                    target=light_controller.blinking_red,
+                    args=(controller.arduinoThread, ball_pos),
+                    daemon=True
+                )
+                blinker_thread.start()
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
+
 
             # Display cropped frame on local display
             cv2.imshow("Ball tracking", cropped_frame)
