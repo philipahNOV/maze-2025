@@ -57,7 +57,10 @@ while True:
     if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
         try:
             frame = run_controller_3.frame_queue.get_nowait()
-            if frame.mean() > 1:
+
+            # Check if frame has meaningful content
+            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
                 print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
                 cv2.imshow("Ball & Marker Tracking", frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
