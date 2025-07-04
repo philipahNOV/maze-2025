@@ -5,11 +5,11 @@ import position_controller
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
-from astar.astar import astar, astar_downscaled
+import astar.shared_masking as shared_masking
+from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
 import numpy as np
-import queue
 import base64
 
 clicked_goal = None
@@ -138,7 +138,6 @@ def draw_path(image, path, waypoints, start, goal):
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
-
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
@@ -153,6 +152,8 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     while maze_frame is None:
         time.sleep(0.1)
         maze_frame = tracker.get_stable_frame()
+
+    shared_masking.__original_color_frame__ = maze_frame.copy()
 
     gray = get_dynamic_threshold(maze_frame)
     binary_mask = create_binary_mask(gray)

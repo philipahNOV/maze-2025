@@ -217,7 +217,7 @@ class Controller:
             self.e_x_int = 0
             self.e_y_int = 0
             if not self.path_following:
-                self.arduinoThread.send_target_positions(0, 0)
+                self.arduinoThread.send_speed(0, 0)
                 time.sleep(self.command_delay)
             self.prevTime = time.time()
             #return
@@ -286,10 +286,10 @@ class Controller:
             vel_y = - np.sign(e_y) * vel_y
 
         if self.stuck:
-            self.arduinoThread.send_target_positions(vel_x, vel_y)
+            self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
         if self.significant_motor_change(vel_x, vel_y):
-            self.arduinoThread.send_target_positions(vel_x, vel_y)
+            self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
         
         self.prev_vel_x = vel_x
@@ -313,7 +313,7 @@ class Controller:
         
         kp = 700 # Proportional gain for the control loop
         deadline = time.time() + timeLimit
-        self.arduinoThread.send_target_positions(0, 0)  # Stop motors initially
+        self.arduinoThread.send_speed(0, 0)  # Stop motors initially
 
         while time.time() < deadline:
             orientation = self.tracker.get_orientation()
@@ -325,7 +325,7 @@ class Controller:
 
             if abs(theta_x) < tol and abs(theta_y) < tol:
                 print("Orientation is within tolerance, stopping motors.")
-                self.arduinoThread.send_target_positions(0, 0)
+                self.arduinoThread.send_speed(0, 0)
                 return
             if abs(theta_x) < tol:
                 vel_x = 0
@@ -340,7 +340,7 @@ class Controller:
                 vel_y *= - np.sign(theta_y)
 
             #print(f"{theta_x}, {theta_y}")
-            self.arduinoThread.send_target_positions(vel_x, vel_y)
+            self.arduinoThread.send_speed(vel_x, vel_y)
             time.sleep(self.command_delay)
         print("Deadline reached, stopping motors.")
         

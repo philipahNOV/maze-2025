@@ -76,16 +76,6 @@ target_frame_time = 1.0 / target_fps  # ~16.67ms
 
 while True:
 
-    # frame = get_frame(mqtt_client, run_controller_3.frame_queue)
-    # if frame is not None:
-    #     if time.time() > last_sent_frame_time + 1/frame_send_hz:
-    #         #send_frame_to_pi(mqtt_client, frame)
-    #         last_sent_frame_time = time.time()
-                
-        # cv2.imshow("Ball & Marker Tracking", frame)
-        # if cv2.waitKey(1) & 0xFF == ord('q'):
-        #     break
-
     try:
         command = mqtt_client.command_queue.get_nowait()
     except queue.Empty:
@@ -100,14 +90,11 @@ while True:
             if params[i] != "pass":
                 params[i] = float(params[i])
         controller.set_pid_parameters(params)
-        mqtt_client.command = None
 
     elif command == "Elevator":
-        arduino_thread.send_target_positions(0, 0, "Get_ball")
-        mqtt_client.command = None
+        arduino_thread.send_get_ball()
     elif command == "Idle":
-        arduino_thread.send_target_positions(0, 0, "Idle")
-        mqtt_client.command = None
+        arduino_thread.send_idle()
     elif command == "Get_pid":
         pid_str = (
             "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," + str(controller.kp_x)
@@ -117,8 +104,6 @@ while True:
         mqtt_client.client.publish("pi/command", pid_str)
         
     elif command == "Control":
-        #run_controller_3.main(tracker, controller, mqtt_client)
-        #mqtt_client.command = None
         mqtt_client.stop_control = False
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
@@ -129,24 +114,21 @@ while True:
             mqtt_client.control_thread.start()
         else:
             print("[INFO] Control loop already running")
-        mqtt_client.command = None
     elif command == "Horizontal":
         controller.horizontal()
-        mqtt_client.command = None
     elif command.startswith("Motor_"):
         dir = command.split("_")[1]
         if dir == "stop":
-            arduino_thread.send_target_positions(0, 0)
-            mqtt_client.command = None
+            arduino_thread.send_speed(0, 0)
             continue
         speed = int(command.split("_")[2])
         if dir == "up":
-            arduino_thread.send_target_positions(speed, 0)
+            arduino_thread.send_speed(speed, 0)
         if dir == "down":
-            arduino_thread.send_target_positions(-speed, 0)
+            arduino_thread.send_speed(-speed, 0)
         if dir == "left":
-            arduino_thread.send_target_positions(0, speed)
+            arduino_thread.send_speed(0, speed)
         if dir == "right":
-            arduino_thread.send_target_positions(0, -speed)
+            arduino_thread.send_speed(0, -speed)
 
     time.sleep(0.015)
