@@ -63,10 +63,7 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
             cv2.imshow("Ball tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
                 break
-
-            #if not frame_queue.full():
-                #frame_queue.put_nowait(frame.copy())
-
+            
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
                 controller.arduinoThread.send_target_positions(0, 0)
