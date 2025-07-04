@@ -77,7 +77,7 @@ def main(tracker: tracking.BallTracker,
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
             else:
-                controller.arduinoThread.send_target_positions(0, 0)
+                controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
 
             # Update image overlays and send frame to Pi
@@ -91,7 +91,7 @@ def main(tracker: tracking.BallTracker,
             # Stop control externally
             if mqtt_client.stop_control:
                 mqtt_client.stop_control = False
-                controller.arduinoThread.send_target_positions(0, 0)
+                controller.arduinoThread.send_speed(0, 0)
                 cv2.destroyAllWindows()
                 break
 
