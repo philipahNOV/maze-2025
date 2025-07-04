@@ -1,6 +1,6 @@
 import cv2
 import numpy as np
-import shared_masking
+import astar.shared_masking
 
 def dilate_mask(mask, kernel_size=(3, 3), iterations=2):
     kernel = np.ones(kernel_size, np.uint8)
@@ -29,8 +29,8 @@ def create_binary_mask(gray):
     final_mask = cv2.bitwise_and(cleaned, edges_inv)
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8), iterations=1)
 
-    if shared_masking.__original_color_frame__ is not None:
-        hsv = cv2.cvtColor(shared_masking.__original_color_frame__, cv2.COLOR_BGR2HSV)
+    if astar.shared_masking.__original_color_frame__ is not None:
+        hsv = cv2.cvtColor(astar.shared_masking.__original_color_frame__, cv2.COLOR_BGR2HSV)
         ball_lower = np.array([35, 80, 80])
         ball_upper = np.array([85, 255, 255])
         ball_mask = cv2.inRange(hsv, ball_lower, ball_upper)
