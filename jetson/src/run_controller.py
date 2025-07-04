@@ -80,16 +80,9 @@ def main(tracker: tracking.BallTracker,
                 pathFollower.follow_path(ball_pos)
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
             else:
-                print("[INFO] Ball not detected, blinking red light.")
-                threading.Thread(
-                    target=light_controller.blinking_red,
-                    args=(controller.arduinoThread,),
-                    daemon=True
-                ).start()
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
-                time.sleep(10)
 
 
             # Display cropped frame on local display
