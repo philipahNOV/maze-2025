@@ -1,8 +1,15 @@
 import serial
 import serial.tools.list_ports
 import threading
-
 import time
+from enum import Enum
+
+class ArduinoState(Enum):
+    IDLE = 0
+    GET_BALL = 1
+    CONTROL = 2
+    SET_COLOR = 3
+
 class ArduinoConnection(threading.Thread):
     def __init__(self, baud_rate=9600):
         """
@@ -14,7 +21,7 @@ class ArduinoConnection(threading.Thread):
         threading.Thread.__init__(self)  # Initialize the base Thread class first
         self.baud_rate = baud_rate
         self.serial_conn = None
-        self.command_var = None
+        self.command_to_send = None
         self.running = False
         self.condition = threading.Condition()
         self.connect()  # Attempt to connect to the Arduino
@@ -32,16 +39,17 @@ class ArduinoConnection(threading.Thread):
 
         """
         port = self.detect_arduino_port()
-        if port:
-            try:
-                self.serial_conn = serial.Serial(port, self.baud_rate)
-                self.running = True
-                print(f"Connected to Arduino on {port}")
-                self.start()  # Start the thread after a successful connection
-            except serial.SerialException as e:
-                raise ConnectionError(f"Failed to connect to Arduino: {e}")
-        else:
+        if not port:
             raise ConnectionError("Arduino not found")
+        
+        try:
+            self.serial_conn = serial.Serial(port, self.baud_rate, timeout=1)
+            self.running = True
+            print(f"Connected to Arduino on {port}")
+            if not self.is_alive():
+                self.start()
+        except serial.SerialException as e:
+            raise ConnectionError(f"Failed to connect to Arduino: {e}")
             
 
     def detect_arduino_port(self):
@@ -57,33 +65,46 @@ class ArduinoConnection(threading.Thread):
                 return port.device
         return None
     
-    def send_target_positions(self, speed1, speed2, state = "Control"):
+    def _send_command(self, state: ArduinoState, *args):
+        """Internal method to format and queue a command."""
+        with self.condition:
+            # Lager en kommando-streng fra alle argumentene pluss state
+            command_parts = list(map(str, args)) + [str(state.value)]
+            self.command_to_send = ",".join(command_parts) + "\n"
+            self.condition.notify()
+    
+    def send_idle(self):
         """
-        Sends target positions and speeds to the Arduino.
+        Sends "IDLE" state to the Arduino.
+        """
+        self._send_command(ArduinoState.IDLE)
+
+    def send_get_ball(self):
+        """
+        Sends "GET_BALL" state to the Arduino.
+        """
+        self._send_command(ArduinoState.GET_BALL)
+
+    def send_speed(self, speed1: int, speed2: int):
+        """
+        Sends target speeds and "CONTROL" state to the Arduino.
 
         Args:
             speed1 (int): The speed for motor 1.
             speed2 (int): The speed for motor 2.
-            state (str, optional): The state of the robot. Defaults to "Control". Options are "Idle", "Get_ball", and "Control". TODO change default to "Idle".
         """
-        with self.condition:
+        self._send_command(ArduinoState.CONTROL, speed1, speed2)
 
-            speed1 = int(speed1)
-            speed2 = int(speed2)
-            
-            if state == "Idle":
-                state_send = int(0)
-            elif state == "Get_ball":
-                state_send = int(1)
-            elif state == "Control":
-                state_send = int(2)
-            else:
-                raise ValueError("Invalid state. Must be 'Idle', 'Get_ball', or 'Control'.")
+    def send_color(self, r: int, g: int, b: int):
+        """
+        Sends target rgb value and "SET_COLOR" state to the Arduino.
 
-
-            self.command_var = f"{speed1},{speed2},{state_send}\n"
-            self.condition.notify()
-
+        Args:
+            r (int): The red component of the color.
+            g (int): The green component of the color.
+            b (int): The blue component of the color.
+        """
+        self._send_command(ArduinoState.SET_COLOR, r, g, b)
 
     def run(self):
         """
@@ -103,34 +124,46 @@ class ArduinoConnection(threading.Thread):
         print("ArduinoConnection thread started")
         while self.running:
             with self.condition:
-                self.condition.wait()
-                if self.command_var:
+                if self.command_to_send is None:
+                    self.condition.wait()
+                
+                if not self.running:
+                    break
+
+                if self.command_to_send:
                     if self.serial_conn and self.serial_conn.is_open:
                         try:
-                            self.serial_conn.write(self.command_var.encode())
-                            # print(f"Sent: {self.command_var}")
+                            self.serial_conn.write(self.command_to_send.encode())
                         except serial.SerialException as e:
-                            print(f"Failed to send target positions: {e}")
+                            print(f"Failed to send command: {e}. Attempting to reconnect...")
                             self.reconnect()
                     else:
-                        print("No connection to Arduino. Cannot send target positions.")
+                        print("No connection to Arduino. Attempting to reconnect...")
                         self.reconnect()
-                    self.command_var = None
+                    self.command_to_send = None
 
 
     def stop(self):
+        if not self.running:
+            return
         self.running = False
         with self.condition:
             self.condition.notify()
-        self.join() 
-        if self.serial_conn:
+        if self.is_alive():
+            self.join()
+        if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
             print("Connection to Arduino closed")
     
     def reconnect(self):
+        if self.serial_conn and self.serial_conn.is_open:
+            self.serial_conn.close()
+        
         print("Attempting to reconnect to Arduino...")
-        self.stop()
         time.sleep(2)
-        self.connect()
+        try:
+            self.connect()
+        except ConnectionError as e:
+            print(e)
 
 

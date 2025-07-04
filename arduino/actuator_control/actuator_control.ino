@@ -37,28 +37,26 @@ namespace led_strips {
     Adafruit_NeoPixel strip = Adafruit_NeoPixel(num_leds, led_pin, NEO_GRB + NEO_KHZ800); // Initialiserer LED stripen
 }
 
-// Navnerom for globale variabler
-namespace {
-
+namespace serial_messages {
     // Enum for tilstander i programmet
     enum class State
     {
         IDLE, // Tilstand for å vente på kommandoer
         GET_BALL, // Tilstand for å hente ball
-        CONTROL // Tilstand for å kontrollere aktuatorene
+        CONTROL, // Tilstand for å kontrollere aktuatorene
+        SET_COLOR // Tilstand for å sette farge på LED stripen
     };
 
-    State state = State::CONTROL; // Initialiserer tilstanden til CONTROL TODO : Endre til IDLE
+    State state = State::IDLE; // Initialiserer tilstanden til IDLE
 
-    // Struct for hastigheter til aktuatorene TODO: Flytt til ett felt i ActuatorData
-    struct Speeds
-    {
-        int16_t speed_actuator_1; // Fart for aktuator en
-        int16_t speed_actuator_2; // Fart for aktuator to
-    };
+    // Variabler for seriedata
+    int16_t value_1 = 0; // Variabel for første verdi i seriedata
+    int16_t value_2 = 0; // Variabel for andre verdi i seriedata
+    int16_t value_3 = 0; // Variabel for tredje verdi i seriedata
+}
 
-    Speeds actuator_speeds = {0, 0}; // Initialiserer hastighetene for aktuatorene
-
+// Navnerom for globale variabler
+namespace {
     // Teller for hvor ofte grensen sjekkes for aktuatorene
     uint8_t limit_check_counter = 0;
 }
@@ -67,7 +65,7 @@ namespace {
 void stop_actuators(); // Funksjon for å stoppe aktuatorene
 void actuator_position(); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
-void move_speed(); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
+void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
 void get_ball(); // Funksjon for å kontrollere heisen for å hente ball
 void set_led_color(uint8_t r, uint8_t g, uint8_t b); // Funksjon for å sette fargen på LED stripen
 void read_serial(); // Funksjon for å lese innkommende seriedata
@@ -106,14 +104,16 @@ void loop() {
     switch (state) // Sjekker hvilken tilstand programmet er i
     {
         case State::GET_BALL: // Tilstand 0: Heis klar til å hente ball
-            set_led_color(255, 0, 0); // Setter fargen til grønn
             get_ball(); // Henter ballen
-            state = State::CONTROL; // Går til neste tilstand
-            set_led_color(255, 255, 255); // Setter fargen til hvit for control tilstand
+            state = State::IDLE; // Går til neste tilstand
             break;
         case State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
             actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
-            move_speed(); // Setter motor hastighetene
+            move_speed(serial_messages::value_1, serial_messages::value_2); // Setter motor hastighetene
+            break;
+        case State::SET_COLOR: // Tilstand 2: Setter farge på LED stripen
+            set_led_color(serial_messages::value_1, serial_messages::value_2, serial_messages::value_3); // Setter fargen på LED stripen
+            state = State::IDLE; // Går til neste tilstand
             break;
         default: // Standard tilstand: Ingen handling
             stop_actuators(); // Stopper aktuatorene
@@ -198,19 +198,18 @@ void actuator_limit_check()
 }
 
 // Funksjon for å sette hastighetene til aktuatorene basert på actuator_speeds
-void move_speed()
+void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2)
 {
-    // Setter hastighetene for aktuatorene fra actuator_speeds
     // Aktuator 1
-    if (actuator_speeds.speed_actuator_1 > 0 && actuators::actuator_1.distance_status != 1) // Hvis aktuator en skal bevege seg oppover og ikke er for høyt
+    if (speed_actuator_1 > 0 && actuators::actuator_1.distance_status != 1) // Hvis aktuator en skal bevege seg oppover og ikke er for høyt
     {
-        analogWrite(actuators::actuator_1.pwm_up, actuator_speeds.speed_actuator_1);
+        analogWrite(actuators::actuator_1.pwm_up, speed_actuator_1);
         analogWrite(actuators::actuator_1.pwm_down, 0);
     } 
-    else if (actuator_speeds.speed_actuator_1 < 0 && actuators::actuator_1.distance_status != -1) // Hvis aktuator en skal bevege seg nedover og ikke er for lavt
+    else if (speed_actuator_1 < 0 && actuators::actuator_1.distance_status != -1) // Hvis aktuator en skal bevege seg nedover og ikke er for lavt
     {
         analogWrite(actuators::actuator_1.pwm_up, 0);
-        analogWrite(actuators::actuator_1.pwm_down, -actuator_speeds.speed_actuator_1); // - for å få riktig retning (-255 er 255 i PWM på negativ pinne)
+        analogWrite(actuators::actuator_1.pwm_down, -speed_actuator_1); // - for å få riktig retning
     }
     else // Hvis aktuator en ikke skal bevege seg
     {
@@ -219,15 +218,15 @@ void move_speed()
     }
     
     // Aktuator 2
-    if (actuator_speeds.speed_actuator_2 > 0 && actuators::actuator_2.distance_status != 1) // Hvis aktuator to skal bevege seg oppover og ikke er for høyt
+    if (speed_actuator_2 > 0 && actuators::actuator_2.distance_status != 1) // Hvis aktuator to skal bevege seg oppover og ikke er for høyt
     {
-        analogWrite(actuators::actuator_2.pwm_up, actuator_speeds.speed_actuator_2);
+        analogWrite(actuators::actuator_2.pwm_up, speed_actuator_2);
         analogWrite(actuators::actuator_2.pwm_down, 0);
     } 
-    else if (actuator_speeds.speed_actuator_2 < 0 && actuators::actuator_2.distance_status != -1) // Hvis aktuator to skal bevege seg nedover og ikke er for lavt
+    else if (speed_actuator_2 < 0 && actuators::actuator_2.distance_status != -1) // Hvis aktuator to skal bevege seg nedover og ikke er for lavt
     {
         analogWrite(actuators::actuator_2.pwm_up, 0);
-        analogWrite(actuators::actuator_2.pwm_down, -actuator_speeds.speed_actuator_2); // - for å få riktig retning (-255 er 255 i PWM på negativ pinne)
+        analogWrite(actuators::actuator_2.pwm_down, -speed_actuator_2); // - for å få riktig retning
     }
     else // Hvis aktuator to ikke skal bevege seg
     {
@@ -276,16 +275,33 @@ void read_serial()
         // Legg til sjekk for å sikre at vi faktisk leste noe før vi parser
         if (len > 0) {
             buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
+             
+            int v1, v2, v3, incoming_state;
             
-            int speed1, speed2, incoming_state; // Variabler for å lagre hastigheter og tilstand
-            
-            // Parser innkommende data for hastigheter og tilstand
-            if (sscanf(buffer, "%d,%d,%d", &speed1, &speed2, &incoming_state) == 3)
+            // Sjekk for den vanligste meldingen FØRST: CONTROL (2 hastigheter + state)
+            if (sscanf(buffer, "%d,%d,%d", &v1, &v2, &incoming_state) == 3)
             {
-                actuator_speeds.speed_actuator_1 = constrain(speed1, -255, 255);
-                actuator_speeds.speed_actuator_2 = constrain(speed2, -255, 255);
-                if (incoming_state >= 0 && incoming_state <= 2) {
-                    state = static_cast<State>(incoming_state); // Oppdaterer tilstanden basert på innkommende data, IDLE = 0, GET_BALL = 1, CONTROL = 2
+                serial_messages::value_1 = v1;
+                serial_messages::value_2 = v2;
+                if (incoming_state >= 0 && incoming_state <= 3) {
+                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                }
+            }
+            // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
+            else if (sscanf(buffer, "%d,%d,%d,%d", &v1, &v2, &v3, &incoming_state) == 4)
+            {
+                serial_messages::value_1 = v1;
+                serial_messages::value_2 = v2;
+                serial_messages::value_3 = v3;
+                if (incoming_state >= 0 && incoming_state <= 3) {
+                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                }
+            }
+            // Sjekk til slutt for den korteste: IDLE/GET_BALL (kun state)
+            else if (sscanf(buffer, "%d", &incoming_state) == 1)
+            {
+                if (incoming_state >= 0 && incoming_state <= 3) {
+                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
                 }
             }
         }
