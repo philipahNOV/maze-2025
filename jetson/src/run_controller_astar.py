@@ -152,9 +152,9 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     #     time.sleep(0.1)
     #     ball_pos = tracker.get_position()
 
-    ball_pos = smoother.update(ball_pos)
-    start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
-    start = snap_to_nearest_walkable(safe_mask, start_raw)
+    # ball_pos = smoother.update(ball_pos)
+    # start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
+    # start = snap_to_nearest_walkable(safe_mask, start_raw)
     #goal = (990, 704)
     global clicked_goal
     clicked_goal = None
