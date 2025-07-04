@@ -2,10 +2,8 @@ import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
 import positionController_2
-import arduino_connection_test
 import lowPassFilter
 import path_following
-import path_following_mpc
 from mqtt_client import MQTTClientJetson
 import queue
 import base64

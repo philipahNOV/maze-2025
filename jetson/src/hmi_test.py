@@ -1,6 +1,6 @@
 from mqtt_client import MQTTClientJetson
 from arduino_connection_test import ArduinoConnection
-import run_controller_3
+import run_controller
 import positionController_2
 import YOLO_tracking.hsv3 as tracking
 import queue
@@ -122,7 +122,7 @@ while True:
         mqtt_client.stop_control = False
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller_3.main,
+                target=run_controller.main,
                 args=(tracker, controller, mqtt_client),
                 daemon=True
             )
