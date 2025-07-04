@@ -19,10 +19,10 @@ class Screen1(tk.Frame):
         self.dir = None
 
         self.image = ImageTk.PhotoImage(Image.open(os.path.join(controller.image_path, 'start_screen.png')))
-        self.update_image()
-
+        
         # Layout the widgets including the logo
         self.create_widgets()
+        self.update_image()
 
     def on_button_click_elevator(self):
         self.mqtt_client.client.publish("jetson/command", "Elevator")
@@ -69,6 +69,9 @@ class Screen1(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        self.image_label = tk.Label(self)
+        self.image_label.place(x=30, y=50, width=320, height=240)
 
         self.example_button = tk.Button(
             self,

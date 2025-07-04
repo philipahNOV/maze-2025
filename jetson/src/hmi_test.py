@@ -71,6 +71,8 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 last_sent_frame_time = time.time()
 frame_send_hz = 5
+last_frame_time = time.time()
+fps = 0.0
 while True:
 
     frame = get_frame(mqtt_client, run_controller_3.frame_queue)
@@ -78,6 +80,13 @@ while True:
         if time.time() > last_sent_frame_time + 1/frame_send_hz:
             send_frame_to_pi(mqtt_client, frame)
             last_sent_frame_time = time.time()
+        now = time.time()
+        dt = now - last_frame_time
+        if dt > 0.0001:
+            fps = 0.9 * fps + 0.1 * (1.0 / dt)  # exponential smoothing
+        cv2.putText(frame, f"FPS: {fps:.2f}", (10, 30),
+            cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+        
         cv2.imshow("Ball & Marker Tracking", frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
