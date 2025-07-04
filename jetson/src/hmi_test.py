@@ -2,7 +2,7 @@ from mqtt_client import MQTTClientJetson
 from arduino_connection_test import ArduinoConnection
 import run_controller_3
 import positionController_2
-import testing.yolov1.hsv3 as tracking
+import testing.yolov1.hsv4 as tracking
 import queue
 import threading
 import maze_solver
@@ -71,6 +71,11 @@ tracker.start()
 controller = positionController_2.Controller(arduino_thread, tracker)
 last_sent_frame_time = time.time()
 frame_send_hz = 5
+
+target_fps = 60
+target_frame_time = 1.0 / target_fps  # ~16.67ms
+
+
 while True:
 
     #frame = get_frame(mqtt_client, run_controller_3.frame_queue)
