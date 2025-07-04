@@ -17,6 +17,7 @@ class MQTTClientJetson(threading.Thread):
         self.client.on_disconnect = self.on_disconnect
 
         self.arduino_connection = arduino_connection
+        self.control_thread = None
         self.command_queue = Queue()
         self.running = True
         self.handshake_complete = False
