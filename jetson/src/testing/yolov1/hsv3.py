@@ -138,8 +138,8 @@ class BallTracker:
     def consumer_loop(self):
         while self.running:
             with self.lock:
-                rgb_frame = self.latest_rgb_frame#.copy() if self.latest_rgb_frame is not None else None
-                bgr_frame = self.latest_bgr_frame#.copy() if self.latest_bgr_frame is not None else None
+                rgb_frame = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                bgr_frame = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
             if rgb_frame is None or bgr_frame is None:
                 time.sleep(0.01)
@@ -182,16 +182,10 @@ class BallTracker:
                             with self.yolo_lock:
                                 self.yolo_request = True
 
-                            # Poll for YOLO result (max wait: 50ms)
-                            wait_start = time.time()
-                            results = None
-                            while time.time() - wait_start < 0.05:
-                                with self.yolo_lock:
-                                    if self.yolo_result is not None:
-                                        results = self.yolo_result
-                                        self.yolo_result = None
-                                        break
-                                time.sleep(0.001)
+                            time.sleep(0.05)
+                            with self.yolo_lock:
+                                results = self.yolo_result
+                                self.yolo_result = None
 
                             if results:
                                 for box in results.boxes:
@@ -207,7 +201,6 @@ class BallTracker:
                                         break
                         else:
                             self.tracked_objects["ball"]["position"] = None
-
 
                 for label in self.tracked_objects:
                     if label == "ball":
