@@ -169,12 +169,16 @@ class BallTracker:
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
             else:
+                # use HSV tracking after ball has been initialized
                 for label in self.tracked_objects:
-                    self.track_or_redetect(label, bgr_frame, rgb_frame)
+                    hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
+                    prev_pos = self.tracked_objects[label]["position"]
+                    new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
+                    if new_pos:
+                        self.tracked_objects[label]["position"] = new_pos
 
             self.frame = bgr_frame
             time.sleep(0.005)
-
 
 
     def start(self):
@@ -192,13 +196,6 @@ class BallTracker:
 
     def stop(self):
         self.running = False
-
-        if hasattr(self, 'producer_thread') and self.producer_thread.is_alive():
-            self.producer_thread.join()
-
-        if hasattr(self, 'consumer_thread') and self.consumer_thread.is_alive():
-            self.consumer_thread.join()
-
         if self.zed:
             self.zed.close()
 
