@@ -1,5 +1,4 @@
-<<<<<<< HEAD
-# nov-maze-2024
+# NOV maze 2025
 
 This is the summer project at NOV summer 2024. 
 The goal is to balance a ball through a maze without it falling into holes along the way.
