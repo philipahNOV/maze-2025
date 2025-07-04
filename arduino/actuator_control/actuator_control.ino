@@ -101,19 +101,19 @@ void setup() {
 void loop() {
     read_serial(); // Motar data over seriel fra Jetson
 
-    switch (state) // Sjekker hvilken tilstand programmet er i
+    switch (serial_messages::state) // Sjekker hvilken tilstand programmet er i
     {
-        case State::GET_BALL: // Tilstand 0: Heis klar til å hente ball
+        case serial_messages::State::GET_BALL: // Tilstand 0: Heis klar til å hente ball
             get_ball(); // Henter ballen
-            state = State::IDLE; // Går til neste tilstand
+            serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
             break;
-        case State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
+        case serial_messages::State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
             actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
             move_speed(serial_messages::value_1, serial_messages::value_2); // Setter motor hastighetene
             break;
-        case State::SET_COLOR: // Tilstand 2: Setter farge på LED stripen
+        case serial_messages::State::SET_COLOR: // Tilstand 2: Setter farge på LED stripen
             set_led_color(serial_messages::value_1, serial_messages::value_2, serial_messages::value_3); // Setter fargen på LED stripen
-            state = State::IDLE; // Går til neste tilstand
+            serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
             break;
         default: // Standard tilstand: Ingen handling
             stop_actuators(); // Stopper aktuatorene
