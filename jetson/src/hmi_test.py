@@ -76,7 +76,7 @@ while True:
     frame = get_frame(mqtt_client, run_controller_3.frame_queue)
     if frame is not None:
         if time.time() > last_sent_frame_time + 1/frame_send_hz:
-            send_frame_to_pi(mqtt_client, frame)
+            #send_frame_to_pi(mqtt_client, frame)
             last_sent_frame_time = time.time()
                 
         cv2.imshow("Ball & Marker Tracking", frame)
