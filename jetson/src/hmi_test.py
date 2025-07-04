@@ -29,29 +29,9 @@ def initialize_component(component, name, retries=5, delay=2):
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
-def get_frame():
-    # === Display frame from control thread, if any ===
-    if hasattr(mqtt_client, "control_thread") and mqtt_client.control_thread.is_alive():
-        try:
-            frame = run_controller_3.frame_queue.get_nowait()
-
-            # Check if frame has meaningful content
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            if cv2.countNonZero(gray) > 1000 and frame.std() > 5:
-                print(f"[MAIN] Got frame with mean: {frame.mean():.2f}")
-                return frame
-        except queue.Empty:
-            pass
-    else:
-        try:
-            cv2.destroyWindow("Ball & Marker Tracking")
-        except:
-            pass
-    return None
-
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
-    time.sleep(10)
+    #time.sleep(10)
 except Exception as e:
     print(e)
     exit(1)
