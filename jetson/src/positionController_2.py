@@ -76,7 +76,7 @@ class Controller:
         #Axis control
         self.kp_theta = 6500  # Proportional gain for the control loop
         self.max_angle = 1.8 #Max angle in deg
-        self.command_delay = 0.015
+        self.command_delay = 0.0001
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
@@ -236,9 +236,9 @@ class Controller:
         dist = np.linalg.norm(np.array(pos) - np.array(ref))
         if np.sqrt(edot_x**2+edot_y**2) < self.vel_tol and dist > self.pos_tol:
             self.stuck = True
-            print("STUCK")
+            #print("STUCK")
         else:
-            print(np.sqrt(edot_x**2+edot_y**2))
+            #print(np.sqrt(edot_x**2+edot_y**2))
             self.stuck = False
 
         if self.stuck:
