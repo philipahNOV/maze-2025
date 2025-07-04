@@ -39,8 +39,13 @@ class BallTracker:
         self.latest_bgr_frame = None
 
         self.hsv_fail_counter = 0
-        self.hsv_fail_threshold = 3
+        self.hsv_fail_threshold = 5
+        self.yolo_cooldown = 0
+        self.yolo_cooldown_period = 15
 
+        self.yolo_request = False
+        self.yolo_result = None
+        self.yolo_lock = threading.Lock()
 
         print("Loading tracking model...")
         self.model = YOLO(model_path)
@@ -97,6 +102,20 @@ class BallTracker:
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
         return self.get_center_of_mass(mask)
+    
+    def yolo_worker(self):
+        while self.running:
+            if self.yolo_request:
+                with self.yolo_lock:
+                    rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                    self.yolo_request = False
+
+                if rgb is not None:
+                    results = self.model.predict(source=rgb, conf=0.6)[0]
+                    with self.yolo_lock:
+                        self.yolo_result = results
+            time.sleep(0.01)
+
 
     def hsv_tracking(self, frame, prev_pos, hsv_lower, hsv_upper):
         h, w = frame.shape[:2]
@@ -146,6 +165,7 @@ class BallTracker:
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
             else:
+                # --- Ball tracking with HSV ---
                 label = "ball"
                 hsv_lower, hsv_upper = self.HSV_RANGES["ball"]
                 prev_pos = self.tracked_objects[label]["position"]
@@ -159,21 +179,31 @@ class BallTracker:
 
                     if self.hsv_fail_counter >= self.hsv_fail_threshold:
                         global_pos = self.global_hsv_search(bgr_frame, hsv_lower, hsv_upper)
-                        if global_pos:
-                            results = self.model.predict(source=rgb_frame, conf=0.6)[0]
-                            for box in results.boxes:
-                                cls = int(box.cls[0])
-                                yolo_label = self.model.names[cls]
-                                if yolo_label == "ball":
-                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                    cx = (x1 + x2) // 2
-                                    cy = (y1 + y2) // 2
-                                    self.tracked_objects["ball"]["position"] = (cx, cy)
-                                    self.hsv_fail_counter = 0
-                                    break
+                        if global_pos and self.yolo_cooldown == 0:
+                            with self.yolo_lock:
+                                self.yolo_request = True
+
+                            time.sleep(0.05)  # Small pause to let yolo_thread respond
+                            with self.yolo_lock:
+                                results = self.yolo_result
+                                self.yolo_result = None
+
+                            if results:
+                                for box in results.boxes:
+                                    cls = int(box.cls[0])
+                                    yolo_label = self.model.names[cls]
+                                    if yolo_label == "ball":
+                                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                        cx = (x1 + x2) // 2
+                                        cy = (y1 + y2) // 2
+                                        self.tracked_objects["ball"]["position"] = (cx, cy)
+                                        self.hsv_fail_counter = 0
+                                        self.yolo_cooldown = self.yolo_cooldown_period
+                                        break
                         else:
                             self.tracked_objects["ball"]["position"] = None
 
+                # --- Marker tracking ---
                 for label in self.tracked_objects:
                     if label == "ball":
                         continue
@@ -183,8 +213,12 @@ class BallTracker:
                     if new_pos:
                         self.tracked_objects[label]["position"] = new_pos
 
+            if self.yolo_cooldown > 0:
+                self.yolo_cooldown -= 1
+
             self.frame = bgr_frame
             time.sleep(0.005)
+
 
     def start(self):
         self.init_camera()
@@ -198,6 +232,10 @@ class BallTracker:
         self.consumer_thread = threading.Thread(target=self.consumer_loop)
         self.consumer_thread.daemon = True
         self.consumer_thread.start()
+
+        self.yolo_thread = threading.Thread(target=self.yolo_worker)
+        self.yolo_thread.daemon = True
+        self.yolo_thread.start()
 
     def stop(self):
         self.running = False
