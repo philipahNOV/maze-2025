@@ -11,7 +11,7 @@ class ArduinoState(Enum):
     SET_COLOR = 3
 
 class ArduinoConnection(threading.Thread):
-    def __init__(self, baud_rate=9600):
+    def __init__(self, baud_rate=115200):
         """
         Initializes an instance of the ArduinoConnection class.
 
