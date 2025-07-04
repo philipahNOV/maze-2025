@@ -64,7 +64,7 @@ class Screen1(tk.Frame):
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
-        self.after(100, self.update_image)  # update every 200 ms
+        self.after(200, self.update_image)  # update every 200 ms
 
     def create_widgets(self):
         self.update()
@@ -72,7 +72,7 @@ class Screen1(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.image_label = tk.Label(self)
-        self.image_label.place(x=30, y=50, width=320, height=240)
+        self.image_label.place(x=30, y=50, width=320, height=320)
 
         self.example_button = tk.Button(
             self,
