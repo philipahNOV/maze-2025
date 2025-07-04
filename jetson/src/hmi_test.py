@@ -31,7 +31,7 @@ def initialize_component(component, name, retries=5, delay=2):
 
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
-    #time.sleep(10)
+    time.sleep(10)
 except Exception as e:
     print(e)
     exit(1)
