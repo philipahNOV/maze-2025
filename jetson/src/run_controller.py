@@ -11,18 +11,6 @@ from image_controller import ImageController
 
 frame_queue = queue.Queue(maxsize=1)
 
-def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
-        scale = 0.5  # 50% of original size
-        height, width = frame.shape[:2]
-        new_size = (int(width * scale), int(height * scale))
-
-        resized = cv2.resize(frame, new_size, interpolation=cv2.INTER_AREA)
-        _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
-        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-
-        mqtt_client.client.publish("pi/camera", jpg_as_text)
-
-
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.4)
@@ -46,21 +34,16 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     controller.horizontal()
     time.sleep(1)
 
-    last_sent_frame_time = time.time()
-    frame_send_hz = 5
+    
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
-    frame_warned = False
-    x1, y1, x2, y2 = 390, 10, 1120, 720
+
     try:
         while True:
             loop_start = time.time()
 
             frame = tracker.frame
             if frame is None:
-                if not frame_warned:
-                    print("[WARN] Tracker returned empty frame. Waiting...")
-                    frame_warned = True
                 time.sleep(0.015)
                 continue
 
@@ -71,18 +54,11 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                image_controller.draw_ball(ball_pos)
+                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
             else:
                 controller.arduinoThread.send_target_positions(0, 0)
+                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 ball_pos = smoother.update(ball_pos)
-
-            image_controller.draw_waypoints(pathFollower)
-
-            cropped_frame = image_controller.get_fixed_frame()
-
-            if time.time() > last_sent_frame_time + 1/frame_send_hz:
-                send_frame_to_pi(mqtt_client, cropped_frame)
-                last_sent_frame_time = time.time()
 
             cv2.imshow("Ball tracking", cropped_frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
