@@ -1,22 +1,15 @@
 from mqtt_client import MQTTClientJetson
-from math_part.math_main import State1_3
-from ai_part.ai_main import State2_3
 from arduino_connection_test import ArduinoConnection
-from camera.cam_loop import CameraThread
-from automatic import Automatic
 import run_controller_3
 import positionController_2
-import run_controller_3_LOS
 import testing.yolov1.hsv3 as tracking
 import queue
 import threading
 import maze_solver
-import estimate_dynamics
-
 from manual_part.manuel_main import elManuel
-
 import time
 import cv2
+import base64
 
 def initialize_component(component, name, retries=5, delay=2):
     for attempt in range(retries):
@@ -31,7 +24,7 @@ def initialize_component(component, name, retries=5, delay=2):
 
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
-    time.sleep(10)
+    time.sleep(5)
 except Exception as e:
     print(e)
     exit(1)

@@ -83,24 +83,21 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                 time.sleep(0.015)
                 continue
 
-            #plot_waypoints(frame, pathFollower)  # Draw path on frame
-
             ball_pos = tracker.get_position()
             ball_pos = smoother.update(ball_pos)
 
-            #if cv2.waitKey(1) & 0xFF == ord('q'):
-            #    break
+            #if not ball_pos:
+            #    print("No ball found (run_controller)")
+            #    continue
 
-            if not ball_pos:
-                print("No ball found (run_controller)")
-                continue
+            if ball_pos is not None:
+                pathFollower.follow_path(ball_pos)
+                cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
+                cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
+            else:
+                controller.arduinoThread.send_target_positions(0, 0)
 
-            # Use path following instead of static control
-            pathFollower.follow_path(ball_pos)
-
-            cv2.circle(frame, ball_pos, 8, (255, 165, 0), -1)
-            cv2.putText(frame, "Ball", (ball_pos[0]+10, ball_pos[1]), 
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 165, 0), 2)
             for i in range(pathFollower.length):
                 if i < pathFollower.next_waypoint:
                     cv2.circle(frame, path_array[i], 5, (0, 200, 0), -1)
