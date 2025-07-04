@@ -76,12 +76,11 @@ def main(tracker: tracking.BallTracker,
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
+                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
             else:
+                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
-
-            # Update image overlays and send frame to Pi
-            cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
 
             # Display cropped frame on local display
             cv2.imshow("Ball tracking", cropped_frame)
