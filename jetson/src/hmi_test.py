@@ -78,15 +78,15 @@ target_frame_time = 1.0 / target_fps  # ~16.67ms
 
 while True:
 
-    frame = get_frame(mqtt_client, run_controller_3.frame_queue)
-    if frame is not None:
-        if time.time() > last_sent_frame_time + 1/frame_send_hz:
-            #send_frame_to_pi(mqtt_client, frame)
-            last_sent_frame_time = time.time()
+    # frame = get_frame(mqtt_client, run_controller_3.frame_queue)
+    # if frame is not None:
+    #     if time.time() > last_sent_frame_time + 1/frame_send_hz:
+    #         #send_frame_to_pi(mqtt_client, frame)
+    #         last_sent_frame_time = time.time()
                 
-        cv2.imshow("Ball & Marker Tracking", frame)
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
+        # cv2.imshow("Ball & Marker Tracking", frame)
+        # if cv2.waitKey(1) & 0xFF == ord('q'):
+        #     break
 
     try:
         command = mqtt_client.command_queue.get_nowait()
