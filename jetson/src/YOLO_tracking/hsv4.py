@@ -20,6 +20,20 @@ class BallTracker:
             "marker_4": {"position": None},
         }
 
+        self.kalman = cv2.KalmanFilter(4, 2)
+        self.kalman.measurementMatrix = np.array([[1, 0, 0, 0],
+                                                [0, 1, 0, 0]], np.float32)
+        self.kalman.transitionMatrix = np.array([[1, 0, 1, 0],
+                                                [0, 1, 0, 1],
+                                                [0, 0, 1, 0],
+                                                [0, 0, 0, 1]], np.float32)
+        self.kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
+        self.kalman.statePre = np.zeros((4, 1), np.float32)
+        self.kalman.statePost = np.zeros((4, 1), np.float32)
+        self.kalman_initialized = False
+        self.kalman_prediction = None
+
+
         self.HSV_RANGES = {
             "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])), #green
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
@@ -28,7 +42,7 @@ class BallTracker:
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
 
         #self.model = YOLO(model_path)
-        self.WINDOW_SIZE = 50
+        self.WINDOW_SIZE = 70
         self.running = False
         self.initialized = False
         self.ball_confirm_counter = 0
@@ -126,7 +140,8 @@ class BallTracker:
                     cy = (y1 + y2) // 2
 
                     if label == "ball":
-                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
+                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
+                        self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
                             self.ball_confirm_counter += 1
                             self.tracked_objects["ball"]["position"] = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
@@ -134,18 +149,58 @@ class BallTracker:
 
                     elif label.startswith("marker"):
                         self.tracked_objects[label]["position"] = (cx, cy)
+
             else:
-                # use HSV tracking after ball has been initialized
+                label = "ball"
+                hsv_lower, hsv_upper = self.HSV_RANGES["ball"]
+                prev_pos = self.tracked_objects[label]["position"]
+                new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
+
+                if new_pos:
+                    self.tracked_objects[label]["position"] = new_pos
+                    self.hsv_fail_counter = 0
+
+                    # Kalman correction
+                    measurement = np.array([[np.float32(new_pos[0])], [np.float32(new_pos[1])]])
+                    if not self.kalman_initialized:
+                        self.kalman.statePre[:2] = measurement
+                        self.kalman.statePost[:2] = measurement
+                        self.kalman_initialized = True
+                    self.kalman.correct(measurement)
+
+                else:
+                    self.hsv_fail_counter += 1
+
+                    if self.hsv_fail_counter >= self.hsv_fail_threshold:
+                        global_pos = self.global_hsv_search(bgr_frame, hsv_lower, hsv_upper)
+                        if global_pos:
+                            self.tracked_objects[label]["position"] = global_pos
+                            self.hsv_fail_counter = 0
+
+                            # Correct Kalman with global fallback
+                            measurement = np.array([[np.float32(global_pos[0])], [np.float32(global_pos[1])]])
+                            self.kalman.correct(measurement)
+                        else:
+                            self.tracked_objects[label]["position"] = None
+
+                    if self.kalman_initialized:
+                        self.kalman.predict()
+
+                # Marker tracking (no Kalman)
                 for label in self.tracked_objects:
-                    hsv_lower, hsv_upper = self.HSV_RANGES["ball" if "ball" in label else "marker"]
+                    if label == "ball":
+                        continue
+                    hsv_lower, hsv_upper = self.HSV_RANGES["marker"]
                     prev_pos = self.tracked_objects[label]["position"]
                     new_pos = self.hsv_tracking(bgr_frame, prev_pos, hsv_lower, hsv_upper)
                     if new_pos:
                         self.tracked_objects[label]["position"] = new_pos
 
+            if self.yolo_cooldown > 0:
+                self.yolo_cooldown -= 1
+
             self.frame = bgr_frame
             time.sleep(0.005)
-
 
     def start(self):
         self.init_camera()
@@ -166,7 +221,12 @@ class BallTracker:
             self.zed.close()
 
     def get_position(self):
-        return self.tracked_objects["ball"]["position"]
+        if self.kalman_initialized:
+            pred = self.kalman.predict()
+            cx, cy = int(pred[0]), int(pred[1])
+            self.kalman_prediction = (cx, cy)
+            return self.kalman_prediction
+        return None
     
     def get_stable_frame(self):
         with self.lock:

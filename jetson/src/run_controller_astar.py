@@ -136,7 +136,7 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5) #start = (604, 950)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
@@ -153,10 +153,8 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
         maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
-    binary_mask = create_binary_mask(gray) #color_frame=maze_frame
+    binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
-
-    launch_pad_radius = 70
     
     ball_pos = tracker.get_position()
     while ball_pos is None:
@@ -167,7 +165,6 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     ball_pos = smoother.update(ball_pos)
     start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
     start = snap_to_nearest_walkable(safe_mask, start_raw)
-    cv2.circle(safe_mask, (ball_pos[1], ball_pos[0]), launch_pad_radius, 255, -1)
 
     #goal = (990, 704)
     global clicked_goal
@@ -188,11 +185,9 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.40)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.60)
     waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
-    print(waypoints)
-    print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
     controller.horizontal()
     time.sleep(1)
