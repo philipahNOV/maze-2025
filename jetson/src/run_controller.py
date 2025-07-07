@@ -8,7 +8,8 @@ from mqtt_client import MQTTClientJetson
 import queue
 from image_controller import ImageController
 import light_controller
-import threading
+import numpy as np
+import path_following_lookahead
 
 frame_queue = queue.Queue(maxsize=1)
 
@@ -49,7 +50,32 @@ def main(tracker: tracking.BallTracker,
         (583, 243), (552, 143), (552, 49), (687, 49), (763, 49)
     ]
 
+    def densify_path(path, factor=3):
+        """
+        Densify a path by linearly interpolating 'factor-1' points between each pair.
+        
+        Args:
+            path (list of tuple): Original path as list of (x, y) tuples
+            factor (int): How many segments per original segment (3 = 2 interpolated points)
+
+        Returns:
+            list of tuple: Densified path
+        """
+        new_path = []
+        for i in range(len(path) - 1):
+            p1 = np.array(path[i])
+            p2 = np.array(path[i + 1])
+            new_path.append(tuple(p1))  # original point
+            for j in range(1, factor):
+                interp = p1 + (p2 - p1) * (j / factor)
+                new_path.append(tuple(interp.astype(int)))
+        new_path.append(path[-1])  # include last point
+        return new_path
+    
+    path_array = densify_path(path_array, factor=3)
+
     pathFollower = path_following.PathFollower(path_array, controller)
+    pathFollowerLookahead = path_following_lookahead.PathFollower(path_array, controller)
 
     # Level the platform before starting path following
     controller.horizontal()
@@ -77,8 +103,8 @@ def main(tracker: tracking.BallTracker,
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
-                pathFollower.follow_path(ball_pos)
-                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
+                pathFollowerLookahead.follow_path(ball_pos)
+                cropped_frame = image_controller.update(ball_pos, pathFollowerLookahead, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
                     blinker.join()
