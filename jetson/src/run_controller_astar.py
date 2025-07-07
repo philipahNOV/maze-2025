@@ -176,12 +176,11 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     cv2.namedWindow("Safe Mask")
     cv2.setMouseCallback("Safe Mask", on_mouse_click)
 
-    preview_mask = safe_mask.copy()
-    cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
+    cv2.circle(safe_mask, (start[1], start[0]), 10, 127, -1)
     print("Click on a goal point...")
 
     while clicked_goal is None:
-        cv2.imshow("Safe Mask", preview_mask)
+        cv2.imshow("Safe Mask", safe_mask)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Goal selection cancelled.")
             return
