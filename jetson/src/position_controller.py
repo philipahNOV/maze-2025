@@ -127,7 +127,7 @@ class Controller:
             
         edot_x = 0
         edot_y = 0
-        alpha = 0.85
+        alpha = 0.9
         if self.prevError is not None and self.prevTime is not None:
             dt = time.time() - self.prevTime
             if dt > 0.0001:  # Avoid division by zero
