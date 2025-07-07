@@ -8,7 +8,7 @@ class PathFollower:
         self.controller = controller
         self.length = len(self.path)
 
-        self.lookahead_distance = 80  # pixels
+        self.lookahead_distance = 90  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
@@ -22,7 +22,7 @@ class PathFollower:
         self.last_closest_index = 0
 
         # Limit how far ahead we can skip (in waypoints)
-        self.max_skip_ahead = int(self.length / 10)  # Skip ahead at most 10% of the path length
+        self.max_skip_ahead = int(self.lookahead_distance / 10)  # e.g., 10 pixels per segment
 
     def follow_path(self, ballPos):
         if not ballPos:
@@ -101,7 +101,10 @@ class PathFollower:
                 return tuple(lookahead_point)
             dist_acc += seg_len
 
-        return self.path[-1]
+        # Reached end of path — reset
+        print("[LOOP] End of path reached. Resetting to start.")
+        self.last_closest_index = 0
+        return self.path[0]
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
