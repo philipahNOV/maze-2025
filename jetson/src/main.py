@@ -42,7 +42,7 @@ while not mqtt_client.handshake_complete:
 
 print("Connected!")
 
-tracker_service.start_tracking()
+tracker_service.start_tracker()
 while tracker_service.tracker is None:
     time.sleep(0.1)
 
