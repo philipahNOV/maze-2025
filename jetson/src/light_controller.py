@@ -15,7 +15,7 @@ class BlinkRed(threading.Thread):
             self.arduino_thread.send_color(*red)
             time.sleep(0.2)
             self.arduino_thread.send_color(*white)
-            time.sleep(2.3)
+            time.sleep(4)
 
     def stop(self):
         self._stop_event.set()
