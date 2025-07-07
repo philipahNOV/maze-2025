@@ -277,31 +277,49 @@ void read_serial()
             buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
              
             int v1, v2, v3, incoming_state;
+
+            // Tell antall kommaer for å bestemme meldingstype raskt
+            uint8_t comma_count = 0;
+            for (int i = 0; i < len; i++)
+            {
+                if (buffer[i] == ',') {
+                    comma_count++;
+                }
+            }
             
             // Sjekk for den vanligste meldingen FØRST: CONTROL (2 hastigheter + state)
-            if (sscanf(buffer, "%d,%d,%d", &v1, &v2, &incoming_state) == 3)
+            if (comma_count == 2) // For CONTROL-meldinger (f.eks. "25,200,1")
             {
-                serial_messages::value_1 = v1;
-                serial_messages::value_2 = v2;
-                if (incoming_state >= 0 && incoming_state <= 3) {
-                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                if (sscanf(buffer, "%d,%d,%d", &v1, &v2, &incoming_state) == 3)
+                {
+                    serial_messages::value_1 = v1;
+                    serial_messages::value_2 = v2;
+                    if (incoming_state >= 0 && incoming_state <= 3) {
+                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                    }
                 }
             }
             // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
-            else if (sscanf(buffer, "%d,%d,%d,%d", &v1, &v2, &v3, &incoming_state) == 4)
+            else if (comma_count == 3) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
             {
-                serial_messages::value_1 = v1;
-                serial_messages::value_2 = v2;
-                serial_messages::value_3 = v3;
-                if (incoming_state >= 0 && incoming_state <= 3) {
-                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                if (sscanf(buffer, "%d,%d,%d,%d", &v1, &v2, &v3, &incoming_state) == 4)
+                {
+                    serial_messages::value_1 = v1;
+                    serial_messages::value_2 = v2;
+                    serial_messages::value_3 = v3;
+                    if (incoming_state >= 0 && incoming_state <= 3) {
+                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                    }
                 }
             }
             // Sjekk til slutt for den korteste: IDLE/GET_BALL (kun state)
-            else if (sscanf(buffer, "%d", &incoming_state) == 1)
+            else if (comma_count == 0) // For IDLE/GET_BALL-meldinger (f.eks. "0")
             {
-                if (incoming_state >= 0 && incoming_state <= 3) {
-                    serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                if (sscanf(buffer, "%d", &incoming_state) == 1)
+                {
+                    if (incoming_state >= 0 && incoming_state <= 3) {
+                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+                    }
                 }
             }
         }
