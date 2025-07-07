@@ -153,7 +153,7 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
         maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
-    binary_mask = create_binary_mask(gray) #color_frame=maze_frame
+    binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
 
     launch_pad_radius = 70
@@ -188,11 +188,9 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.40)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.60)
     waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
-    print(waypoints)
-    print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
     controller.horizontal()
     time.sleep(1)

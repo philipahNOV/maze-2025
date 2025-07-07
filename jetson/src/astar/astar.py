@@ -64,14 +64,9 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
     return False
 
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.40):
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.60):
     small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
     small_array = (small_array > 0).astype(np.uint8)
-
-    # Add walkable circle for launch pad (in downscaled space)
-    launch_pad_center = (int(630 * scale), int(1030 * scale))  # (y, x) scaled
-    launch_pad_radius = int(70 * scale)
-    cv2.circle(small_array, (launch_pad_center[1], launch_pad_center[0]), launch_pad_radius, 1, -1)
 
     start_small = (int(start[0] * scale), int(start[1] * scale))
     goal_small = (int(goal[0] * scale), int(goal[1] * scale))
