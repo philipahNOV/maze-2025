@@ -58,7 +58,7 @@ def main(tracker: tracking.BallTracker,
     # Set loop rate
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
-
+    blinker = None
     try:
         while True:
             loop_start = time.time()
@@ -79,8 +79,10 @@ def main(tracker: tracking.BallTracker,
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
-                blinker.stop()
-                blinker.join()
+                if blinker is not None:
+                    blinker.stop()
+                    blinker.join()
+                    blinker = None
             else:
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
