@@ -45,7 +45,7 @@ class MainApp(tk.Tk):
         
         print("Frames initialized:", self.frames)
 
-        self.show_frame("BootScreen")
+        self.show_frame("BootScreen1")
 
 
     def get_current_screen(self):
