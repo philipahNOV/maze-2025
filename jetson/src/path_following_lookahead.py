@@ -8,8 +8,7 @@ class PathFollower:
         self.controller = controller
         self.length = len(self.path)
 
-        self.lookahead_distance_min = 50  # pixels
-        self.lookahead_distance_max = 100  # pixels
+        self.lookahead_distance = 90  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
@@ -23,7 +22,7 @@ class PathFollower:
         self.last_closest_index = 0
 
         # Limit how far ahead we can skip (in waypoints)
-        self.max_skip_ahead = int(self.length / 10)  # How far ahead we can search
+        self.max_skip_ahead = int(self.length / 20)  # How far ahead we can search
         self.max_skip_behind = int(self.length / 10)  # How far back we can search
 
     def follow_path(self, ballPos):
@@ -40,13 +39,6 @@ class PathFollower:
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
 
-        # Determine dynamic lookahead distance
-        if vel is not None:
-            # Clamp velocity-based lookahead between min and max
-            lookahead_distance = np.clip(vel, self.lookahead_distance_min, self.lookahead_distance_max)
-        else:
-            lookahead_distance = self.lookahead_distance_min
-
         # Handle stuck detection
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:
@@ -57,11 +49,11 @@ class PathFollower:
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 print("[STUCK] Ball not progressing, stopping control temporarily.")
                 self.prev_progress_time = None
-                self.controller.arduinoThread.send_speed(0, 0)
+                #self.controller.arduinoThread.send_speed(0, 0)
                 return
 
         # Compute lookahead target
-        lookahead_point = self.get_lookahead_point(ballPos, lookahead_distance)
+        lookahead_point = self.get_lookahead_point(ballPos, self.lookahead_distance)
 
         # Feedforward direction
         dx = lookahead_point[0] - ballPos[0]
