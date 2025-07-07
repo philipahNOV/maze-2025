@@ -16,6 +16,7 @@ class LocatingScreen(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
+        self.check_for_ball()  # Start checking for the ball
 
     def on_button_click_template(self):
         self.mqtt_client.client.publish("jetson/command", "Template")
