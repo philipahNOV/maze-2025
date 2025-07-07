@@ -189,7 +189,7 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.55)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.40)
     waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
     print(waypoints)
