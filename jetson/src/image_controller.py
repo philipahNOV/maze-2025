@@ -20,7 +20,7 @@ class ImageController:
         self.frame = None
         self.cropped_frame = None
         self.last_sent_frame_time = time.time()
-        self.frame_send_hz = 5  # Max number of frames to send per second
+        self.frame_send_hz = 5  # Number of frames to send per second
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
