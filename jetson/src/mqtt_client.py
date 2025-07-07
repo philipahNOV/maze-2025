@@ -9,7 +9,7 @@ CMD_CONTROL = "Control"
 CMD_STOP = "Stop_control"
 
 class MQTTClientJetson(threading.Thread):
-    def __init__(self, arduino_connection: ArduinoConnection = None, broker_address="192.168.1.3", port=1883):
+    def __init__(self, arduino_connection: ArduinoConnection = None, fsm = None, broker_address="192.168.1.3", port=1883):
         super().__init__()
         self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)  # type: ignore
         self.client.on_connect = self.on_connect
@@ -17,6 +17,7 @@ class MQTTClientJetson(threading.Thread):
         self.client.on_disconnect = self.on_disconnect
 
         self.arduino_connection = arduino_connection
+        self.fsm = fsm
         self.command_queue = Queue()
         self.running = True
         self.handshake_complete = False
@@ -69,8 +70,9 @@ class MQTTClientJetson(threading.Thread):
                 self.stop_control = False
             elif payload == CMD_STOP:
                 self.stop_control = True
-        elif topic == "jetson/state":
-            pass
+        elif topic == "jetson/state_transition":
+            state = msg.payload.decode()
+            self.fsm.set_state(state)
         elif topic == "arduino/elevator":
             self.elevator = payload
 

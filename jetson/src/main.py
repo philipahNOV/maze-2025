@@ -6,6 +6,7 @@ from camera.tracker_service import TrackerService
 import queue
 import threading
 import time
+from finite_state_machine import FSM
 
 
 def initialize_component(component, name, retries=5, delay=2):
@@ -35,6 +36,8 @@ except Exception as e:
 
 tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
+fsm = FSM(tracker_service, arduino_thread)
+mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
