@@ -74,7 +74,7 @@ class LocatingScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.under_title.place(x=430, y=245)
+        self.under_title.place(x=430, y=280)
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:

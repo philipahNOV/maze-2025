@@ -67,11 +67,13 @@ class MQTTClientPi(threading.Thread):
 
     def on_message(self, client, userdata, msg):
         # Delegate to the appropriate handler based on the topic
+        print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
             pass
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
+                print("TEST: Ball found")
             if msg.payload.decode() == "ball_not_found":
                 self.ball_found = False
         elif msg.topic == "handshake/response":
