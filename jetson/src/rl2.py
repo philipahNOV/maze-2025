@@ -87,7 +87,7 @@ def main(tracker: TrackerService,
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
-                    blinker.join()
+                    #blinker.join()
                     blinker = None
             else:
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)

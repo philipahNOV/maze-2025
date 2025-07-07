@@ -55,7 +55,7 @@ class NavigationScreen(tk.Frame):
             relief="flat",
             command=lambda: self.controller.show_frame("MainScreen")
         )
-        self.back_button.place(x=929, y=10, width=150, height=50)
+        self.back_button.place(x=879, y=10, width=150, height=50)
 
         self.template_title = tk.Label(
             self,
