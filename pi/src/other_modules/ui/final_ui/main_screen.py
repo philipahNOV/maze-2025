@@ -68,7 +68,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=lambda: self.controller.show_frame("InfoScreen"),
         )
-        self.info_button.place(x=391, y=335, width=243, height=74)
+        self.info_button.place(x=391, y=270, width=243, height=74)
 
         self.disco_button = tk.Button(
             self,
@@ -82,7 +82,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_disco,
         )
-        self.disco_button.place(x=391, y=420, width=243, height=74)
+        self.disco_button.place(x=391, y=355, width=243, height=74)
 
         self.title = tk.Label(
             self,
