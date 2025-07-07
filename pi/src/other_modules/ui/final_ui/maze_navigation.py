@@ -143,6 +143,8 @@ class NavigationScreen(tk.Frame):
             activebackground="#D9D9D9",
             fg="#1A1A1A",
             selectcolor="#60666C",  # This changes the indicator fill color
+            anchor='w',
+            justify='left',
             command=self.on_toggle_loop
         )
         self.loop_toggle.place(x=760, y=175, width=200, height=50)  # Adjust position as needed
@@ -158,6 +160,8 @@ class NavigationScreen(tk.Frame):
             activebackground="#D9D9D9",
             fg="#1A1A1A",
             selectcolor="#60666C",  # This changes the indicator fill color
+            anchor='w',
+            justify='left',
             command=self.on_toggle_custom
         )
         self.custom_toggle.place(x=760, y=115, width=200, height=50)  # Adjust position as needed

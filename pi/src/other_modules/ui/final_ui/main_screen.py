@@ -91,7 +91,7 @@ class MainScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title.place(x=400, y=100)
+        self.title.place(x=380, y=100)
 
     def show(self):
         """Make this frame visible"""
