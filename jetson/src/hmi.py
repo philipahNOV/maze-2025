@@ -39,7 +39,7 @@ while not mqtt_client.handshake_complete:
 
 print("Connected to Pi!")
 
-tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
+tracker = tracking.BallTracker(model_path="YOLO_tracking/v8-291.pt")
 tracker.start()
 controller = position_controller.Controller(arduino_thread, tracker)
 

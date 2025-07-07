@@ -2,7 +2,7 @@ import numpy as np
 from ultralytics import YOLO
 
 class YOLOModel:
-    def __init__(self, model_path="best.pt"):
+    def __init__(self, model_path="v8-281.pt"):
         print("Loading tracking model...")
         self.model = YOLO(model_path)
         self.model.fuse()
