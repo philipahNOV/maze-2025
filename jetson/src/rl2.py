@@ -18,15 +18,6 @@ frame_queue = queue.Queue(maxsize=1)
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson):
-    """
-    Main control loop for vision-based ball-on-plate control.
-
-    Args:
-        tracker (TrackerService): Modular tracking service
-        controller (Controller): Ball-on-plate position controller
-        mqtt_client (MQTTClientJetson): MQTT client for Jetson to Pi communication
-    """
-
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 

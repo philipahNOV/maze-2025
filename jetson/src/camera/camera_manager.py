@@ -9,7 +9,7 @@ class CameraManager:
 
     def init_camera(self):
         if self.initialized:
-            print("[CameraManager] Camera already initialized.")
+            print("Camera already initialized.")
             return
 
         init_params = sl.InitParameters()
@@ -21,7 +21,7 @@ class CameraManager:
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             raise RuntimeError("ZED camera failed to open.")
         
-        print("[CameraManager] Camera initialized.")
+        print("Camera initialized.")
         self.initialized = True
 
     def grab_frame(self):
@@ -58,4 +58,4 @@ class CameraManager:
         if self.initialized:
             self.zed.close()
             self.initialized = False
-            print("[CameraManager] Camera closed.")
+            print("Camera closed.")
