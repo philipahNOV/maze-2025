@@ -1,4 +1,4 @@
-import YOLO_tracking.hsv4 as tracking
+import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
 import position_controller
@@ -75,7 +75,7 @@ def main(tracker: tracking.BallTracker,
     path_array = densify_path(path_array, factor=3)
 
     pathFollower = path_following.PathFollower(path_array, controller)
-    pathFollowerLookahead = path_following_lookahead.PathFollower(path_array, controller)
+    #pathFollowerLookahead = path_following_lookahead.PathFollower(path_array, controller)
 
     # Level the platform before starting path following
     controller.horizontal()
@@ -103,8 +103,9 @@ def main(tracker: tracking.BallTracker,
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
-                pathFollowerLookahead.follow_path(ball_pos)
-                cropped_frame = image_controller.update(ball_pos, pathFollowerLookahead, mqtt_client)
+                #pathFollowerLookahead.follow_path(ball_pos)
+                pathFollower.follow_path(ball_pos)
+                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
                     blinker.join()
