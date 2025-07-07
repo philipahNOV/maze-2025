@@ -87,8 +87,9 @@ def main(tracker: tracking.BallTracker,
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
-                blinker = light_controller.BlinkRed(controller.arduinoThread)
-                blinker.start()
+                if blinker is None:
+                    blinker = light_controller.BlinkRed(controller.arduinoThread)
+                    blinker.start()
 
 
             # Display cropped frame on local display
