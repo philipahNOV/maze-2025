@@ -145,7 +145,7 @@ class NavigationScreen(tk.Frame):
             selectcolor="#60666C",  # This changes the indicator fill color
             command=self.on_toggle_loop
         )
-        self.loop_toggle.place(x=760, y=200, width=50, height=50)  # Adjust position as needed
+        self.loop_toggle.place(x=760, y=175, width=200, height=50)  # Adjust position as needed
 
         self.custom_toggle = tk.Checkbutton(
             self,
@@ -160,7 +160,7 @@ class NavigationScreen(tk.Frame):
             selectcolor="#60666C",  # This changes the indicator fill color
             command=self.on_toggle_custom
         )
-        self.custom_toggle.place(x=760, y=100, width=50, height=50)  # Adjust position as needed
+        self.custom_toggle.place(x=760, y=115, width=200, height=50)  # Adjust position as needed
 
 
 
