@@ -88,8 +88,8 @@ class ImageController:
         Returns:
             np.ndarray: The final processed frame ready for display.
         """
-        self.draw_waypoints(pathFollower)
-        #self.draw_waypoints_lookahead(pathFollower)
+        #self.draw_waypoints(pathFollower)
+        self.draw_waypoints_lookahead(pathFollower)
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)

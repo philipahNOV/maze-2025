@@ -46,7 +46,7 @@ class Controller:
         self.vel_max = 100
 
         # === PID TUNING PARAMETERS ===
-        lookahead = False
+        lookahead = True
         if lookahead:
             self.kp_x = 0.00002
             self.kd_x = 0.00014
