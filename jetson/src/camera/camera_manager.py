@@ -9,7 +9,7 @@ class CameraManager:
 
     def init_camera(self):
         if self.initialized:
-            print("[CameraManager] Camera already initialized. Skipping open().")
+            print("[CameraManager] Camera already initialized.")
             return
 
         init_params = sl.InitParameters()

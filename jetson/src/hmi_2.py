@@ -37,14 +37,14 @@ print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(1)
 
-print("Connected to Pi!")
-
 tracker_service = TrackerService(model_path="camera/best.pt")
 tracker_service.camera.init_camera()
 
 controller = pos2.Controller(arduino_thread, tracker_service)
 
 color = "white"
+
+print("Ready to use. Waiting for commands...")
 
 while True:
     try:
