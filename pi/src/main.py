@@ -1,8 +1,17 @@
 import tkinter as tk
 from other_modules.ui.start_screen import Screen1
-from other_modules.ui.boot_screen_1 import BootScreen
+#from other_modules.ui.boot_screen_1 import BootScreen
 from other_modules.ui.tuning_screen import Tuning
 from other_modules.ui.control_screen import ControlScreen
+
+from other_modules.ui.final_ui.booting import BootScreen
+from other_modules.ui.final_ui.controlling import ControllingScreen
+from other_modules.ui.final_ui.maze_navigation import NavigationScreen
+from other_modules.ui.final_ui.info import InfoScreen
+from other_modules.ui.final_ui.locating_ball import LocatingScreen
+from other_modules.ui.final_ui.main_screen import MainScreen
+from other_modules.ui.final_ui.path_finding_auto import AutoPathScreen
+from other_modules.ui.final_ui.path_finding_custom import CustomPathScreen
 
 import subprocess
 from other_modules.mqtt_client import MQTTClientPi
@@ -38,7 +47,7 @@ class MainApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (BootScreen, Screen1, Tuning, ControlScreen):
+        for F in (BootScreen, Screen1, Tuning, ControlScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")

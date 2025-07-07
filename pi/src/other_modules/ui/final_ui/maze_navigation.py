@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from main import MainApp
 
 
-class Template(tk.Frame):
+class NavigationScreen(tk.Frame):
     def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
