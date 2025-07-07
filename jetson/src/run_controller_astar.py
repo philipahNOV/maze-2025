@@ -5,7 +5,6 @@ import position_controller
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
-import astar.shared_masking as shared_masking
 from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
