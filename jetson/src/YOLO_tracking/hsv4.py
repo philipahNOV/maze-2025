@@ -33,16 +33,16 @@ class BallTracker:
         self.kalman_initialized = False
         self.kalman_prediction = None
 
-
         self.HSV_RANGES = {
             "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])), #green
+            #"ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # Red
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
 
         #self.model = YOLO(model_path)
-        self.WINDOW_SIZE = 70
+        self.WINDOW_SIZE = 80
         self.running = False
         self.initialized = False
         self.ball_confirm_counter = 0
@@ -50,6 +50,15 @@ class BallTracker:
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+
+        self.hsv_fail_counter = 0
+        self.hsv_fail_threshold = 5
+        self.yolo_cooldown = 0
+        self.yolo_cooldown_period = 15
+
+        self.yolo_request = False
+        self.yolo_result = None
+        self.yolo_lock = threading.Lock()
 
         print("Loading tracking model...")
         self.model = YOLO(model_path)
@@ -63,11 +72,11 @@ class BallTracker:
         self.zed = sl.Camera()
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.HD720
-        init_params.camera_fps = 30
+        init_params.camera_fps = 60
         init_params.depth_mode = sl.DEPTH_MODE.NONE
         init_params.coordinate_units = sl.UNIT.MILLIMETER
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
-            raise RuntimeError("ZED camera failed to open")
+            raise RuntimeError("ZED camera failed to open.")
 
     def grab_frame(self):
         image = sl.Mat()
@@ -101,6 +110,25 @@ class BallTracker:
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
         return (cx, cy)
+    
+    def global_hsv_search(self, frame, hsv_lower, hsv_upper):
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+        return self.get_center_of_mass(mask)
+    
+    def yolo_worker(self):
+        while self.running:
+            if self.yolo_request:
+                with self.yolo_lock:
+                    rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                    self.yolo_request = False
+
+                if rgb is not None:
+                    results = self.model.predict(source=rgb, conf=0.6)[0]
+                    with self.yolo_lock:
+                        self.yolo_result = results
+            time.sleep(0.01)
+
 
     def hsv_tracking(self, frame, prev_pos, hsv_lower, hsv_upper):
         h, w = frame.shape[:2]
@@ -202,6 +230,7 @@ class BallTracker:
             self.frame = bgr_frame
             time.sleep(0.005)
 
+
     def start(self):
         self.init_camera()
         self.grab_frame()
@@ -215,6 +244,10 @@ class BallTracker:
         self.consumer_thread.daemon = True
         self.consumer_thread.start()
 
+        self.yolo_thread = threading.Thread(target=self.yolo_worker)
+        self.yolo_thread.daemon = True
+        self.yolo_thread.start()
+
     def stop(self):
         self.running = False
         if self.zed:
@@ -227,7 +260,7 @@ class BallTracker:
             self.kalman_prediction = (cx, cy)
             return self.kalman_prediction
         return None
-    
+
     def get_stable_frame(self):
         with self.lock:
             return self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
