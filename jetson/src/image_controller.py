@@ -1,4 +1,6 @@
 from path_following import PathFollower
+from path_following_lookahead import PathFollower as PathFollowerLookahead
+import numpy as np
 import cv2
 import time
 import base64
@@ -35,6 +37,11 @@ class ImageController:
             else:
                 color = (0, 0, 255)  # Red for future waypoints
             cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
+
+    def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
+        cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
+        #for i in range(pathFollower.length):
+        #    cv2.circle(self.frame, pathFollower.path[i], 5, (255, 0, 0), -1)
 
     def draw_ball(self, ball_pos):
         """Draw the ball position on the frame."""
@@ -82,6 +89,7 @@ class ImageController:
             np.ndarray: The final processed frame ready for display.
         """
         #self.draw_waypoints(pathFollower)
+        self.draw_waypoints_lookahead(pathFollower)
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)

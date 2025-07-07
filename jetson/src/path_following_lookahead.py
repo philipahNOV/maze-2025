@@ -8,7 +8,7 @@ class PathFollower:
         self.controller = controller
         self.length = len(self.path)
 
-        self.lookahead_distance = 100  # pixels
+        self.lookahead_distance = 90  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
@@ -17,6 +17,12 @@ class PathFollower:
         self.prev_progress_time = None
         self.stuck_retry_time = 3
         self.lookahead_point = None
+
+        # Optimization: cache the last closest segment index
+        self.last_closest_index = 0
+
+        # Limit how far ahead we can skip (in waypoints)
+        self.max_skip_ahead = int(self.lookahead_distance / 10)  # e.g., 10 pixels per segment
 
     def follow_path(self, ballPos):
         if not ballPos:
@@ -63,12 +69,15 @@ class PathFollower:
 
     def get_lookahead_point(self, ball_pos, lookahead_dist=100):
         min_dist = float('inf')
-        closest_index = 0
+        closest_index = self.last_closest_index
         closest_proj = None
         ball_pos_np = np.array(ball_pos)
 
-        # Find closest point on the path
-        for i in range(self.length - 1):
+        # Optimization: limit the search range forward only
+        max_index = min(self.length - 1, self.last_closest_index + self.max_skip_ahead)
+        search_range = range(self.last_closest_index, max_index)
+
+        for i in search_range:
             a = np.array(self.path[i])
             b = np.array(self.path[i + 1])
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
@@ -77,6 +86,8 @@ class PathFollower:
                 min_dist = dist
                 closest_index = i
                 closest_proj = proj
+
+        self.last_closest_index = closest_index  # Update cache
 
         # Traverse forward from closest point
         dist_acc = 0
@@ -90,7 +101,10 @@ class PathFollower:
                 return tuple(lookahead_point)
             dist_acc += seg_len
 
-        return self.path[-1]
+        # Reached end of path — reset
+        print("[LOOP] End of path reached. Resetting to start.")
+        self.last_closest_index = 0
+        return self.path[0]
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
