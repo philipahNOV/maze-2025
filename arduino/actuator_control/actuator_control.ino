@@ -72,7 +72,7 @@ void read_serial(); // Funksjon for å lese innkommende seriedata
 
 void setup() {
     // Starter seriel kominikasjon
-    Serial.begin(9600);
+    Serial.begin(115200);
 
     // Initialiserer LED stripen
     led_strips::strip.begin(); // Starter LED stripen
