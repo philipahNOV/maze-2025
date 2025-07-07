@@ -28,3 +28,7 @@ class TrackerService:
 
     def get_orientation(self):
         return self.camera.get_orientation() if self.started else None
+
+    @property
+    def is_initialized(self):
+        return self.tracker.initialized if self.tracker else False
