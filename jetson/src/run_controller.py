@@ -50,7 +50,7 @@ def main(tracker: tracking.BallTracker,
         (583, 243), (552, 143), (552, 49), (687, 49), (763, 49)
     ]
 
-    def densify_path(path, factor=3):
+    def densify_path(path, factor=6):
         """
         Densify a path by linearly interpolating 'factor-1' points between each pair.
         
