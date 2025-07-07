@@ -17,8 +17,8 @@ class MainScreen(tk.Frame):
         # Layout the widgets including the logo
         self.create_widgets()
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_button_click_disco(self):
+        pass
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -44,7 +44,7 @@ class MainScreen(tk.Frame):
 
         self.template_button = tk.Button(
             self,
-            text="TEMPLATE",
+            text="MAZE NAVIGATION",
             font=("Jockey One", 30),
             fg="white",                    # Text color
             borderwidth=0,            # No border
@@ -52,18 +52,46 @@ class MainScreen(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=self.on_button_click_template,
+            command=self.controller.show_frame("NavigationScreen")
         )
-        self.template_button.place(x=690, y=150, width=243, height=74)
+        self.template_button.place(x=391, y=300, width=243, height=74)
+
+        self.template_button = tk.Button(
+            self,
+            text="INFO",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.controller.show_frame("InfoScreen"),
+        )
+        self.template_button.place(x=391, y=485, width=243, height=74)
+
+        self.template_button = tk.Button(
+            self,
+            text="MAZE NAVIGATION",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_disco,
+        )
+        self.template_button.place(x=391, y=570, width=243, height=74)
 
         self.template_title = tk.Label(
             self,
-            text="Template",
+            text="WELCOME",
             font=("Jockey One", 40),   # or any font you prefer
-            fg="#EE3229",                # text color
+            fg=self.controller.nov_grey,                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.template_title.place(x=410, y=315)
+        self.template_title.place(x=410, y=200)
 
     def show(self):
         """Make this frame visible"""

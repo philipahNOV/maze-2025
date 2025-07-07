@@ -61,7 +61,7 @@ class BootScreen(tk.Frame):
 
     def check_pi_state(self):
         if self.mqtt_client.handshake_complete:
-            self.controller.show_frame("Screen1")
+            self.controller.show_frame("MainScreen")  # Show main screen when handshake is complete
         else:
             self.after(200, self.check_pi_state)  # Check again after 0.2 seconds
 
