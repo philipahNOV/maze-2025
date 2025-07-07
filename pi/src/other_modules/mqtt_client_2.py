@@ -22,7 +22,7 @@ class MQTTClientPi(threading.Thread):
         self.img = None
         self.jetson_path = "None"
         self.screen2_instance = None
-        self.ball_info = None
+        self.ball_found = None
         self.img = None
         
         self.connected = False
