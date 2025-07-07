@@ -22,9 +22,11 @@ class MainScreen(tk.Frame):
 
     def on_button_click_navigation(self):
         self.mqtt_client.client.publish("jetson/command", "Navigate")
+        self.controller.show_frame("NavigationScreen")
 
     def on_button_click_info(self):
         self.mqtt_client.client.publish("jetson/command", "Info")
+        self.controller.show_frame("InfoScreen")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -58,7 +60,7 @@ class MainScreen(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.controller.show_frame("NavigationScreen")
+            command=self.on_button_click_navigation
         )
         self.navigation_button.place(x=391, y=235, width=243, height=74)
 
@@ -72,7 +74,7 @@ class MainScreen(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.controller.show_frame("InfoScreen"),
+            command=self.on_button_click_info,
         )
         self.info_button.place(x=391, y=320, width=243, height=74)
 
