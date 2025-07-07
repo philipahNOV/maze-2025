@@ -59,7 +59,7 @@ class Controller:
         #self.ki_x = 0.0006
 
         #Best so far (pathfollowing)
-        lookahead = True
+        lookahead = False
         if lookahead:
             self.kp_x = 0.00002
             self.kd_x = 0.00014
