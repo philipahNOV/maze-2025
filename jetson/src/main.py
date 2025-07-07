@@ -49,6 +49,7 @@ while tracker_service.tracker is None:
 tracker = tracker_service.tracker
 ballPos = tracker.get_position()
 while ballPos is None:
+    ballPos = tracker.get_position()
     time.sleep(0.1)
 
 mqtt_client.client.publish("pi/info", "ball_found")
