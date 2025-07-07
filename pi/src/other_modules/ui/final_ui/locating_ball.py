@@ -42,28 +42,44 @@ class LocatingScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.add_essential_buttons()
 
-        self.template_button = tk.Button(
+        self.back_button = tk.Button(
             self,
-            text="TEMPLATE",
-            font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            text="BACK",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
             activeforeground="#DFDFDF",
-            command=self.on_button_click_template,
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=lambda: self.controller.show_frame("MainScreen")
         )
-        self.template_button.place(x=690, y=150, width=243, height=74)
+        self.back_button.place(x=804, y=10, width=150, height=50)
 
-        self.template_title = tk.Label(
+        self.title = tk.Label(
             self,
-            text="Template",
-            font=("Jockey One", 40),   # or any font you prefer
-            fg="#EE3229",                # text color
+            text="LOCATING BALL",
+            font=("Jockey One", 55),   # or any font you prefer
+            fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.template_title.place(x=410, y=315)
+        self.title.place(x=380, y=180)
+
+        self.under_title = tk.Label(
+            self,
+            text="WELCOME",
+            font=("Jockey One", 30),   # or any font you prefer
+            fg="#1A1A1A",                # text color
+            bg="#D9D9D9"                 # background (or match your image if needed)
+        )
+        self.under_title.place(x=430, y=245)
+
+    def check_for_ball(self):
+        if self.mqtt_client.ball_found:
+            self.controller.show_frame("AutoPathScreen")
+        else:
+            self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
 
     def show(self):
         """Make this frame visible"""
