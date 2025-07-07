@@ -1,6 +1,6 @@
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-import run_controller
+import rl2
 import position_controller
 from camera.tracker_service import TrackerService
 import queue
@@ -39,7 +39,7 @@ while not mqtt_client.handshake_complete:
 
 print("Connected to Pi!")
 
-tracker_service = TrackerService(model_path="YOLO_tracking/best.pt")
+tracker_service = TrackerService(model_path="camera/best.pt")
 tracker_service.camera.init_camera()
 
 controller = position_controller.Controller(arduino_thread, tracker_service)
@@ -89,7 +89,7 @@ while True:
         # Start control loop thread if not running
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
-                target=run_controller.main,
+                target=rl2.main,
                 args=(tracker_service, controller, mqtt_client),
                 daemon=True
             )
