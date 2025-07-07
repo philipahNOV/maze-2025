@@ -11,14 +11,33 @@ class NavigationScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.loop = tk.BooleanVar(value=False)
+        self.custom = tk.BooleanVar(value=False)
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
         self.create_widgets()
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_toggle_loop(self):
+        pass
+
+    def on_toggle_custom(self):
+        pass
+
+    def on_button_click_horizontal(self):
+        self.mqtt_client.client.publish("jetson/command", "Horizontal")
+
+    def on_button_click_elevator(self):
+        self.mqtt_client.client.publish("jetson/command", "Elevator")
+
+    def on_button_click_safe(self):
+        self.controller.show_frame("LocatingScreen")
+        self.mqtt_client.client.publish("jetson/command", "SafeControl")
+
+    def on_button_click_speed(self):
+        self.controller.show_frame("LocatingScreen")
+        self.mqtt_client.client.publish("jetson/command", "SpeedControl")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -57,14 +76,93 @@ class NavigationScreen(tk.Frame):
         )
         self.back_button.place(x=879, y=10, width=150, height=50)
 
-        self.template_title = tk.Label(
+        self.get_ball_button = tk.Button(
             self,
-            text="Template",
-            font=("Jockey One", 40),   # or any font you prefer
-            fg="#EE3229",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
+            text="GET BALL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_elevator
         )
-        self.template_title.place(x=410, y=315)
+        self.get_ball_button.place(x=30, y=235, width=243, height=74)
+
+        self.horizontal_button = tk.Button(
+            self,
+            text="HORIZONTAL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_horizontal
+        )
+        self.horizontal_button.place(x=30, y=320, width=243, height=74)
+
+        self.safe_button = tk.Button(
+            self,
+            text="SAFE CONTROL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=lambda: self.controller.show_frame("LocatingScreen")
+        )
+        self.safe_button.place(x=873, y=235, width=243, height=74)
+
+        self.speed_button = tk.Button(
+            self,
+            text="SPEED CONTROL",
+            font=("Jockey One", 30),
+            fg="white",                    # Text color
+            borderwidth=0,            # No border
+            highlightthickness=0,     # No highlight border
+            background="#60666C",     # Match image color or use transparent if supported
+            activebackground="#4B4C4C",  # Match on press
+            activeforeground="#DFDFDF",
+            command=lambda: self.controller.show_frame("LocatingScreen")
+        )
+        self.speed_button.place(x=873, y=320, width=243, height=74)
+
+        self.loop_toggle = tk.Checkbutton(
+            self,
+            text="LOOP",
+            font=("Jockey One", 24),
+            variable=self.loop,
+            onvalue=True,
+            offvalue=False,
+            bg="#D9D9D9",
+            activebackground="#D9D9D9",
+            fg="#1A1A1A",
+            selectcolor="#60666C",  # This changes the indicator fill color
+            command=self.on_toggle_loop
+        )
+        self.loop_toggle.place(x=760, y=200, width=50, height=50)  # Adjust position as needed
+
+        self.custom_toggle = tk.Checkbutton(
+            self,
+            text="CUSTOM GOAL",
+            font=("Jockey One", 24),
+            variable=self.custom,
+            onvalue=True,
+            offvalue=False,
+            bg="#D9D9D9",
+            activebackground="#D9D9D9",
+            fg="#1A1A1A",
+            selectcolor="#60666C",  # This changes the indicator fill color
+            command=self.on_toggle_custom
+        )
+        self.custom_toggle.place(x=820, y=200, width=50, height=50)  # Adjust position as needed
+
+
 
     def show(self):
         """Make this frame visible"""
