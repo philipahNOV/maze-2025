@@ -22,8 +22,8 @@ class PathFollower:
         self.last_closest_index = 0
 
         # Limit how far ahead we can skip (in waypoints)
-        self.max_skip_ahead = int(self.length / 10)  # New: how far ahead we can search if stuck
-        self.max_skip_behind = int(self.length / 10)  # New: how far back we can search if stuck
+        self.max_skip_ahead = int(self.length / 10)  # How far ahead we can search
+        self.max_skip_behind = int(self.length / 10)  # How far back we can search
 
     def follow_path(self, ballPos):
         if not ballPos:
