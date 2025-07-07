@@ -5,7 +5,7 @@ from camera.vision_utils import hsv_tracking, global_hsv_search
 from camera.model_loader import YOLOModel
 
 class BallTracker:
-    def __init__(self, camera, model_path="best.pt"):
+    def __init__(self, camera, model_path="v8-291.pt"):
         self.camera = camera
         self.model = YOLOModel(model_path)
 
@@ -99,6 +99,11 @@ class BallTracker:
 
     def get_position(self):
         return self.ball_position
+    
+    def retrack(self):
+        self.initialized
+        self.ball_confirm_counter = 0
+        print("[BallTracker] Retracking initiated.")
 
     def get_frame(self):
         with self.lock:

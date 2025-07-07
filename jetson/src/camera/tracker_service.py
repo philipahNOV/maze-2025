@@ -2,7 +2,7 @@ from camera.camera_manager import CameraManager
 from camera.ball_tracker import BallTracker
 
 class TrackerService:
-    def __init__(self, model_path="best.pt"):
+    def __init__(self, model_path="v8-291.pt"):
         self.camera = CameraManager()
         self.camera.init_camera()
         self.tracker = None
@@ -32,3 +32,7 @@ class TrackerService:
     @property
     def is_initialized(self):
         return self.tracker.initialized if self.tracker else False
+    
+    def retrack(self):
+        if self.started and self.tracker:
+            self.tracker.retrack() # call this using tracker_service.retrack()

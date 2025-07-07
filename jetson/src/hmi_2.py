@@ -37,7 +37,7 @@ print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(1)
 
-tracker_service = TrackerService(model_path="camera/best.pt")
+tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
 
 controller = pos2.Controller(arduino_thread, tracker_service)
