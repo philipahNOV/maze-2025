@@ -42,7 +42,7 @@ class MainScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.add_essential_buttons()
 
-        self.template_button = tk.Button(
+        self.navigation_button = tk.Button(
             self,
             text="MAZE NAVIGATION",
             font=("Jockey One", 30),
@@ -54,9 +54,9 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.controller.show_frame("NavigationScreen")
         )
-        self.template_button.place(x=391, y=300, width=243, height=74)
+        self.navigation_button.place(x=391, y=185, width=243, height=74)
 
-        self.template_button = tk.Button(
+        self.info_button = tk.Button(
             self,
             text="INFO",
             font=("Jockey One", 30),
@@ -68,11 +68,11 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.controller.show_frame("InfoScreen"),
         )
-        self.template_button.place(x=391, y=485, width=243, height=74)
+        self.info_button.place(x=391, y=335, width=243, height=74)
 
-        self.template_button = tk.Button(
+        self.disco_button = tk.Button(
             self,
-            text="MAZE NAVIGATION",
+            text="DISCO",
             font=("Jockey One", 30),
             fg="white",                    # Text color
             borderwidth=0,            # No border
@@ -82,16 +82,16 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_disco,
         )
-        self.template_button.place(x=391, y=570, width=243, height=74)
+        self.disco_button.place(x=391, y=420, width=243, height=74)
 
-        self.template_title = tk.Label(
+        self.title = tk.Label(
             self,
             text="WELCOME",
             font=("Jockey One", 40),   # or any font you prefer
-            fg=self.controller.nov_grey,                # text color
+            fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.template_title.place(x=410, y=200)
+        self.title.place(x=410, y=100)
 
     def show(self):
         """Make this frame visible"""
