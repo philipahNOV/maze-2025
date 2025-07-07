@@ -5,7 +5,6 @@ import position_controller
 import lowPassFilter
 import path_following
 from mqtt_client import MQTTClientJetson
-import astar.shared_masking as shared_masking
 from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 import math
@@ -137,7 +136,7 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.5) #start = (604, 950)
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
@@ -154,9 +153,11 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
         maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
-    binary_mask = create_binary_mask(gray) 
+    binary_mask = create_binary_mask(gray) #color_frame=maze_frame
     safe_mask = dilate_mask(binary_mask)
-    #start = (604, 950)
+
+    launch_pad_radius = 70
+    
     ball_pos = tracker.get_position()
     while ball_pos is None:
         print("Waiting for ball position...")
@@ -166,6 +167,8 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     ball_pos = smoother.update(ball_pos)
     start_raw = (ball_pos[1], ball_pos[0])  # (y, x)
     start = snap_to_nearest_walkable(safe_mask, start_raw)
+    cv2.circle(safe_mask, (ball_pos[1], ball_pos[0]), launch_pad_radius, 255, -1)
+
     #goal = (990, 704)
     global clicked_goal
     clicked_goal = None
@@ -173,12 +176,11 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
     cv2.namedWindow("Safe Mask")
     cv2.setMouseCallback("Safe Mask", on_mouse_click)
 
-    preview_mask = safe_mask.copy()
-    cv2.circle(preview_mask, (start[1], start[0]), 10, 127, -1)
+    cv2.circle(safe_mask, (start[1], start[0]), 10, 127, -1)
     print("Click on a goal point...")
 
     while clicked_goal is None:
-        cv2.imshow("Safe Mask", preview_mask)
+        cv2.imshow("Safe Mask", safe_mask)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             print("Goal selection cancelled.")
             return

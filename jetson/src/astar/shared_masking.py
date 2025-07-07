@@ -1,1 +1,0 @@
-__original_color_frame__ = None  # default placeholder
