@@ -19,6 +19,7 @@ class HMIController:
         self.state = SystemState.BOOTING
         self.tracking_service = tracking_service
         self.arduino_thread = arduino_thread
+        self.control_type = None
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
@@ -35,22 +36,24 @@ class HMIController:
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
 
-        elif self.state == SystemState.TRACKING:
-            if cmd == "Retrack":
-                self.model.force_retrack()
-                self.state = SystemState.LOCATING
-
-            elif cmd == "Stop":
-                self.model.stop_all()
-                self.state = SystemState.STOPPED
-
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN from INFO_SCREEN")
 
         elif self.state == SystemState.NAVIGATION:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN from NAVIGATION")
+            if cmd.startswith("Locate"):
+                if cmd.endswith("Safe"):
+                    self.control_type = "SafeControl"
+                elif cmd.endswith("Speed"):
+                    self.control_type = "SpeedControl"
+                self.tracking_service.start_tracker()
+                self.state = SystemState.LOCATING
+                print("[FSM] Transitioned to LOCATING from NAVIGATION")
+
 
         elif self.state == SystemState.LOCATING:
             if self.model.tracking_service.is_initialized:
