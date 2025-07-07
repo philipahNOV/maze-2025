@@ -39,7 +39,7 @@ class ImageController:
             cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
-        cv2.circle(self.frame, pathFollower.lookahead_point, 5, (100, 200, 100), -1)
+        cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
         for i in range(pathFollower.length):
             cv2.circle(self.frame, pathFollower.path[i], 5, (255, 0, 0), -1)
 
