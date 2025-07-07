@@ -20,8 +20,8 @@ import os
 class MainApp(tk.Tk):
     def __init__(self, mqtt_client):
         super().__init__()
-        self.title("Raspberry Pi Application")
-        self.geometry("1024x600") # This is the wrong reselution for the pi screen
+        self.title("NOV maze 2025")
+        self.geometry("1024x600")
         self.attributes("-fullscreen", True)
         self.current_screen = None
         self.nov_red = "#EE3229"
