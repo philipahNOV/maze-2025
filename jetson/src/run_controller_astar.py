@@ -137,7 +137,7 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5) #start = (604, 950)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)
@@ -154,12 +154,9 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
         maze_frame = tracker.get_stable_frame()
 
     gray = get_dynamic_threshold(maze_frame)
-    binary_mask = create_binary_mask(gray) #color_frame=maze_frame
+    binary_mask = create_binary_mask(gray) 
     safe_mask = dilate_mask(binary_mask)
-
-    launch_pad_center = (1030, 630)
-    launch_pad_radius = 70
-    cv2.circle(safe_mask, launch_pad_center, launch_pad_radius, 255, -1)
+    #start = (604, 950)
     ball_pos = tracker.get_position()
     while ball_pos is None:
         print("Waiting for ball position...")
