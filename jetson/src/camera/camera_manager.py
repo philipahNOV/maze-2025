@@ -1,21 +1,28 @@
 import cv2
-import math
+import numpy as np
 import pyzed.sl as sl
 
 class CameraManager:
     def __init__(self):
         self.zed = sl.Camera()
-        self.latest_rgb_frame = None
-        self.latest_bgr_frame = None
+        self.initialized = False
 
     def init_camera(self):
+        if self.initialized:
+            print("[CameraManager] Camera already initialized. Skipping open().")
+            return
+
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.HD720
         init_params.camera_fps = 60
         init_params.depth_mode = sl.DEPTH_MODE.NONE
         init_params.coordinate_units = sl.UNIT.MILLIMETER
+
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             raise RuntimeError("ZED camera failed to open.")
+        
+        print("[CameraManager] Camera initialized.")
+        self.initialized = True
 
     def grab_frame(self):
         image = sl.Mat()
@@ -37,6 +44,7 @@ class CameraManager:
         dir1 = ox + ow
         dir2 = oy - oz
 
+        import math
         sinr_cosp = 2 * (ow * ox + oy * oz)
         cosr_cosp = 1 - 2 * (ox * ox + oy * oy)
         roll = math.degrees(math.atan2(sinr_cosp, cosr_cosp))
@@ -47,4 +55,7 @@ class CameraManager:
         return [-dir2, dir1]
 
     def close(self):
-        self.zed.close()
+        if self.initialized:
+            self.zed.close()
+            self.initialized = False
+            print("[CameraManager] Camera closed.")
