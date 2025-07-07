@@ -29,7 +29,7 @@ class BallTracker:
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
 
         #self.model = YOLO(model_path)
-        self.WINDOW_SIZE = 80
+        self.WINDOW_SIZE = 50
         self.running = False
         self.initialized = False
         self.ball_confirm_counter = 0
