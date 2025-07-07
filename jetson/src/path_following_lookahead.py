@@ -18,6 +18,9 @@ class PathFollower:
         self.stuck_retry_time = 3
         self.lookahead_point = None
 
+        # Optimization: cache the last closest segment index
+        self.last_closest_index = 0
+
     def follow_path(self, ballPos):
         if not ballPos:
             return
@@ -63,12 +66,14 @@ class PathFollower:
 
     def get_lookahead_point(self, ball_pos, lookahead_dist=100):
         min_dist = float('inf')
-        closest_index = 0
+        closest_index = self.last_closest_index
         closest_proj = None
         ball_pos_np = np.array(ball_pos)
 
-        # Find closest point on the path
-        for i in range(self.length - 1):
+        # Optimization: limit the search range forward only
+        search_range = range(self.last_closest_index, min(self.length - 1, self.last_closest_index + 50))
+
+        for i in search_range:
             a = np.array(self.path[i])
             b = np.array(self.path[i + 1])
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
@@ -77,6 +82,8 @@ class PathFollower:
                 min_dist = dist
                 closest_index = i
                 closest_proj = proj
+
+        self.last_closest_index = closest_index  # Update cache
 
         # Traverse forward from closest point
         dist_acc = 0
