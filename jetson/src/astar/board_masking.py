@@ -1,6 +1,5 @@
 import cv2
 import numpy as np
-import astar.shared_masking as shared_masking
 
 def dilate_mask(mask, kernel_size=(3, 3), iterations=2):
     kernel = np.ones(kernel_size, np.uint8)
@@ -17,7 +16,7 @@ def apply_clahe(gray):
     clahe = cv2.createCLAHE(clipLimit=1.0, tileGridSize=(8, 8))
     return clahe.apply(gray)
 
-def create_binary_mask(gray):
+def create_binary_mask(gray, color_frame=None):
     enhanced = apply_clahe(gray)
     _, base_mask = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     cleaned = cv2.morphologyEx(base_mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8), iterations=2)
@@ -29,8 +28,7 @@ def create_binary_mask(gray):
     final_mask = cv2.bitwise_and(cleaned, edges_inv)
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8), iterations=1)
 
-    if shared_masking.__original_color_frame__ is not None:
-        color_frame = shared_masking.__original_color_frame__
+    if color_frame is not None:
         hsv = cv2.cvtColor(color_frame, cv2.COLOR_BGR2HSV)
         ball_lower = np.array([30, 50, 50])
         ball_upper = np.array([90, 255, 255])
@@ -44,7 +42,6 @@ def create_binary_mask(gray):
 
         launch_pad_center = (1030, 630)
         launch_pad_radius = 70
-
-        cv2.circle(final_mask, launch_pad_center, launch_pad_radius, 255, -1)  # force white
+        cv2.circle(final_mask, launch_pad_center, launch_pad_radius, 255, -1)
 
     return final_mask

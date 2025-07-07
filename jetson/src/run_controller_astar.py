@@ -153,10 +153,8 @@ def main(tracker: tracking.BallTracker, controller: position_controller.Controll
         time.sleep(0.1)
         maze_frame = tracker.get_stable_frame()
 
-    shared_masking.__original_color_frame__ = maze_frame.copy()
-
     gray = get_dynamic_threshold(maze_frame)
-    binary_mask = create_binary_mask(gray)
+    binary_mask = create_binary_mask(gray, color_frame=maze_frame)
     safe_mask = dilate_mask(binary_mask)
 
     #start = (604, 950)
