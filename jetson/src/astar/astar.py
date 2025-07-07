@@ -64,7 +64,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
     return False
 
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.55):
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.40):
     small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
     small_array = (small_array > 0).astype(np.uint8)
 
