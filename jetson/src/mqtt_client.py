@@ -38,6 +38,7 @@ class MQTTClientJetson(threading.Thread):
         self.client.subscribe("jetson/command")
         self.client.subscribe("arduino/elevator")
         self.client.subscribe("pi/response")
+        self.client.subscribe("jetson/state")
 
     def on_disconnect(self, client, userdata, rc):
         print(f"Disconnected from broker with code {rc}, attempting to reconnect...")
@@ -68,7 +69,8 @@ class MQTTClientJetson(threading.Thread):
                 self.stop_control = False
             elif payload == CMD_STOP:
                 self.stop_control = True
-
+        elif topic == "jetson/state":
+            pass
         elif topic == "arduino/elevator":
             self.elevator = payload
 
