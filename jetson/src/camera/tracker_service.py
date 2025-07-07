@@ -1,5 +1,5 @@
-from camera_manager import CameraManager
-from ball_tracker import BallTracker
+from camera.camera_manager import CameraManager
+from camera.ball_tracker import BallTracker
 
 class TrackerService:
     def __init__(self, model_path="best.pt"):
