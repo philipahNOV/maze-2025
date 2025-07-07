@@ -28,7 +28,7 @@ class MainApp(tk.Tk):
         self.logo_path = os.path.join(self.image_path, 'logo.png')
         self.background_path = os.path.join(self.image_path, 'background.png')
 
-        self.current_frame = "BootScreen"
+        self.current_frame = "BootScreen1"
 
         self.mqtt_client = mqtt_client
         # Container to hold all the frames
