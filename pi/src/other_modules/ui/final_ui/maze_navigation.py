@@ -118,7 +118,7 @@ class NavigationScreen(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.controller.show_frame("LocatingScreen")
+            command=self.on_button_click_safe
         )
         self.safe_button.place(x=751, y=235, width=243, height=74)
 
@@ -132,7 +132,7 @@ class NavigationScreen(tk.Frame):
             background="#60666C",     # Match image color or use transparent if supported
             activebackground="#4B4C4C",  # Match on press
             activeforeground="#DFDFDF",
-            command=lambda: self.controller.show_frame("LocatingScreen")
+            command=self.on_button_click_speed
         )
         self.speed_button.place(x=751, y=320, width=243, height=74)
 
