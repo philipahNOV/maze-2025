@@ -17,8 +17,9 @@ class InfoScreen(tk.Frame):
         # Layout the widgets including the logo
         self.create_widgets()
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_button_click_back(self):
+        self.mqtt_client.client.publish("jetson/command", "Back")
+        self.controller.show_frame("MainScreen")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -53,7 +54,7 @@ class InfoScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=lambda: self.controller.show_frame("MainScreen")
+            command=self.on_button_click_back
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
 

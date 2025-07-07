@@ -25,6 +25,10 @@ class NavigationScreen(tk.Frame):
     def on_toggle_custom(self):
         pass
 
+    def on_button_click_back(self):
+        self.mqtt_client.client.publish("jetson/command", "Back")
+        self.controller.show_frame("MainScreen")
+
     def on_button_click_horizontal(self):
         self.mqtt_client.client.publish("jetson/command", "Horizontal")
 
@@ -72,7 +76,7 @@ class NavigationScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=lambda: self.controller.show_frame("MainScreen")
+            command=self.on_button_click_back
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
 
