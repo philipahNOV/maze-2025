@@ -74,7 +74,7 @@ class NavigationScreen(tk.Frame):
             relief="flat",
             command=lambda: self.controller.show_frame("MainScreen")
         )
-        self.back_button.place(x=879, y=10, width=150, height=50)
+        self.back_button.place(x=804, y=10, width=150, height=50)
 
         self.get_ball_button = tk.Button(
             self,
@@ -116,7 +116,7 @@ class NavigationScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=lambda: self.controller.show_frame("LocatingScreen")
         )
-        self.safe_button.place(x=873, y=235, width=243, height=74)
+        self.safe_button.place(x=751, y=235, width=243, height=74)
 
         self.speed_button = tk.Button(
             self,
@@ -130,12 +130,12 @@ class NavigationScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=lambda: self.controller.show_frame("LocatingScreen")
         )
-        self.speed_button.place(x=873, y=320, width=243, height=74)
+        self.speed_button.place(x=751, y=320, width=243, height=74)
 
         self.loop_toggle = tk.Checkbutton(
             self,
             text="LOOP",
-            font=("Jockey One", 24),
+            font=("Jockey One", 20),
             variable=self.loop,
             onvalue=True,
             offvalue=False,
@@ -150,7 +150,7 @@ class NavigationScreen(tk.Frame):
         self.custom_toggle = tk.Checkbutton(
             self,
             text="CUSTOM GOAL",
-            font=("Jockey One", 24),
+            font=("Jockey One", 20),
             variable=self.custom,
             onvalue=True,
             offvalue=False,
@@ -160,7 +160,7 @@ class NavigationScreen(tk.Frame):
             selectcolor="#60666C",  # This changes the indicator fill color
             command=self.on_toggle_custom
         )
-        self.custom_toggle.place(x=820, y=200, width=50, height=50)  # Adjust position as needed
+        self.custom_toggle.place(x=760, y=100, width=50, height=50)  # Adjust position as needed
 
 
 
