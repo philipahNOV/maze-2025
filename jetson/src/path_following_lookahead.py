@@ -21,6 +21,9 @@ class PathFollower:
         # Optimization: cache the last closest segment index
         self.last_closest_index = 0
 
+        # Limit how far ahead we can skip (in waypoints)
+        self.max_skip_ahead = int(self.length / 10)  # Skip ahead at most 10% of the path length
+
     def follow_path(self, ballPos):
         if not ballPos:
             return
@@ -71,7 +74,8 @@ class PathFollower:
         ball_pos_np = np.array(ball_pos)
 
         # Optimization: limit the search range forward only
-        search_range = range(self.last_closest_index, min(self.length - 1, self.last_closest_index + 50))
+        max_index = min(self.length - 1, self.last_closest_index + self.max_skip_ahead)
+        search_range = range(self.last_closest_index, max_index)
 
         for i in search_range:
             a = np.array(self.path[i])
