@@ -49,7 +49,7 @@ class PathFollower:
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
                 print("[STUCK] Ball not progressing, stopping control temporarily.")
                 self.prev_progress_time = None
-                self.controller.arduinoThread.send_speed(0, 0)
+                #self.controller.arduinoThread.send_speed(0, 0)
                 return
 
         # Compute lookahead target
