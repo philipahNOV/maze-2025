@@ -59,6 +59,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("data/updates")
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
+            self.client.subscribe("pi/info")
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
