@@ -18,7 +18,6 @@ class TrackerService:
         if self.started:
             self.tracker.stop()
             self.started = False
-            self.camera.close()
 
     def get_ball_position(self):
         return self.tracker.get_position() if self.started else None
