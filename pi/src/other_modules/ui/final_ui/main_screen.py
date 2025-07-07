@@ -54,7 +54,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=lambda: self.controller.show_frame("NavigationScreen")
         )
-        self.navigation_button.place(x=391, y=185, width=243, height=74)
+        self.navigation_button.place(x=391, y=235, width=243, height=74)
 
         self.info_button = tk.Button(
             self,
@@ -68,7 +68,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=lambda: self.controller.show_frame("InfoScreen"),
         )
-        self.info_button.place(x=391, y=270, width=243, height=74)
+        self.info_button.place(x=391, y=320, width=243, height=74)
 
         self.disco_button = tk.Button(
             self,
@@ -82,7 +82,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_disco,
         )
-        self.disco_button.place(x=391, y=355, width=243, height=74)
+        self.disco_button.place(x=391, y=405, width=243, height=74)
 
         self.title = tk.Label(
             self,
@@ -91,7 +91,7 @@ class MainScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title.place(x=410, y=100)
+        self.title.place(x=400, y=100)
 
     def show(self):
         """Make this frame visible"""
