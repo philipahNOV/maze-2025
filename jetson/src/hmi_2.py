@@ -1,7 +1,7 @@
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 import rl2
-import position_controller
+import pos2
 from camera.tracker_service import TrackerService
 import queue
 import threading
@@ -42,7 +42,7 @@ print("Connected to Pi!")
 tracker_service = TrackerService(model_path="camera/best.pt")
 tracker_service.camera.init_camera()
 
-controller = position_controller.Controller(arduino_thread, tracker_service)
+controller = pos2.Controller(arduino_thread, tracker_service)
 
 color = "white"
 
