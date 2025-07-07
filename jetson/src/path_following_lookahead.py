@@ -8,7 +8,7 @@ class PathFollower:
         self.controller = controller
         self.length = len(self.path)
 
-        self.lookahead_distance = 100  # pixels
+        self.lookahead_distance = 80  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
