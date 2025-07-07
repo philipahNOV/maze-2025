@@ -13,9 +13,9 @@ class BlinkRed(threading.Thread):
         white = (255, 255, 255)
         while not self._stop_event.is_set():
             self.arduino_thread.send_color(*red)
-            time.sleep(0.3)
+            time.sleep(0.2)
             self.arduino_thread.send_color(*white)
-            time.sleep(2.0)
+            time.sleep(2.3)
 
     def stop(self):
         self._stop_event.set()

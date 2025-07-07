@@ -31,7 +31,7 @@ def main(tracker: tracking.BallTracker,
         mqtt_client (MQTTClientJetson): MQTT client for Jetson to Pi communication
     """
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.4)
+    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 
     print("[INFO] Waiting for YOLO initialization...")
@@ -85,9 +85,9 @@ def main(tracker: tracking.BallTracker,
                     blinker = None
             else:
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
-                controller.arduinoThread.send_speed(0, 0)
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
                 if blinker is None:
+                    controller.arduinoThread.send_speed(0, 0)
                     blinker = light_controller.BlinkRed(controller.arduinoThread)
                     blinker.start()
 
