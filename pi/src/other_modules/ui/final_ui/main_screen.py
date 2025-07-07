@@ -20,6 +20,12 @@ class MainScreen(tk.Frame):
     def on_button_click_disco(self):
         pass
 
+    def on_button_click_navigation(self):
+        self.mqtt_client.client.publish("jetson/command", "Navigate")
+
+    def on_button_click_info(self):
+        self.mqtt_client.client.publish("jetson/command", "Info")
+
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
             self,

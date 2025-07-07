@@ -1,4 +1,4 @@
-from mqtt_client import MQTTClientJetson
+from mqtt_client_2 import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 import rl2
 import pos2
@@ -45,16 +45,16 @@ while not mqtt_client.handshake_complete:
 
 print("Connected!")
 
-tracker_service.start_tracker()
-while tracker_service.tracker is None:
-    time.sleep(0.1)
-
-tracker = tracker_service.tracker
-ballPos = tracker_service.get_ball_position()
-while ballPos is None:
-    ballPos = tracker_service.get_ball_position()
-    time.sleep(0.1)
-
-print("Ball found at:", ballPos)
-
-mqtt_client.client.publish("pi/info", "ball_found")
+#tracker_service.start_tracker()
+#while tracker_service.tracker is None:
+#    time.sleep(0.1)
+#
+#tracker = tracker_service.tracker
+#ballPos = tracker_service.get_ball_position()
+#while ballPos is None:
+#    ballPos = tracker_service.get_ball_position()
+#    time.sleep(0.1)
+#
+#print("Ball found at:", ballPos)
+#
+#mqtt_client.client.publish("pi/info", "ball_found")

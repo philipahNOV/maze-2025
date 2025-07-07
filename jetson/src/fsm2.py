@@ -20,23 +20,20 @@ class HMIController:
         self.tracking_service = tracking_service
         self.arduino_thread = arduino_thread
 
-    def on_command(self, topic, cmd):
+    def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
         if self.state == SystemState.BOOTING:
-            if topic == "state_transition":
-                if cmd == "booted":
-                    self.state = SystemState.MAIN_SCREEN
-                    print("[FSM] Transitioned to MAIN_SCREEN")
+            if cmd == "booted":
+                self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN")
         elif self.state == SystemState.MAIN_SCREEN:
             if cmd == "Info":
                 self.state = SystemState.INFO_SCREEN
+                print("[FSM] Transitioned to INFO_SCREEN")
 
             elif cmd == "Navigate":
                 self.state = SystemState.NAVIGATION
-
-            elif cmd == "Control":
-                self.model.start_tracking()
-                self.state = SystemState.TRACKING
+                print("[FSM] Transitioned to NAVIGATION")
 
         elif self.state == SystemState.TRACKING:
             if cmd == "Retrack":

@@ -66,7 +66,7 @@ class MQTTClientJetson(threading.Thread):
         elif topic == "pi/response":
             self.pi_state = payload
         else:
-            self.fsm.on_command(msg.topic, msg.payload.decode())
+            self.fsm.on_command(payload)
 
     def publish_image(self, image):
         self.client.publish("camera/feed", image, qos=0)
