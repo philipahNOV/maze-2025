@@ -20,29 +20,13 @@ class BallTracker:
             "marker_4": {"position": None},
         }
 
-        self.kalman = cv2.KalmanFilter(4, 2)
-        self.kalman.measurementMatrix = np.array([[1, 0, 0, 0],
-                                                [0, 1, 0, 0]], np.float32)
-        self.kalman.transitionMatrix = np.array([[1, 0, 1, 0],
-                                                [0, 1, 0, 1],
-                                                [0, 0, 1, 0],
-                                                [0, 0, 0, 1]], np.float32)
-        self.kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
-        self.kalman.statePre = np.zeros((4, 1), np.float32)
-        self.kalman.statePost = np.zeros((4, 1), np.float32)
-        self.kalman_initialized = False
-        self.kalman_prediction = None
-
         self.HSV_RANGES = {
-            "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])), #green
-            #"ball": (np.array([0, 100, 50]), np.array([10, 255, 180])), # Red
+            "ball": (np.array([35, 80, 80]), np.array([85, 255, 255])),
             "marker": (np.array([0, 100, 100]), np.array([10, 255, 255])),
         }
 
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
-
-        #self.model = YOLO(model_path)
-        self.WINDOW_SIZE = 80
+        self.WINDOW_SIZE = 50
         self.running = False
         self.initialized = False
         self.ball_confirm_counter = 0
@@ -68,6 +52,18 @@ class BallTracker:
         self.model.predict(dummy, verbose=False)
         print("Tracking model ready.")
 
+        # Kalman filter
+        self.kalman = cv2.KalmanFilter(4, 2)
+        self.kalman.measurementMatrix = np.array([[1, 0, 0, 0],
+                                                  [0, 1, 0, 0]], np.float32)
+        self.kalman.transitionMatrix = np.array([[1, 0, 1, 0],
+                                                 [0, 1, 0, 1],
+                                                 [0, 0, 1, 0],
+                                                 [0, 0, 0, 1]], np.float32)
+        self.kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
+        self.kalman_initialized = False
+        self.kalman_prediction = None
+
     def init_camera(self):
         self.zed = sl.Camera()
         init_params = sl.InitParameters()
@@ -90,9 +86,7 @@ class BallTracker:
     def producer_loop(self):
         while self.running:
             frames = self.grab_frame()
-            if frames is None:
-                continue
-            if frames is not None:
+            if frames:
                 rgb_frame, bgr_frame = frames
                 with self.lock:
                     self.latest_rgb_frame = rgb_frame
@@ -110,12 +104,12 @@ class BallTracker:
         cx = int(M["m10"] / M["m00"])
         cy = int(M["m01"] / M["m00"])
         return (cx, cy)
-    
+
     def global_hsv_search(self, frame, hsv_lower, hsv_upper):
         hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
         mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
         return self.get_center_of_mass(mask)
-    
+
     def yolo_worker(self):
         while self.running:
             if self.yolo_request:
@@ -128,7 +122,6 @@ class BallTracker:
                     with self.yolo_lock:
                         self.yolo_result = results
             time.sleep(0.01)
-
 
     def hsv_tracking(self, frame, prev_pos, hsv_lower, hsv_upper):
         h, w = frame.shape[:2]
@@ -169,7 +162,7 @@ class BallTracker:
 
                     if label == "ball":
                         if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
-                        self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
+                           self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
                             self.ball_confirm_counter += 1
                             self.tracked_objects["ball"]["position"] = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
@@ -188,7 +181,6 @@ class BallTracker:
                     self.tracked_objects[label]["position"] = new_pos
                     self.hsv_fail_counter = 0
 
-                    # Kalman correction
                     measurement = np.array([[np.float32(new_pos[0])], [np.float32(new_pos[1])]])
                     if not self.kalman_initialized:
                         self.kalman.statePre[:2] = measurement
@@ -201,20 +193,42 @@ class BallTracker:
 
                     if self.hsv_fail_counter >= self.hsv_fail_threshold:
                         global_pos = self.global_hsv_search(bgr_frame, hsv_lower, hsv_upper)
-                        if global_pos:
-                            self.tracked_objects[label]["position"] = global_pos
-                            self.hsv_fail_counter = 0
+                        if global_pos and self.yolo_cooldown == 0:
+                            with self.yolo_lock:
+                                self.yolo_request = True
 
-                            # Correct Kalman with global fallback
-                            measurement = np.array([[np.float32(global_pos[0])], [np.float32(global_pos[1])]])
-                            self.kalman.correct(measurement)
+                            wait_start = time.time()
+                            results = None
+                            while time.time() - wait_start < 0.05:
+                                with self.yolo_lock:
+                                    if self.yolo_result is not None:
+                                        results = self.yolo_result
+                                        self.yolo_result = None
+                                        break
+                                time.sleep(0.001)
+
+                            if results:
+                                for box in results.boxes:
+                                    cls = int(box.cls[0])
+                                    yolo_label = self.model.names[cls]
+                                    if yolo_label == "ball":
+                                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                        cx = (x1 + x2) // 2
+                                        cy = (y1 + y2) // 2
+                                        self.tracked_objects["ball"]["position"] = (cx, cy)
+                                        self.hsv_fail_counter = 0
+                                        self.yolo_cooldown = self.yolo_cooldown_period
+
+                                        measurement = np.array([[np.float32(cx)], [np.float32(cy)]])
+                                        if not self.kalman_initialized:
+                                            self.kalman.statePre[:2] = measurement
+                                            self.kalman.statePost[:2] = measurement
+                                            self.kalman_initialized = True
+                                        self.kalman.correct(measurement)
+                                        break
                         else:
-                            self.tracked_objects[label]["position"] = None
+                            self.tracked_objects["ball"]["position"] = None
 
-                    if self.kalman_initialized:
-                        self.kalman.predict()
-
-                # Marker tracking (no Kalman)
                 for label in self.tracked_objects:
                     if label == "ball":
                         continue
@@ -229,7 +243,6 @@ class BallTracker:
 
             self.frame = bgr_frame
             time.sleep(0.005)
-
 
     def start(self):
         self.init_camera()
@@ -255,9 +268,10 @@ class BallTracker:
 
     def get_position(self):
         if self.kalman_initialized:
-            pred = self.kalman.predict()
-            cx, cy = int(pred[0]), int(pred[1])
-            self.kalman_prediction = (cx, cy)
+            prediction = self.kalman.predict()
+            self.kalman_prediction = (int(prediction[0]), int(prediction[1]))
+
+        if self.tracked_objects["ball"]["position"] is not None:
             return self.kalman_prediction
         return None
 
