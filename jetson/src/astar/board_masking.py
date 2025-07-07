@@ -22,7 +22,7 @@ def create_binary_mask(gray):
     _, base_mask = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
     cleaned = cv2.morphologyEx(base_mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8), iterations=2)
 
-    edges = cv2.Canny(enhanced, 50, 150)
+    edges = cv2.Canny(enhanced, 200, 300)
     edges_dilated = cv2.dilate(edges, np.ones((3, 3), np.uint8), iterations=1)
     edges_inv = cv2.bitwise_not(edges_dilated)
 
