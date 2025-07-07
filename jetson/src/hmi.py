@@ -43,7 +43,7 @@ tracker = tracking.BallTracker(model_path="YOLO_tracking/best.pt")
 tracker.start()
 controller = position_controller.Controller(arduino_thread, tracker)
 
-
+color = "white"
 while True:
 
     try:
@@ -64,7 +64,13 @@ while True:
     elif command == "Elevator":
         arduino_thread.send_get_ball()
     elif command == "Idle":
-        arduino_thread.send_idle()
+        #arduino_thread.send_idle()
+        if color == "white":
+            arduino_thread.send_color(255, 0, 0)
+            color = "red"
+        elif color == "red":
+            arduino_thread.send_color(255, 255, 255)
+            color = "white"
     elif command == "Get_pid":
         pid_str = (
             "PID:" + str(controller.x_offset) + "," + str(controller.y_offset) + "," + str(controller.kp_x)
