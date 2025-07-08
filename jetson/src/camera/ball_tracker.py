@@ -4,6 +4,17 @@ import numpy as np
 from camera.vision_utils import hsv_tracking, global_hsv_search
 from camera.model_loader import YOLOModel
 
+def is_in_region(point: tuple[int, int], region: tuple[tuple[int, int], tuple[int, int]]) -> bool:
+    (x1, y1), (x2, y2) = region
+    cx, cy = point
+    return x1 <= cx <= x2 and y1 <= cy <= y2
+
+
+def get_box_center(box) -> tuple[int, int]:
+    x1, y1, x2, y2 = map(int, box.xyxy[0])
+    return (x1 + x2) // 2, (y1 + y2) // 2
+
+
 class BallTracker:
     def __init__(self, camera, model_path="v8-291.pt"):
         self.camera = camera
@@ -54,16 +65,20 @@ class BallTracker:
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     if label == "ball":
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
-                           self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
+                        cx, cy = get_box_center(box)
+                        if is_in_region((cx, cy), self.INIT_BALL_REGION):
                             self.ball_confirm_counter += 1
                             self.ball_position = (cx, cy)
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.initialized = True
             else:
-                new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
+                new_pos = hsv_tracking(
+                    bgr=bgr,
+                    position=self.ball_position,
+                    hsv_min=self.HSV_RANGE[0],
+                    hsv_max=self.HSV_RANGE[1],
+                    window_size=self.WINDOW_SIZE
+                )
 
                 if new_pos:
                     self.ball_position = new_pos
@@ -73,14 +88,17 @@ class BallTracker:
                     self.hsv_fail_counter += 1
 
                     if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
-                        global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
+                        global_pos = global_hsv_search(
+                            bgr=bgr,
+                            hsv_min=self.HSV_RANGE[0],
+                            hsv_max=self.HSV_RANGE[1]
+                        )
                         if global_pos:
                             results = self.model.predict(rgb)
                             for box in results.boxes:
                                 label = self.model.get_label(box.cls[0])
                                 if label == "ball":
-                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                                    cx, cy = get_box_center(box)
                                     self.ball_position = (cx, cy)
                                     self.hsv_fail_counter = 0
                                     self.yolo_cooldown = self.yolo_cooldown_period
