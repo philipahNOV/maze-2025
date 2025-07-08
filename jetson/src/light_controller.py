@@ -82,6 +82,7 @@ class PathFindingThread(threading.Thread):
             path = cached
         else:
             path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
+            self.path_cache.cache_path(start, self.goal, path)
         waypoints = sample_waypoints(path, safe_mask)
 
         final_path = [(x, y) for y, x in waypoints]
