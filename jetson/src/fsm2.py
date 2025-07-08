@@ -40,7 +40,7 @@ class HMIController:
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
 
-    def densify_path(path, factor=6):
+    def densify_path(self, path, factor=6):
         new_path = []
         for i in range(len(path) - 1):
             p1 = np.array(path[i])
@@ -56,6 +56,7 @@ class HMIController:
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
     def on_path_found(self, path):
+        print("TEST 1")
         self.path = path
         if self.controller.lookahead:
             self.path = self.densify_path(self.path, factor=3)
