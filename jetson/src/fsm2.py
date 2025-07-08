@@ -129,19 +129,21 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
-                self.image_thread.stop()
-                self.image_thread.join()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
                 self.path = None
-                self.image_thread = None
                 print("[FSM] Transitioned to NAVIGATION")
             if cmd.startswith("Locate"):
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.stop_tracker()
-                self.image_thread.stop()
-                self.image_thread.join()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
                 self.path = None
-                self.image_thread = None
                 self.tracking_service.start_tracker()
                 self.ball_finder = light_controller.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
