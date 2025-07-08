@@ -7,7 +7,7 @@ def heuristic(a, b):
     #return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
 
 
-def compute_repulsion_cost(array, min_safe_dist = 8):
+def compute_repulsion_cost(array, min_safe_dist = 14):
     dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
     mask_safe = (dist_transform >= min_safe_dist).astype(np.uint8)
     max_dist = np.max(dist_transform)
