@@ -56,6 +56,7 @@ class HMIController:
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
     def on_path_found(self, path):
+        print("TEST 1")
         self.path = path
         if self.controller.lookahead:
             self.path = self.densify_path(self.path, factor=3)
