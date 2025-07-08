@@ -63,7 +63,7 @@ class HMIController:
         self.path = [(x, y) for y, x in waypoints]
 
     def start_path_finding(self):
-        goal = (49, 763)
+        goal = (763, 49)
         path_thread = light_controller.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
