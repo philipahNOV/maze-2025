@@ -54,8 +54,8 @@ class CustomPathScreen(tk.Frame):
         r = 3
         self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
 
-        x = self.true_width - int(x / self.scale_ratio) + self.offset_x - self.image_top_left[0]
-        y = self.true_height - int(y / self.scale_ratio) + self.offset_y - self.image_top_left[1]
+        x = self.true_width - int(x / self.scale_ratio) + self.offset_x + self.image_top_left[0]
+        y = self.true_height - int(y / self.scale_ratio) + self.offset_y + self.image_top_left[1]
         print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
 
 
