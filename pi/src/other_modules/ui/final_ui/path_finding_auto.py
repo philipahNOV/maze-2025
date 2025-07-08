@@ -45,6 +45,14 @@ class AutoPathScreen(tk.Frame):
         self.start_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
         self.retry_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
+    def check_for_timeout(self):
+        if self.mqtt_client.timeout:
+            self.controller.show_frame("MainScreen")
+            self.mqtt_client.client.publish("jetson/command", "timeout")
+            self.mqtt_client.timeout = False
+        else:
+            self.after(1000, self.check_for_timeout)
+
     def update_image(self):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
