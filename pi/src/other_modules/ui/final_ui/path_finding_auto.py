@@ -26,6 +26,11 @@ class AutoPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
 
+    def on_button_click_retry(self):
+        self.controller.show_frame("LocatingScreen")
+        self.mqtt_client.client.publish("jetson/command", "Locate")
+        self.mqtt_client.img = None
+
     def update_image(self):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
@@ -42,7 +47,7 @@ class AutoPathScreen(tk.Frame):
             waiting_text = "FINDING PATH" + "." * (math.floor(self.waiting_phase / 2) + 1)
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=waiting_text)
-            self.status_label.place(x=100, y=230, width=300, height=50)
+            self.status_label.place(x=120, y=250, width=300, height=50)
         self.after(200, self.update_image)  # update every 200 ms
 
     def add_essential_buttons(self):
@@ -105,9 +110,9 @@ class AutoPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.on_button_click_back,
+            command=self.on_button_click_retry,
         )
-        self.retry_button.place(x=804, y=10, width=150, height=50)
+        self.retry_button.place(x=480, y=75, width=150, height=50)
 
 
     def show(self):

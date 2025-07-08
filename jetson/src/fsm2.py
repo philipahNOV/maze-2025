@@ -100,7 +100,7 @@ class HMIController:
             if cmd.startswith("Locate"):
                 if "loop" in cmd:
                     self.loop_control = True
-                else:
+                elif "dont_loop" in cmd:
                     self.loop_control = False
                 if cmd.endswith("safe"):
                     self.safe_control = True
@@ -141,6 +141,14 @@ class HMIController:
                 self.path = None
                 self.image_thread = None
                 print("[FSM] Transitioned to NAVIGATION")
+            if cmd.startswith("Locate"):
+                self.state = SystemState.LOCATING
+                print("[FSM] Transitioned to LOCATING")
+                self.tracking_service.start_tracker()
+                self.ball_finder = light_controller.LookForBall(
+                    self.tracking_service, on_ball_found=self.on_ball_found
+                )
+                self.ball_finder.start_ball_check()
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":

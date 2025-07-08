@@ -41,7 +41,7 @@ class NavigationScreen(tk.Frame):
         if self.loop.get():
             self.mqtt_client.client.publish("jetson/command", "Locate,loop,safe")
         else:
-            self.mqtt_client.client.publish("jetson/command", "Locate,safe")
+            self.mqtt_client.client.publish("jetson/command", "Locate,dont_loop,safe")
 
     def on_button_click_speed(self):
         self.controller.show_frame("LocatingScreen")
@@ -49,7 +49,7 @@ class NavigationScreen(tk.Frame):
         if self.loop.get():
             self.mqtt_client.client.publish("jetson/command", "Locate,loop,speed")
         else:
-            self.mqtt_client.client.publish("jetson/command", "Locate,speed")
+            self.mqtt_client.client.publish("jetson/command", "Locate,dont_loop,speed")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
