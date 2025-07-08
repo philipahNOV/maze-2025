@@ -11,6 +11,8 @@ from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilat
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
 from astar.draw_path import draw_path
+import numpy as np
+import cv2
 
 
 class SystemState(Enum):
@@ -48,7 +50,10 @@ class HMIController:
         gray = get_dynamic_threshold(self.tracking_service.get_stable_frame())
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
-
+        safe_mask = (safe_mask > 0).astype(np.uint8) * 255
+        block = (630, 1030)  # y, x
+        cv2.circle(safe_mask, (block[1], block[0]), 70, 255, -1)
+        
         ball_pos = self.tracking_service.get_ball_position()
         ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x) format for processing
         start = find_nearest_walkable(safe_mask, ball_pos)
