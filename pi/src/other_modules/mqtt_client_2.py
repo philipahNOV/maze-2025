@@ -74,7 +74,6 @@ class MQTTClientPi(threading.Thread):
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
-                print("TEST: Ball found")
             if msg.payload.decode() == "ball_not_found":
                 self.ball_found = False
         elif msg.topic == "handshake/response":

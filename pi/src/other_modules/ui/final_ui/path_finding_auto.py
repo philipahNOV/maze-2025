@@ -17,8 +17,9 @@ class AutoPathScreen(tk.Frame):
         # Layout the widgets including the logo
         self.create_widgets()
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_button_click_back(self):
+        self.mqtt_client.client.publish("jetson/command", "Back")
+        self.controller.show_frame("NavigationScreen")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -42,28 +43,21 @@ class AutoPathScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.add_essential_buttons()
 
-        self.template_button = tk.Button(
+        self.back_button = tk.Button(
             self,
-            text="TEMPLATE",
-            font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            text="BACK",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
             activeforeground="#DFDFDF",
-            command=self.on_button_click_template,
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_back,
         )
-        self.template_button.place(x=690, y=150, width=243, height=74)
+        self.back_button.place(x=804, y=10, width=150, height=50)
 
-        self.template_title = tk.Label(
-            self,
-            text="Template",
-            font=("Jockey One", 40),   # or any font you prefer
-            fg="#EE3229",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
-        )
-        self.template_title.place(x=410, y=315)
 
     def show(self):
         """Make this frame visible"""
