@@ -62,7 +62,7 @@ class HMIController:
 
         goal = (49, 763)
 
-        path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.60)
+        path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.50)
         waypoints = sample_waypoints(path, safe_mask)
         self.path = [(x, y) for y, x in waypoints]
 
