@@ -71,7 +71,7 @@ class PathFindingThread(threading.Thread):
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x)
-        ball_pos = (701, 941)
+        #ball_pos = (701, 941)
         start = find_nearest_walkable(safe_mask, ball_pos)
 
         path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
