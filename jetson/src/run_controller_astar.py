@@ -12,6 +12,7 @@ from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilat
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
 from astar.draw_path import draw_path
+from YOLO_tracking.hsv3 import BallTracker
 
 clicked_goal = None
 
@@ -30,7 +31,7 @@ def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
     jpg_as_text = base64.b64encode(buffer).decode('utf-8')
     mqtt_client.client.publish("pi/camera", jpg_as_text)
 
-def main(tracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
+def main(tracker: BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
@@ -53,8 +54,8 @@ def main(tracker, controller: position_controller.Controller, mqtt_client: MQTTC
 
     safe_mask = (safe_mask > 0).astype(np.uint8) * 255
 
-    start = (630, 1030)  # y, x
-    cv2.circle(safe_mask, (start[1], start[0]), 70, 255, -1)
+    start_pad = (630, 1030)  # y, x
+    cv2.circle(safe_mask, (start_pad[1], start_pad[0]), 70, 255, -1)
 
     ball_pos = tracker.get_position()
     while ball_pos is None:
@@ -81,7 +82,7 @@ def main(tracker, controller: position_controller.Controller, mqtt_client: MQTTC
     cv2.destroyWindow("Safe Mask")
     goal = clicked_goal
 
-    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.60)
+    path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=1.0)
     waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
     pathFollower = path_following.PathFollower(path_array, controller)
