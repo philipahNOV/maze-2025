@@ -17,7 +17,7 @@ class CustomPathScreen(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
-        self.update_image()  # Start updating the image
+        #self.update_image()  # Start updating the image
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
