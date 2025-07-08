@@ -35,10 +35,10 @@ def main(tracker: TrackerService,
         pathFollower = path_following.PathFollower(path_array, controller)
 
     controller.horizontal()
-    time.sleep(1)
-    wiggle_thread = light_controller.EscapeElevatorThread(controller.arduinoThread)
-    wiggle_thread.start()
-    time.sleep(6)
+    escape_thread = light_controller.EscapeElevatorThread(controller.arduinoThread)
+    escape_thread.start()
+    time.sleep(escape_thread.duration)
+    controller.horizontal()
 
     # Set control loop parameters
     TARGET_HZ = 60
