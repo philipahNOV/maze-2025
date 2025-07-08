@@ -28,4 +28,12 @@ def create_binary_mask(gray):
     final_mask = cv2.bitwise_and(cleaned, edges_inv)
     final_mask = cv2.morphologyEx(final_mask, cv2.MORPH_CLOSE, np.ones((7, 7), np.uint8), iterations=1)
 
+    # needs to filter green hsv values as white
+    hsv = cv2.cvtColor(cv2.cvtColor(gray, cv2.COLOR_GRAY2BGR), cv2.COLOR_BGR2HSV)
+    lower_green = np.array([40, 50, 50])
+    upper_green = np.array([80, 255, 255])
+    green_mask = cv2.inRange(hsv, lower_green, upper_green)
+    green_mask = cv2.morphologyEx(green_mask, cv2.MORPH_CLOSE, np.ones((5, 5), np.uint8), iterations=2)
+    final_mask = cv2.bitwise_and(final_mask, cv2.bitwise_not(green_mask))
+
     return final_mask
