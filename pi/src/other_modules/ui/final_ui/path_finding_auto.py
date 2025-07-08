@@ -31,6 +31,10 @@ class AutoPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Locate")
         self.mqtt_client.img = None
 
+    def on_button_click_start(self):
+        #self.controller.show_frame("LocatingScreen")
+        self.mqtt_client.client.publish("jetson/command", "Start")
+
     def update_image(self):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
@@ -113,6 +117,21 @@ class AutoPathScreen(tk.Frame):
             command=self.on_button_click_retry,
         )
         self.retry_button.place(x=480, y=75, width=150, height=50)
+
+        self.start_button = tk.Button(
+            self,
+            text="START ROBOT",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_start,
+        )
+        self.start_button.place(x=700, y=75, width=200, height=50)
 
 
     def show(self):
