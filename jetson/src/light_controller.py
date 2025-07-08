@@ -98,8 +98,8 @@ class EscapeElevatorThread(threading.Thread):
     def __init__(self, arduino_thread):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
-        self.duration = 8
-        self.speed = 75  # absolute motor speed
+        self.duration = 5
+        self.speed = 150  # absolute motor speed
         self._stop_event = threading.Event()
         self.start_time = time.time()
 
