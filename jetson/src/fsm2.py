@@ -52,6 +52,7 @@ class HMIController:
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
         #self.image_controller.frame = safe_mask
+        #cv2.circle(self.image_controller.frame, (1030, 630), 70, 255, -1)
         #self.image_controller.crop_and_rotate_frame()
         #self.image_controller.send_frame_to_pi(self.mqtt_client)
 
