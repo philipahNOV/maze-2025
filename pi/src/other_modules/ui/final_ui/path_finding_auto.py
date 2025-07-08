@@ -87,7 +87,7 @@ class AutoPathScreen(tk.Frame):
         self.status_label = tk.Label(
             self,
             text="",
-            font=("Jockey One", 60),
+            font=("Jockey One", 35),
             fg="white",
             bg="#4D4D4D",  # Match background or make transparent if needed
             anchor="w",    # Left aligned
