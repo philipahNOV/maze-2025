@@ -51,7 +51,8 @@ class HMIController:
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
-        self.image_controller.cropped_frame = safe_mask
+        self.image_controller.frame = safe_mask
+        self.image_controller.crop_and_rotate_frame()
         self.image_controller.send_frame_to_pi(self.mqtt_client)
 
         goal = (49, 763)
