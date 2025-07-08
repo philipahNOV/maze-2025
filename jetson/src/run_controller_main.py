@@ -27,8 +27,10 @@ def main(tracker: TrackerService,
         time.sleep(0.1)
     print("[INFO] Tracking initialized.")
 
-    pathFollower = path_following.PathFollower(path_array, controller)
-    #pathFollowerLookahead = path_following_lookahead.PathFollower(path_array, controller)
+    if controller.lookahead:
+        pathFollower = path_following_lookahead.PathFollower(path_array, controller)
+    else:
+        pathFollower = path_following.PathFollower(path_array, controller)
 
     controller.horizontal()
     time.sleep(1)
