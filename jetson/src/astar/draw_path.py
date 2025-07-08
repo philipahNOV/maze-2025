@@ -1,6 +1,6 @@
 import cv2
 
-def draw_path(image, path, waypoints, start, goal):
+def draw_path(image, waypoints, start, goal):
     out = image.copy()
 
     # VERY important for handling different image formats
