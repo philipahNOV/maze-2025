@@ -4,6 +4,7 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import MainApp
+import cv2
 
 
 class CustomPathScreen(tk.Frame):
@@ -16,10 +17,29 @@ class CustomPathScreen(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
+        self.update_image()  # Start updating the image
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
+
+    def on_canvas_click(self, event):
+        x, y = event.x, event.y
+        print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
+
+        # Optional: show a small circle at the clicked location
+        r = 3
+        self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
+
+    def update_image(self):
+        if self.mqtt_client.img is not None:
+            frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            #img = img.resize((320, 240), Image.Resampling.LANCZOS)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.image_label.imgtk = imgtk
+            self.image_label.config(image=imgtk)
+        self.after(200, self.update_image)  # update every 200 ms 
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -41,6 +61,11 @@ class CustomPathScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.canvas = tk.Canvas(self, width=450, height=450)
+        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        blank_image = Image.open(self.controller.blank_image_path).convert("RGB")
+        self.bg_image_id = self.canvas.create_image(0, 0, anchor="nw", image=blank_image)
+        self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.add_essential_buttons()
 
         self.back_button = tk.Button(
