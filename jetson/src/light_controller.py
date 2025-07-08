@@ -80,6 +80,6 @@ class PathFindingThread(threading.Thread):
         final_path = [(x, y) for y, x in waypoints]
         print(f"[PathFindingThread] Path found with {len(final_path)} points.")
 
-        self.on_path_found(final_path, safe_mask)
+        self.on_path_found(final_path)
 
 

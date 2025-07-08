@@ -45,10 +45,15 @@ class HMIController:
         self.path = path
         #self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         #self.image_thread.start()
-        self.image_controller.frame = mask
-        self.image_controller.send_frame_to_pi(self.mqtt_client)
 
     def start_path_finding(self):
+        frame = self.tracking_service.get_stable_frame()
+        gray = get_dynamic_threshold(frame)
+        binary_mask = create_binary_mask(gray)
+        safe_mask = dilate_mask(binary_mask)
+        self.image_controller.frame = safe_mask
+        self.image_controller.send_frame_to_pi(self.mqtt_client)
+        
         goal = (49, 763)
         path_thread = light_controller.PathFindingThread(
             tracking_service=self.tracking_service,
