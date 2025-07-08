@@ -4,6 +4,7 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import MainApp
+import cv2
 
 
 class AutoPathScreen(tk.Frame):
@@ -20,6 +21,15 @@ class AutoPathScreen(tk.Frame):
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
+
+    def update_image(self):
+        if self.mqtt_client.img is not None:
+            frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            imgtk = ImageTk.PhotoImage(image=img)
+            self.image_label.imgtk = imgtk
+            self.image_label.config(image=imgtk)
+        #self.after(200, self.update_image)  # update every 200 ms 
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -41,6 +51,8 @@ class AutoPathScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.image_label = tk.Label(self)
+        self.image_label.place(x=30, y=75, width=450, height=450)
         self.add_essential_buttons()
 
         self.back_button = tk.Button(

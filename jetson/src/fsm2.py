@@ -3,6 +3,7 @@ from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
 import light_controller
+from image_controller import ImageController
 import pos2
 
 
@@ -25,6 +26,7 @@ class HMIController:
         self.speed_control = False
         self.loop_control = False
         self.ball_finder = None
+        self.image_controller = ImageController()
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
@@ -76,6 +78,14 @@ class HMIController:
             if cmd == "AutoPath":
                 self.state = SystemState.AUTO_PATH
                 print("[FSM] Transitioned to AUTO_PATH")
+                frame = self.tracking_service.get_stable_frame()
+                if frame is not None:
+                    self.image_controller.frame = frame.copy()
+                    self.image_controller.update(
+                        self.tracking_service.get_ball_position(),
+                        None, 
+                        self.mqtt_client
+                    )
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
