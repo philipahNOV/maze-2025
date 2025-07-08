@@ -19,8 +19,9 @@ class LocatingScreen(tk.Frame):
         self.create_widgets()
         self.check_for_ball()  # Start checking for the ball
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_button_click_back(self):
+        self.mqtt_client.client.publish("jetson/command", "Back")
+        self.controller.show_frame("NavigationScreen")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -55,7 +56,7 @@ class LocatingScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=lambda: self.controller.show_frame("MainScreen")
+            command=self.on_button_click_back,
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
 
@@ -70,12 +71,12 @@ class LocatingScreen(tk.Frame):
 
         self.under_title = tk.Label(
             self,
-            text="WELCOME",
+            text="PLACE BALL IN ELEVATOR",
             font=("Jockey One", 30),   # or any font you prefer
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.under_title.place(x=430, y=280)
+        self.under_title.place(x=430, y=290)
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:

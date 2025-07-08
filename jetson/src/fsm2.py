@@ -24,6 +24,7 @@ class HMIController:
         self.safe_control = False
         self.speed_control = False
         self.loop_control = False
+        self.ball_finder = None
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
@@ -66,10 +67,10 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
-                ball_finder = light_controller.LookForBall(
+                self.ball_finder = light_controller.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                ball_finder.start_ball_check()
+                self.ball_finder.start_ball_check()
 
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
@@ -78,12 +79,25 @@ class HMIController:
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
+            elif cmd == "Back":
+                self.tracking_service.stop_tracker()
+                if self.ball_finder:
+                    self.ball_finder.stop_ball_check()
+                    self.ball_finder = None
+                self.state = SystemState.NAVIGATION
+                print("[FSM] Transitioned to NAVIGATION")
         
         elif self.state == SystemState.AUTO_PATH:
-            pass
+            if cmd == "Back":
+                self.state = SystemState.NAVIGATION
+                self.tracking_service.stop_tracker()
+                print("[FSM] Transitioned to NAVIGATION")
 
         elif self.state == SystemState.CUSTOM_PATH:
-            pass
+            if cmd == "Back":
+                self.state = SystemState.NAVIGATION
+                self.tracking_service.stop_tracker()
+                print("[FSM] Transitioned to NAVIGATION")
 
         elif cmd == "Emergency_Stop":
             self.model.stop_all()
