@@ -82,9 +82,11 @@ class LocatingScreen(tk.Frame):
         if self.mqtt_client.ball_found:
             if self.custom:
                 self.mqtt_client.client.publish("jetson/command", "CustomPath")
+                self.mqtt_client.ball_found = False
                 self.controller.show_frame("CustomPathScreen")
             else:
                 self.mqtt_client.client.publish("jetson/command", "AutoPath")
+                self.mqtt_client.ball_found = False
                 self.controller.show_frame("AutoPathScreen")
         else:
             self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
