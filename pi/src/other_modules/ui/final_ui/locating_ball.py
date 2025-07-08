@@ -11,6 +11,8 @@ class LocatingScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.safe = False
+        self.speed = False
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 

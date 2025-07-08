@@ -36,7 +36,7 @@ except Exception as e:
 
 tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
-fsm = HMIController(tracker_service, arduino_thread)
+fsm = HMIController(tracker_service, arduino_thread, mqtt_client)
 mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")

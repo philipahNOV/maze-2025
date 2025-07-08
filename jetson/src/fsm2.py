@@ -2,6 +2,7 @@ from enum import Enum, auto
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
+import light_controller
 import pos2
 
 
@@ -12,14 +13,16 @@ class SystemState(Enum):
     NAVIGATION = auto()
     LOCATING = auto()
     TRACKING = auto()
-    STOPPED = auto()
 
 class HMIController:
-    def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection):
+    def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson):
         self.state = SystemState.BOOTING
         self.tracking_service = tracking_service
         self.arduino_thread = arduino_thread
-        self.control_type = None
+        self.mqtt_client = mqtt_client
+
+    def on_ball_found(self):
+        self.mqtt_client.client.publish("pi/info", "ball_found")
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
@@ -39,25 +42,24 @@ class HMIController:
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
-                print("[FSM] Transitioned to MAIN_SCREEN from INFO_SCREEN")
+                print("[FSM] Transitioned to MAIN_SCREEN")
 
         elif self.state == SystemState.NAVIGATION:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
-                print("[FSM] Transitioned to MAIN_SCREEN from NAVIGATION")
+                print("[FSM] Transitioned to MAIN_SCREEN")
             if cmd.startswith("Locate"):
-                if cmd.endswith("Safe"):
-                    self.control_type = "SafeControl"
-                elif cmd.endswith("Speed"):
-                    self.control_type = "SpeedControl"
-                self.tracking_service.start_tracker()
                 self.state = SystemState.LOCATING
-                print("[FSM] Transitioned to LOCATING from NAVIGATION")
+                print("[FSM] Transitioned to LOCATING")
+                self.tracking_service.start_tracker()
+                ball_finder = light_controller.LookForBall(
+                    self.tracking_service, on_ball_found=self.on_ball_found
+                )
+                ball_finder.start_ball_check()
 
 
         elif self.state == SystemState.LOCATING:
-            if self.model.tracking_service.is_initialized:
-                self.state = SystemState.TRACKING
+            pass
 
         elif cmd == "Emergency_Stop":
             self.model.stop_all()
