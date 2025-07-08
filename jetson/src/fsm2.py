@@ -82,7 +82,7 @@ class HMIController:
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
-                    self.ball_finder.stop_ball_check()
+                    self.ball_finder.stop()
                     self.ball_finder = None
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
