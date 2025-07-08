@@ -52,7 +52,7 @@ class HMIController:
         safe_mask = dilate_mask(binary_mask)
         safe_mask = (safe_mask > 0).astype(np.uint8) * 255
         block = (630, 1030)  # y, x
-        cv2.circle(safe_mask, (block[1], block[0]), 70, 255, -1)
+        cv2.circle(safe_mask, (block[0], block[1]), 70, 255, -1)
         
         ball_pos = self.tracking_service.get_ball_position()
         ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x) format for processing
