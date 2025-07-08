@@ -5,6 +5,11 @@ from camera.tracker_service import TrackerService
 import light_controller
 from image_controller import ImageController
 import pos2
+from astar.astar import astar_downscaled
+from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
+from astar.nearest_point import find_nearest_walkable
+from astar.waypoint_sampling import sample_waypoints
+from astar.draw_path import draw_path
 
 
 class SystemState(Enum):
@@ -26,10 +31,45 @@ class HMIController:
         self.speed_control = False
         self.loop_control = False
         self.ball_finder = None
+        self.path = None
         self.image_controller = ImageController()
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
+
+    def on_path_found(self, path):
+        self.path = path
+        if self.path is not None:
+            self.image_controller.frame = self.tracking_service.get_stable_frame().copy()
+            self.image_controller.update(
+                self.tracking_service.get_ball_position(),
+                self.path,
+                self.mqtt_client
+            )
+
+    def path_finding_auto(self):
+        gray = get_dynamic_threshold(self.tracking_service.get_stable_frame())
+        binary_mask = create_binary_mask(gray)
+        safe_mask = dilate_mask(binary_mask)
+
+        ball_pos = self.tracking_service.get_ball_position()
+        ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x) format for processing
+        start = find_nearest_walkable(safe_mask, ball_pos)
+
+        goal = (49, 763)
+
+        path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=0.60)
+        waypoints = sample_waypoints(path, safe_mask)
+        self.path = [(x, y) for y, x in waypoints]
+
+    def start_path_finding(self):
+        goal = (49, 763)
+        path_thread = light_controller.PathFindingThread(
+            tracking_service=self.tracking_service,
+            goal=goal,
+            on_path_found=self.on_path_found
+        )
+        path_thread.start()
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
@@ -78,14 +118,7 @@ class HMIController:
             if cmd == "AutoPath":
                 self.state = SystemState.AUTO_PATH
                 print("[FSM] Transitioned to AUTO_PATH")
-                frame = self.tracking_service.get_stable_frame()
-                if frame is not None:
-                    self.image_controller.frame = frame.copy()
-                    self.image_controller.update(
-                        self.tracking_service.get_ball_position(),
-                        None, 
-                        self.mqtt_client
-                    )
+                self.start_path_finding()
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")

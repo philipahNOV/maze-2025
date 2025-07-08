@@ -1,5 +1,9 @@
 import time
 import threading
+from astar.astar import astar_downscaled
+from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
+from astar.nearest_point import find_nearest_walkable
+from astar.waypoint_sampling import sample_waypoints
 
 
 class BlinkRed(threading.Thread):
@@ -44,3 +48,35 @@ class LookForBall:
 
     def stop(self):
         self._stop_event.set()
+
+class PathFindingThread(threading.Thread):
+    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=0.60):
+        super().__init__(daemon=True)
+        self.tracking_service = tracking_service
+        self.goal = goal
+        self.on_path_found = on_path_found
+        self.repulsion_weight = repulsion_weight
+        self.scale = scale
+
+    def run(self):
+        print("[PathFindingThread] Started path finding...")
+        frame = self.tracking_service.get_stable_frame()
+        gray = get_dynamic_threshold(frame)
+        binary_mask = create_binary_mask(gray)
+        safe_mask = dilate_mask(binary_mask)
+
+        ball_pos = self.tracking_service.get_ball_position()
+        if ball_pos is None:
+            print("[PathFindingThread] Ball position is None. Aborting.")
+            return
+
+        ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x)
+        start = find_nearest_walkable(safe_mask, ball_pos)
+
+        path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
+        waypoints = sample_waypoints(path, safe_mask)
+
+        final_path = [(x, y) for y, x in waypoints]
+        print(f"[PathFindingThread] Path found with {len(final_path)} points.")
+
+        self.on_path_found(final_path)

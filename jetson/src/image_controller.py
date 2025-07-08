@@ -5,6 +5,7 @@ import cv2
 import time
 import base64
 from mqtt_client import MQTTClientJetson
+import threading
 
 class ImageController:
     """
@@ -95,3 +96,27 @@ class ImageController:
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)
         return self.cropped_frame
+    
+class ImageSenderThread(threading.Thread):
+    def __init__(self, image_controller: ImageController, mqtt_client: MQTTClientJetson, tracker_service, path_follower=None):
+        super().__init__(daemon=True)
+        self.image_controller = image_controller
+        self.mqtt_client = mqtt_client
+        self.tracker_service = tracker_service
+        self.path_follower = path_follower
+        self.running = False
+        self.sleep_interval = 0.20  # 5 FPS update loop; actual send rate is limited by image_controller
+
+    def run(self):
+        self.running = True
+        print("[ImageSenderThread] Started")
+        while self.running:
+            ball_pos = self.tracker_service.get_ball_position()
+            self.image_controller.frame = self.tracker_service.get_last_frame()  # Ensure latest raw frame
+            self.image_controller.update(ball_pos, self.path_follower, self.mqtt_client)
+            time.sleep(self.sleep_interval)
+
+    def stop(self):
+        self.running = False
+        print("[ImageSenderThread] Stopped")
+
