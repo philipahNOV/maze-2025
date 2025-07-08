@@ -40,11 +40,25 @@ class HMIController:
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
 
+    def densify_path(path, factor=6):
+        new_path = []
+        for i in range(len(path) - 1):
+            p1 = np.array(path[i])
+            p2 = np.array(path[i + 1])
+            new_path.append(tuple(p1))
+            for j in range(1, factor):
+                interp = p1 + (p2 - p1) * (j / factor)
+                new_path.append(tuple(interp.astype(int)))
+        new_path.append(path[-1])
+        return new_path
+
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
     def on_path_found(self, path):
         self.path = path
+        if self.controller.lookahead:
+            self.path = self.densify_path(self.path, factor=3)
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         self.image_thread.start()
     

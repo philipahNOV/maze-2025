@@ -28,8 +28,10 @@ def main(tracker: TrackerService,
     print("[INFO] Tracking initialized.")
 
     if controller.lookahead:
+        print("[INFO] Using lookahead path following.")
         pathFollower = path_following_lookahead.PathFollower(path_array, controller)
     else:
+        print("[INFO] Using standard path following.")
         pathFollower = path_following.PathFollower(path_array, controller)
 
     controller.horizontal()
