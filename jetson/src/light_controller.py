@@ -4,6 +4,7 @@ from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
+from astar.path_memory import PathMemory
 import cv2
 
 
@@ -58,6 +59,7 @@ class PathFindingThread(threading.Thread):
         self.on_path_found = on_path_found
         self.repulsion_weight = repulsion_weight
         self.scale = scale
+        self.path_cache = PathMemory(max_paths=10, tolerance=15, cache_file="astar/path_cache.json")
 
     def run(self):
         print("[PathFindingThread] Started path finding...")
@@ -75,8 +77,11 @@ class PathFindingThread(threading.Thread):
         ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x)
         #ball_pos = (701, 941)
         start = find_nearest_walkable(safe_mask, ball_pos)
-
-        path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
+        cached = self.path_cache.get_cached_path(start, self.goal)
+        if cached:
+            path = cached
+        else:
+            path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
         waypoints = sample_waypoints(path, safe_mask)
 
         final_path = [(x, y) for y, x in waypoints]
