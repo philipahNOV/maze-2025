@@ -81,3 +81,5 @@ class PathFindingThread(threading.Thread):
         print(f"[PathFindingThread] Path found with {len(final_path)} points.")
 
         self.on_path_found(final_path)
+
+

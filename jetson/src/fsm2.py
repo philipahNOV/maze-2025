@@ -4,6 +4,7 @@ from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
 import light_controller
 from image_controller import ImageController
+from image_controller import ImageSenderThread
 import pos2
 from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
@@ -39,17 +40,8 @@ class HMIController:
 
     def on_path_found(self, path):
         self.path = path
-        if self.path is not None:
-            frame = self.tracking_service.get_stable_frame().copy()
-            if len(self.path) > 0:
-                frame = draw_path(frame, self.path, self.path[0], self.path[-1])
-            self.image_controller.frame = frame
-            self.image_controller.update(
-                self.tracking_service.get_ball_position(),
-                pathFollower=None,
-                mqtt_client=self.mqtt_client,
-                path=None
-            )
+        image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        image_thread.start()
 
     def path_finding_auto(self):
         gray = get_dynamic_threshold(self.tracking_service.get_stable_frame())
