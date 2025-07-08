@@ -25,6 +25,23 @@ class CustomPathScreen(tk.Frame):
         self.create_widgets()
         #self.update_image()  # Start updating the image
 
+    def update_image(self):
+        if self.mqtt_client.img is not None:
+             # Convert OpenCV BGR to RGB
+            frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
+            img = Image.fromarray(frame)
+            # Resize to match canvas scale
+            img_scaled = img.resize(
+                (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
+                Image.Resampling.LANCZOS
+            )
+
+            # Convert to ImageTk and update canvas
+            self.image = ImageTk.PhotoImage(img_scaled)
+            self.canvas.itemconfig(self.image_id, image=self.image)
+
+        self.after(200, self.update_image)  # update every 200 ms 
+
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
@@ -35,7 +52,7 @@ class CustomPathScreen(tk.Frame):
         # Optional: show a small circle at the clicked location
         r = 3
         self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
-        
+
         x = self.true_width - int(x / self.scale_ratio) + self.offset_x
         y = self.true_height - int(y / self.scale_ratio) + self.offset_y
         print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
@@ -63,15 +80,9 @@ class CustomPathScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.canvas = tk.Canvas(self, width=int(self.true_width * self.scale_ratio), height=int(self.true_height * self.scale_ratio))
         self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
-        
-        blank_image_pil = Image.open(self.controller.blank_image_path).convert("RGB")
-        scaled_pil = blank_image_pil.resize(
-            (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
-            Image.Resampling.LANCZOS
-        )
-        blank_image = ImageTk.PhotoImage(scaled_pil)
-
-        self.image = blank_image  # Keep a reference to prevent garbage collection
+                
+        placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
+        self.image = placeholder
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
 
         self.canvas.bind("<Button-1>", self.on_canvas_click)
@@ -94,6 +105,7 @@ class CustomPathScreen(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
+        self.update_image()  # Start updating the image
 
     def hide(self):
         """Hide this frame"""

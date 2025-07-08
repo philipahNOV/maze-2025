@@ -135,6 +135,8 @@ class HMIController:
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
