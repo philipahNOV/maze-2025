@@ -48,7 +48,9 @@ class AutoPathScreen(tk.Frame):
                 font = ImageFont.load_default()
 
             # Draw text centered
-            text_width, text_height = draw.textsize(waiting_text, font=font)
+            bbox = draw.textbbox((0, 0), waiting_text, font=font)
+            text_width = bbox[2] - bbox[0]
+            text_height = bbox[3] - bbox[1]
             x = (blank_image.width - text_width) // 2
             y = (blank_image.height - text_height) // 2
             draw.text((x, y), waiting_text, font=font, fill=(0, 0, 0))
