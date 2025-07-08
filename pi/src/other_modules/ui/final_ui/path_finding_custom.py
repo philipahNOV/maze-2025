@@ -83,7 +83,7 @@ class CustomPathScreen(tk.Frame):
                 
         placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
         self.image = placeholder
-        self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
+        self.image_id = self.canvas.create_image(150, 16, anchor="nw", image=self.image)
 
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.add_essential_buttons()
