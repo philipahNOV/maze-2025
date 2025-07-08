@@ -74,8 +74,7 @@ class PathFindingThread(threading.Thread):
             print("[PathFindingThread] Ball position is None. Aborting.")
             return
 
-        ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x)
-        #ball_pos = (701, 941)
+        ball_pos = (ball_pos[1], ball_pos[0])
         start = find_nearest_walkable(safe_mask, ball_pos)
         cached = self.path_cache.get_cached_path(start, self.goal)
 
