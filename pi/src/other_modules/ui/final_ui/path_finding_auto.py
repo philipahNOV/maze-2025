@@ -33,7 +33,7 @@ class AutoPathScreen(tk.Frame):
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
-            self.status_label.config(text="")  # Hide message when image appears
+            self.status_label.place_forget()
         else:
             blank_image = Image.open(self.controller.blank_image_path).convert("RGB")
             imgtk = ImageTk.PhotoImage(image=blank_image)
@@ -42,6 +42,7 @@ class AutoPathScreen(tk.Frame):
             waiting_text = "FINDING PATH" + "." * (math.floor(self.waiting_phase / 2) + 1)
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=waiting_text)
+            self.status_label.place(x=100, y=230, width=300, height=50)
         self.after(200, self.update_image)  # update every 200 ms
 
     def add_essential_buttons(self):
@@ -92,7 +93,6 @@ class AutoPathScreen(tk.Frame):
             anchor="w",    # Left aligned
             justify="left"
         )
-        self.status_label.place(x=180, y=230, width=400, height=50)  # Adjust position and size
 
 
     def show(self):
