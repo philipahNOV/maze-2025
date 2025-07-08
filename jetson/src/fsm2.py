@@ -41,28 +41,12 @@ class HMIController:
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
-    def on_path_found(self, path):
+    def on_path_found(self, path, mask):
         self.path = path
-        self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
-        self.image_thread.start()
-
-    def path_finding_auto(self):
-        gray = get_dynamic_threshold(self.tracking_service.get_stable_frame())
-        binary_mask = create_binary_mask(gray)
-        safe_mask = dilate_mask(binary_mask)
-        safe_mask = (safe_mask > 0).astype(np.uint8) * 255
-        block = (630, 1030)  # y, x
-        cv2.circle(safe_mask, (block[1], block[0]), 70, 255, -1)
-        
-        ball_pos = self.tracking_service.get_ball_position()
-        ball_pos = (ball_pos[1], ball_pos[0])  # Convert to (y, x) format for processing
-        start = find_nearest_walkable(safe_mask, ball_pos)
-
-        goal = (49, 763)
-
-        path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=1.0)
-        waypoints = sample_waypoints(path, safe_mask)
-        self.path = [(x, y) for y, x in waypoints]
+        #self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        #self.image_thread.start()
+        self.image_controller.frame = mask
+        self.image_controller.send_frame_to_pi(self.mqtt_client)
 
     def start_path_finding(self):
         goal = (49, 763)
