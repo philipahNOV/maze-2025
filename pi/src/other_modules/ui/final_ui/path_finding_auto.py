@@ -13,6 +13,7 @@ class AutoPathScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.waiting_phase = 0
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
@@ -99,6 +100,8 @@ class AutoPathScreen(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
+        self.mqtt_client.img = None  # Reset image to trigger loading state
+        self.waiting_phase = 0  # Reset waiting phase for loading state
 
     def hide(self):
         """Hide this frame"""
