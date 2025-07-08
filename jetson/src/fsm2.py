@@ -40,12 +40,14 @@ class HMIController:
     def on_path_found(self, path):
         self.path = path
         if self.path is not None:
-            self.image_controller.frame = self.tracking_service.get_stable_frame().copy()
+            frame = self.tracking_service.get_stable_frame().copy()
+            path_frame = draw_path(frame, self.path)
+            self.image_controller.frame = path_frame
             self.image_controller.update(
                 self.tracking_service.get_ball_position(),
                 pathFollower=None,
                 mqtt_client=self.mqtt_client,
-                path=self.path
+                path=None
             )
 
     def path_finding_auto(self):
