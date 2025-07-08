@@ -181,7 +181,6 @@ class HMIController:
                     self.image_thread.stop()
                     self.image_thread.join()
 
-                    # Start control loop thread if not running
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():
                         self.controller_thread = threading.Thread(

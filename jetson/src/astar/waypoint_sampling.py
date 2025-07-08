@@ -35,6 +35,7 @@ def sample_waypoints(path, mask, target_count=20, angle_threshold=135):
             for j in range(i, last_wp_idx, -1):
                 if is_clear_path(mask, path[last_wp_idx], path[j]):
                     best_idx = j
+                    break
             waypoints.append(path[best_idx])
             last_wp_idx = best_idx
             accumulated = 0.0
