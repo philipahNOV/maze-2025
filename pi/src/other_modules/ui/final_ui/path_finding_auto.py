@@ -159,6 +159,7 @@ class AutoPathScreen(tk.Frame):
         """Make this frame visible"""
         self.mqtt_client.img = None  # Reset image to trigger loading state
         self.waiting_phase = 0  # Reset waiting phase for loading state
+        self.check_for_timeout()
 
     def hide(self):
         """Hide this frame"""
