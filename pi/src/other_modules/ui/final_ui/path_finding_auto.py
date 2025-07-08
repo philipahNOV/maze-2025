@@ -88,7 +88,7 @@ class AutoPathScreen(tk.Frame):
             text="",
             font=("Jockey One", 60),
             fg="white",
-            bg="#D9D9D9",  # Match background or make transparent if needed
+            bg="#4D4D4D",  # Match background or make transparent if needed
             anchor="w",    # Left aligned
             justify="left"
         )
