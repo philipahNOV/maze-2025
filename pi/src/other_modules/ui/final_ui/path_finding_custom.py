@@ -13,6 +13,8 @@ class CustomPathScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
+        self.scale_ratio = 0.8
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
@@ -25,6 +27,8 @@ class CustomPathScreen(tk.Frame):
 
     def on_canvas_click(self, event):
         x, y = event.x, event.y
+        x = int(x / self.scale_ratio)
+        y = int(y / self.scale_ratio)
         print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
 
         # Optional: show a small circle at the clicked location
@@ -51,7 +55,7 @@ class CustomPathScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.canvas = tk.Canvas(self, width=450, height=450)
+        self.canvas = tk.Canvas(self, width=int(730 * self.scale_ratio), height=int(710 * self.scale_ratio))
         self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
         
         blank_image_pil = Image.open(self.controller.blank_image_path).convert("RGB")
