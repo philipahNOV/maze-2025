@@ -13,8 +13,8 @@ def draw_path(image, waypoints, start, goal):
 
     if waypoints and len(waypoints) > 1:
         for i in range(1, len(waypoints)):
-            pt1 = (waypoints[i - 1][1], waypoints[i - 1][0])
-            pt2 = (waypoints[i][1], waypoints[i][0])
+            pt1 = (waypoints[i - 1])
+            pt2 = (waypoints[i])
             cv2.line(out, pt1, pt2, (255, 255, 255), 1, lineType=cv2.LINE_AA)
 
     for y, x in waypoints or []:

@@ -51,6 +51,11 @@ def main(tracker, controller: position_controller.Controller, mqtt_client: MQTTC
     binary_mask = create_binary_mask(gray)
     safe_mask = dilate_mask(binary_mask)
 
+    safe_mask = (safe_mask > 0).astype(np.uint8) * 255
+
+    start = (630, 1030)  # y, x
+    cv2.circle(safe_mask, (start[1], start[0]), 70, 255, -1)
+
     ball_pos = tracker.get_position()
     while ball_pos is None:
         print("Waiting for ball position...")

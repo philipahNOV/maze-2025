@@ -1,6 +1,6 @@
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-import rl2
+import run_controller_astar
 import pos2
 from camera.tracker_service import TrackerService
 import queue
@@ -89,7 +89,7 @@ while True:
         # Start control loop thread if not running
         if not hasattr(mqtt_client, "control_thread") or not mqtt_client.control_thread.is_alive():
             mqtt_client.control_thread = threading.Thread(
-                target=rl2.main,
+                target=run_controller_astar.main,
                 args=(tracker_service, controller, mqtt_client),
                 daemon=True
             )
