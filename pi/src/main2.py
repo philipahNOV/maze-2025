@@ -32,6 +32,7 @@ class MainApp(tk.Tk):
         self.image_path = os.path.abspath(os.path.join(self.script_dir, '..', 'data'))
         self.logo_path = os.path.join(self.image_path, 'logo.png')
         self.background_path = os.path.join(self.image_path, 'background.png')
+        self.blank_image_path = os.path.join(self.image_path, 'blank_image.png')
 
         self.current_frame = "BootScreen"
 
