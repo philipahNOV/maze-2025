@@ -16,8 +16,9 @@ from camera.tracker_service import TrackerService
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson,
-         path_array=None):
-    
+         path_array=None,
+         stop_event=None):
+
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 
@@ -38,7 +39,7 @@ def main(tracker: TrackerService,
     blinker = None
 
     try:
-        while True:
+        while not stop_event.is_set():
             loop_start = time.time()
 
             frame = tracker.get_stable_frame()
@@ -65,15 +66,9 @@ def main(tracker: TrackerService,
                     blinker.start()
 
             # Display the visual overlay
-            cv2.imshow("Ball tracking", cropped_frame)
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-            if mqtt_client.stop_control:
-                mqtt_client.stop_control = False
-                controller.arduinoThread.send_speed(0, 0)
-                cv2.destroyAllWindows()
-                break
+            #cv2.imshow("Ball tracking", cropped_frame)
+            #if cv2.waitKey(1) & 0xFF == ord('q'):
+            #    break
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
@@ -87,8 +82,12 @@ def main(tracker: TrackerService,
         print(f"[ERROR] Control loop crashed: {e}")
         traceback.print_exc()
     finally:
-        cv2.destroyAllWindows()
+        #cv2.destroyAllWindows()
         print("[INFO] Control thread exited.")
+        if blinker is not None:
+            blinker.stop()
+            blinker = None
+        controller.arduinoThread.send_speed(0, 0)
 
 if __name__ == "__main__":
     main()

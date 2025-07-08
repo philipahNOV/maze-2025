@@ -39,6 +39,8 @@ class HMIController:
         self.image_controller = ImageController()
         self.image_thread = None
         self.controller = pos2.Controller(arduino_thread, tracking_service)
+        self.controller_thread = None
+        self.stop_controller_event = threading.Event()
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
@@ -47,6 +49,12 @@ class HMIController:
         self.path = path
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         self.image_thread.start()
+    
+    def stop_controller(self):
+        if self.controller_thread is not None and self.controller_thread.is_alive():
+            self.stop_controller_event.set()
+            self.controller_thread.join()
+            self.controller_thread = None
 
     def start_path_finding(self):
         frame = self.tracking_service.get_stable_frame()
@@ -127,6 +135,7 @@ class HMIController:
         
         elif self.state == SystemState.AUTO_PATH:
             if cmd == "Back":
+                self.stop_controller()
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
@@ -136,6 +145,7 @@ class HMIController:
                 self.path = None
                 print("[FSM] Transitioned to NAVIGATION")
             if cmd.startswith("Locate"):
+                self.stop_controller()
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.stop_tracker()
@@ -149,6 +159,9 @@ class HMIController:
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
+                if self.controller_thread is not None and self.controller_thread.is_alive():
+                    self.controller_thread.join()
+                    self.controller_thread = None
             if cmd == "Start":
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
@@ -157,13 +170,14 @@ class HMIController:
                     self.image_thread.join()
 
                     # Start control loop thread if not running
-                    if not hasattr(self.mqtt_client, "control_thread") or not self.mqtt_client.control_thread.is_alive():
-                        self.mqtt_client.control_thread = threading.Thread(
+                    self.stop_controller_event.clear()
+                    if self.controller_thread is None or not self.controller_thread.is_alive():
+                        self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
-                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path),
+                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
                             daemon=True
                         )
-                        self.mqtt_client.control_thread.start()
+                        self.controller_thread.start()
                     else:
                         print("[INFO] Control loop already running")
 
