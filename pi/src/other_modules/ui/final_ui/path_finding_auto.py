@@ -31,7 +31,7 @@ class AutoPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Locate")
         self.mqtt_client.img = None
 
-    def on_button_click_retry(self):
+    def on_button_click_start(self):
         #self.controller.show_frame("LocatingScreen")
         self.mqtt_client.client.publish("jetson/command", "Start")
 

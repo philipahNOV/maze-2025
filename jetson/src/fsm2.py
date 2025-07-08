@@ -151,6 +151,9 @@ class HMIController:
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+
                     # Start control loop thread if not running
                     if not hasattr(self.mqtt_client, "control_thread") or not self.mqtt_client.control_thread.is_alive():
                         self.mqtt_client.control_thread = threading.Thread(
