@@ -31,13 +31,15 @@ class CustomPathScreen(tk.Frame):
 
     def on_canvas_click(self, event):
         x, y = event.x, event.y
-        x = self.true_width - int(x / self.scale_ratio) + self.offset_x
-        y = self.true_height - int(y / self.scale_ratio) + self.offset_y
-        print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
 
         # Optional: show a small circle at the clicked location
         r = 3
         self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
+        
+        x = self.true_width - int(x / self.scale_ratio) + self.offset_x
+        y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+        print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
+
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
