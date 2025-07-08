@@ -40,7 +40,7 @@ class HMIController:
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
 
-    def densify_path(path, factor=6):
+    def densify_path(self, path, factor=6):
         new_path = []
         for i in range(len(path) - 1):
             p1 = np.array(path[i])
