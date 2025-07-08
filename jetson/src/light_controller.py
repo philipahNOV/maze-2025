@@ -78,11 +78,16 @@ class PathFindingThread(threading.Thread):
         #ball_pos = (701, 941)
         start = find_nearest_walkable(safe_mask, ball_pos)
         cached = self.path_cache.get_cached_path(start, self.goal)
+
         if cached:
             path = cached
         else:
             path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
-            self.path_cache.cache_path(start, self.goal, path)
+            if path: 
+                self.path_cache.cache_path(start, self.goal, path)
+            else:
+                print("[PathMemory] Pathfinding failed. Not caching empty path.")
+
         waypoints = sample_waypoints(path, safe_mask)
 
         final_path = [(x, y) for y, x in waypoints]
