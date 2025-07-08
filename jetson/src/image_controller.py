@@ -102,7 +102,8 @@ class ImageController:
             #self.draw_waypoints_lookahead(pathFollower)
             self.draw_waypoints(pathFollower)
         elif path is not None:
-            self.frame = draw_path(self.frame, path, path[0], path[-1])
+            if len(path) > 0:
+                self.frame = draw_path(self.frame, path, path[0], path[-1])
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)
@@ -124,7 +125,7 @@ class ImageSenderThread(threading.Thread):
         while self.running:
             ball_pos = self.tracker_service.get_ball_position()
             self.image_controller.frame = self.tracker_service.get_stable_frame().copy()
-            self.image_controller.update(ball_pos, pathFollower=None, mqtt_client=self.mqtt_client, path=self.path if self.path is not None else None)
+            self.image_controller.update(ball_pos, pathFollower=None, mqtt_client=self.mqtt_client, path=self.path)
             time.sleep(self.sleep_interval)
 
     def stop(self):
