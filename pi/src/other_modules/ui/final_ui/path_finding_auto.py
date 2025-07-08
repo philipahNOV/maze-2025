@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import MainApp
 import cv2
+from PIL import ImageDraw, ImageFont
 
 
 class AutoPathScreen(tk.Frame):
@@ -30,7 +31,31 @@ class AutoPathScreen(tk.Frame):
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
-        self.after(200, self.update_image)  # update every 1000 ms
+        else:
+            # Load blank image
+            blank_image = Image.open(self.controller.blank_image_path).convert("RGB")
+            draw = ImageDraw.Draw(blank_image)
+
+            # Cycle through "Waiting." -> "Waiting.." -> "Waiting..."
+            waiting_text = "FINDING PATH" + "." * (self.waiting_phase + 1)
+            self.waiting_phase = (self.waiting_phase + 1) % 3
+
+            # Load a font (optional: provide TTF path or use default)
+            try:
+                font = ImageFont.truetype("Jockey One", 36)
+            except:
+                font = ImageFont.load_default()
+
+            # Draw text centered
+            text_width, text_height = draw.textsize(waiting_text, font=font)
+            x = (blank_image.width - text_width) // 2
+            y = (blank_image.height - text_height) // 2
+            draw.text((x, y), waiting_text, font=font, fill=(0, 0, 0))
+
+            imgtk = ImageTk.PhotoImage(image=blank_image)
+            self.image_label.imgtk = imgtk
+            self.image_label.config(image=imgtk)
+        self.after(200, self.update_image)  # update every 200 ms
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
