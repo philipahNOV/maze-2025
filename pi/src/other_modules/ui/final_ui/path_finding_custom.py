@@ -18,7 +18,6 @@ class CustomPathScreen(tk.Frame):
         self.true_height = 710
         self.offset_x = 390
         self.offset_y = 10
-        self.image_top_left = (150, 16)  # Top-left corner of the image in the canvas
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
@@ -54,8 +53,8 @@ class CustomPathScreen(tk.Frame):
         r = 3
         self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
 
-        x = self.true_width - int(x / self.scale_ratio) + self.offset_x + self.image_top_left[0]
-        y = self.true_height - int(y / self.scale_ratio) + self.offset_y + self.image_top_left[1]
+        x = self.true_width - int(x / self.scale_ratio) + self.offset_x
+        y = self.true_height - int(y / self.scale_ratio) + self.offset_y
         print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
 
 
@@ -80,11 +79,11 @@ class CustomPathScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.canvas = tk.Canvas(self, width=int(self.true_width * self.scale_ratio), height=int(self.true_height * self.scale_ratio))
-        self.canvas.place(x=0, y=0, relwidth=1, relheight=1)
+        self.canvas.place(x=150, y=16, relwidth=1, relheight=1)
                 
         placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
         self.image = placeholder
-        self.image_id = self.canvas.create_image(*self.image_top_left, anchor="nw", image=self.image)
+        self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
 
         self.canvas.bind("<Button-1>", self.on_canvas_click)
         self.add_essential_buttons()
