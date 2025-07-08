@@ -94,6 +94,21 @@ class AutoPathScreen(tk.Frame):
             justify="left"
         )
 
+        self.retry_button = tk.Button(
+            self,
+            text="RETRY",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_back,
+        )
+        self.retry_button.place(x=804, y=10, width=150, height=50)
+
 
     def show(self):
         """Make this frame visible"""
