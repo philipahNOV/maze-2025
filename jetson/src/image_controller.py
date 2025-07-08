@@ -44,6 +44,13 @@ class ImageController:
         #for i in range(pathFollower.length):
         #    cv2.circle(self.frame, pathFollower.path[i], 5, (255, 0, 0), -1)
 
+    def draw_waypoints_simple(self, path):
+        if self.frame is None or path is None:
+            return
+
+        for point in path:
+            cv2.circle(self.frame, point, 5, (255, 0, 0), -1)
+
     def draw_ball(self, ball_pos):
         """Draw the ball position on the frame."""
         if self.frame is None or ball_pos is None:
@@ -77,7 +84,7 @@ class ImageController:
             mqtt_client.client.publish("pi/camera", jpg_as_text)
             self.last_sent_frame_time = time.time()
 
-    def update(self, ballPos, pathFollower: PathFollower, mqtt_client: MQTTClientJetson):
+    def update(self, ballPos, pathFollower: PathFollower = None, mqtt_client: MQTTClientJetson = None, path=None):
         """
         Main update routine: draw overlays, crop, rotate, and send frame.
 
@@ -90,9 +97,11 @@ class ImageController:
             np.ndarray: The final processed frame ready for display.
         """
         #self.draw_waypoints(pathFollower)
-        if pathFollower:
+        if pathFollower is not None:
             #self.draw_waypoints_lookahead(pathFollower)
             self.draw_waypoints(pathFollower)
+        elif path is not None:
+            self.draw_waypoints_simple(path)
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)

@@ -43,8 +43,9 @@ class HMIController:
             self.image_controller.frame = self.tracking_service.get_stable_frame().copy()
             self.image_controller.update(
                 self.tracking_service.get_ball_position(),
-                self.path,
-                self.mqtt_client
+                pathFollower=None,
+                mqtt_client=self.mqtt_client,
+                path=self.path
             )
 
     def path_finding_auto(self):
