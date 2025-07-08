@@ -50,7 +50,7 @@ class LookForBall:
         self._stop_event.set()
 
 class PathFindingThread(threading.Thread):
-    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=0.50):
+    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0):
         super().__init__(daemon=True)
         self.tracking_service = tracking_service
         self.goal = goal

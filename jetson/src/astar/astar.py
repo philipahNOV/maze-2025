@@ -65,7 +65,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
     return False
 
 # default scale is 0.60, shows a good balanace, adjust based on needs
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=0.60):
+def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=1.0):
     small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
     small_array = (small_array > 0).astype(np.uint8)
 
