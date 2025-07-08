@@ -24,7 +24,7 @@ class BallTracker:
 
         self.WINDOW_SIZE = 80
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
-        self.HSV_RANGE = (np.array([35, 80, 80]), np.array([85, 255, 255])) # Green
+        self.HSV_RANGE = (np.array([35, 80, 80]), np.array([85, 255, 255]))  # Green
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
@@ -64,11 +64,14 @@ class BallTracker:
                                 self.initialized = True
             else:
                 new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
+
                 if new_pos:
                     self.ball_position = new_pos
                     self.hsv_fail_counter = 0
                 else:
+                    self.ball_position = None
                     self.hsv_fail_counter += 1
+
                     if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
                         global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
                         if global_pos:
@@ -82,8 +85,7 @@ class BallTracker:
                                     self.hsv_fail_counter = 0
                                     self.yolo_cooldown = self.yolo_cooldown_period
                                     break
-                        else:
-                            self.ball_position = None
+
             if self.yolo_cooldown > 0:
                 self.yolo_cooldown -= 1
 
@@ -99,9 +101,9 @@ class BallTracker:
 
     def get_position(self):
         return self.ball_position
-    
+
     def retrack(self):
-        self.initialized
+        self.initialized = False
         self.ball_confirm_counter = 0
         print("[BallTracker] Retracking initiated.")
 
