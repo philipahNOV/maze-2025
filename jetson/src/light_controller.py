@@ -106,6 +106,7 @@ class EscapeElevatorThread(threading.Thread):
     def run(self):
         print("[EscapeElevatorThread] Starting escape...")
         while time.time() - self.start_time < self.duration:
-            self.arduino_thread.send_speed(0, -self.speed)
+            self.arduino_thread.send_speed(25, -self.speed)
             time.sleep(0.1)
+        self.arduino_thread.send_speed(0, 0)
 
