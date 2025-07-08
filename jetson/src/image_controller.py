@@ -97,10 +97,11 @@ class ImageController:
         Returns:
             np.ndarray: The final processed frame ready for display.
         """
-        #self.draw_waypoints(pathFollower)
         if pathFollower is not None:
-            #self.draw_waypoints_lookahead(pathFollower)
-            self.draw_waypoints(pathFollower)
+            if isinstance(pathFollower, PathFollowerLookahead):
+                self.draw_waypoints_lookahead(pathFollower)
+            else:
+                self.draw_waypoints(pathFollower)
         elif path is not None:
             if len(path) > 0:
                 self.frame = draw_path(self.frame, path, path[0], path[-1])

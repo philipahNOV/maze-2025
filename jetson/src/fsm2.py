@@ -31,8 +31,6 @@ class HMIController:
         self.tracking_service = tracking_service
         self.arduino_thread = arduino_thread
         self.mqtt_client = mqtt_client
-        self.safe_control = False
-        self.speed_control = False
         self.loop_control = False
         self.ball_finder = None
         self.path = None
@@ -104,11 +102,9 @@ class HMIController:
                 elif "dont_loop" in cmd:
                     self.loop_control = False
                 if cmd.endswith("safe"):
-                    self.safe_control = True
-                    self.speed_control = False
+                    self.controller.lookahead = False
                 elif cmd.endswith("speed"):
-                    self.safe_control = False
-                    self.speed_control = True
+                    self.controller.lookahead = True
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
