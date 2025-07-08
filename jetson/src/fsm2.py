@@ -41,7 +41,7 @@ class HMIController:
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
-    def on_path_found(self, path, mask):
+    def on_path_found(self, path):
         self.path = path
         #self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         #self.image_thread.start()
@@ -53,7 +53,7 @@ class HMIController:
         safe_mask = dilate_mask(binary_mask)
         self.image_controller.frame = safe_mask
         self.image_controller.send_frame_to_pi(self.mqtt_client)
-        
+
         goal = (49, 763)
         path_thread = light_controller.PathFindingThread(
             tracking_service=self.tracking_service,
