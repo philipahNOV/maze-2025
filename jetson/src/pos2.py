@@ -11,7 +11,8 @@ class Controller:
 
     def __init__(self, arduinoThread: arduino_connection.ArduinoConnection,
                  tracker: TrackerService,
-                 path_following=True):
+                 path_following=True,
+                 lookahead=False):
         self.arduinoThread = arduinoThread
         self.tracker = tracker
 
@@ -46,8 +47,8 @@ class Controller:
         self.vel_max = 100
 
         # === PID TUNING PARAMETERS ===
-        lookahead = True
-        if lookahead:
+        self.lookahead = lookahead
+        if self.lookahead:
             self.kp_x = 0.00002
             self.kd_x = 0.00014
             self.kp_y = 0.00002

@@ -12,7 +12,8 @@ from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
 from astar.draw_path import draw_path
 import numpy as np
-import cv2
+import run_controller_main
+import threading
 
 
 class SystemState(Enum):
@@ -37,6 +38,7 @@ class HMIController:
         self.path = None
         self.image_controller = ImageController()
         self.image_thread = None
+        self.controller = pos2.Controller(arduino_thread, tracking_service)
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
@@ -145,6 +147,20 @@ class HMIController:
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
+            if cmd == "Start":
+                if self.path is None:
+                    print("[FSM] No path found, cannot start.")
+                else:
+                    # Start control loop thread if not running
+                    if not hasattr(self.mqtt_client, "control_thread") or not self.mqtt_client.control_thread.is_alive():
+                        self.mqtt_client.control_thread = threading.Thread(
+                            target=run_controller_main.main,
+                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path),
+                            daemon=True
+                        )
+                        self.mqtt_client.control_thread.start()
+                    else:
+                        print("[INFO] Control loop already running")
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
