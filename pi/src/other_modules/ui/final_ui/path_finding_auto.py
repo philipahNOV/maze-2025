@@ -6,6 +6,7 @@ if TYPE_CHECKING:
     from main import MainApp
 import cv2
 from PIL import ImageDraw, ImageFont
+import math
 
 
 class AutoPathScreen(tk.Frame):
@@ -32,32 +33,15 @@ class AutoPathScreen(tk.Frame):
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
+            self.status_label.config(text="")  # Hide message when image appears
         else:
-            # Load blank image
             blank_image = Image.open(self.controller.blank_image_path).convert("RGB")
-            draw = ImageDraw.Draw(blank_image)
-
-            # Cycle through "Waiting." -> "Waiting.." -> "Waiting..."
-            waiting_text = "FINDING PATH" + "." * (self.waiting_phase + 1)
-            self.waiting_phase = (self.waiting_phase + 1) % 3
-
-            # Load a font (optional: provide TTF path or use default)
-            try:
-                font = ImageFont.truetype("Jockey One", 36)
-            except:
-                font = ImageFont.load_default()
-
-            # Draw text centered
-            bbox = draw.textbbox((0, 0), waiting_text, font=font)
-            text_width = bbox[2] - bbox[0]
-            text_height = bbox[3] - bbox[1]
-            x = (blank_image.width - text_width) // 2
-            y = (blank_image.height - text_height) // 2
-            draw.text((x, y), waiting_text, font=font, fill=(0, 0, 0))
-
             imgtk = ImageTk.PhotoImage(image=blank_image)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
+            waiting_text = "FINDING PATH" + "." * (math.floor(self.waiting_phase / 2) + 1)
+            self.waiting_phase = (self.waiting_phase + 1) % 6
+            self.status_label.config(text=waiting_text)
         self.after(200, self.update_image)  # update every 200 ms
 
     def add_essential_buttons(self):
@@ -98,6 +82,17 @@ class AutoPathScreen(tk.Frame):
             command=self.on_button_click_back,
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
+
+        self.status_label = tk.Label(
+            self,
+            text="",
+            font=("Jockey One", 60),
+            fg="white",
+            bg="#D9D9D9",  # Match background or make transparent if needed
+            anchor="w",    # Left aligned
+            justify="left"
+        )
+        self.status_label.place(x=180, y=230, width=400, height=50)  # Adjust position and size
 
 
     def show(self):
