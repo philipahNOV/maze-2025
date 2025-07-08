@@ -41,7 +41,7 @@ class HMIController:
         self.path = path
         if self.path is not None:
             frame = self.tracking_service.get_stable_frame().copy()
-            path_frame = draw_path(frame, self.path)
+            path_frame = draw_path(frame, self.path, self.path[0], self.path[-1])
             self.image_controller.frame = path_frame
             self.image_controller.update(
                 self.tracking_service.get_ball_position(),
