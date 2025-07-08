@@ -24,6 +24,7 @@ class MQTTClientPi(threading.Thread):
         self.screen2_instance = None
         self.ball_found = None
         self.img = None
+        self.timeout = False
         
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
@@ -76,6 +77,9 @@ class MQTTClientPi(threading.Thread):
                 self.ball_found = True
             if msg.payload.decode() == "ball_not_found":
                 self.ball_found = False
+            if msg.payload.decode() == "timeout":
+                print("[Pi] Ball not found for too long, returning to main menu.")
+                self.timeout = True
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True

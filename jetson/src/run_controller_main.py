@@ -22,6 +22,9 @@ def main(tracker: TrackerService,
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 
+    ball_not_found_timer = None
+    ball_not_found_limit = 60  # seconds
+
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.is_initialized:
         time.sleep(0.1)
@@ -64,6 +67,7 @@ def main(tracker: TrackerService,
                 if blinker is not None:
                     blinker.stop()
                     blinker = None
+                    ball_not_found_timer = None
             else:
                 cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 ball_pos = smoother.update(ball_pos)
@@ -71,6 +75,16 @@ def main(tracker: TrackerService,
                     controller.arduinoThread.send_speed(0, 0)
                     blinker = light_controller.BlinkRed(controller.arduinoThread)
                     blinker.start()
+                    ball_not_found_timer = time.time()
+
+            if ball_not_found_timer is not None:
+                elapsed_time = time.time() - ball_not_found_timer
+                if elapsed_time > ball_not_found_limit:
+                    print("[WARNING] Ball not found for too long, returning to main menu.")
+                    controller.arduinoThread.send_speed(0, 0)
+                    ball_not_found_timer = None
+                    mqtt_client.publish("pi/info", "timeout")
+                    break
 
             # Display the visual overlay
             #cv2.imshow("Ball tracking", cropped_frame)

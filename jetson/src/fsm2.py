@@ -190,6 +190,17 @@ class HMIController:
                         self.controller_thread.start()
                     else:
                         print("[INFO] Control loop already running")
+            if cmd == "timeout":
+                print("[FSM] Timeout command received in AUTO_PATH")
+                self.stop_controller()
+                self.state = SystemState.MAIN_SCREEN
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                print("[FSM] Transitioned to MAIN_SCREEN")
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
