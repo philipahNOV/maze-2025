@@ -94,4 +94,21 @@ class PathFindingThread(threading.Thread):
 
         self.on_path_found(final_path)
 
+class EscapeElevatorThread(threading.Thread):
+    def __init__(self, arduino_thread, duration=0.5, speed=30):
+        super().__init__(daemon=True)
+        self.arduino_thread = arduino_thread
+        self.duration = 6
+        self.speed = 50  # absolute motor speed
+        self._stop_event = threading.Event()
+        self.start_time = time.time()
+
+    def run(self):
+        print("[EscapeElevatorThread] Starting escape...")
+        while time.time() - self.start_time < self.duration/2:
+            self.arduino_thread.send_speed(0, -self.speed)
+            time.sleep(0.1)
+        while time.time() - self.start_time < self.duration:
+            self.arduino_thread.send_speed(0, self.speed)
+            time.sleep(0.1)
 
