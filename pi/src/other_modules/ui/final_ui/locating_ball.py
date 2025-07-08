@@ -11,8 +11,7 @@ class LocatingScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-        self.safe = False
-        self.speed = False
+        self.custom = False
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
@@ -80,7 +79,12 @@ class LocatingScreen(tk.Frame):
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:
-            self.controller.show_frame("AutoPathScreen")
+            if self.custom:
+                self.mqtt_client.client.publish("jetson/command", "CustomPath")
+                self.controller.show_frame("CustomPathScreen")
+            else:
+                self.mqtt_client.client.publish("jetson/command", "AutoPath")
+                self.controller.show_frame("AutoPathScreen")
         else:
             self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
 
