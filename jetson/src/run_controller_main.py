@@ -83,7 +83,7 @@ def main(tracker: TrackerService,
                     print("[WARNING] Ball not found for too long, returning to main menu.")
                     controller.arduinoThread.send_speed(0, 0)
                     ball_not_found_timer = None
-                    mqtt_client.publish("pi/info", "timeout")
+                    mqtt_client.client.publish("pi/info", "timeout")
                     break
 
             # Display the visual overlay
