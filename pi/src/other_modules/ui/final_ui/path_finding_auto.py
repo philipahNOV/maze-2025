@@ -141,6 +141,7 @@ class AutoPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
+            state="disabled",  # Initially disabled
             command=self.on_button_click_start,
         )
         self.start_button.place(x=770, y=300, width=200, height=50)
