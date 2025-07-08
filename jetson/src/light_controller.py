@@ -65,7 +65,7 @@ class PathFindingThread(threading.Thread):
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
-        cv2.circle(safe_mask, (630, 1030), 70, 255, -1)
+        cv2.circle(safe_mask, (1030, 630), 70, 255, -1)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None:
