@@ -30,7 +30,7 @@ class AutoPathScreen(tk.Frame):
             imgtk = ImageTk.PhotoImage(image=img)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
-        self.after(1000, self.update_image)  # update every 1000 ms
+        self.after(200, self.update_image)  # update every 1000 ms
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(

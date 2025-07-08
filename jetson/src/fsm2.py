@@ -36,14 +36,15 @@ class HMIController:
         self.ball_finder = None
         self.path = None
         self.image_controller = ImageController()
+        self.image_thread = None
 
     def on_ball_found(self):
         self.mqtt_client.client.publish("pi/info", "ball_found")
 
     def on_path_found(self, path):
         self.path = path
-        image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
-        image_thread.start()
+        self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        self.image_thread.start()
 
     def path_finding_auto(self):
         gray = get_dynamic_threshold(self.tracking_service.get_stable_frame())
@@ -135,6 +136,10 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
+                self.image_thread.stop()
+                self.image_thread.join()
+                self.path = None
+                self.image_thread = None
                 print("[FSM] Transitioned to NAVIGATION")
 
         elif self.state == SystemState.CUSTOM_PATH:
