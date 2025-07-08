@@ -25,15 +25,25 @@ class AutoPathScreen(tk.Frame):
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
+        self.disable_buttons()
 
     def on_button_click_retry(self):
         self.controller.show_frame("LocatingScreen")
         self.mqtt_client.client.publish("jetson/command", "Locate")
         self.mqtt_client.img = None
+        self.disable_buttons()
 
     def on_button_click_start(self):
         #self.controller.show_frame("LocatingScreen")
         self.mqtt_client.client.publish("jetson/command", "Start")
+
+    def enable_buttons(self):
+        self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
+        self.retry_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
+
+    def disable_buttons(self):
+        self.start_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
+        self.retry_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
     def update_image(self):
         if self.mqtt_client.img is not None:
@@ -43,6 +53,7 @@ class AutoPathScreen(tk.Frame):
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
             self.status_label.place_forget()
+            self.enable_buttons()
         else:
             blank_image = Image.open(self.controller.blank_image_path).convert("RGB")
             imgtk = ImageTk.PhotoImage(image=blank_image)
@@ -107,31 +118,32 @@ class AutoPathScreen(tk.Frame):
             self,
             text="RETRY",
             font=("Jockey One", 20),
-            fg="white",
-            bg="#EE3229",           
-            activebackground="#B82F27",
-            activeforeground="#DFDFDF",
+            fg="#9E9E9E",
+            bg="#723D3A",           
+            activebackground="#331E1D",
+            activeforeground="#7A7A7A",
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
+            state="disabled",  # Initially disabled
             command=self.on_button_click_retry,
         )
-        self.retry_button.place(x=480, y=75, width=150, height=50)
+        self.retry_button.place(x=600, y=300, width=150, height=50)
 
         self.start_button = tk.Button(
             self,
             text="START ROBOT",
             font=("Jockey One", 20),
-            fg="white",
-            bg="#EE3229",           
-            activebackground="#B82F27",
-            activeforeground="#DFDFDF",
+            fg="#9E9E9E",
+            bg="#723D3A",           
+            activebackground="#331E1D",
+            activeforeground="#7A7A7A",
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
             command=self.on_button_click_start,
         )
-        self.start_button.place(x=700, y=75, width=200, height=50)
+        self.start_button.place(x=770, y=300, width=200, height=50)
 
 
     def show(self):
