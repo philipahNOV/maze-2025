@@ -53,6 +53,7 @@ namespace serial_messages {
     int16_t value_1 = 0; // Variabel for første verdi i seriedata
     int16_t value_2 = 0; // Variabel for andre verdi i seriedata
     int16_t value_3 = 0; // Variabel for tredje verdi i seriedata
+    int16_t value_4 = 0; // Variabel for fjerde verdi i seriedata
 }
 
 // Navnerom for globale variabler
@@ -67,7 +68,7 @@ void actuator_position(); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
 void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
 void get_ball(); // Funksjon for å kontrollere heisen for å hente ball
-void set_led_color(uint8_t r, uint8_t g, uint8_t b); // Funksjon for å sette fargen på LED stripen
+void set_led_color(uint8_t r, uint8_t g, uint8_t b, int8_t led_number); // Funksjon for å sette fargen på LED stripen
 void read_serial(); // Funksjon for å lese innkommende seriedata
 
 void setup() {
@@ -78,7 +79,7 @@ void setup() {
     led_strips::strip.begin(); // Starter LED stripen
     led_strips::strip.setBrightness(255); // Setter lysstyrken til stripen
     // Setter alle LED til hvit farge
-    set_led_color(255, 255, 255); // Setter fargen til hvit
+    set_led_color(255, 255, 255, -1); // Setter fargen til hvit
 
     // Setter pin modusene
     // Aktuator en
@@ -112,7 +113,7 @@ void loop() {
             move_speed(serial_messages::value_1, serial_messages::value_2); // Setter motor hastighetene
             break;
         case serial_messages::State::SET_COLOR: // Tilstand 2: Setter farge på LED stripen
-            set_led_color(serial_messages::value_1, serial_messages::value_2, serial_messages::value_3); // Setter fargen på LED stripen
+            set_led_color(serial_messages::value_1, serial_messages::value_2, serial_messages::value_3, serial_messages::value_4); // Setter fargen på LED stripen
             serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
             break;
         default: // Standard tilstand: Ingen handling
@@ -255,10 +256,25 @@ void get_ball()
     lift_servo::lift.detach(); // Frakobler servoen
 }
 
-void set_led_color(uint8_t r, uint8_t g, uint8_t b) {
-    // Funksjon for å sette fargen på LED stripen
-    for (uint8_t i = 0; i < led_strips::num_leds; i++) {
+// Funksjon for å sette fargen på LED stripen
+void set_led_color(uint8_t r, uint8_t g, uint8_t b, int8_t led_number) {
+
+    // Setter alle LED til en spesifikk farge
+    if (led_number == -1)
+    {
+        for (uint8_t i = 0; i < led_strips::num_leds; i++) {
         led_strips::strip.setPixelColor(i, led_strips::strip.Color(r, g, b)); // Setter fargen på hver LED
+        }
+    }
+    // Setter en spesifikk LED til en spesifikk farge
+    else if (led_number >= 0 && led_number < led_strips::num_leds)
+    {
+        led_strips::strip.setPixelColor(led_number, led_strips::strip.Color(r, g, b)); // Setter fargen på den spesifikke LED
+    }
+    else
+    {
+        Serial.println("Invalid LED number!"); // Skriver ut en feilmelding hvis led_number er utenfor gyldig område
+        return; // Avslutter funksjonen tidlig
     }
     led_strips::strip.show(); // Oppdaterer stripen for å vise endringene
 }
@@ -273,16 +289,18 @@ void read_serial()
         int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser data til linjeskift eller buffer er fullt
 
         // Legg til sjekk for å sikre at vi faktisk leste noe før vi parser
-        if (len > 0) {
+        if (len > 0)
+        {
             buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
              
-            int v1, v2, v3, incoming_state;
+            int v1, v2, v3, v4, incoming_state;
 
             // Tell antall kommaer for å bestemme meldingstype raskt
             uint8_t comma_count = 0;
             for (int i = 0; i < len; i++)
             {
-                if (buffer[i] == ',') {
+                if (buffer[i] == ',')
+                {
                     comma_count++;
                 }
             }
@@ -294,7 +312,8 @@ void read_serial()
                 {
                     serial_messages::value_1 = v1;
                     serial_messages::value_2 = v2;
-                    if (incoming_state >= 0 && incoming_state <= 3) {
+                    if (incoming_state >= 0 && incoming_state <= 3)
+                    {
                         serial_messages::state = static_cast<serial_messages::State>(incoming_state);
                     }
                 }
@@ -302,12 +321,14 @@ void read_serial()
             // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
             else if (comma_count == 3) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
             {
-                if (sscanf(buffer, "%d,%d,%d,%d", &v1, &v2, &v3, &incoming_state) == 4)
+                if (sscanf(buffer, "%d,%d,%d,%d,%d", &v1, &v2, &v3, &v4, &incoming_state) == 4)
                 {
                     serial_messages::value_1 = v1;
                     serial_messages::value_2 = v2;
                     serial_messages::value_3 = v3;
-                    if (incoming_state >= 0 && incoming_state <= 3) {
+                    serial_messages::value_4 = v4;
+                    if (incoming_state >= 0 && incoming_state <= 4)
+                    {
                         serial_messages::state = static_cast<serial_messages::State>(incoming_state);
                     }
                 }
@@ -317,7 +338,8 @@ void read_serial()
             {
                 if (sscanf(buffer, "%d", &incoming_state) == 1)
                 {
-                    if (incoming_state >= 0 && incoming_state <= 3) {
+                    if (incoming_state >= 0 && incoming_state <= 3)
+                    {
                         serial_messages::state = static_cast<serial_messages::State>(incoming_state);
                     }
                 }
