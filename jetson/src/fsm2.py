@@ -130,6 +130,7 @@ class HMIController:
             if cmd == "booted":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+                self.controller.horizontal()
         elif self.state == SystemState.MAIN_SCREEN:
             if cmd == "Info":
                 self.state = SystemState.INFO_SCREEN
