@@ -28,12 +28,6 @@ except Exception as e:
     print(e)
     exit(1)
 
-try:
-    mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
-except Exception as e:
-    print(e)
-    exit(1)
-
 tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
 tracker_service.start_tracker()
@@ -45,6 +39,12 @@ controller = pos2.Controller(
 )
 controller.horizontal()
 tracker_service.stop_tracker()
+
+try:
+    mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
+except Exception as e:
+    print(e)
+    exit(1)
 
 fsm = HMIController(tracker_service, arduino_thread, mqtt_client)
 mqtt_client.fsm = fsm
