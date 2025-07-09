@@ -41,6 +41,7 @@ class HMIController:
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
         self.path_thread = None
+        self.discoing = False
 
     def densify_path(self, path, factor=6):
         new_path = []
