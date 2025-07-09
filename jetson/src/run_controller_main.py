@@ -23,7 +23,7 @@ def main(tracker: TrackerService,
     image_controller = ImageController()
 
     ball_not_found_timer = None
-    ball_not_found_limit = 60  # seconds
+    ball_not_found_limit = 30  # seconds
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.is_initialized:

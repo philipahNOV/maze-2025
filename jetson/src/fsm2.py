@@ -155,12 +155,14 @@ class HMIController:
                 self.path = None
                 print("[FSM] Transitioned to AUTO_PATH")
                 self.start_path_finding()
+                self.tracking_service.stop_tracker()
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
+                self.tracking_service.stop_tracker()
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
@@ -173,7 +175,6 @@ class HMIController:
             if cmd == "Back":
                 self.stop_controller()
                 self.state = SystemState.NAVIGATION
-                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
@@ -184,7 +185,6 @@ class HMIController:
                 self.stop_controller()
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
-                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
@@ -207,6 +207,7 @@ class HMIController:
 
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():
+                        self.tracking_service.start_tracker()
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
                             args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
@@ -229,8 +230,12 @@ class HMIController:
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                    self.custom_goal = None
                 self.state = SystemState.NAVIGATION
-                self.tracking_service.stop_tracker()
                 print("[FSM] Transitioned to NAVIGATION")
             if cmd.startswith("Goal_set:"):
                 coords = cmd.split(":")[1]

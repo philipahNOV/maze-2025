@@ -124,9 +124,15 @@ class ImageSenderThread(threading.Thread):
         self.running = True
         print("[ImageSenderThread] Started")
         while self.running:
-            ball_pos = self.tracker_service.get_ball_position()
-            self.image_controller.frame = self.tracker_service.get_stable_frame().copy()
-            self.image_controller.update(ball_pos, pathFollower=None, mqtt_client=self.mqtt_client, path=self.path)
+            frame = self.tracker_service.get_stable_frame()
+            if frame is not None:
+                self.image_controller.frame = frame.copy()
+                self.image_controller.update(
+                    ball_pos=None,
+                    pathFollower=None,
+                    mqtt_client=self.mqtt_client,
+                    path=self.path
+                )
             time.sleep(self.sleep_interval)
 
     def stop(self):
