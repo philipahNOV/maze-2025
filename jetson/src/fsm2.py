@@ -135,6 +135,20 @@ class HMIController:
             elif cmd == "Navigate":
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
+            
+            elif cmd == "Disco":
+                if not self.discoing:
+                    self.discoing = True
+                    self.disco_thread = light_controller.DiscoThread(self.arduino_thread)
+                    self.disco_thread.start()
+                else:
+                    self.discoing = False
+                    if self.disco_thread is not None:
+                        self.disco_thread._stop_event.set()
+                        self.disco_thread.join()
+                        self.disco_thread = None
+                    self.arduino_thread.send_color(255, 255, 255)
+                    print("[FSM] Disco mode stopped")
 
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
