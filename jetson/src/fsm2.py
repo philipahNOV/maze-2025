@@ -182,6 +182,7 @@ class HMIController:
                     self.image_thread.join()
                     self.image_thread = None
                 self.path = None
+                self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to NAVIGATION")
             if cmd.startswith("Locate"):
                 self.stop_controller()
@@ -193,6 +194,7 @@ class HMIController:
                     self.image_thread.join()
                     self.image_thread = None
                 self.path = None
+                self.image_controller.set_new_path(self.path)
                 self.tracking_service.start_tracker()
                 self.ball_finder = light_controller.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
@@ -229,6 +231,7 @@ class HMIController:
                     self.image_thread.join()
                     self.image_thread = None
                 self.path = None
+                self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
         elif self.state == SystemState.CUSTOM_PATH:
