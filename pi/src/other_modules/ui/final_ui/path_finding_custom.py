@@ -107,10 +107,10 @@ class CustomPathScreen(tk.Frame):
         self.calculate_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
     def enable_button_start(self):
-        self.calculate_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
+        self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
 
     def disable_button_start(self):
-        self.calculate_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
+        self.start_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
 
     def add_essential_buttons(self):
@@ -184,9 +184,9 @@ class CustomPathScreen(tk.Frame):
         )
         self.calculate_button.place(x=770, y=300, width=200, height=75)
 
-        self.calculate_button = tk.Button(
+        self.start_button = tk.Button(
             self,
-            text="CALCULATE PATH",
+            text="START ROBOT",
             font=("Jockey One", 20),
             fg="#9E9E9E",
             bg="#723D3A",           
@@ -198,7 +198,7 @@ class CustomPathScreen(tk.Frame):
             state="disabled",  # Initially disabled
             command=self.on_button_click_start,
         )
-        self.calculate_button.place(x=770, y=385, width=200, height=75)
+        self.start_button.place(x=770, y=385, width=200, height=75)
 
     def show(self):
         """Make this frame visible"""
