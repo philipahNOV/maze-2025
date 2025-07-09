@@ -62,6 +62,7 @@ class HMIController:
             self.mqtt_client.client.publish("pi/info", "path_found")
         if self.controller.lookahead:
             self.path = self.densify_path(self.path, factor=3)
+        self.remove_withing_elevator(self.path)
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         self.image_thread.start()
     
@@ -92,6 +93,20 @@ class HMIController:
             on_path_found=self.on_path_found
         )
         path_thread.start()
+
+    def remove_withing_elevator(self, path, center_x: int = 1030, center_y: int = 630, radius: int = 60):
+        within_indexes = []
+        if path is None:
+            return
+        for i in range(len(path)):
+            x, y = path[i]
+            dx = x - center_x
+            dy = y - center_y
+            distance_squared = dx * dx + dy * dy
+            if distance_squared <= radius * radius:
+                within_indexes.append(i)
+        for i in reversed(within_indexes):
+            path.pop(i)
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
