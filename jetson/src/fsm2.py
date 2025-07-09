@@ -253,6 +253,8 @@ class HMIController:
                     self.image_thread = None
                     self.custom_goal = None
                 self.state = SystemState.NAVIGATION
+                self.path = None
+                self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to NAVIGATION")
             if cmd.startswith("Goal_set:"):
                 coords = cmd.split(":")[1]
