@@ -74,6 +74,7 @@ class MainApp(tk.Tk):
                 return
 
             frame.tkraise()
+            self.event_generate('<Motion>', warp=True, x=1, y=1)
             frame.focus_set()
             self.update_idletasks()
             self.update()
