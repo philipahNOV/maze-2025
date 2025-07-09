@@ -35,24 +35,37 @@ class MainApp(tk.Tk):
         self.blank_image_path = os.path.join(self.image_path, 'blank_image.png')
 
         self.current_frame = "BootScreen"
-
         self.mqtt_client = mqtt_client
-        # Container to hold all the frames
+
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen):
+
+        boot = BootScreen(parent=container, controller=self, mqtt_client=self.mqtt_client)
+        self.frames["BootScreen"] = boot
+        boot.grid(row=0, column=0, sticky="nsew")
+        self.show_frame("BootScreen")
+
+        for F in (
+            NavigationScreen, InfoScreen, LocatingScreen,
+            MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen
+        ):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
-        
+
         print("Frames initialized:", self.frames)
 
+<<<<<<< HEAD
+    def get_current_screen(self):
+        return self.current_screen  # Returns the current active screen
+=======
         self.show_frame("BootScreen")
 
+>>>>>>> 052c323ecc5ffbade684a01f7fcacc0682b453aa
 
     def show_frame(self, page_name):
         print("Attempting to show frame:", page_name)
@@ -82,20 +95,6 @@ class MainApp(tk.Tk):
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
         self.destroy()
-        sys.exit(0)
-
-    def restart_program(self):
-        print("Restart requested...")
-        try:
-            self.mqtt_client.shut_down()
-        except Exception as e:
-            print(f"Error stopping MQTT client: {e}")
-
-        # Launch a new process first
-        python = sys.executable
-        script = os.path.abspath(sys.argv[0])
-        print(f"Launching new process: {python} {script}")
-        subprocess.Popen([python, script], start_new_session=True)
         sys.exit(0)
 
 def signal_handler(sig, frame):
