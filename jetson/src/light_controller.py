@@ -60,44 +60,65 @@ class PathFindingThread(threading.Thread):
         self.repulsion_weight = repulsion_weight
         self.scale = scale
         self.path_cache = PathMemory(max_paths=10, tolerance=15, cache_file="astar/path_cache.json")
+        self._stop_event = threading.Event()
 
     def run(self):
         print("[PathFindingThread] Started path finding...")
 
-        frame = self.tracking_service.get_stable_frame()
-        if frame is None:
+        if self._stop_event.is_set():
             return
-        
+
+        frame = self.tracking_service.get_stable_frame()
+        if frame is None or self._stop_event.is_set():
+            return
+
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
+
+        if self._stop_event.is_set():
+            return
+
         cv2.circle(safe_mask, (1030, 630), 70, 255, -1)
 
         ball_pos = self.tracking_service.get_ball_position()
-        if ball_pos is None:
-            print("[PathFindingThread] Ball position is None. Aborting.")
+        if ball_pos is None or self._stop_event.is_set():
+            print("[PathFindingThread] Ball position is None or stop requested. Aborting.")
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])
         start = find_nearest_walkable(safe_mask, ball_pos)
 
+        if self._stop_event.is_set():
+            return
+
         cached = self.path_cache.get_cached_path(start, self.goal)
         print(f"[PathFindingThread] Start point: {start}, Goal: {self.goal}")
+
         if cached:
             path = cached
             print("[PathFindingThread] Using cached path.")
         else:
-            path = astar_downscaled(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight, scale=self.scale)
-            if path: 
+            path = astar_downscaled(safe_mask, start, self.goal,
+                                    repulsion_weight=self.repulsion_weight, scale=self.scale)
+            if self._stop_event.is_set():
+                return
+            if path:
                 self.path_cache.cache_path(start, self.goal, path)
             else:
                 print("[PathMemory] Pathfinding failed. Not caching empty path.")
+                return  # exit early if pathfinding failed
+
+        if self._stop_event.is_set():
+            return
 
         print(f"[PathFindingThread] Path length: {len(path)}")
         waypoints = sample_waypoints(path, safe_mask)
 
-        print(f"[PathFindingThread] Sampled {len(waypoints)} waypoints.")
+        if self._stop_event.is_set():
+            return
 
+        print(f"[PathFindingThread] Sampled {len(waypoints)} waypoints.")
         final_path = [(x, y) for y, x in waypoints]
         print(f"[PathFindingThread] Path found with {len(final_path)} points.")
 
