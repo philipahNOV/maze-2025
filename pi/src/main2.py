@@ -63,6 +63,7 @@ class MainApp(tk.Tk):
         self.current_screen = page_name
         frame = self.frames[page_name]
         frame.tkraise()
+        self.update_idletasks()
 
         # If the frame has a custom `show()` method, call it
         if hasattr(frame, "show"):
