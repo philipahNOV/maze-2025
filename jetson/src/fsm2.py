@@ -63,6 +63,7 @@ class HMIController:
         if self.controller.lookahead:
             self.path = self.densify_path(self.path, factor=3)
         self.remove_withing_elevator(self.path)
+        self.image_controller.set_new_path(self.path)
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         self.image_thread.start()
     
@@ -153,12 +154,14 @@ class HMIController:
             if cmd == "AutoPath":
                 self.state = SystemState.AUTO_PATH
                 self.path = None
+                self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to AUTO_PATH")
                 self.start_path_finding()
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None
+                self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
             elif cmd == "Back":

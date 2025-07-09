@@ -25,7 +25,8 @@ class ImageController:
         self.cropped_frame = None
         self.last_sent_frame_time = time.time()
         self.frame_send_hz = 5  # Number of frames to send per second
-        self.last_drawn_path = None
+        self.current_path = None  # Holds the active path
+        self.new_path_available = False  # Flag to track if we need to update the drawing
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
@@ -40,6 +41,11 @@ class ImageController:
             else:
                 color = (0, 0, 255)  # Red for future waypoints
             cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
+
+    def set_new_path(self, path):
+        if path and len(path) > 0:
+            self.current_path = path
+            self.new_path_available = True
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
         cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
@@ -103,11 +109,12 @@ class ImageController:
                 self.draw_waypoints_lookahead(pathFollower)
             else:
                 self.draw_waypoints(pathFollower)
-        elif path is not None and len(path) > 0:
-            self.last_drawn_path = path
-            self.frame = draw_path(self.frame, path, path[0], path[-1])
-        elif self.last_drawn_path:
-            self.frame = draw_path(self.frame, self.last_drawn_path, self.last_drawn_path[0], self.last_drawn_path[-1])
+        elif self.current_path:
+            if self.new_path_available:
+                self.frame = draw_path(self.frame, self.current_path, self.current_path[0], self.current_path[-1])
+                self.new_path_available = False
+            else:
+                self.frame = draw_path(self.frame, self.current_path, None, None)
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)
