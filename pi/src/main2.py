@@ -63,7 +63,9 @@ class MainApp(tk.Tk):
         self.current_screen = page_name
         frame = self.frames[page_name]
         frame.tkraise()
+        frame.focus_set()
         self.update_idletasks()
+        self.after(10, lambda: frame.event_generate("<Expose>"))
 
         # If the frame has a custom `show()` method, call it
         if hasattr(frame, "show"):
