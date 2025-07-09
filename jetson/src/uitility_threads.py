@@ -243,7 +243,7 @@ class DiscoThread(threading.Thread):
             while not self._stop_event.is_set():
                 # Clear all LEDs to white
                 self.arduino_thread.send_color(255, 255, 255)
-
+                time.sleep(0.01)
                 # Set the current LED to red
                 self.arduino_thread.send_color(255, 0, 0, current)
 
