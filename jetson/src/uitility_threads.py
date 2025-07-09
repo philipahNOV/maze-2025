@@ -242,6 +242,7 @@ class DiscoThread(threading.Thread):
                         self.arduino_thread.send_color(255, 0, 0, i)
                     else:
                         self.arduino_thread.send_color(255, 255, 255, i)
+                time.sleep(0.1)
 
     def stop(self):
         print("[DiscoThread] Stopping disco thread.")
