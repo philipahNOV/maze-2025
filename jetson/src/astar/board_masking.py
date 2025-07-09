@@ -45,6 +45,6 @@ def create_binary_mask(gray):
             cy = int(M["m01"] / M["m00"])
             cv2.floodFill(flood_fill_mask, None, (cx, cy), 255)
 
-    safe_mask = cv2.bitwise_or(safe_mask, flood_fill_mask)
+    final_mask = cv2.bitwise_or(final_mask, flood_fill_mask)
 
     return final_mask
