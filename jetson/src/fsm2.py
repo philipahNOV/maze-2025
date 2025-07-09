@@ -41,7 +41,7 @@ class HMIController:
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
         self.path_thread = None
-        self.discoing = False
+        self.disco_mode = 0
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -138,18 +138,22 @@ class HMIController:
                 print("[FSM] Transitioned to NAVIGATION")
             
             elif cmd == "Disco":
-                if not self.discoing:
-                    self.discoing = True
-                    self.disco_thread = light_controller.DiscoThread(self.arduino_thread)
-                    self.disco_thread.start()
-                else:
-                    self.discoing = False
+                self.disco_mode += 1
+                self.disco_mode = self.disco_mode % 6
+                if self.disco_mode == 0:
                     if self.disco_thread is not None:
                         self.disco_thread._stop_event.set()
                         self.disco_thread.join()
                         self.disco_thread = None
-                    self.arduino_thread.send_color(255, 255, 255)
                     print("[FSM] Disco mode stopped")
+                else:
+                    if self.disco_thread is not None:
+                        self.disco_thread._stop_event.set()
+                        self.disco_thread.join()
+                        self.disco_thread = None
+                    self.disco_thread = light_controller.DiscoThread(self.arduino_thread, self.disco_mode)
+                    self.disco_thread.start()
+            
 
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":

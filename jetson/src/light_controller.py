@@ -152,30 +152,90 @@ class EscapeElevatorThread(threading.Thread):
         self.arduino_thread.send_speed(0, 0)
 
 class DiscoThread(threading.Thread):
-    def __init__(self, arduino_thread):
+    def __init__(self, arduino_thread, mode):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self._stop_event = threading.Event()
-        self.speed = 0.01
+        self.mode = mode
 
     def run(self):
         print("[DiscoThread] Starting disco...")
-        hue = 0.0
-        while not self._stop_event.is_set():
-            # Convert hue to RGB (colorsys returns floats 0–1)
-            r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
-            r, g, b = int(r * 255), int(g * 255), int(b * 255)
+        if self.mode == 1:
+            hue = 0.0
+            while not self._stop_event.is_set():
+                # Convert hue to RGB (colorsys returns floats 0–1)
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                r, g, b = int(r * 255), int(g * 255), int(b * 255)
 
-            # Send color to Arduino
-            self.arduino_thread.send_color(r, g, b)
+                # Send color to Arduino
+                self.arduino_thread.send_color(r, g, b)
 
-            # Increment hue and wrap around
-            hue += 0.005
-            if hue > 1.0:
-                hue = 0.0
+                # Increment hue and wrap around
+                hue += 0.005
+                if hue > 1.0:
+                    hue = 0.0
 
-            time.sleep(self.speed)
+                time.sleep(0.1)
+        elif self.mode == 2:
+            hue = 0.0
+            while not self._stop_event.is_set():
+                # Convert hue to RGB (colorsys returns floats 0–1)
+                r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+                r, g, b = int(r * 255), int(g * 255), int(b * 255)
+
+                # Send color to Arduino
+                self.arduino_thread.send_color(r, g, b)
+
+                # Increment hue and wrap around
+                hue += 0.005
+                if hue > 1.0:
+                    hue = 0.0
+
+                time.sleep(0.01)
+        elif self.mode == 3:
+            brightness = 0.0
+            direction = 1
+            while not self._stop_event.is_set():
+                value = int(brightness * 255)
+                self.arduino_thread.send_color(value, value, value)
+
+                brightness += 0.01 * direction
+                if brightness >= 1.0:
+                    brightness = 1.0
+                    direction = -1
+                elif brightness <= 0.0:
+                    brightness = 0.0
+                    direction = 1
+
+                time.sleep(0.01)
+
+        elif self.mode == 4:
+            import random
+            while not self._stop_event.is_set():
+                r = random.randint(0, 255)
+                g = random.randint(0, 255)
+                b = random.randint(0, 255)
+                self.arduino_thread.send_color(r, g, b)
+                time.sleep(0.05)  # flash fast
+
+        elif self.mode == 5:
+            brightness = 0.0
+            direction = 1
+            while not self._stop_event.is_set():
+                value = int(brightness * 255)
+                self.arduino_thread.send_color(value, 0, 0)
+
+                brightness += 0.01 * direction
+                if brightness >= 1.0:
+                    brightness = 1.0
+                    direction = -1
+                elif brightness <= 0.0:
+                    brightness = 0.0
+                    direction = 1
+
+                time.sleep(0.01)
 
     def stop(self):
         print("[DiscoThread] Stopping disco thread.")
+        self.arduino_thread.send_color(255, 255, 255)
         self._stop_event.set()
