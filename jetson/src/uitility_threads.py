@@ -235,11 +235,25 @@ class DiscoThread(threading.Thread):
 
                 time.sleep(0.01)
             
-        elif self.mode == 6:
+        elif self.mode == 6:  # Red chase effect
+            num_leds = 10  # Adjust this to match your actual LED count
+            current = 0
+            direction = 1  # 1 = forward, -1 = backward
+
             while not self._stop_event.is_set():
-                self.arduino_thread.send_color(255, 255, 255)
-                self.arduino_thread.send_color(255, 0, 0, 5)
-                time.sleep(0.01)
+                # Clear all LEDs to white
+                for i in range(num_leds):
+                    self.arduino_thread.send_color(255, 255, 255, i)
+
+                # Set the current LED to red
+                self.arduino_thread.send_color(255, 0, 0, current)
+
+                # Update index
+                current += direction
+                if current >= num_leds - 1 or current <= 0:
+                    direction *= -1  # Bounce back
+
+                time.sleep(0.05)
 
     def stop(self):
         print("[DiscoThread] Stopping disco thread.")
