@@ -1,7 +1,7 @@
 import math
 from .path_geometry import angle_between, is_clear_path
 
-def sample_waypoints(path, mask, target_count=20, angle_threshold=135):
+def sample_waypoints(path, mask, waypoint_spacing=50, angle_threshold=135):
     if not path or len(path) < 2:
         return path or []
 
@@ -9,6 +9,7 @@ def sample_waypoints(path, mask, target_count=20, angle_threshold=135):
         math.hypot(p2[0] - p1[0], p2[1] - p1[1])
         for p1, p2 in zip(path[:-1], path[1:])
     )
+    target_count = max(2, int(total_length / waypoint_spacing))
     spacing = total_length / target_count
 
     waypoints = [path[0]]
