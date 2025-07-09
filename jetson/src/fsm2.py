@@ -227,7 +227,6 @@ class HMIController:
 
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():
-                        self.tracking_service.start_tracker()
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
                             args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
