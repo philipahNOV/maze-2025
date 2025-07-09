@@ -59,19 +59,30 @@ class MainApp(tk.Tk):
 
         print("Frames initialized:", self.frames)
 
+<<<<<<< HEAD
     def get_current_screen(self):
         return self.current_screen  # Returns the current active screen
+=======
+        self.show_frame("BootScreen")
+
+>>>>>>> 052c323ecc5ffbade684a01f7fcacc0682b453aa
 
     def show_frame(self, page_name):
-        """Show a frame for the given page name"""
         print("Attempting to show frame:", page_name)
         self.current_screen = page_name
         frame = self.frames[page_name]
-        frame.tkraise()
 
-        # If the frame has a custom `show()` method, call it
-        if hasattr(frame, "show"):
-            frame.show()
+        def raise_and_show():
+            frame.tkraise()
+            frame.focus_set()
+            self.update_idletasks()
+            self.update()
+            self.after(10, lambda: frame.event_generate("<Configure>"))
+            if hasattr(frame, "show"):
+                frame.show()
+
+        # Slight delay gives X server a chance to sync and load fonts properly
+        self.after(30, raise_and_show)
 
     def on_close(self):
         try:
