@@ -269,7 +269,23 @@ class HMIController:
                     print("[FSM] No custom goal set, cannot calculate path.")
                 else:
                     self.start_path_finding(custom_goal=self.custom_goal)
+            if cmd == "Start":
+                if self.path is None:
+                    print("[FSM] No path found, cannot start.")
+                else:
+                    self.image_thread.stop()
+                    self.image_thread.join()
 
+                    self.stop_controller_event.clear()
+                    if self.controller_thread is None or not self.controller_thread.is_alive():
+                        self.controller_thread = threading.Thread(
+                            target=run_controller_main.main,
+                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
+                            daemon=True
+                        )
+                        self.controller_thread.start()
+                    else:
+                        print("[INFO] Control loop already running")
         elif cmd == "Emergency_Stop":
             self.model.stop_all()
             self.state = SystemState.STOPPED
