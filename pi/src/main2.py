@@ -60,15 +60,20 @@ class MainApp(tk.Tk):
         frame = self.frames[page_name]
 
         def raise_and_show():
+            # Wait until the window is fully visible (mapped)
+            if not self.winfo_ismapped():
+                self.after(10, raise_and_show)
+                return
+
             frame.tkraise()
             frame.focus_set()
             self.update_idletasks()
             self.update()
-            self.after(10, lambda: frame.event_generate("<Configure>"))
+            frame.event_generate("<Configure>")
+
             if hasattr(frame, "show"):
                 frame.show()
 
-        # Slight delay gives X server a chance to sync and load fonts properly
         self.after(30, raise_and_show)
 
     def on_close(self):
