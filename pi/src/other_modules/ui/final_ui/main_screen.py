@@ -23,7 +23,8 @@ class MainScreen(tk.Frame):
         self.create_widgets()
 
     def on_button_click_disco(self):
-        pass
+        self.mqtt_client.client.publish("jetson/command", "Disco")
+
 
     def on_button_click_navigation(self):
         self.mqtt_client.client.publish("jetson/command", "Navigate")
