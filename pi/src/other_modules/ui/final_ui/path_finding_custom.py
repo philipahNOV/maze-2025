@@ -19,6 +19,8 @@ class CustomPathScreen(tk.Frame):
         self.offset_x = 390
         self.offset_y = 10
 
+        self.has_pathfinded = False
+
         self.waiting_phase = 0
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -42,9 +44,11 @@ class CustomPathScreen(tk.Frame):
 
             # Hide status text
             self.status_label.place_forget()
-            self.enable_button_start()
+            if self.has_pathfinded:
+                self.enable_button_start()
         else:
             # Show blank image and animated text
+            self.has_pathfinded = True
             blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
             img_scaled = blank_img.resize(
                 (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
@@ -57,6 +61,7 @@ class CustomPathScreen(tk.Frame):
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=f"FINDING PATH{dots}")
             self.status_label.place(x=300, y=250, width=400, height=50)
+            self.disable_button_start()
 
         self.after(200, self.update_image)  # update every 200 ms 
 
@@ -204,6 +209,7 @@ class CustomPathScreen(tk.Frame):
         """Make this frame visible"""
         self.update_image()  # Start updating the image
         self.mqtt_client.finding_path = False
+        self.has_pathfinded = False
         self.disable_button_calculate()
         self.disable_button_start()
 
