@@ -63,7 +63,11 @@ class PathFindingThread(threading.Thread):
 
     def run(self):
         print("[PathFindingThread] Started path finding...")
+
         frame = self.tracking_service.get_stable_frame()
+        if frame is None:
+            return
+        
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
@@ -76,6 +80,7 @@ class PathFindingThread(threading.Thread):
 
         ball_pos = (ball_pos[1], ball_pos[0])
         start = find_nearest_walkable(safe_mask, ball_pos)
+
         cached = self.path_cache.get_cached_path(start, self.goal)
         print(f"[PathFindingThread] Start point: {start}, Goal: {self.goal}")
         if cached:
@@ -87,6 +92,7 @@ class PathFindingThread(threading.Thread):
                 self.path_cache.cache_path(start, self.goal, path)
             else:
                 print("[PathMemory] Pathfinding failed. Not caching empty path.")
+
         print(f"[PathFindingThread] Path length: {len(path)}")
         waypoints = sample_waypoints(path, safe_mask)
 
@@ -110,10 +116,10 @@ class EscapeElevatorThread(threading.Thread):
     def run(self):
         print("[EscapeElevatorThread] Starting escape...")
         while time.time() - self.start_time < self.duration:
-            if time.time() - self.start_time >= self.y_duration:
+            elapsed = time.time() - self.start_time
+            if elapsed >= self.y_duration:
                 self.arduino_thread.send_speed(25, -self.speed)
             else:
                 self.arduino_thread.send_speed(0, self.speed)
             time.sleep(0.1)
         self.arduino_thread.send_speed(0, 0)
-

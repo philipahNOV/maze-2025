@@ -29,9 +29,9 @@ class TrackerService:
         return self.camera.get_orientation() if self.started else None
 
     @property
-    def is_initialized(self):
+    def is_initialized(self) -> bool:
         return self.tracker.initialized if self.tracker else False
     
-    def retrack(self):
+    def retrack(self) -> None:
         if self.started and self.tracker:
             self.tracker.retrack() # call this using tracker_service.retrack()
