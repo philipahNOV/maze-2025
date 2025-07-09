@@ -155,14 +155,12 @@ class HMIController:
                 self.path = None
                 print("[FSM] Transitioned to AUTO_PATH")
                 self.start_path_finding()
-                self.tracking_service.stop_tracker()
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
-                self.tracking_service.stop_tracker()
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
@@ -175,6 +173,7 @@ class HMIController:
             if cmd == "Back":
                 self.stop_controller()
                 self.state = SystemState.NAVIGATION
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
@@ -185,6 +184,7 @@ class HMIController:
                 self.stop_controller()
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
@@ -230,6 +230,7 @@ class HMIController:
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
