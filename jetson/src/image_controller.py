@@ -46,6 +46,8 @@ class ImageController:
         if path and len(path) > 0:
             self.current_path = path
             self.new_path_available = True
+        else:
+            self.current_path = None
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
         cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
