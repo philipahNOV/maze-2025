@@ -164,7 +164,7 @@ class HMIController:
             if cmd == "Elevator":
                 self.arduino_thread.send_get_ball()
             if cmd == "Horizontal":
-                self.controller.horizontal()
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":

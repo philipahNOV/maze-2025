@@ -5,6 +5,7 @@ from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilat
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
 from astar.path_memory import PathMemory
+import colorsys
 import cv2
 
 
@@ -149,3 +150,32 @@ class EscapeElevatorThread(threading.Thread):
                 self.arduino_thread.send_speed(0, self.speed)
             time.sleep(0.1)
         self.arduino_thread.send_speed(0, 0)
+
+class DiscoThread(threading.Thread):
+    def __init__(self, arduino_thread):
+        super().__init__(daemon=True)
+        self.arduino_thread = arduino_thread
+        self._stop_event = threading.Event()
+        self.speed = 0.01
+
+    def run(self):
+        print("[DiscoThread] Starting disco...")
+        hue = 0.0
+        while not self._stop_event.is_set():
+            # Convert hue to RGB (colorsys returns floats 0–1)
+            r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
+            r, g, b = int(r * 255), int(g * 255), int(b * 255)
+
+            # Send color to Arduino
+            self.arduino_thread.send_color(r, g, b)
+
+            # Increment hue and wrap around
+            hue += 0.005
+            if hue > 1.0:
+                hue = 0.0
+
+            time.sleep(self.speed)
+
+    def stop(self):
+        print("[DiscoThread] Stopping disco thread.")
+        self._stop_event.set()

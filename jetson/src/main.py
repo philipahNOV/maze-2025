@@ -30,7 +30,6 @@ except Exception as e:
 
 tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
-tracker_service.start_tracker()
 controller = pos2.Controller(
     arduinoThread=arduino_thread,
     tracker=tracker_service,
@@ -38,7 +37,6 @@ controller = pos2.Controller(
     lookahead=False
 )
 controller.horizontal()
-tracker_service.stop_tracker()
 
 try:
     mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
