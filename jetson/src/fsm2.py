@@ -54,7 +54,17 @@ class HMIController:
         return new_path
 
     def on_ball_found(self):
-        self.mqtt_client.client.publish("pi/info", "ball_found")
+        if self.is_in_elevator(self.tracking_service.get_ball_position()):
+            self.mqtt_client.client.publish("pi/info", "ball_found")
+
+    def is_in_elevator(self, ball_pos, center_x: int = 1030, center_y: int = 630, radius: int = 60):
+        if ball_pos is None:
+            return False
+        x, y = ball_pos
+        dx = x - center_x
+        dy = y - center_y
+        distance_squared = dx * dx + dy * dy
+        return distance_squared <= radius * radius
 
     def on_path_found(self, path):
         self.path = path
