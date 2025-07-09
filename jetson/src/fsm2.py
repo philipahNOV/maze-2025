@@ -253,9 +253,9 @@ class HMIController:
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
                 self.tracking_service.stop_tracker()
-                if self.ball_finder is not None:
-                    self.ball_finder.stop()
-                    self.ball_finder = None
+                if self.path_thread is not None:
+                    self.path_thread.stop()
+                    self.path_thread = None
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
