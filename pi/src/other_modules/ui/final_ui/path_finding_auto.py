@@ -34,7 +34,6 @@ class AutoPathScreen(tk.Frame):
         self.disable_buttons()
 
     def on_button_click_start(self):
-        #self.controller.show_frame("LocatingScreen")
         self.mqtt_client.client.publish("jetson/command", "Start")
 
     def enable_buttons(self):

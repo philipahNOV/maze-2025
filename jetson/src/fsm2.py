@@ -56,6 +56,11 @@ class HMIController:
     def on_ball_found(self):
         if self.is_in_elevator(self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
+        else:
+            self.ball_finder = light_controller.LookForBall(
+                    self.tracking_service, on_ball_found=self.on_ball_found
+                )
+            self.ball_finder.start_ball_check()
 
     def is_in_elevator(self, ball_pos, center_x: int = 1030, center_y: int = 630, radius: int = 60):
         if ball_pos is None:
@@ -222,7 +227,6 @@ class HMIController:
 
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():
-                        self.tracking_service.start_tracker()
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
                             args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
