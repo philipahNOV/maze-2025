@@ -230,7 +230,7 @@ class HMIController:
                     if self.controller_thread is None or not self.controller_thread.is_alive():
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
-                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.stop_controller_event),
+                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event),
                             daemon=True
                         )
                         self.controller_thread.start()
