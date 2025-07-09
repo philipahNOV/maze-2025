@@ -130,7 +130,7 @@ class ImageSenderThread(threading.Thread):
             if frame is not None:
                 self.image_controller.frame = frame.copy()
                 self.image_controller.update(
-                    ball_pos=None,
+                    ballPos=None,
                     pathFollower=None,
                     mqtt_client=self.mqtt_client,
                     path=self.path
