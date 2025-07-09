@@ -92,17 +92,9 @@ class HMIController:
             self.stop_controller_event.set()
             self.controller_thread.join()
             self.controller_thread = None
+        self.arduino_thread.send_speed(0, 0)
 
     def start_path_finding(self, custom_goal=None):
-        frame = self.tracking_service.get_stable_frame()
-        gray = get_dynamic_threshold(frame)
-        binary_mask = create_binary_mask(gray)
-        safe_mask = dilate_mask(binary_mask)
-        #self.image_controller.frame = safe_mask
-        #cv2.circle(self.image_controller.frame, (1030, 630), 70, 255, -1)
-        #self.image_controller.crop_and_rotate_frame()
-        #self.image_controller.send_frame_to_pi(self.mqtt_client)
-
         if custom_goal is not None:
             goal = (custom_goal[1], custom_goal[0])
         else:
@@ -207,6 +199,9 @@ class HMIController:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
+                if self.path_thread is not None:
+                    self.path_thread.stop()
+                    self.path_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to NAVIGATION")
@@ -262,6 +257,7 @@ class HMIController:
 
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
+                self.stop_controller()
                 self.tracking_service.stop_tracker()
                 if self.path_thread is not None:
                     self.path_thread.stop()
@@ -303,6 +299,18 @@ class HMIController:
                         self.controller_thread.start()
                     else:
                         print("[INFO] Control loop already running")
+            if cmd == "timeout":
+                print("[FSM] Timeout command received in AUTO_PATH")
+                self.stop_controller()
+                self.state = SystemState.MAIN_SCREEN
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                print("[FSM] Transitioned to MAIN_SCREEN")
         elif cmd == "Emergency_Stop":
             self.model.stop_all()
             self.state = SystemState.STOPPED
