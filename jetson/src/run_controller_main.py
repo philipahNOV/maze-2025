@@ -7,7 +7,7 @@ import position_controller
 import lowPassFilter
 import path_following
 import path_following_lookahead
-import light_controller
+import uitility_threads
 from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
 
@@ -38,7 +38,7 @@ def main(tracker: TrackerService,
         pathFollower = path_following.PathFollower(path_array, controller)
 
     controller.horizontal()
-    escape_thread = light_controller.EscapeElevatorThread(controller.arduinoThread)
+    escape_thread = uitility_threads.EscapeElevatorThread(controller.arduinoThread)
     escape_thread.start()
     time.sleep(escape_thread.duration)
     controller.horizontal()
@@ -73,7 +73,7 @@ def main(tracker: TrackerService,
                 ball_pos = smoother.update(ball_pos)
                 if blinker is None:
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = light_controller.BlinkRed(controller.arduinoThread)
+                    blinker = uitility_threads.BlinkRed(controller.arduinoThread)
                     blinker.start()
                     ball_not_found_timer = time.time()
 

@@ -2,7 +2,7 @@ from enum import Enum, auto
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
-import light_controller
+import uitility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 import pos2
@@ -60,7 +60,7 @@ class HMIController:
         if self.is_in_elevator(self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
         else:
-            self.ball_finder = light_controller.LookForBall(
+            self.ball_finder = uitility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
             self.ball_finder.start_ball_check()
@@ -102,7 +102,7 @@ class HMIController:
         else:
             goal = (49, 763)
 
-        self.path_thread = light_controller.PathFindingThread(
+        self.path_thread = uitility_threads.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
             on_path_found=self.on_path_found
@@ -160,7 +160,7 @@ class HMIController:
                         self.disco_thread.stop()
                         self.disco_thread.join()
                         self.disco_thread = None
-                    self.disco_thread = light_controller.DiscoThread(self.arduino_thread, self.disco_mode)
+                    self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread, self.disco_mode)
                     self.disco_thread.start()
             
 
@@ -185,7 +185,7 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
-                self.ball_finder = light_controller.LookForBall(
+                self.ball_finder = uitility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
@@ -243,7 +243,7 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 self.tracking_service.start_tracker()
-                self.ball_finder = light_controller.LookForBall(
+                self.ball_finder = uitility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
