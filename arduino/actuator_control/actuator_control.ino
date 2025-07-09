@@ -319,15 +319,15 @@ void read_serial()
                 }
             }
             // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
-            else if (comma_count == 3) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
+            else if (comma_count == 4) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
             {
-                if (sscanf(buffer, "%d,%d,%d,%d,%d", &v1, &v2, &v3, &v4, &incoming_state) == 4)
+                if (sscanf(buffer, "%d,%d,%d,%d,%d", &v1, &v2, &v3, &v4, &incoming_state) == 5)
                 {
                     serial_messages::value_1 = v1;
                     serial_messages::value_2 = v2;
                     serial_messages::value_3 = v3;
                     serial_messages::value_4 = v4;
-                    if (incoming_state >= 0 && incoming_state <= 4)
+                    if (incoming_state >= 0 && incoming_state <= 5)
                     {
                         serial_messages::state = static_cast<serial_messages::State>(incoming_state);
                     }
