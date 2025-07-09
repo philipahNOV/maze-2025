@@ -27,7 +27,7 @@ class CustomPathScreen(tk.Frame):
 
         # Layout the widgets including the logo
         self.create_widgets()
-        #self.update_image()  # Start updating the image
+        self.update_image()  # Start updating the image
 
     def update_image(self):
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
@@ -207,7 +207,7 @@ class CustomPathScreen(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
-        self.update_image()  # Start updating the image
+        #self.update_image()  # Start updating the image
         self.mqtt_client.finding_path = False
         self.has_pathfinded = False
         if hasattr(self, 'click_marker') and self.click_marker is not None:
