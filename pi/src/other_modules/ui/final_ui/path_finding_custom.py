@@ -210,6 +210,8 @@ class CustomPathScreen(tk.Frame):
         self.update_image()  # Start updating the image
         self.mqtt_client.finding_path = False
         self.has_pathfinded = False
+        if hasattr(self, 'click_marker') and self.click_marker is not None:
+                self.canvas.delete(self.click_marker)
         self.disable_button_calculate()
         self.disable_button_start()
 
