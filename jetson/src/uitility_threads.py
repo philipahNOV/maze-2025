@@ -238,7 +238,7 @@ class DiscoThread(threading.Thread):
         elif self.mode == 6:
             for i in range(10):
                 if i == 5:
-                    self.arduino_thread.send_color(255, 0, 0)
+                    self.arduino_thread.send_color(255, 0, 0, i)
                 else:
                     self.arduino_thread.send_color(255, 255, 255)
 
