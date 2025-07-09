@@ -82,7 +82,7 @@ class HMIController:
         #self.image_controller.send_frame_to_pi(self.mqtt_client)
 
         if custom_goal is not None:
-            goal = custom_goal
+            goal = (custom_goal[1], custom_goal[0])
         else:
             goal = (49, 763)
 
