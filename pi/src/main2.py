@@ -59,13 +59,8 @@ class MainApp(tk.Tk):
 
         print("Frames initialized:", self.frames)
 
-<<<<<<< HEAD
     def get_current_screen(self):
         return self.current_screen  # Returns the current active screen
-=======
-        self.show_frame("BootScreen")
-
->>>>>>> 052c323ecc5ffbade684a01f7fcacc0682b453aa
 
     def show_frame(self, page_name):
         print("Attempting to show frame:", page_name)
