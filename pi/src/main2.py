@@ -22,7 +22,8 @@ class MainApp(tk.Tk):
         super().__init__()
         self.title("NOV maze 2025")
         self.geometry("1024x600")
-        self.attributes("-fullscreen", True)
+        #self.attributes("-fullscreen", True)
+        self.after(300, lambda: subprocess.run(["xdotool", "search", "--name", "NOV maze 2025", "windowactivate", "--sync", "key", "F11"]))
         self.current_screen = None
         self.nov_red = "#EE3229"
         self.nov_grey = "#60666C"
