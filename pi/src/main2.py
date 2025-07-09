@@ -63,6 +63,8 @@ class MainApp(tk.Tk):
             frame.tkraise()
             frame.focus_set()
             self.update_idletasks()
+            self.update()
+            self.after(10, lambda: frame.event_generate("<Configure>"))
             if hasattr(frame, "show"):
                 frame.show()
 
