@@ -48,8 +48,9 @@ class MainApp(tk.Tk):
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
-            self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
+            frame.lower()
+            self.frames[F.__name__] = frame
         
         print("Frames initialized:", self.frames)
 
@@ -59,27 +60,15 @@ class MainApp(tk.Tk):
         return self.current_screen  # Returns the current active screen
 
     def show_frame(self, page_name):
+        """Show a frame for the given page name"""
         print("Attempting to show frame:", page_name)
         self.current_screen = page_name
         frame = self.frames[page_name]
+        frame.tkraise()
 
-        def raise_and_show():
-            # Wait until the window is fully visible (mapped)
-            if not self.winfo_ismapped():
-                self.after(10, raise_and_show)
-                return
-
-            frame.tkraise()
-            self.event_generate('<Motion>', warp=True, x=1, y=1)
-            frame.focus_set()
-            self.update_idletasks()
-            self.update()
-            frame.event_generate("<Configure>")
-
-            if hasattr(frame, "show"):
-                frame.show()
-
-        self.after(30, raise_and_show)
+        # If the frame has a custom `show()` method, call it
+        if hasattr(frame, "show"):
+            frame.show()
 
     def on_close(self):
         try:
