@@ -36,28 +36,21 @@ class MainApp(tk.Tk):
 
         self.current_frame = "BootScreen"
         self.mqtt_client = mqtt_client
-
+        # Container to hold all the frames
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-
-        boot = BootScreen(parent=container, controller=self, mqtt_client=self.mqtt_client)
-        self.frames["BootScreen"] = boot
-        boot.grid(row=0, column=0, sticky="nsew")
-        self.show_frame("BootScreen")
-
-        for F in (
-            NavigationScreen, InfoScreen, LocatingScreen,
-            MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen
-        ):
+        for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             self.frames[F.__name__] = frame
             frame.grid(row=0, column=0, sticky="nsew")
-
+        
         print("Frames initialized:", self.frames)
+
+        self.show_frame("BootScreen")
 
     def get_current_screen(self):
         return self.current_screen  # Returns the current active screen
