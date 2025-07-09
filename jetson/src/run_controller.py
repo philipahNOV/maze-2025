@@ -7,7 +7,7 @@ import path_following
 from mqtt_client import MQTTClientJetson
 import queue
 from image_controller import ImageController
-import light_controller
+import uitility_threads
 import numpy as np
 import path_following_lookahead
 
@@ -115,7 +115,7 @@ def main(tracker: tracking.BallTracker,
                 ball_pos = smoother.update(ball_pos)  # smooth None to hold last known
                 if blinker is None:
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = light_controller.BlinkRed(controller.arduinoThread)
+                    blinker = uitility_threads.BlinkRed(controller.arduinoThread)
                     blinker.start()
 
 
