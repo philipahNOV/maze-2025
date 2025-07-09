@@ -33,14 +33,14 @@ class ImageController:
         if self.frame is None or self.current_path is None:
             return
 
-        for i in range(len(self.current_path)):
+        for i in range(pathFollower.length):
             if i < pathFollower.next_waypoint:
                 color = (0, 200, 0)  # Green for past waypoints
             elif i == pathFollower.next_waypoint:
                 color = (0, 255, 255)  # Yellow for current target
             else:
                 color = (0, 0, 255)  # Red for future waypoints
-            cv2.circle(self.frame, self.current_path[i], 5, color, -1)
+            cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
 
     def set_new_path(self, path):
         if path and len(path) > 0:

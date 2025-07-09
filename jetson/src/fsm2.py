@@ -79,8 +79,8 @@ class HMIController:
             self.path = self.densify_path(self.path, factor=3)
         self.remove_withing_elevator(self.path)
         self.image_controller.set_new_path(self.path)
-        self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
-        self.image_thread.start()
+        #self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        #self.image_thread.start()
     
     def stop_controller(self):
         if self.controller_thread is not None and self.controller_thread.is_alive():
