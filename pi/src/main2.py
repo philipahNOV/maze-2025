@@ -23,7 +23,9 @@ class MainApp(tk.Tk):
         self.title("NOV maze 2025")
         self.geometry("1024x600")
         #self.attributes("-fullscreen", True)
-        self.after(300, lambda: subprocess.run(["xdotool", "search", "--name", "NOV maze 2025", "windowactivate", "--sync", "key", "F11"]))
+        self.overrideredirect(True)  # Removes window decorations
+        self.geometry("1024x600")    # Force fixed size
+        self.resizable(False, False)  # Prevent accidental resize
         self.current_screen = None
         self.nov_red = "#EE3229"
         self.nov_grey = "#60666C"
