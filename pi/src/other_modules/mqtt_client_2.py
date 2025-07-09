@@ -83,7 +83,7 @@ class MQTTClientPi(threading.Thread):
                 self.timeout = True
             if msg.payload.decode() == "path_found":
                 print("[Pi] Path found by Jetson.")
-                self.path_found = True
+                self.finding_path = False
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True

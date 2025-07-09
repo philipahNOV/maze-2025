@@ -28,7 +28,7 @@ class CustomPathScreen(tk.Frame):
         #self.update_image()  # Start updating the image
 
     def update_image(self):
-        if self.mqtt_client.img is not None and self.mqtt_client.path_found is not None:
+        if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
@@ -55,7 +55,7 @@ class CustomPathScreen(tk.Frame):
             dots = "." * (self.waiting_phase // 2 + 1)
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=f"FINDING PATH{dots}")
-            self.status_label.place(x=220, y=250, width=400, height=50)
+            self.status_label.place(x=260, y=250, width=400, height=50)
 
         self.after(200, self.update_image)  # update every 200 ms 
 
@@ -65,27 +65,36 @@ class CustomPathScreen(tk.Frame):
 
     def on_button_click_calculate(self):
         self.mqtt_client.client.publish("jetson/command", "CalculatePath")
-        self.mqtt_client.path_found = False
+        self.mqtt_client.finding_path = True
+        self.disable_buttons()
         if hasattr(self, 'click_marker') and self.click_marker is not None:
             self.canvas.delete(self.click_marker)
 
     def on_canvas_click(self, event):
         x, y = event.x, event.y
 
-        # Remove previous dot if it exists
-        if hasattr(self, 'click_marker') and self.click_marker is not None:
-            self.canvas.delete(self.click_marker)
+        canvas_width = int(self.true_width * self.scale_ratio)
+        canvas_height = int(self.true_height * self.scale_ratio)
 
-        # Draw new green dot
-        r = 5
-        self.click_marker = self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="green", outline="")
+        # Check if the click is within the image bounds
+        if 0 <= x <= canvas_width and 0 <= y <= canvas_height:
+            # Remove previous dot if it exists
+            if hasattr(self, 'click_marker') and self.click_marker is not None:
+                self.canvas.delete(self.click_marker)
 
-        x = self.true_width - int(x / self.scale_ratio) + self.offset_x
-        y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+            # Draw new green dot
+            r = 5
+            self.click_marker = self.canvas.create_oval(x - r, y - r, x + r, y + r, fill="green", outline="")
 
-        self.enable_buttons()  # Enable buttons when goal is set
-        print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
-        self.mqtt_client.client.publish("jetson/command", f"Goal_set:{x},{y}")
+            # Transform coordinates
+            transformed_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
+            transformed_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+
+            self.enable_buttons()  # Enable buttons when goal is set
+            print(f"[CustomPathScreen] Clicked at pixel: ({transformed_x}, {transformed_y})")
+            self.mqtt_client.client.publish("jetson/command", f"Goal_set:{transformed_x},{transformed_y}")
+        else:
+            print("[CustomPathScreen] Click ignored: outside of image bounds.")
 
     def enable_buttons(self):
         self.calculate_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
@@ -168,7 +177,7 @@ class CustomPathScreen(tk.Frame):
     def show(self):
         """Make this frame visible"""
         self.update_image()  # Start updating the image
-        self.mqtt_client.path_found = False
+        self.mqtt_client.finding_path = False
 
     def hide(self):
         """Hide this frame"""
