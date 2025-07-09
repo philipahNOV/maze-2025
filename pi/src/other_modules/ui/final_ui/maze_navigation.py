@@ -182,6 +182,12 @@ class NavigationScreen(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
+        self.after(0, self.force_redraw)
+
+    def force_redraw(self):
+        for child in self.winfo_children():
+            child.update_idletasks()
+            child.update()
 
     def hide(self):
         """Hide this frame"""
