@@ -39,6 +39,7 @@ class HMIController:
         self.controller = pos2.Controller(arduino_thread, tracking_service)
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
+        self.custom_goal = None
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -57,6 +58,8 @@ class HMIController:
 
     def on_path_found(self, path):
         self.path = path
+        if self.path is not None:
+            self.mqtt_client.client.publish("pi/info", "path_found")
         if self.controller.lookahead:
             self.path = self.densify_path(self.path, factor=3)
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
@@ -68,7 +71,7 @@ class HMIController:
             self.controller_thread.join()
             self.controller_thread = None
 
-    def start_path_finding(self):
+    def start_path_finding(self, custom_goal=None):
         frame = self.tracking_service.get_stable_frame()
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
@@ -78,7 +81,11 @@ class HMIController:
         #self.image_controller.crop_and_rotate_frame()
         #self.image_controller.send_frame_to_pi(self.mqtt_client)
 
-        goal = (49, 763)
+        if custom_goal is not None:
+            goal = custom_goal
+        else:
+            goal = (49, 763)
+
         path_thread = light_controller.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
@@ -130,11 +137,13 @@ class HMIController:
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
                 self.state = SystemState.AUTO_PATH
+                self.path = None
                 print("[FSM] Transitioned to AUTO_PATH")
                 self.start_path_finding()
             elif cmd == "CustomPath":
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
+                self.path = None
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
             elif cmd == "Back":
@@ -209,6 +218,15 @@ class HMIController:
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
                 print("[FSM] Transitioned to NAVIGATION")
+            if cmd.startswith("Goal_set:"):
+                coords = cmd.split(":")[1]
+                x, y = map(int, coords.split(","))
+                self.custom_goal = (x, y)
+            if cmd == "CalculatePath":
+                if self.custom_goal is None:
+                    print("[FSM] No custom goal set, cannot calculate path.")
+                else:
+                    self.start_path_finding(custom_goal=self.custom_goal)
 
         elif cmd == "Emergency_Stop":
             self.model.stop_all()
