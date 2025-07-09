@@ -105,7 +105,7 @@ class ImageController:
         if pathFollower is not None:
             if isinstance(pathFollower, PathFollowerLookahead):
                 self.draw_waypoints_lookahead(pathFollower)
-            elif self.current_path:
+            else:
                 self.draw_waypoints(pathFollower)
         elif self.current_path:
             if self.new_path_available:
