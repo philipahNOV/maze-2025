@@ -224,6 +224,7 @@ class HMIController:
                 else:
                     self.image_thread.stop()
                     self.image_thread.join()
+                    self.image_thread = None
 
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():
@@ -275,6 +276,7 @@ class HMIController:
                 else:
                     self.image_thread.stop()
                     self.image_thread.join()
+                    self.image_thread = None
 
                     self.stop_controller_event.clear()
                     if self.controller_thread is None or not self.controller_thread.is_alive():

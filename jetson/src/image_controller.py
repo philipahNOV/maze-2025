@@ -30,10 +30,10 @@ class ImageController:
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
-        if self.frame is None:
+        if self.frame is None or self.current_path is None:
             return
 
-        for i in range(self.current_path):
+        for i in range(len(self.current_path)):
             if i < pathFollower.next_waypoint:
                 color = (0, 200, 0)  # Green for past waypoints
             elif i == pathFollower.next_waypoint:
@@ -132,6 +132,7 @@ class ImageSenderThread(threading.Thread):
         self.running = True
         print("[ImageSenderThread] Started")
         while self.running:
+            print("TESTSSSSS")
             frame = self.tracker_service.get_stable_frame()
             if frame is not None:
                 self.image_controller.frame = frame.copy()
