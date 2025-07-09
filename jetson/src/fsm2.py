@@ -148,7 +148,7 @@ class HMIController:
             
             elif cmd == "Disco":
                 self.disco_mode += 1
-                self.disco_mode = self.disco_mode % 6
+                self.disco_mode = self.disco_mode % 7
                 if self.disco_mode == 0:
                     if self.disco_thread is not None:
                         self.disco_thread.stop()

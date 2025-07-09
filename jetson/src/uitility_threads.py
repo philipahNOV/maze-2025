@@ -234,6 +234,13 @@ class DiscoThread(threading.Thread):
                     direction = 1
 
                 time.sleep(0.01)
+            
+        elif self.mode == 6:
+            for i in range(20):
+                if i == 5:
+                    self.arduino_thread.send_color(255, 0, 0)
+                else:
+                    self.arduino_thread.send_color(255, 255, 255)
 
     def stop(self):
         print("[DiscoThread] Stopping disco thread.")
