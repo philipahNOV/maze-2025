@@ -169,6 +169,10 @@ class HMIController:
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
+            if cmd == "Elevator":
+                self.arduino_thread.send_get_ball()
+            if cmd == "Horizontal":
+                self.controller.horizontal()
 
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
