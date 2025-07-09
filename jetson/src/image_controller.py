@@ -33,14 +33,14 @@ class ImageController:
         if self.frame is None:
             return
 
-        for i in range(pathFollower.length):
+        for i in range(self.current_path):
             if i < pathFollower.next_waypoint:
                 color = (0, 200, 0)  # Green for past waypoints
             elif i == pathFollower.next_waypoint:
                 color = (0, 255, 255)  # Yellow for current target
             else:
                 color = (0, 0, 255)  # Red for future waypoints
-            cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
+            cv2.circle(self.frame, self.current_path[i], 5, color, -1)
 
     def set_new_path(self, path):
         if path and len(path) > 0:
@@ -49,8 +49,6 @@ class ImageController:
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
         cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
-        #for i in range(pathFollower.length):
-        #    cv2.circle(self.frame, pathFollower.path[i], 5, (255, 0, 0), -1)
 
     def draw_waypoints_simple(self, path):
         if self.frame is None or path is None:
@@ -107,7 +105,7 @@ class ImageController:
         if pathFollower is not None:
             if isinstance(pathFollower, PathFollowerLookahead):
                 self.draw_waypoints_lookahead(pathFollower)
-            else:
+            elif self.current_path:
                 self.draw_waypoints(pathFollower)
         elif self.current_path:
             if self.new_path_available:
