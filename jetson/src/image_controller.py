@@ -25,6 +25,7 @@ class ImageController:
         self.cropped_frame = None
         self.last_sent_frame_time = time.time()
         self.frame_send_hz = 5  # Number of frames to send per second
+        self.last_drawn_path = None
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
@@ -102,9 +103,11 @@ class ImageController:
                 self.draw_waypoints_lookahead(pathFollower)
             else:
                 self.draw_waypoints(pathFollower)
-        elif path is not None:
-            if len(path) > 0:
-                self.frame = draw_path(self.frame, path, path[0], path[-1])
+        elif path is not None and len(path) > 0:
+            self.last_drawn_path = path
+            self.frame = draw_path(self.frame, path, path[0], path[-1])
+        elif self.last_drawn_path:
+            self.frame = draw_path(self.frame, self.last_drawn_path, self.last_drawn_path[0], self.last_drawn_path[-1])
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
         self.send_frame_to_pi(mqtt_client)
