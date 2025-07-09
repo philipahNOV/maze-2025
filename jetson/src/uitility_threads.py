@@ -236,7 +236,7 @@ class DiscoThread(threading.Thread):
                 time.sleep(0.01)
             
         elif self.mode == 6:  # Red chase effect
-            num_leds = 10  # Adjust this to match your actual LED count
+            num_leds = 20  # Adjust this to match your actual LED count
             current = 0
             direction = 1  # 1 = forward, -1 = backward
 
