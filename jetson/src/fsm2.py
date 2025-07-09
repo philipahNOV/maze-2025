@@ -42,6 +42,7 @@ class HMIController:
         self.custom_goal = None
         self.path_thread = None
         self.disco_mode = 0
+        self.disco_thread = None
 
     def densify_path(self, path, factor=6):
         new_path = []
