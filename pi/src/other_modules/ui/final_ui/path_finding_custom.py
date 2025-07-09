@@ -55,7 +55,7 @@ class CustomPathScreen(tk.Frame):
             dots = "." * (self.waiting_phase // 2 + 1)
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=f"FINDING PATH{dots}")
-            self.status_label.place(x=220, y=250, width=400, height=50)
+            self.status_label.place(x=260, y=250, width=400, height=50)
 
         self.after(200, self.update_image)  # update every 200 ms 
 
@@ -66,6 +66,7 @@ class CustomPathScreen(tk.Frame):
     def on_button_click_calculate(self):
         self.mqtt_client.client.publish("jetson/command", "CalculatePath")
         self.mqtt_client.finding_path = True
+        self.disable_buttons()
         if hasattr(self, 'click_marker') and self.click_marker is not None:
             self.canvas.delete(self.click_marker)
 
