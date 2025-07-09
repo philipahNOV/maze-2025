@@ -19,6 +19,8 @@ class CustomPathScreen(tk.Frame):
         self.offset_x = 390
         self.offset_y = 10
 
+        self.waiting_phase = 0
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
@@ -26,19 +28,34 @@ class CustomPathScreen(tk.Frame):
         #self.update_image()  # Start updating the image
 
     def update_image(self):
-        if self.mqtt_client.img is not None:
-             # Convert OpenCV BGR to RGB
+        if self.mqtt_client.img is not None and self.mqtt_client.path_found is not None:
+            # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
-            # Resize to match canvas scale
             img_scaled = img.resize(
                 (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
                 Image.Resampling.LANCZOS
             )
 
-            # Convert to ImageTk and update canvas
             self.image = ImageTk.PhotoImage(img_scaled)
             self.canvas.itemconfig(self.image_id, image=self.image)
+
+            # Hide status text
+            self.status_label.place_forget()
+        else:
+            # Show blank image and animated text
+            blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
+            img_scaled = blank_img.resize(
+                (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
+                Image.Resampling.LANCZOS
+            )
+            self.image = ImageTk.PhotoImage(img_scaled)
+            self.canvas.itemconfig(self.image_id, image=self.image)
+
+            dots = "." * (self.waiting_phase // 2 + 1)
+            self.waiting_phase = (self.waiting_phase + 1) % 6
+            self.status_label.config(text=f"FINDING PATH{dots}")
+            self.status_label.place(x=220, y=250, width=400, height=50)
 
         self.after(200, self.update_image)  # update every 200 ms 
 
@@ -46,16 +63,35 @@ class CustomPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("NavigationScreen")
 
+    def on_button_click_calculate(self):
+        self.mqtt_client.client.publish("jetson/command", "CalculatePath")
+        self.mqtt_client.path_found = False
+        if hasattr(self, 'click_marker') and self.click_marker is not None:
+            self.canvas.delete(self.click_marker)
+
     def on_canvas_click(self, event):
         x, y = event.x, event.y
 
-        # Optional: show a small circle at the clicked location
-        r = 3
-        self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="red", outline="")
+        # Remove previous dot if it exists
+        if hasattr(self, 'click_marker') and self.click_marker is not None:
+            self.canvas.delete(self.click_marker)
+
+        # Draw new green dot
+        r = 5
+        self.click_marker = self.canvas.create_oval(x-r, y-r, x+r, y+r, fill="green", outline="")
 
         x = self.true_width - int(x / self.scale_ratio) + self.offset_x
         y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+
+        self.enable_buttons()  # Enable buttons when goal is set
         print(f"[CustomPathScreen] Clicked at pixel: ({x}, {y})")
+        self.mqtt_client.client.publish("jetson/command", f"Goal_set:{x},{y}")
+
+    def enable_buttons(self):
+        self.calculate_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
+
+    def disable_buttons(self):
+        self.calculate_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
 
     def add_essential_buttons(self):
@@ -103,9 +139,36 @@ class CustomPathScreen(tk.Frame):
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
 
+        self.status_label = tk.Label(
+            self,
+            text="",
+            font=("Jockey One", 35),
+            fg="white",
+            bg="#4D4D4D",
+            anchor="w",
+            justify="left"
+        )
+
+        self.calculate_button = tk.Button(
+            self,
+            text="CALCULATE PATH",
+            font=("Jockey One", 20),
+            fg="#9E9E9E",
+            bg="#723D3A",           
+            activebackground="#331E1D",
+            activeforeground="#7A7A7A",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            state="disabled",  # Initially disabled
+            command=self.on_button_click_calculate,
+        )
+        self.calculate_button.place(x=770, y=300, width=200, height=75)
+
     def show(self):
         """Make this frame visible"""
         self.update_image()  # Start updating the image
+        self.mqtt_client.path_found = False
 
     def hide(self):
         """Hide this frame"""
