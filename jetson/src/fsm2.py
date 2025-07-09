@@ -40,6 +40,7 @@ class HMIController:
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
+        self.path_thread = None
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -103,12 +104,12 @@ class HMIController:
         else:
             goal = (49, 763)
 
-        path_thread = light_controller.PathFindingThread(
+        self.path_thread = light_controller.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
             on_path_found=self.on_path_found
         )
-        path_thread.start()
+        self.path_thread.start()
 
     def remove_withing_elevator(self, path, center_x: int = 1030, center_y: int = 630, radius: int = 60):
         within_indexes = []
@@ -252,11 +253,15 @@ class HMIController:
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
                 self.tracking_service.stop_tracker()
+                if self.ball_finder is not None:
+                    self.ball_finder.stop()
+                    self.ball_finder = None
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
                     self.custom_goal = None
+                
                 self.state = SystemState.NAVIGATION
                 self.path = None
                 self.image_controller.set_new_path(self.path)

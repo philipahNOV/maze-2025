@@ -103,6 +103,11 @@ class PathFindingThread(threading.Thread):
 
         self.on_path_found(final_path)
 
+    # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
+    def stop(self):
+        print("[PathFindingThread] Stopping path finding thread.")
+        self._stop_event.set()
+
 class EscapeElevatorThread(threading.Thread):
     def __init__(self, arduino_thread):
         super().__init__(daemon=True)
