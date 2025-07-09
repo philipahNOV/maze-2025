@@ -95,7 +95,7 @@ class ArduinoConnection(threading.Thread):
         """
         self._send_command(ArduinoState.CONTROL, int(speed1), int(speed2))
 
-    def send_color(self, r: int, g: int, b: int):
+    def send_color(self, r: int, g: int, b: int, index: int = -1):
         """
         Sends target rgb value and "SET_COLOR" state to the Arduino.
 
@@ -104,7 +104,7 @@ class ArduinoConnection(threading.Thread):
             g (int): The green component of the color.
             b (int): The blue component of the color.
         """
-        self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b))
+        self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b), int(index))
 
     def run(self):
         """
