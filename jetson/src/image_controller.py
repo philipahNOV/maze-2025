@@ -97,6 +97,7 @@ class ImageController:
         Returns:
             np.ndarray: The final processed frame ready for display.
         """
+        print("TEST1")
         if pathFollower is not None:
             if isinstance(pathFollower, PathFollowerLookahead):
                 self.draw_waypoints_lookahead(pathFollower)
@@ -107,6 +108,7 @@ class ImageController:
                 self.frame = draw_path(self.frame, path, path[0], path[-1])
         self.draw_ball(ballPos)
         self.crop_and_rotate_frame()
+        print("TEST2")
         self.send_frame_to_pi(mqtt_client)
         return self.cropped_frame
     
