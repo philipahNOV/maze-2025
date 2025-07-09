@@ -17,10 +17,10 @@ def main(tracker: TrackerService,
          controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson,
          path_array=None,
+         image_controller=None,
          stop_event=None):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
-    image_controller = ImageController()
 
     ball_not_found_timer = None
     ball_not_found_limit = 30  # seconds
