@@ -120,12 +120,12 @@ class ControllingScreen(tk.Frame):
 
         self.loop_label = tk.Label(
             self,
-            text="LOOP MODE",
+            text="LOOP",
             font=("Jockey One", 16),
             fg="#EE3229",
             bg="#D9D9D9"
         )
-        self.loop_label.place(x=45, y=265)
+        self.loop_label.place(x=50, y=265)
 
     def show(self):
         """Make this frame visible"""

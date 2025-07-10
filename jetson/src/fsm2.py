@@ -173,6 +173,10 @@ class HMIController:
             elif cmd.startswith("Locate"):
                 # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
+                if self.disco_thread is not None:
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
                 self.ball_finder = uitility_threads.LookForBall(
@@ -248,8 +252,8 @@ class HMIController:
                 if self.ball_finder:
                     self.ball_finder.stop()
                     self.ball_finder = None
-                self.state = SystemState.NAVIGATION
-                print("[FSM] Transitioned to NAVIGATION")
+                self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN")
             elif cmd == "BallFound":
                 # Transition to CUSTOM_PATH and set up image thread
                 self.state = SystemState.CUSTOM_PATH

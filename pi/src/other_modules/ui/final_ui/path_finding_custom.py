@@ -114,10 +114,11 @@ class CustomPathScreen(tk.Frame):
 
     def enable_button_start(self):
         self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
+        self.start_speed_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
 
     def disable_button_start(self):
         self.start_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
-
+        self.start_speed_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
@@ -205,6 +206,40 @@ class CustomPathScreen(tk.Frame):
             command=self.on_button_click_start,
         )
         self.start_button.place(x=770, y=385, width=200, height=75)
+
+        self.start_speed_button = tk.Button(
+            self,
+            text="START SPEED",
+            font=("Jockey One", 20),
+            fg="#9E9E9E",
+            bg="#723D3A",           
+            activebackground="#331E1D",
+            activeforeground="#7A7A7A",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            state="disabled",  # Initially disabled
+            command=self.on_button_click_start,
+        )
+        self.start_speed_button.place(x=770, y=470, width=200, height=75)
+
+        self.goal1_label = tk.Label(
+            self,
+            text="CLICK IMAGE",
+            font=("Jockey One", 25),
+            fg=self.controller.nov_grey,
+            bg="#D9D9D9"
+        )
+        self.goal1_label.place(x=750, y=50)
+
+        self.goal2_label = tk.Label(
+            self,
+            text="TO SET GOAL",
+            font=("Jockey One", 25),
+            fg=self.controller.nov_grey,
+            bg="#D9D9D9"
+        )
+        self.goal2_label.place(x=750, y=100)
 
     def show(self):
         """Make this frame visible"""
