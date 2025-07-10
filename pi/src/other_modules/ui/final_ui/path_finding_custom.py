@@ -29,7 +29,7 @@ class CustomPathScreen(tk.Frame):
                 .convert("RGBA")
                 .resize((100, 100), Image.Resampling.LANCZOS)
             )
-            for i in range(1, 27)
+            for i in range(1, 9)
         ]
         self.animation_index = 0
         self._animating = False
