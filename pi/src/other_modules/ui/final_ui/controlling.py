@@ -112,8 +112,8 @@ class ControllingScreen(tk.Frame):
             image=self.loop_off_img,
             bd=0,
             command=self.on_toggle_loop,
-            bg="#AFAFAF",
-            activebackground="#868686"
+            bg="#FFFFFF",
+            activebackground="#FFFFFF"
         )
         self.loop_button.place(x=45, y=300, width=60, height=60)
 

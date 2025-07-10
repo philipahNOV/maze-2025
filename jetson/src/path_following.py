@@ -68,6 +68,7 @@ class PathFollower:
         self.acceptance_radius_out = self.controller.pos_tol + 10
 
     def _advance_waypoint(self):
+        print(self.looping)
         if self.forward:
             if self.next_waypoint >= self.length - 1:
                 if self.looping:
@@ -158,13 +159,13 @@ class PathFollower:
             if not self.inside_target_radius:
                 self.inside_target_radius = True
                 self.time_entered_radius = current_time
-                print(f"[LATCH] Ball entered waypoint {self.next_waypoint}")
+                #print(f"[LATCH] Ball entered waypoint {self.next_waypoint}")
             elif self.time_entered_radius and (current_time - self.time_entered_radius > self.radius_dwell_time):
-                print(f"[DWELL ADVANCE] Stayed on waypoint {self.next_waypoint} → advancing")
+                #print(f"[DWELL ADVANCE] Stayed on waypoint {self.next_waypoint} → advancing")
                 self._advance_waypoint()
         else:
             if self.inside_target_radius:
-                print(f"[EXIT ADVANCE] Ball exited waypoint {self.next_waypoint} → advancing")
+                #print(f"[EXIT ADVANCE] Ball exited waypoint {self.next_waypoint} → advancing")
                 self._advance_waypoint()
 
         # Reset latch if outside
