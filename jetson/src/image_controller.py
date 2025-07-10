@@ -51,7 +51,7 @@ class ImageController:
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
         if pathFollower.lookahead_point is not None:
-            cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
+            cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 7, (255, 0, 0), -1)
 
     def draw_waypoints_simple(self, path):
         if self.frame is None or path is None:
@@ -122,7 +122,7 @@ class ImageController:
         return self.cropped_frame
     
 class ImageSenderThread(threading.Thread):
-    def __init__(self, image_controller: ImageController, mqtt_client: MQTTClientJetson, tracker_service, path, path_follower=None):
+    def __init__(self, image_controller: ImageController, mqtt_client: MQTTClientJetson, tracker_service, path, path_follower=None, stop_event=None):
         super().__init__(daemon=True)
         self.image_controller = image_controller
         self.mqtt_client = mqtt_client
@@ -131,12 +131,12 @@ class ImageSenderThread(threading.Thread):
         self.path_follower = path_follower
         self.running = False
         self.sleep_interval = 0.20  # 5 FPS update loop; actual send rate is limited by image_controller
+        self.stop_event = stop_event
 
     def run(self):
         self.running = True
         print("[ImageSenderThread] Started")
-        while self.running:
-            print("TEST")
+        while self.running and (self.stop_event is None or not self.stop_event.is_set()):
             frame = self.tracker_service.get_stable_frame()
             if frame is not None:
                 self.image_controller.frame = frame.copy()

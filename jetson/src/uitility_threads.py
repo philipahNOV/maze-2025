@@ -116,7 +116,7 @@ class PathFindingThread(threading.Thread):
 
         print(f"[PathFindingThread] Path length: {len(path)}")
         if self.lookahead:
-            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=40)
+            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=50)
         else:
             waypoints = sample_waypoints(path, safe_mask)
 
@@ -138,8 +138,8 @@ class EscapeElevatorThread(threading.Thread):
     def __init__(self, arduino_thread):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
-        self.duration = 2.5
-        self.y_duration = 0.5
+        self.duration = 2.2
+        self.y_duration = 0.2
         self.speed = 150  # absolute motor speed
         self._stop_event = threading.Event()
         self.start_time = time.time()
@@ -151,7 +151,7 @@ class EscapeElevatorThread(threading.Thread):
             if elapsed >= self.y_duration:
                 self.arduino_thread.send_speed(25, -self.speed)
             else:
-                self.arduino_thread.send_speed(0, self.speed)
+                self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
         self.arduino_thread.send_speed(0, 0)
 

@@ -37,7 +37,7 @@ def main(tracker: TrackerService,
         print("[INFO] Using standard path following.")
         pathFollower = path_following.PathFollower(path_array, controller)
 
-    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower)
+    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
     image_controller.set_new_path(path_array)
     image_thread.start()
 

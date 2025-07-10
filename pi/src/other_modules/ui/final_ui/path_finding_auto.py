@@ -35,6 +35,7 @@ class AutoPathScreen(tk.Frame):
 
     def on_button_click_start(self):
         self.mqtt_client.client.publish("jetson/command", "Start")
+        self.controller.show_frame("ControllingScreen")
 
     def enable_buttons(self):
         self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
@@ -158,7 +159,7 @@ class AutoPathScreen(tk.Frame):
         """Make this frame visible"""
         self.mqtt_client.img = None  # Reset image to trigger loading state
         self.waiting_phase = 0  # Reset waiting phase for loading state
-        self.check_for_timeout()
+        #self.check_for_timeout()
 
     def hide(self):
         """Hide this frame"""

@@ -44,6 +44,7 @@ class HMIController:
         self.path_thread = None
         self.disco_mode = 0
         self.disco_thread = None
+        self.loop_path = False
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -94,6 +95,7 @@ class HMIController:
             self.controller_thread.join()
             self.controller_thread = None
         self.arduino_thread.send_speed(0, 0)
+        threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
@@ -381,3 +383,38 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
+
+        # --- CONTROLLING STATE ---
+        elif self.state == SystemState.CONTROLLING:
+            if cmd == "Back":
+                # Stop controller and clean up threads and resources
+                self.stop_controller()
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                self.state = SystemState.NAVIGATION
+                print("[FSM] Transitioned to NAVIGATION")
+
+            elif cmd == "timeout":
+                # Handle inactivity timeout in controlling state
+                print("[FSM] Timeout command received in CONTROLLING")
+                self.stop_controller()
+                self.state = SystemState.MAIN_SCREEN
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                print("[FSM] Transitioned to MAIN_SCREEN")
+
+            elif cmd.startswith("Loop"):
+                if cmd.endswith("On"):
+                    self.controller.looping = True
+                elif cmd.endswith("Off"):
+                    self.controller.looping = False
