@@ -80,7 +80,7 @@ class CustomPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "StartSafe")
         self.controller.show_frame("ControllingScreen")
 
-    def on_button_click_start(self):
+    def on_button_click_start_speed(self):
         self.mqtt_client.client.publish("jetson/command", "StartSpeed")
         self.controller.show_frame("ControllingScreen")
 
