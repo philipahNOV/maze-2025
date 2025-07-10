@@ -26,6 +26,7 @@ class MQTTClientPi(threading.Thread):
         self.img = None
         self.timeout = False
         self.path_found = False
+        self.finding_path = False
         
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
