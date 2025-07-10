@@ -113,27 +113,25 @@ class PathFollower:
 
         self.last_closest_index = closest_index  # Update cache
 
-        # Traverse forward from closest point
-        dist_acc = 0
+        total_dist = np.linalg.norm(ball_pos_np - closest_proj)
+        a = closest_proj
+
         if self.forward:
             range_iter = range(closest_index, self.length - 1)
         else:
             range_iter = range(closest_index, 0, -1)
 
         for j in range_iter:
-            if j == closest_index:
-                a = np.array(closest_proj)
-            else:
-                a = np.array(self.path[j])
-
             b = np.array(self.path[j + 1] if self.forward else self.path[j - 1])
 
             seg_len = np.linalg.norm(b - a)
-            if dist_acc + seg_len >= lookahead_dist:
-                ratio = (lookahead_dist - dist_acc) / seg_len
+            if total_dist + seg_len >= lookahead_dist:
+                ratio = (lookahead_dist - total_dist) / seg_len
                 lookahead_point = a + (b - a) * ratio
                 return tuple(lookahead_point)
-            dist_acc += seg_len
+
+            total_dist += seg_len
+            a = b  # Move to next segment
 
         # Reached end/start of path — reverse if looping
         now = time.time()
