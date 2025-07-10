@@ -21,10 +21,10 @@ class PathFollower:
         self.looping = False
         self.forward = True
 
-        self.filtered_lookahead = 90  # initial default
-        self.alpha = 0.05             # low-pass factor, smaller = smoother
-        self.min_lookahead = 50          # minimum lookahead distance
-        self.max_lookahead = 150         # maximum lookahead distance
+        self.filtered_lookahead = 80  # initial default
+        self.alpha = 0.03             # low-pass factor, smaller = smoother
+        self.min_lookahead = 60          # minimum lookahead distance
+        self.max_lookahead = 100         # maximum lookahead distance
 
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
