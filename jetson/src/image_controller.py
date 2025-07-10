@@ -50,7 +50,8 @@ class ImageController:
             self.current_path = None
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
-        cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
+        if pathFollower.lookahead_point is not None:
+            cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 5, (100, 200, 100), -1)
 
     def draw_waypoints_simple(self, path):
         if self.frame is None or path is None:
