@@ -43,7 +43,7 @@ class CustomPathScreen(tk.Frame):
     def update_image(self):
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             self._animating = False
-            self.animation_label.configure(image="")  # Clear animation image
+            self.animation_label.place_forget()
             # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
@@ -64,6 +64,7 @@ class CustomPathScreen(tk.Frame):
             self.has_pathfinded = True
             if not self._animating:
                 self._animating = True
+                self.animation_label.place(x=442, y=300, width=100, height=100, anchor="center")
                 self.animate_pathfinding()
             blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
             img_scaled = blank_img.resize(
@@ -145,7 +146,7 @@ class CustomPathScreen(tk.Frame):
             return
         self.animation_label.configure(image=self.pathfinding_images[self.animation_index])
         self.animation_index = (self.animation_index + 1) % len(self.pathfinding_images)
-        self.after(50, self.animate_pathfinding)  # ~20 FPS
+        self.after(int(1000 / 8), self.animate_pathfinding)  # ~20 FPS
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
