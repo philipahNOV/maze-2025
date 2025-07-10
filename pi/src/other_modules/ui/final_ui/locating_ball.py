@@ -4,6 +4,7 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main2 import MainApp
+import time
 
 
 class LocatingScreen(tk.Frame):
@@ -19,7 +20,7 @@ class LocatingScreen(tk.Frame):
         self.images = [
             ImageTk.PhotoImage(
                 Image.open(path).resize(
-                    (100, 100),
+                    (200, 200),
                     Image.Resampling.LANCZOS
                 )
             )
@@ -34,10 +35,12 @@ class LocatingScreen(tk.Frame):
         self.cycle_images()  # Start cycling images
 
     def cycle_images(self):
-        # Change to next image
+        start_time = time.perf_counter()
         self.image_index = (self.image_index + 1) % len(self.images)
         self.image_label.configure(image=self.images[self.image_index])
-        self.after(1000//20, self.cycle_images)  # Change image every 0.05 seconds
+        elapsed = time.perf_counter() - start_time
+        delay = max(0, int((1/20 - elapsed) * 1000))  # Aim for 20 FPS
+        self.after(delay, self.cycle_images)
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -64,7 +67,7 @@ class LocatingScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.image_label = tk.Label(self)
-        self.image_label.place(x=462, y=400, width=100, height=100)
+        self.image_label.place(x=362, y=200, width=200, height=200)
         self.add_essential_buttons()
 
         self.back_button = tk.Button(
@@ -89,7 +92,7 @@ class LocatingScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title.place(x=320, y=180)
+        #self.title.place(x=320, y=180)
 
         self.under_title = tk.Label(
             self,
@@ -98,7 +101,7 @@ class LocatingScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.under_title.place(x=480, y=290)
+        #self.under_title.place(x=480, y=290)
 
     def check_for_ball_2(self):
         if self.mqtt_client.ball_found:
@@ -111,7 +114,7 @@ class LocatingScreen(tk.Frame):
                 self.mqtt_client.ball_found = False
                 self.controller.show_frame("AutoPathScreen")
         else:
-            self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
+            self.after(207, self.check_for_ball)  # Check again after 0.207 seconds
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:
