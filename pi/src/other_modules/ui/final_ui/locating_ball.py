@@ -19,7 +19,7 @@ class LocatingScreen(tk.Frame):
             self.image_paths.append(os.path.join(self.controller.loading_animation_path, f"{i}.png"))
         self.images = [
             ImageTk.PhotoImage(
-                Image.open(path).resize(
+                Image.open(path).convert("RGBA").resize(
                     (200, 200),
                     Image.Resampling.LANCZOS
                 )
@@ -35,12 +35,9 @@ class LocatingScreen(tk.Frame):
         self.cycle_images()  # Start cycling images
 
     def cycle_images(self):
-        start_time = time.perf_counter()
         self.image_label.configure(image=self.images[self.image_index])
         self.image_index = (self.image_index + 1) % len(self.images)
-        elapsed = time.perf_counter() - start_time
-        delay = max(0, int((1/30 - elapsed) * 1000))  # Aim for 30 FPS
-        self.after(delay, self.cycle_images)
+        self.after(int(1000 / 50), lambda: self.after_idle(self.cycle_images))
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -63,7 +60,7 @@ class LocatingScreen(tk.Frame):
         self.exit_button.place(x=964, y=10, width=50, height=50) 
 
     def create_widgets(self):
-        self.update()
+        #self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.image_label = tk.Label(self)
@@ -114,7 +111,7 @@ class LocatingScreen(tk.Frame):
                 self.mqtt_client.ball_found = False
                 self.controller.show_frame("AutoPathScreen")
         else:
-            self.after(207, self.check_for_ball)  # Check again after 0.207 seconds
+            self.after(200, self.check_for_ball)  # Check again after 0.207 seconds
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:
@@ -122,7 +119,7 @@ class LocatingScreen(tk.Frame):
             self.mqtt_client.ball_found = False
             self.controller.show_frame("CustomPathScreen")
         else:
-            self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
+            self.after(977, self.check_for_ball)  # Check again after 0.977 seconds
 
     def show(self):
         """Make this frame visible"""
