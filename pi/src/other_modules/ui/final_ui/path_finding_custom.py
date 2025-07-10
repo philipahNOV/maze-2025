@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main import MainApp
+    from main2 import MainApp
 import cv2
 
 
@@ -23,6 +23,17 @@ class CustomPathScreen(tk.Frame):
 
         self.waiting_phase = 0
 
+        self.pathfinding_images = [
+            ImageTk.PhotoImage(
+                Image.open(os.path.join(self.controller.pathfinding_animation_path, f"{i}.png"))
+                .convert("RGBA")
+                .resize((100, 100), Image.Resampling.LANCZOS)
+            )
+            for i in range(1, 27)
+        ]
+        self.animation_index = 0
+        self._animating = False
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
@@ -31,6 +42,8 @@ class CustomPathScreen(tk.Frame):
 
     def update_image(self):
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
+            self._animating = False
+            self.animation_label.configure(image="")  # Clear animation image
             # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
@@ -49,6 +62,9 @@ class CustomPathScreen(tk.Frame):
         else:
             # Show blank image and animated text
             self.has_pathfinded = True
+            if not self._animating:
+                self._animating = True
+                self.animate_pathfinding()
             blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
             img_scaled = blank_img.resize(
                 (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
@@ -60,7 +76,7 @@ class CustomPathScreen(tk.Frame):
             dots = "." * (self.waiting_phase // 2 + 1)
             self.waiting_phase = (self.waiting_phase + 1) % 6
             self.status_label.config(text=f"FINDING PATH{dots}")
-            self.status_label.place(x=300, y=250, width=400, height=50)
+            self.status_label.place(x=442, y=370, anchor="n")
             self.disable_button_start()
 
         self.after(200, self.update_image)  # update every 200 ms 
@@ -124,6 +140,13 @@ class CustomPathScreen(tk.Frame):
         self.start_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
         self.start_speed_button.config(state="disabled", bg="#723D3A", activebackground="#331E1D", fg="#9E9E9E", activeforeground="#7A7A7A")
 
+    def animate_pathfinding(self):
+        if not self._animating or not self.mqtt_client.finding_path:
+            return
+        self.animation_label.configure(image=self.pathfinding_images[self.animation_index])
+        self.animation_index = (self.animation_index + 1) % len(self.pathfinding_images)
+        self.after(50, self.animate_pathfinding)  # ~20 FPS
+
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
             self,
@@ -146,6 +169,8 @@ class CustomPathScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.canvas = tk.Canvas(self, width=int(self.true_width * self.scale_ratio), height=int(self.true_height * self.scale_ratio))
         self.canvas.place(x=150, y=16, relwidth=1, relheight=1)
+        self.animation_label = tk.Label(self, bg="#D9D9D9")
+        self.animation_label.place(x=442, y=300, width=100, height=100, anchor="center")
                 
         placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
         self.image = placeholder
