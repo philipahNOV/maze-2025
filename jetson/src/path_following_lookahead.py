@@ -65,7 +65,7 @@ class PathFollower:
             self.controller.feedforward_vector = (0, 0)
 
         # Send position command to controller
-        print(f"[FOLLOW] Lookahead: {lookahead_point}, From Ball: {ballPos}, ClosestIdx: {self.last_closest_index}")
+        #print(f"[FOLLOW] Lookahead: {lookahead_point}, From Ball: {ballPos}, ClosestIdx: {self.last_closest_index}")
 
 
         self.controller.posControl(lookahead_point)
@@ -86,6 +86,7 @@ class PathFollower:
             b = np.array(self.path[i + 1])
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
             dist = np.linalg.norm(ball_pos_np - proj)
+            print(f"[LOOK] Segment {i}-{i+1}, proj: {tuple(proj)}, dist: {dist:.2f}")
             if dist < min_dist:
                 min_dist = dist
                 closest_index = i
