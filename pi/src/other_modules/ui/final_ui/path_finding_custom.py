@@ -78,6 +78,7 @@ class CustomPathScreen(tk.Frame):
 
     def on_button_click_start(self):
         self.mqtt_client.client.publish("jetson/command", "Start")
+        self.controller.show_frame("ControllingScreen")
 
     def on_canvas_click(self, event):
         x, y = event.x, event.y

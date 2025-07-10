@@ -12,6 +12,10 @@ class ControlScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
+        self.scale_ratio = 0.8
+        self.true_width = 730
+        self.true_height = 710
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
@@ -55,7 +59,7 @@ class ControlScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.image_label = tk.Label(self)
-        self.image_label.place(x=287, y=50, width=450, height=450)
+        self.image_label.place(x=150, y=16, width=self.true_width * self.scale_ratio, height=self.true_height * self.scale_ratio)
 
         self.add_essential_buttons()
 

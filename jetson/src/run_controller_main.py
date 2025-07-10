@@ -10,17 +10,20 @@ import path_following_lookahead
 import uitility_threads
 from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
-
+from image_controller import ImageSenderThread
 from camera.tracker_service import TrackerService
 
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson,
          path_array=None,
-         image_controller=None,
+         image_controller:ImageController = None,
          stop_event=None):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array)
+    image_controller.set_new_path(path_array)
+    image_thread.start()
 
     ball_not_found_timer = None
     ball_not_found_limit = 30  # seconds
@@ -63,13 +66,13 @@ def main(tracker: TrackerService,
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
+                #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
                     blinker = None
                     ball_not_found_timer = None
             else:
-                cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
+                #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 ball_pos = smoother.update(ball_pos)
                 if blinker is None:
                     controller.arduinoThread.send_speed(0, 0)
@@ -109,6 +112,9 @@ def main(tracker: TrackerService,
             blinker.stop()
             blinker = None
         controller.arduinoThread.send_speed(0, 0)
+        if image_thread.is_alive():
+            image_thread.stop()
+            image_thread.join()
 
 if __name__ == "__main__":
     main()

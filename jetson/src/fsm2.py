@@ -24,6 +24,7 @@ class SystemState(Enum):
     LOCATING = auto()
     AUTO_PATH = auto()
     CUSTOM_PATH = auto()
+    CONTROLLING = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson):
@@ -125,30 +126,37 @@ class HMIController:
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
+        
+        # --- BOOTING STATE ---
         if self.state == SystemState.BOOTING:
             if cmd == "booted":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+        
+        # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
             if cmd == "Info":
+                # Stop disco thread if running before going to Info screen
                 if self.disco_thread is not None:
-                        self.disco_thread.stop()
-                        self.disco_thread.join()
-                        self.disco_thread = None
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
                 self.state = SystemState.INFO_SCREEN
                 print("[FSM] Transitioned to INFO_SCREEN")
 
             elif cmd == "Navigate":
+                # Stop disco thread before navigating
                 if self.disco_thread is not None:
-                        self.disco_thread.stop()
-                        self.disco_thread.join()
-                        self.disco_thread = None
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
-            
+
             elif cmd == "Disco":
+                # Cycle through disco modes (0–5), restart thread accordingly
                 self.disco_mode += 1
-                self.disco_mode = self.disco_mode % 7
+                self.disco_mode = self.disco_mode % 6
                 if self.disco_mode == 0:
                     if self.disco_thread is not None:
                         self.disco_thread.stop()
@@ -159,29 +167,34 @@ class HMIController:
                     if self.disco_thread is not None:
                         self.disco_thread.stop()
                         self.disco_thread.join()
-                        self.disco_thread = None
                     self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread, self.disco_mode)
                     self.disco_thread.start()
-            
-
+        
+        # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
+        # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
-            if cmd.startswith("Locate"):
+
+            elif cmd.startswith("Locate"):
+                # Configure loop and lookahead based on command
                 if "loop" in cmd:
                     self.loop_control = True
                 elif "dont_loop" in cmd:
                     self.loop_control = False
+
                 if cmd.endswith("safe"):
                     self.controller.lookahead = False
                 elif cmd.endswith("speed"):
                     self.controller.lookahead = True
+
+                # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
@@ -189,35 +202,47 @@ class HMIController:
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
-            if cmd == "Elevator":
+
+            elif cmd == "Elevator":
+                # Send elevator retrieval command
                 self.arduino_thread.send_get_ball()
-            if cmd == "Horizontal":
+
+            elif cmd == "Horizontal":
+                # Trigger horizontal calibration/control
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
+        # --- LOCATING STATE ---
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
+                # Transition to AUTO_PATH and start pathfinding
                 self.state = SystemState.AUTO_PATH
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to AUTO_PATH")
                 self.start_path_finding()
+
             elif cmd == "CustomPath":
+                # Transition to CUSTOM_PATH and set up image thread
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
+
             elif cmd == "Back":
+                # Cleanup ball finder and tracking before going back
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
                     self.ball_finder.stop()
                     self.ball_finder = None
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
-        
+
+        # --- AUTO_PATH STATE ---
         elif self.state == SystemState.AUTO_PATH:
             if cmd == "Back":
+                # Stop controller, tracker, threads, and reset path
                 self.stop_controller()
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
@@ -231,7 +256,9 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to NAVIGATION")
-            if cmd.startswith("Locate"):
+
+            elif cmd.startswith("Locate"):
+                # Go back to locating mode
                 self.stop_controller()
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
@@ -250,7 +277,9 @@ class HMIController:
                 if self.controller_thread is not None and self.controller_thread.is_alive():
                     self.controller_thread.join()
                     self.controller_thread = None
-            if cmd == "Start":
+
+            elif cmd == "Start":
+                # Start the control loop if path is ready
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
@@ -268,7 +297,11 @@ class HMIController:
                         self.controller_thread.start()
                     else:
                         print("[INFO] Control loop already running")
-            if cmd == "timeout":
+                    self.state = SystemState.CONTROLLING
+                    print("[FSM] Transitioned to CONTROLLING")
+
+            elif cmd == "timeout":
+                # Handle inactivity timeout
                 print("[FSM] Timeout command received in AUTO_PATH")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
@@ -281,8 +314,10 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
+        # --- CUSTOM_PATH STATE ---
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
+                # Stop controller and clean up threads and resources
                 self.stop_controller()
                 self.tracking_service.stop_tracker()
                 if self.path_thread is not None:
@@ -298,16 +333,22 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to NAVIGATION")
-            if cmd.startswith("Goal_set:"):
+
+            elif cmd.startswith("Goal_set:"):
+                # Parse and set custom goal coordinates
                 coords = cmd.split(":")[1]
                 x, y = map(int, coords.split(","))
                 self.custom_goal = (x, y)
-            if cmd == "CalculatePath":
+
+            elif cmd == "CalculatePath":
+                # Initiate custom pathfinding to goal
                 if self.custom_goal is None:
                     print("[FSM] No custom goal set, cannot calculate path.")
                 else:
                     self.start_path_finding(custom_goal=self.custom_goal)
-            if cmd == "Start":
+
+            elif cmd == "Start":
+                # Start controller thread with custom path
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
@@ -325,7 +366,11 @@ class HMIController:
                         self.controller_thread.start()
                     else:
                         print("[INFO] Control loop already running")
-            if cmd == "timeout":
+                    self.state = SystemState.CONTROLLING
+                    print("[FSM] Transitioned to CONTROLLING")
+
+            elif cmd == "timeout":
+                # Timeout handling for custom path mode
                 print("[FSM] Timeout command received in AUTO_PATH")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
@@ -337,6 +382,3 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
-        elif cmd == "Emergency_Stop":
-            self.model.stop_all()
-            self.state = SystemState.STOPPED

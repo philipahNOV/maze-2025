@@ -121,12 +121,13 @@ class ImageController:
         return self.cropped_frame
     
 class ImageSenderThread(threading.Thread):
-    def __init__(self, image_controller: ImageController, mqtt_client: MQTTClientJetson, tracker_service, path):
+    def __init__(self, image_controller: ImageController, mqtt_client: MQTTClientJetson, tracker_service, path, path_follower=None):
         super().__init__(daemon=True)
         self.image_controller = image_controller
         self.mqtt_client = mqtt_client
         self.tracker_service = tracker_service
         self.path = path
+        self.path_follower = path_follower
         self.running = False
         self.sleep_interval = 0.20  # 5 FPS update loop; actual send rate is limited by image_controller
 
@@ -138,8 +139,8 @@ class ImageSenderThread(threading.Thread):
             if frame is not None:
                 self.image_controller.frame = frame.copy()
                 self.image_controller.update(
-                    ballPos=None,
-                    pathFollower=None,
+                    ballPos=self.tracker_service.get_ball_position() if self.path_follower is not None else None,
+                    pathFollower=self.path_follower,
                     mqtt_client=self.mqtt_client,
                     path=self.path
                 )
