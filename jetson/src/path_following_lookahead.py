@@ -51,7 +51,7 @@ class PathFollower:
 
         if vel is not None:
             # Choose dynamic target between min and max
-            target_lookahead = np.clip(vel * 1.2, self.min_lookahead, self.max_lookahead)
+            target_lookahead = np.clip(vel * 0.8, self.min_lookahead, self.max_lookahead)
             self.filtered_lookahead = (
                 self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
             )
