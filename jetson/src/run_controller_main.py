@@ -21,9 +21,6 @@ def main(tracker: TrackerService,
          stop_event=None):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
-    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array)
-    image_controller.set_new_path(path_array)
-    image_thread.start()
 
     ball_not_found_timer = None
     ball_not_found_limit = 30  # seconds
@@ -39,6 +36,10 @@ def main(tracker: TrackerService,
     else:
         print("[INFO] Using standard path following.")
         pathFollower = path_following.PathFollower(path_array, controller)
+
+    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower)
+    image_controller.set_new_path(path_array)
+    image_thread.start()
 
     controller.horizontal()
     escape_thread = uitility_threads.EscapeElevatorThread(controller.arduinoThread)

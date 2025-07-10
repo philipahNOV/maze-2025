@@ -79,8 +79,6 @@ class HMIController:
         self.path = path
         if self.path is not None:
             self.mqtt_client.client.publish("pi/info", "path_found")
-        if self.controller.lookahead:
-            self.path = self.densify_path(self.path, factor=3)
         self.remove_withing_elevator(self.path)
         self.image_controller.set_new_path(self.path)
         if self.image_thread is None:
@@ -106,7 +104,8 @@ class HMIController:
         self.path_thread = uitility_threads.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
-            on_path_found=self.on_path_found
+            on_path_found=self.on_path_found,
+            lookahead=self.controller.lookahead
         )
         self.path_thread.start()
 
