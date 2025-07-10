@@ -55,6 +55,7 @@ class PathFollower:
             self.filtered_lookahead = (
                 self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
             )
+            self.filtered_lookahead = np.clip(self.filtered_lookahead, self.min_lookahead, self.max_lookahead)
             self.lookahead_distance = self.filtered_lookahead
 
         self.prev_time = time.time()
