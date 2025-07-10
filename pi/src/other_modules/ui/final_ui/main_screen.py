@@ -27,8 +27,8 @@ class MainScreen(tk.Frame):
 
 
     def on_button_click_navigation(self):
-        self.mqtt_client.client.publish("jetson/command", "Navigate")
-        self.controller.show_frame("NavigationScreen")
+        self.mqtt_client.client.publish("jetson/command", "Locate")
+        self.controller.show_frame("LocatingScreen")
 
     def on_button_click_info(self):
         self.mqtt_client.client.publish("jetson/command", "Info")

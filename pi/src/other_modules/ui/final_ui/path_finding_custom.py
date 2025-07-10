@@ -67,7 +67,7 @@ class CustomPathScreen(tk.Frame):
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("NavigationScreen")
+        self.controller.show_frame("MainScreen")
 
     def on_button_click_calculate(self):
         self.mqtt_client.client.publish("jetson/command", "CalculatePath")

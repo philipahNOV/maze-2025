@@ -31,7 +31,7 @@ class ControllingScreen(tk.Frame):
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("NavigationScreen")
+        self.controller.show_frame("MainScreen")
 
     def check_for_timeout(self):
         if self.mqtt_client.timeout and not self._last_timeout_state:

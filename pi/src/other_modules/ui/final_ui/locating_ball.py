@@ -77,7 +77,7 @@ class LocatingScreen(tk.Frame):
         )
         self.under_title.place(x=430, y=290)
 
-    def check_for_ball(self):
+    def check_for_ball_2(self):
         if self.mqtt_client.ball_found:
             if self.custom:
                 self.mqtt_client.client.publish("jetson/command", "CustomPath")
@@ -87,6 +87,14 @@ class LocatingScreen(tk.Frame):
                 self.mqtt_client.client.publish("jetson/command", "AutoPath")
                 self.mqtt_client.ball_found = False
                 self.controller.show_frame("AutoPathScreen")
+        else:
+            self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
+
+    def check_for_ball(self):
+        if self.mqtt_client.ball_found:
+            self.mqtt_client.client.publish("jetson/command", "BallFound")
+            self.mqtt_client.ball_found = False
+            self.controller.show_frame("CustomPathScreen")
         else:
             self.after(200, self.check_for_ball)  # Check again after 0.2 seconds
 

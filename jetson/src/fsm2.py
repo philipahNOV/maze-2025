@@ -170,10 +170,20 @@ class HMIController:
                         self.disco_thread.join()
                     self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread, self.disco_mode)
                     self.disco_thread.start()
+            elif cmd.startswith("Locate"):
+                # Transition to LOCATING and start ball tracking
+                self.state = SystemState.LOCATING
+                print("[FSM] Transitioned to LOCATING")
+                self.tracking_service.start_tracker()
+                self.ball_finder = uitility_threads.LookForBall(
+                    self.tracking_service, on_ball_found=self.on_ball_found
+                )
+                self.ball_finder.start_ball_check()
         
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
+                self.disco_mode = 0
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
@@ -181,6 +191,7 @@ class HMIController:
         elif self.state == SystemState.NAVIGATION:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
+                self.disco_mode = 0
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Locate"):
@@ -239,6 +250,14 @@ class HMIController:
                     self.ball_finder = None
                 self.state = SystemState.NAVIGATION
                 print("[FSM] Transitioned to NAVIGATION")
+            elif cmd == "BallFound":
+                # Transition to CUSTOM_PATH and set up image thread
+                self.state = SystemState.CUSTOM_PATH
+                print("[FSM] Transitioned to CUSTOM_PATH")
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
 
         # --- AUTO_PATH STATE ---
         elif self.state == SystemState.AUTO_PATH:
@@ -330,10 +349,10 @@ class HMIController:
                     self.image_thread = None
                     self.custom_goal = None
                 
-                self.state = SystemState.NAVIGATION
+                self.state = SystemState.MAIN_SCREEN
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                print("[FSM] Transitioned to NAVIGATION")
+                print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Goal_set:"):
                 # Parse and set custom goal coordinates
@@ -382,6 +401,7 @@ class HMIController:
                     self.image_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+                self.disco_mode = 0
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
         # --- CONTROLLING STATE ---
@@ -396,8 +416,8 @@ class HMIController:
                     self.image_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                self.state = SystemState.NAVIGATION
-                print("[FSM] Transitioned to NAVIGATION")
+                self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd == "timeout":
                 # Handle inactivity timeout in controlling state
@@ -411,6 +431,7 @@ class HMIController:
                     self.image_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+                self.disco_mode = 0
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Loop"):
