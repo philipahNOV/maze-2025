@@ -98,7 +98,7 @@ class PathFollower:
 
     def follow_path(self, ballPos):
         vel = None
-        looping = self.controller.looping
+        self.looping = self.controller.looping
 
         if self.prev_time and self.prev_ball_pos:
             dt = time.time() - self.prev_time
