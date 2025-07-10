@@ -95,6 +95,7 @@ class HMIController:
             self.controller_thread.join()
             self.controller_thread = None
         self.arduino_thread.send_speed(0, 0)
+        threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:

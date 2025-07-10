@@ -36,6 +36,7 @@ class ControllingScreen(tk.Frame):
     def check_for_timeout(self):
         if self.mqtt_client.timeout and not self._last_timeout_state:
             print("[DEBUG] New timeout detected — transitioning to MainScreen.")
+            self.controller.show_frame("MainScreen")
             self._last_timeout_state = True
             self.mqtt_client.timeout = False
             self.mqtt_client.client.publish("jetson/command", "timeout")
