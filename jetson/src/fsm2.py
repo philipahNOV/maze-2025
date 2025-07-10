@@ -435,7 +435,6 @@ class HMIController:
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd == "timeout":
-                # Handle inactivity timeout in controlling state
                 print("[FSM] Timeout command received in CONTROLLING")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
