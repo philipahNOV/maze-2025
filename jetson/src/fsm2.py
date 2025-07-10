@@ -253,6 +253,7 @@ class HMIController:
                     self.ball_finder.stop()
                     self.ball_finder = None
                 self.state = SystemState.MAIN_SCREEN
+                self.disco_mode = 0
                 print("[FSM] Transitioned to MAIN_SCREEN")
             elif cmd == "BallFound":
                 # Transition to CUSTOM_PATH and set up image thread
