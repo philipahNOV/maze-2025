@@ -78,7 +78,6 @@ class PathFollower:
         start_index = max(0, self.last_closest_index - self.max_skip_behind)
         end_index = min(self.length - 1, self.last_closest_index + self.max_skip_ahead)
         search_range = range(start_index, end_index)
-        print(self.path)
 
         for i in search_range:
             a = np.array(self.path[i])
@@ -91,6 +90,7 @@ class PathFollower:
                 closest_proj = proj
 
         self.last_closest_index = closest_index  # Update cache
+        print(f"[LOOKAHEAD] Closest index: {closest_index}, last_closest_index: {self.last_closest_index}")
 
         # Traverse forward from closest point
         dist_acc = 0
@@ -98,9 +98,7 @@ class PathFollower:
             a = np.array(self.path[j])
             b = np.array(self.path[j + 1])
             seg_len = np.linalg.norm(b - a)
-            print("TEST1")
             if dist_acc + seg_len >= lookahead_dist:
-                print("TEST2")
                 ratio = (lookahead_dist - dist_acc) / seg_len
                 lookahead_point = a + (b - a) * ratio
                 return tuple(lookahead_point)
