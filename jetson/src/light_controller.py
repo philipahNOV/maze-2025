@@ -53,7 +53,7 @@ class LookForBall:
         self._stop_event.set()
 
 class PathFindingThread(threading.Thread):
-    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0, lookahead=False):
+    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0):
         super().__init__(daemon=True)
         self.tracking_service = tracking_service
         self.goal = goal
@@ -62,7 +62,6 @@ class PathFindingThread(threading.Thread):
         self.scale = scale
         self.path_cache = PathMemory(max_paths=30, tolerance=15, cache_file="astar/path_cache.json")
         self._stop_event = threading.Event()
-        self.lookahead = lookahead
 
     def run(self):
         print("[PathFindingThread] Started path finding...")
@@ -115,10 +114,7 @@ class PathFindingThread(threading.Thread):
             return
 
         print(f"[PathFindingThread] Path length: {len(path)}")
-        if self.lookahead:
-            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=40)
-        else:
-            waypoints = sample_waypoints(path, safe_mask)
+        waypoints = sample_waypoints(path, safe_mask)
 
         if self._stop_event.is_set():
             return
@@ -238,25 +234,6 @@ class DiscoThread(threading.Thread):
                     direction = 1
 
                 time.sleep(0.01)
-            
-        #elif self.mode == 6:  # Red chase effect
-        #    num_leds = 10  # Adjust this to match your actual LED count
-        #    current = 0
-        #    direction = 1  # 1 = forward, -1 = backward
-
-        #    while not self._stop_event.is_set():
-                # Clear all LEDs to white
-        #        self.arduino_thread.send_color(255, 255, 255)
-        #        time.sleep(0.01)
-                # Set the current LED to red
-        #        self.arduino_thread.send_color(255, 0, 0, current)
-
-                # Update index
-        #        current += direction
-        #        if current >= num_leds - 1 or current <= 0:
-        #            direction *= -1  # Bounce back
-
-        #        time.sleep(0.05)
 
     def stop(self):
         print("[DiscoThread] Stopping disco thread.")

@@ -3,7 +3,7 @@ import json
 import numpy as np
 
 class PathMemory:
-    def __init__(self, max_paths=10, tolerance=10, cache_file="path_cache.json"):
+    def __init__(self, max_paths=30, tolerance=10, cache_file="path_cache.json"):
         self.paths = []
         self.max_paths = max_paths
         self.tolerance = tolerance
