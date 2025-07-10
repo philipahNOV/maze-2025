@@ -53,7 +53,7 @@ class LookForBall:
         self._stop_event.set()
 
 class PathFindingThread(threading.Thread):
-    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0, lookahead=False):
+    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0):
         super().__init__(daemon=True)
         self.tracking_service = tracking_service
         self.goal = goal
@@ -62,7 +62,6 @@ class PathFindingThread(threading.Thread):
         self.scale = scale
         self.path_cache = PathMemory(max_paths=30, tolerance=15, cache_file="astar/path_cache.json")
         self._stop_event = threading.Event()
-        self.lookahead = lookahead
 
     def run(self):
         print("[PathFindingThread] Started path finding...")
@@ -115,19 +114,18 @@ class PathFindingThread(threading.Thread):
             return
 
         print(f"[PathFindingThread] Path length: {len(path)}")
-        if self.lookahead:
-            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=50)
-        else:
-            waypoints = sample_waypoints(path, safe_mask)
+        waypoints = sample_waypoints(path, safe_mask)
+        waypoints_lookahead = sample_waypoints(path, safe_mask, waypoint_spacing=50)
 
         if self._stop_event.is_set():
             return
 
         print(f"[PathFindingThread] Sampled {len(waypoints)} waypoints.")
         final_path = [(x, y) for y, x in waypoints]
+        final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
         print(f"[PathFindingThread] Path found with {len(final_path)} points.")
 
-        self.on_path_found(final_path)
+        self.on_path_found(final_path, final_path_lookahead)
 
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):

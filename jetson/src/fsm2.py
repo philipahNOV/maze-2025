@@ -35,6 +35,7 @@ class HMIController:
         self.loop_control = False
         self.ball_finder = None
         self.path = None
+        self.path_lookahead = None
         self.image_controller = ImageController()
         self.image_thread = None
         self.controller = pos2.Controller(arduino_thread, tracking_service)
@@ -76,8 +77,9 @@ class HMIController:
         distance_squared = dx * dx + dy * dy
         return distance_squared <= radius * radius
 
-    def on_path_found(self, path):
+    def on_path_found(self, path, path_lookahead):
         self.path = path
+        self.path_lookahead = path_lookahead
         if self.path is not None:
             self.mqtt_client.client.publish("pi/info", "path_found")
         self.remove_withing_elevator(self.path)
@@ -107,7 +109,6 @@ class HMIController:
             tracking_service=self.tracking_service,
             goal=goal,
             on_path_found=self.on_path_found,
-            lookahead=self.controller.lookahead
         )
         self.path_thread.start()
 
@@ -379,9 +380,11 @@ class HMIController:
                 else:
                     if cmd.endswith("Safe"):
                         self.controller.lookahead = False
+                        path = self.path
                     elif cmd.endswith("Speed"):
                         self.controller.lookahead = True
-                        
+                        path = self.path_lookahead
+
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
@@ -390,7 +393,7 @@ class HMIController:
                     if self.controller_thread is None or not self.controller_thread.is_alive():
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
-                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event),
+                            args=(self.tracking_service, self.controller, self.mqtt_client, path, self.image_controller, self.stop_controller_event),
                             daemon=True
                         )
                         self.controller_thread.start()
