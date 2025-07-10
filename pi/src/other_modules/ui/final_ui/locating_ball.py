@@ -64,7 +64,7 @@ class LocatingScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.image_label = tk.Label(self)
-        self.image_label.place(x=362, y=200, width=200, height=200)
+        self.image_label.place(x=412, y=200, width=200, height=200)
         self.add_essential_buttons()
 
         self.back_button = tk.Button(
@@ -85,20 +85,20 @@ class LocatingScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="LOCATING BALL",
-            font=("Jockey One", 55),   # or any font you prefer
-            fg="#1A1A1A",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
-        )
-        #self.title.place(x=320, y=180)
-
-        self.under_title = tk.Label(
-            self,
-            text="PLACE BALL IN ELEVATOR",
             font=("Jockey One", 30),   # or any font you prefer
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        #self.under_title.place(x=480, y=290)
+        self.title.place(x=512, y=420, anchor="n")
+
+        self.under_title = tk.Label(
+            self,
+            text="PLACE BALL IN ELEVATOR",
+            font=("Jockey One", 20),   # or any font you prefer
+            fg="#1A1A1A",                # text color
+            bg="#D9D9D9"                 # background (or match your image if needed)
+        )
+        self.under_title.place(x=512, y=470, anchor="n")
 
     def check_for_ball_2(self):
         if self.mqtt_client.ball_found:
