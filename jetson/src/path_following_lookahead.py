@@ -125,6 +125,9 @@ class PathFollower:
             b = np.array(self.path[j + 1] if self.forward else self.path[j - 1])
 
             seg_len = np.linalg.norm(b - a)
+            if seg_len < 1e-6:
+                continue  # skip zero-length segment
+
             if total_dist + seg_len >= lookahead_dist:
                 ratio = (lookahead_dist - total_dist) / seg_len
                 lookahead_point = a + (b - a) * ratio
