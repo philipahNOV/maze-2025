@@ -59,7 +59,9 @@ class ImageController:
                 color = (0, 0, 255)  # Red for future waypoints
             cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
         if pathFollower.lookahead_point is not None:
-            cv2.circle(self.frame, tuple(map(int, pathFollower.lookahead_point)), 7, (255, 0, 0), -1)
+            pt = pathFollower.lookahead_point
+            if pt is not None and all(np.isfinite(pt)):
+                cv2.circle(self.frame, tuple(map(int, pt)), 7, (255, 0, 0), -1)
 
     def draw_waypoints_simple(self, path):
         if self.frame is None or path is None:
