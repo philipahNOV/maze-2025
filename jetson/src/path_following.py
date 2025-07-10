@@ -68,7 +68,6 @@ class PathFollower:
         self.acceptance_radius_out = self.controller.pos_tol + 10
 
     def _advance_waypoint(self):
-        print(self.looping)
         if self.forward:
             if self.next_waypoint >= self.length - 1:
                 if self.looping:
@@ -149,7 +148,10 @@ class PathFollower:
             if dist < self.acceptance_radius and dist_to_next > self.acceptance_radius_out:
                 #print(f"[SKIP] Ball near waypoint {i} → skipping back")
                 self.prev_waypoint = i
-                self.next_waypoint = min(i + 1, self.length - 1)
+                if self.forward:
+                    self.next_waypoint = min(i + 1, self.length - 1)
+                else:
+                    self.next_waypoint = max(i - 1, 0)
                 self.inside_target_radius = False
                 self.time_entered_radius = None
                 break
