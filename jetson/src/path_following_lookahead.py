@@ -89,8 +89,13 @@ class PathFollower:
                 closest_index = i
                 closest_proj = proj
 
-        self.last_closest_index = closest_index  # Update cache
-        print(f"[LOOKAHEAD] Closest index: {closest_index}, last_closest_index: {self.last_closest_index}")
+        #self.last_closest_index = closest_index  # Update cache
+        # If the ball is still closest to the same segment, force progression if close
+        if closest_index <= self.last_closest_index and min_dist < self.acceptance_radius:
+            self.last_closest_index = min(self.last_closest_index + 1, self.length - 2)
+            print(f"[ADVANCE] Forced index forward to {self.last_closest_index}")
+        else:
+            self.last_closest_index = closest_index
 
         # Traverse forward from closest point
         dist_acc = 0
