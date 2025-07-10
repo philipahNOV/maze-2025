@@ -5,8 +5,8 @@ import pyzed.sl as sl
 def init_zed_camera():
     zed = sl.Camera()
     params = sl.InitParameters()
-    params.camera_resolution = sl.RESOLUTION.HD720
-    params.camera_fps = 60
+    params.camera_resolution = sl.RESOLUTION.HD2K
+    params.camera_fps = 15
     params.coordinate_units = sl.UNIT.MILLIMETER
     if zed.open(params) != sl.ERROR_CODE.SUCCESS:
         print("ZED failed to open"); exit(1)
@@ -45,7 +45,7 @@ def main():
 
             key = cv2.waitKey(1) & 0xFF
             if key == ord(' '):  # SPACE: save BGR so colors stay correct
-                fn = os.path.join(save_dir, f"img_{img_count+1}.jpg")
+                fn = os.path.join(save_dir, f"img_{img_count+1}.png")
                 cv2.imwrite(fn, bgr)
                 print("Saved", fn)
                 img_count += 1
