@@ -21,6 +21,11 @@ class PathFollower:
         self.looping = False
         self.forward = True
 
+        self.filtered_lookahead = 90  # initial default
+        self.alpha = 0.05             # low-pass factor, smaller = smoother
+        self.min_lookahead = 50          # minimum lookahead distance
+        self.max_lookahead = 150         # maximum lookahead distance
+
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
 
@@ -43,6 +48,14 @@ class PathFollower:
             dt = time.time() - self.prev_time
             if dt > 0:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
+
+        if vel is not None:
+            # Choose dynamic target between min and max
+            target_lookahead = np.clip(vel * 1.2, self.min_lookahead, self.max_lookahead)
+            self.filtered_lookahead = (
+                self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
+            )
+            self.lookahead_distance = self.filtered_lookahead
 
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
@@ -130,11 +143,16 @@ class PathFollower:
             self.last_closest_index = self.length - 2 if self.forward else 1
             return self.path[self.last_closest_index]
         else:
-            return self.path[-1] if self.forward else self.path[0]
+            print("[LOOKAHEAD] No lookahead segment in range — using closest projection.")
+            return tuple(closest_proj)
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
         ab = b - a
+
+        if np.allclose(ab, 0):
+            return a
+
         t = np.dot(ap, ab) / np.dot(ab, ab)
         t = np.clip(t, 0, 1)
         return a + t * ab
