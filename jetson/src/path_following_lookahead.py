@@ -62,6 +62,7 @@ class PathFollower:
 
         # Compute lookahead target
         lookahead_point = self.get_lookahead_point(ballPos, self.lookahead_distance)
+        self.lookahead_point = lookahead_point
 
         # Feedforward direction
         dx = lookahead_point[0] - ballPos[0]
