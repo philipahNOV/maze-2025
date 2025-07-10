@@ -39,7 +39,7 @@ class LocatingScreen(tk.Frame):
         self.image_index = (self.image_index + 1) % len(self.images)
         self.image_label.configure(image=self.images[self.image_index])
         elapsed = time.perf_counter() - start_time
-        delay = max(0, int((1/13 - elapsed) * 1000))  # Aim for 15 FPS
+        delay = max(0, int((1/60 - elapsed) * 1000))  # Aim for 15 FPS
         self.after(delay, self.cycle_images)
 
     def on_button_click_back(self):
