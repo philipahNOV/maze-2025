@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main import MainApp
+    from main2 import MainApp
 
 
 class LocatingScreen(tk.Frame):
@@ -13,10 +13,31 @@ class LocatingScreen(tk.Frame):
         self.mqtt_client = mqtt_client
         self.custom = False
 
+        self.image_paths = []
+        for i in range(1, 27):
+            self.image_paths.append(os.path.join(self.controller.loading_animation_path, f"{i}.png"))
+        self.images = [
+            ImageTk.PhotoImage(
+                Image.open(path).resize(
+                    (100, 100),
+                    Image.Resampling.LANCZOS
+                )
+            )
+            for path in self.image_paths
+        ]
+        self.image_index = 0
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
         self.create_widgets()
+        self.cycle_images()  # Start cycling images
+
+    def cycle_images(self):
+        # Change to next image
+        self.image_index = (self.image_index + 1) % len(self.images)
+        self.image_label.configure(image=self.images[self.image_index])
+        self.after(1000//20, self.cycle_images)  # Change image every 0.05 seconds
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -42,6 +63,8 @@ class LocatingScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.image_label = tk.Label(self)
+        self.image_label.place(x=462, y=400, width=100, height=100)
         self.add_essential_buttons()
 
         self.back_button = tk.Button(
@@ -66,7 +89,7 @@ class LocatingScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.title.place(x=380, y=180)
+        self.title.place(x=320, y=180)
 
         self.under_title = tk.Label(
             self,
@@ -75,7 +98,7 @@ class LocatingScreen(tk.Frame):
             fg="#1A1A1A",                # text color
             bg="#D9D9D9"                 # background (or match your image if needed)
         )
-        self.under_title.place(x=430, y=290)
+        self.under_title.place(x=480, y=290)
 
     def check_for_ball_2(self):
         if self.mqtt_client.ball_found:

@@ -130,7 +130,6 @@ class PathFollower:
             self.last_closest_index = self.length - 2 if self.forward else 1
             return self.path[self.last_closest_index]
         else:
-            print("[LOOKAHEAD] At end, waiting to reverse again.")
             return self.path[-1] if self.forward else self.path[0]
 
     def _project_point_onto_segment(self, p, a, b):

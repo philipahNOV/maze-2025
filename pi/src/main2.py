@@ -38,6 +38,7 @@ class MainApp(tk.Tk):
         self.blank_image_path = os.path.join(self.image_path, 'blank_image.png')
         self.check_true_path = os.path.join(self.image_path, 'Check_true.png')
         self.check_false_path = os.path.join(self.image_path, 'Check_false.png')
+        self.loading_animation_path = os.path.join(self.image_path, 'loading_animation')
 
         self.current_frame = "BootScreen"
         self.mqtt_client = mqtt_client
