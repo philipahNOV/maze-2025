@@ -82,8 +82,8 @@ class HMIController:
         self.path_lookahead = path_lookahead
         if self.path is not None:
             self.mqtt_client.client.publish("pi/info", "path_found")
-        self.remove_withing_elevator(self.path)
-        self.remove_withing_elevator(self.path_lookahead)
+        self.remove_withing_elevator(self.path, radius=60)
+        self.remove_withing_elevator(self.path_lookahead, radius=80)
         self.image_controller.set_new_path(self.path)
         if self.image_thread is None:
             self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
