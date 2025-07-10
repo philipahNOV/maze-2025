@@ -65,7 +65,9 @@ class PathFollower:
             self.controller.feedforward_vector = (0, 0)
 
         # Send position command to controller
-        self.lookahead_point = lookahead_point
+        print(f"[FOLLOW] Lookahead: {lookahead_point}, From Ball: {ballPos}, ClosestIdx: {self.last_closest_index}")
+
+
         self.controller.posControl(lookahead_point)
 
     def get_lookahead_point(self, ball_pos, lookahead_dist=100):
@@ -89,13 +91,7 @@ class PathFollower:
                 closest_index = i
                 closest_proj = proj
 
-        #self.last_closest_index = closest_index  # Update cache
-        # If the ball is still closest to the same segment, force progression if close
-        if closest_index <= self.last_closest_index and min_dist < self.acceptance_radius:
-            self.last_closest_index = min(self.last_closest_index + 1, self.length - 2)
-            print(f"[ADVANCE] Forced index forward to {self.last_closest_index}")
-        else:
-            self.last_closest_index = closest_index
+        self.last_closest_index = closest_index  # Update cache
 
         # Traverse forward from closest point
         dist_acc = 0
