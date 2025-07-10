@@ -18,6 +18,9 @@ class PathFollower:
         self.stuck_retry_time = 3
         self.lookahead_point = None
 
+        self.looping = False
+        self.forward = True
+
         # Optimization: cache the last closest segment index
         self.last_closest_index = 0
 
@@ -28,6 +31,8 @@ class PathFollower:
     def follow_path(self, ballPos):
         if not ballPos:
             return
+
+        self.looping = self.controller.looping
 
         # Compute velocity
         vel = None
@@ -65,9 +70,6 @@ class PathFollower:
             self.controller.feedforward_vector = (0, 0)
 
         # Send position command to controller
-        #print(f"[FOLLOW] Lookahead: {lookahead_point}, From Ball: {ballPos}, ClosestIdx: {self.last_closest_index}")
-
-
         self.controller.posControl(lookahead_point)
 
     def get_lookahead_point(self, ball_pos, lookahead_dist=100):
@@ -86,7 +88,6 @@ class PathFollower:
             b = np.array(self.path[i + 1])
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
             dist = np.linalg.norm(ball_pos_np - proj)
-            print(f"[LOOK] Segment {i}-{i+1}, proj: {tuple(proj)}, dist: {dist:.2f}")
             if dist < min_dist:
                 min_dist = dist
                 closest_index = i
@@ -96,9 +97,19 @@ class PathFollower:
 
         # Traverse forward from closest point
         dist_acc = 0
-        for j in range(closest_index, self.length - 1):
-            a = np.array(self.path[j])
-            b = np.array(self.path[j + 1])
+        if self.forward:
+            range_iter = range(closest_index, self.length - 1)
+        else:
+            range_iter = range(closest_index, 0, -1)
+
+        for j in range_iter:
+            if self.forward:
+                a = np.array(self.path[j])
+                b = np.array(self.path[j + 1])
+            else:
+                a = np.array(self.path[j])
+                b = np.array(self.path[j - 1])
+
             seg_len = np.linalg.norm(b - a)
             if dist_acc + seg_len >= lookahead_dist:
                 ratio = (lookahead_dist - dist_acc) / seg_len
@@ -106,10 +117,15 @@ class PathFollower:
                 return tuple(lookahead_point)
             dist_acc += seg_len
 
-        # Reached end of path — reset
-        print("[LOOP] End of path reached. Resetting to start.")
-        self.last_closest_index = 0
-        return self.path[0]
+        # Reached end/start of path — reverse if looping
+        if self.looping:
+            self.forward = not self.forward
+            print(f"[LOOKAHEAD] Reversed direction: {'forward' if self.forward else 'backward'}")
+            self.last_closest_index = self.length - 2 if self.forward else 1
+            return self.path[self.last_closest_index]
+        else:
+            print("[LOOKAHEAD] End of path reached. Holding at end.")
+            return self.path[-1] if self.forward else self.path[0]
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
