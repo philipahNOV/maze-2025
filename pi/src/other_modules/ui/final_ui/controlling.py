@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main import MainApp
+    from main2 import MainApp
 import cv2
 
 
@@ -12,10 +12,15 @@ class ControllingScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self._last_timeout_state = False  # Track the last timeout state
+        self.loop = tk.BooleanVar(value=False)
 
         self.scale_ratio = 0.8
         self.true_width = 730
         self.true_height = 710
+
+        self.loop_on_img = ImageTk.PhotoImage(Image.open(controller.check_true_path))
+        self.loop_off_img = ImageTk.PhotoImage(Image.open(controller.check_false_path))
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
@@ -29,11 +34,24 @@ class ControllingScreen(tk.Frame):
         self.controller.show_frame("NavigationScreen")
 
     def check_for_timeout(self):
-        if self.mqtt_client.timeout:
-            self.controller.show_frame("MainScreen")
+        if self.mqtt_client.timeout and not self._last_timeout_state:
+            print("[DEBUG] New timeout detected — transitioning to MainScreen.")
+            self._last_timeout_state = True
+            self.mqtt_client.timeout = False
             self.mqtt_client.client.publish("jetson/command", "timeout")
+
+        elif not self.mqtt_client.timeout:
+            self._last_timeout_state = False
+
+        self.after(1000, self.check_for_timeout)
+
+    def on_toggle_loop(self):
+        current = self.loop.get()
+        self.loop.set(not current)
+        if self.loop.get():
+            self.loop_button.config(image=self.loop_on_img)
         else:
-            self.after(1000, self.check_for_timeout)
+            self.loop_button.config(image=self.loop_off_img)
 
     def update_image(self):
         if self.mqtt_client.img is not None:
@@ -87,11 +105,20 @@ class ControllingScreen(tk.Frame):
         )
         self.back_button.place(x=804, y=10, width=150, height=50)
 
+        self.loop_button = tk.Button(
+            self,
+            image=self.loop_off_img,
+            bd=0,
+            command=self.on_toggle_loop,
+            bg="#D9D9D9",
+            activebackground="#D9D9D9"
+        )
+        self.loop_button.place(x=45, y=300, width=60, height=60)
+
     def show(self):
         """Make this frame visible"""
-        if self.mqtt_client.timeout:
-            self.check_for_timeout()
-            self.mqtt_client.timeout = False
+        self._last_timeout_state = self.mqtt_client.timeout
+        self.check_for_timeout()
 
     def hide(self):
         """Hide this frame"""

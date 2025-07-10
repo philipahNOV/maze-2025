@@ -35,6 +35,7 @@ class AutoPathScreen(tk.Frame):
 
     def on_button_click_start(self):
         self.mqtt_client.client.publish("jetson/command", "Start")
+        self.controller.show_frame("ControllingScreen")
 
     def enable_buttons(self):
         self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
