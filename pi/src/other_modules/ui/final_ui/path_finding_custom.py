@@ -77,7 +77,11 @@ class CustomPathScreen(tk.Frame):
             self.canvas.delete(self.click_marker)
 
     def on_button_click_start(self):
-        self.mqtt_client.client.publish("jetson/command", "Start")
+        self.mqtt_client.client.publish("jetson/command", "StartSafe")
+        self.controller.show_frame("ControllingScreen")
+
+    def on_button_click_start(self):
+        self.mqtt_client.client.publish("jetson/command", "StartSpeed")
         self.controller.show_frame("ControllingScreen")
 
     def on_canvas_click(self, event):
@@ -219,7 +223,7 @@ class CustomPathScreen(tk.Frame):
             highlightthickness=0,
             relief="flat",
             state="disabled",  # Initially disabled
-            command=self.on_button_click_start,
+            command=self.on_button_click_start_speed,
         )
         self.start_speed_button.place(x=770, y=470, width=200, height=75)
 
@@ -230,7 +234,7 @@ class CustomPathScreen(tk.Frame):
             fg=self.controller.nov_grey,
             bg="#D9D9D9"
         )
-        self.goal1_label.place(x=750, y=50)
+        self.goal1_label.place(x=780, y=100)
 
         self.goal2_label = tk.Label(
             self,
@@ -239,7 +243,7 @@ class CustomPathScreen(tk.Frame):
             fg=self.controller.nov_grey,
             bg="#D9D9D9"
         )
-        self.goal2_label.place(x=750, y=100)
+        self.goal2_label.place(x=780, y=150)
 
     def show(self):
         """Make this frame visible"""

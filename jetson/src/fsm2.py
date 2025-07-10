@@ -372,11 +372,16 @@ class HMIController:
                 else:
                     self.start_path_finding(custom_goal=self.custom_goal)
 
-            elif cmd == "Start":
+            elif cmd.startswith("Start"):
                 # Start controller thread with custom path
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
+                    if cmd.endswith("Safe"):
+                        self.controller.lookahead = False
+                    elif cmd.endswith("Speed"):
+                        self.controller.lookahead = True
+                        
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
