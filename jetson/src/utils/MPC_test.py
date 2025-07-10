@@ -22,7 +22,7 @@ def create_path_with_velocity(waypoints_px, desired_speed=50):  # pixels/sec
         path_with_vel.append([wp[0], vx, wp[2], vy])
     return path_with_vel
 
-# Define waypoints in pixels: [x, _, y, _]
+# this defines waypoints in pixels [x, _, y, _]
 waypoints_px = [
     [200, 0, 200, 0],
     [400, 0, 300, 0],
@@ -47,7 +47,6 @@ trajectory = [x.copy()]
 current_wp_index = 1
 mpc_controller = MPC.MPC_controller()
 
-# --- Simulation Loop ---
 for t in range(N_sim):
     if current_wp_index >= num_waypoints:
         break
