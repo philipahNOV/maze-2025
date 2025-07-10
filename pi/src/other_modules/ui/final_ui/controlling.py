@@ -50,8 +50,10 @@ class ControllingScreen(tk.Frame):
         self.loop.set(not current)
         if self.loop.get():
             self.loop_button.config(image=self.loop_on_img)
+            self.mqtt_client.client.publish("jetson/command", "LoopOn")
         else:
             self.loop_button.config(image=self.loop_off_img)
+            self.mqtt_client.client.publish("jetson/command", "LoopOff")
 
     def update_image(self):
         if self.mqtt_client.img is not None:
@@ -114,6 +116,15 @@ class ControllingScreen(tk.Frame):
             activebackground="#D9D9D9"
         )
         self.loop_button.place(x=45, y=300, width=60, height=60)
+
+        self.loop_label = tk.Label(
+            self,
+            text="LOOP MODE",
+            font=("Jockey One", 16),
+            fg="#EE3229",
+            bg="#D9D9D9"
+        )
+        self.loop_label.place(x=45, y=265)
 
     def show(self):
         """Make this frame visible"""

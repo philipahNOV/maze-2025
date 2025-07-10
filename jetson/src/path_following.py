@@ -1,4 +1,4 @@
-import position_controller
+import pos2
 import numpy as np
 import time
 
@@ -26,7 +26,7 @@ class PathFollower:
             automatic recovery if the object is stuck or goes behind a previously visited waypoint.
     """
 
-    def __init__(self, path_array, controller: position_controller.Controller):
+    def __init__(self, path_array, controller: pos2.Controller):
 
         self.path = []
         self.length = 0
@@ -51,6 +51,7 @@ class PathFollower:
 
         self.prev_progress_time = None
         self.stuck_retry_time = 3
+        self.forward = True  # Start moving forward
 
         self.inside_target_radius = False
         self.time_entered_radius = None
@@ -67,21 +68,37 @@ class PathFollower:
         self.acceptance_radius_out = self.controller.pos_tol + 10
 
     def _advance_waypoint(self):
-        self.prev_waypoint = self.next_waypoint
-        if self.next_waypoint == self.length - 1:
-            if self.looping:
-                print("Loop completed, restarting.")
-                self.prev_waypoint = None
-                self.next_waypoint = 0
+        if self.forward:
+            if self.next_waypoint >= self.length - 1:
+                if self.looping:
+                    print("Reached end — reversing direction.")
+                    self.forward = False
+                    self.next_waypoint = self.length - 2  # Step back
+                    self.prev_waypoint = self.length - 1
+                else:
+                    print("Done following path (forward).")
             else:
-                print("Done following path")
-        else:
-            self.next_waypoint = min(self.next_waypoint + 1, self.length - 1)
+                self.prev_waypoint = self.next_waypoint
+                self.next_waypoint += 1
+        else:  # Backward traversal
+            if self.next_waypoint <= 0:
+                if self.looping:
+                    print("Reached start — reversing direction.")
+                    self.forward = True
+                    self.next_waypoint = 1  # Step forward
+                    self.prev_waypoint = 0
+                else:
+                    print("Done following path (backward).")
+            else:
+                self.prev_waypoint = self.next_waypoint
+                self.next_waypoint -= 1
+
         self.inside_target_radius = False
         self.time_entered_radius = None
 
     def follow_path(self, ballPos):
         vel = None
+        looping = self.controller.looping
 
         if self.prev_time and self.prev_ball_pos:
             dt = time.time() - self.prev_time

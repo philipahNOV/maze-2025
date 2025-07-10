@@ -34,6 +34,8 @@ class Controller:
         self.use_feedforward_model = True
         self.feedforward_vector = (0, 0)
 
+        self.looping = False
+
         self.path_following = path_following
         self.prev_vel_x = 0
         self.prev_vel_y = 0

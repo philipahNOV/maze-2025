@@ -44,6 +44,7 @@ class HMIController:
         self.path_thread = None
         self.disco_mode = 0
         self.disco_thread = None
+        self.loop_path = False
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -410,3 +411,9 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
+
+            elif cmd.startswith("Loop"):
+                if cmd.endswith("On"):
+                    self.controller.looping = True
+                elif cmd.endswith("Off"):
+                    self.controller.looping = False

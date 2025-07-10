@@ -137,7 +137,6 @@ class ImageSenderThread(threading.Thread):
         self.running = True
         print("[ImageSenderThread] Started")
         while self.running and (self.stop_event is None or not self.stop_event.is_set()):
-            print("TEST")
             frame = self.tracker_service.get_stable_frame()
             if frame is not None:
                 self.image_controller.frame = frame.copy()
