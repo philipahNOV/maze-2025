@@ -35,7 +35,9 @@ class CustomPathScreen(tk.Frame):
         self._animating = False
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
-        self.touch_image = ImageTk.PhotoImage(Image.open(controller.touch_path))
+        self.touch_image = ImageTk.PhotoImage(
+            Image.open(controller.touch_path).resize((30, 30), Image.Resampling.LANCZOS)
+        )
 
         # Layout the widgets including the logo
         self.create_widgets()
@@ -173,8 +175,8 @@ class CustomPathScreen(tk.Frame):
         self.canvas.place(x=150, y=16, relwidth=1, relheight=1)
         self.animation_label = tk.Label(self, bg="#D9D9D9")
         self.animation_label.place(x=442, y=300, width=100, height=100, anchor="center")
-        self.touch_label = tk.Label(self, bg="#D9D9D9")
-        self.touch_label.place(x=730, y=97, width=50, height=50)
+        self.touch_label = tk.Label(self, image=self.touch_image, bg="#D9D9D9")
+        self.touch_label.place(x=742, y=105, width=30, height=30)
                 
         placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
         self.image = placeholder
@@ -259,11 +261,11 @@ class CustomPathScreen(tk.Frame):
         self.goal_label = tk.Label(
             self,
             text="CLICK IMAGE TO SET GOAL",
-            font=("Jockey One", 20),
+            font=("Jockey One", 16),
             fg="#000000",
             bg="#D9D9D9"
         )
-        self.goal_label.place(x=780, y=100)
+        self.goal_label.place(x=780, y=105)
 
     def show(self):
         """Make this frame visible"""
