@@ -21,6 +21,9 @@ class PathFollower:
         self.looping = False
         self.forward = True
 
+        self.last_reverse_time = None
+        self.reverse_cooldown = 3  # seconds before another reversal is allowed
+
         # Optimization: cache the last closest segment index
         self.last_closest_index = 0
 
@@ -118,13 +121,15 @@ class PathFollower:
             dist_acc += seg_len
 
         # Reached end/start of path — reverse if looping
-        if self.looping:
+        now = time.time()
+        if self.looping and (self.last_reverse_time is None or now - self.last_reverse_time > self.reverse_cooldown):
             self.forward = not self.forward
-            print(f"[LOOKAHEAD] Reversed direction: {'forward' if self.forward else 'backward'}")
+            self.last_reverse_time = now
+            print(f"[LOOKAHEAD] Reversed direction: {'→' if self.forward else '←'}")
             self.last_closest_index = self.length - 2 if self.forward else 1
             return self.path[self.last_closest_index]
         else:
-            print("[LOOKAHEAD] End of path reached. Holding at end.")
+            print("[LOOKAHEAD] At end, waiting to reverse again.")
             return self.path[-1] if self.forward else self.path[0]
 
     def _project_point_onto_segment(self, p, a, b):
