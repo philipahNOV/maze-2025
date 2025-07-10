@@ -13,21 +13,37 @@ class ControllingScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
+        self.scale_ratio = 0.8
+        self.true_width = 730
+        self.true_height = 710
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         # Layout the widgets including the logo
         self.create_widgets()
         self.update_image()  # Start updating the image
+        self.check_for_timeout()  # Start checking for timeout
 
-    def on_button_click_template(self):
-        self.mqtt_client.client.publish("jetson/command", "Template")
+    def on_button_click_back(self):
+        self.mqtt_client.client.publish("jetson/command", "Back")
+        self.controller.show_frame("NavigationScreen")
+
+    def check_for_timeout(self):
+        if self.mqtt_client.timeout:
+            self.controller.show_frame("MainScreen")
+            self.mqtt_client.client.publish("jetson/command", "timeout")
+        else:
+            self.after(1000, self.check_for_timeout)
 
     def update_image(self):
         if self.mqtt_client.img is not None:
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
-            #img = img.resize((320, 240), Image.Resampling.LANCZOS)
-            imgtk = ImageTk.PhotoImage(image=img)
+            img_scaled = img.resize(
+                (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
+                Image.Resampling.LANCZOS
+            )
+            imgtk = ImageTk.PhotoImage(image=img_scaled)
             self.image_label.imgtk = imgtk
             self.image_label.config(image=imgtk)
         self.after(200, self.update_image)  # update every 200 ms 
@@ -53,34 +69,29 @@ class ControllingScreen(tk.Frame):
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.image_label = tk.Label(self)
-        self.image_label.place(x=287, y=50, width=450, height=450)
+        self.image_label.place(x=150, y=16, width=self.true_width * self.scale_ratio, height=self.true_height * self.scale_ratio)
         self.add_essential_buttons()
 
-        self.template_button = tk.Button(
+        self.back_button = tk.Button(
             self,
-            text="TEMPLATE",
-            font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            text="BACK",
+            font=("Jockey One", 20),
+            fg="white",
+            bg="#EE3229",           
+            activebackground="#B82F27",
             activeforeground="#DFDFDF",
-            command=self.on_button_click_template,
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_back,
         )
-        self.template_button.place(x=690, y=150, width=243, height=74)
-
-        self.template_title = tk.Label(
-            self,
-            text="Template",
-            font=("Jockey One", 40),   # or any font you prefer
-            fg="#EE3229",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
-        )
-        self.template_title.place(x=410, y=315)
+        self.back_button.place(x=804, y=10, width=150, height=50)
 
     def show(self):
         """Make this frame visible"""
+        if self.mqtt_client.timeout:
+            self.check_for_timeout()
+            self.mqtt_client.timeout = False
 
     def hide(self):
         """Hide this frame"""

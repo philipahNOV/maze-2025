@@ -116,7 +116,7 @@ class PathFindingThread(threading.Thread):
 
         print(f"[PathFindingThread] Path length: {len(path)}")
         if self.lookahead:
-            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=40)
+            waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=50)
         else:
             waypoints = sample_waypoints(path, safe_mask)
 

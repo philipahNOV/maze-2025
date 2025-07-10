@@ -381,3 +381,32 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
+
+        # --- CONTROLLING STATE ---
+        elif self.state == SystemState.CONTROLLING:
+            if cmd == "Back":
+                # Stop controller and clean up threads and resources
+                self.stop_controller()
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                self.state = SystemState.NAVIGATION
+                print("[FSM] Transitioned to NAVIGATION")
+
+            elif cmd == "timeout":
+                # Handle inactivity timeout in controlling state
+                print("[FSM] Timeout command received in CONTROLLING")
+                self.stop_controller()
+                self.state = SystemState.MAIN_SCREEN
+                self.tracking_service.stop_tracker()
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+                print("[FSM] Transitioned to MAIN_SCREEN")
