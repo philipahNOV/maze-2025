@@ -112,7 +112,7 @@ class HMIController:
         )
         self.path_thread.start()
 
-    def remove_withing_elevator(self, path, center_x: int = 1030, center_y: int = 630, radius: int = 60):
+    def remove_withing_elevator(self, path, center_x: int = 1030, center_y: int = 630, radius: int = 80):
         within_indexes = []
         if path is None:
             return
