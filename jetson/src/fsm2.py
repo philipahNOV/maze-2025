@@ -430,6 +430,7 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 self.state = SystemState.MAIN_SCREEN
+                self.disco_mode = 0
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd == "timeout":
