@@ -25,6 +25,9 @@ class MainScreen(tk.Frame):
     def on_button_click_disco(self):
         self.mqtt_client.client.publish("jetson/command", "Disco")
 
+    def on_button_click_restart(self):
+        self.mqtt_client.client.publish("jetson/command", "Restart")
+        self.controller.restart_program()
 
     def on_button_click_navigation(self):
         self.mqtt_client.client.publish("jetson/command", "Locate")
@@ -49,6 +52,21 @@ class MainScreen(tk.Frame):
             command=self.controller.on_close
         )
         self.exit_button.place(x=964, y=10, width=50, height=50)
+
+        self.exit_button = tk.Button(
+            self,
+            text="⟲",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_restart
+        )
+        self.exit_button.place(x=125, y=10, width=50, height=50)
 
     def create_widgets(self):
         self.update()  # ensure layout updates

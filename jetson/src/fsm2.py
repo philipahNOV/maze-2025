@@ -6,14 +6,12 @@ import uitility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 import pos2
-from astar.astar import astar_downscaled
-from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
-from astar.nearest_point import find_nearest_walkable
-from astar.waypoint_sampling import sample_waypoints
-from astar.draw_path import draw_path
 import numpy as np
 import run_controller_main
 import threading
+import subprocess
+import os
+import sys
 
 
 class SystemState(Enum):
@@ -46,6 +44,39 @@ class HMIController:
         self.disco_mode = 0
         self.disco_thread = None
         self.loop_path = False
+
+    def restart_program(self):
+        print("Restart requested...")
+        try:
+            self.mqtt_client.shut_down()
+        except Exception as e:
+            print(f"Error stopping MQTT client: {e}")
+        if self.image_thread is not None:
+            self.image_thread.stop()
+            self.image_thread.join()
+            self.image_thread = None
+        if self.controller_thread is not None and self.controller_thread.is_alive():
+            self.stop_controller_event.set()
+            self.controller_thread.join()
+            self.controller_thread = None
+        if self.path_thread is not None and self.path_thread.is_alive():
+            self.path_thread.stop()
+            self.path_thread = None
+        if self.ball_finder is not None:
+            self.ball_finder.stop()
+            self.ball_finder = None
+        if self.disco_thread is not None:
+            self.disco_thread.stop()
+            self.disco_thread.join()
+            self.disco_thread = None
+        self.tracking_service.stop_tracker()
+
+        # Launch a new process first
+        python = sys.executable
+        script = os.path.abspath(sys.argv[0])
+        print(f"Launching new process: {python} {script}")
+        subprocess.Popen([python, script], start_new_session=True)
+        sys.exit(0)
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -454,4 +485,4 @@ class HMIController:
                 elif cmd.endswith("Off"):
                     self.controller.looping = False
         elif cmd == "Restart":
-            pass
+            self.restart_program()

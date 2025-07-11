@@ -33,6 +33,10 @@ class ControllingScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("MainScreen")
 
+    def on_button_click_restart(self):
+        self.mqtt_client.client.publish("jetson/command", "Restart")
+        self.controller.restart_program()
+
     def check_for_timeout(self):
         if self.mqtt_client.timeout and not self._last_timeout_state:
             print("[DEBUG] New timeout detected — transitioning to MainScreen.")
@@ -84,6 +88,21 @@ class ControllingScreen(tk.Frame):
             command=self.controller.on_close  # or self.controller.destroy
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
+
+        self.exit_button = tk.Button(
+            self,
+            text="⟲",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_restart
+        )
+        self.exit_button.place(x=125, y=10, width=50, height=50)
 
     def create_widgets(self):
         self.update()

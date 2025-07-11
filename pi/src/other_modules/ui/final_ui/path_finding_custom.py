@@ -104,6 +104,10 @@ class CustomPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "StartSpeed")
         self.controller.show_frame("ControllingScreen")
 
+    def on_button_click_restart(self):
+        self.mqtt_client.client.publish("jetson/command", "Restart")
+        self.controller.restart_program()
+
     def on_canvas_click(self, event):
         x, y = event.x, event.y
 
@@ -166,6 +170,21 @@ class CustomPathScreen(tk.Frame):
             command=self.controller.on_close  # or self.controller.destroy
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
+
+        self.exit_button = tk.Button(
+            self,
+            text="⟲",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_restart
+        )
+        self.exit_button.place(x=125, y=10, width=50, height=50)
 
     def create_widgets(self):
         self.update()
