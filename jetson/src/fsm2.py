@@ -34,7 +34,7 @@ class HMIController:
         self.ball_finder = None
         self.path = None
         self.path_lookahead = None
-        self.image_controller = ImageController()
+        self.image_controller = ImageController(config)
         self.image_thread = None
         self.controller = pos2.Controller(arduino_thread, tracking_service, config=config)
         self.controller_thread = None
