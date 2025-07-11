@@ -47,10 +47,16 @@ class CustomPathScreen(tk.Frame):
         # Pathfinding is complete, image is ready
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             if self.awaiting_path:
-                print("[UI] Path found. Enabling START buttons.")
-                self.has_pathfinded = True
-                self.awaiting_path = False  # reset to prevent re-enabling
-                self.enable_button_start()
+                if self.mqtt_client.path_failed:
+                    print("[UI] Pathfinding failed. Showing image but disabling START buttons.")
+                    self.awaiting_path = False
+                    self.has_pathfinded = False
+                    self.disable_button_start()
+                else:
+                    print("[UI] Path found. Enabling START buttons.")
+                    self.awaiting_path = False
+                    self.has_pathfinded = True
+                    self.enable_button_start()
 
             self._animating = False
             self.animation_label.place_forget()
@@ -97,6 +103,8 @@ class CustomPathScreen(tk.Frame):
         self.awaiting_path = True
         self.has_pathfinded = False
         self.mqtt_client.finding_path = True
+        self.mqtt_client.path_failed = False
+
         self.disable_button_calculate()
         if hasattr(self, 'click_marker') and self.click_marker is not None:
             self.canvas.delete(self.click_marker)
