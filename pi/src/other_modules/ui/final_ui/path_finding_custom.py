@@ -21,8 +21,6 @@ class CustomPathScreen(tk.Frame):
 
         self.has_pathfinded = False
 
-        self.waiting_phase = 0
-
         self.pathfinding_images = [
             ImageTk.PhotoImage(
                 Image.open(os.path.join(self.controller.pathfinding_animation_path, f"{i}.png"))
@@ -45,6 +43,8 @@ class CustomPathScreen(tk.Frame):
 
     def update_image(self):
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
+            if not self.has_pathfinded:
+                return  # Wait until path is truly marked as found
             self._animating = False
             self.animation_label.place_forget()
             # Convert OpenCV BGR to RGB
@@ -77,9 +77,6 @@ class CustomPathScreen(tk.Frame):
             self.image = ImageTk.PhotoImage(img_scaled)
             self.canvas.itemconfig(self.image_id, image=self.image)
 
-            dots = "." * (self.waiting_phase // 2 + 1)
-            self.waiting_phase = (self.waiting_phase + 1) % 6
-            self.status_label.config(text=f"FINDING PATH{dots}")
             self.status_label.place(x=442, y=370, anchor="n")
             self.disable_button_start()
 
@@ -225,7 +222,7 @@ class CustomPathScreen(tk.Frame):
 
         self.status_label = tk.Label(
             self,
-            text="",
+            text="FINDING PATH",
             font=("Jockey One", 35),
             fg="white",
             bg="#4D4D4D",
