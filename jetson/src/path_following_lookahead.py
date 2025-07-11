@@ -22,6 +22,8 @@ class PathFollower:
         self.looping = False
         self.forward = True
 
+        self.path_np = np.array(path_array, dtype=np.float64)
+
         self.filtered_lookahead = 80  # initial default
         self.alpha = 0.03             # low-pass factor, smaller = smoother
         self.min_lookahead = 50          # minimum lookahead distance
@@ -34,8 +36,8 @@ class PathFollower:
         self.last_closest_index = 0
 
         # Limit how far ahead we can skip (in waypoints)
-        self.max_skip_ahead = max(5, int(self.length / 5))
-        self.max_skip_behind = max(5, int(self.length / 10))
+        self.max_skip_ahead = max(5, int(self.length / 10))
+        self.max_skip_behind = max(5, int(self.length / 15))
 
     def get_path_curvature_at_index(self, idx):
         if idx <= 0 or idx >= self.length - 2:
@@ -80,8 +82,8 @@ class PathFollower:
                 (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
             )
 
-        curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
-        target_lookahead *= curvature_scale
+        #curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
+        #target_lookahead *= curvature_scale
 
         self.filtered_lookahead = (
                 self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
@@ -133,8 +135,8 @@ class PathFollower:
         search_range = range(start_index, end_index)
 
         for i in search_range:
-            a = np.array(self.path[i])
-            b = np.array(self.path[i + 1])
+            a = self.path_np[i]
+            b = self.path_np[i + 1]
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
             dist = np.linalg.norm(ball_pos_np - proj)
             if dist < min_dist:
