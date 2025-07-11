@@ -50,14 +50,14 @@ class ImageController:
             self.current_path = None
 
     def draw_waypoints_lookahead(self, pathFollower: PathFollowerLookahead):
-        for i in range(pathFollower.length):
-            if i < pathFollower.last_closest_index:
-                color = (0, 200, 0)  # Green for past waypoints
-            elif i == pathFollower.last_closest_index:
-                color = (0, 255, 255)  # Yellow for current target
-            else:
-                color = (0, 0, 255)  # Red for future waypoints
-            cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
+        #for i in range(pathFollower.length):
+        #    if i < pathFollower.last_closest_index:
+        #        color = (0, 200, 0)  # Green for past waypoints
+        #    elif i == pathFollower.last_closest_index:
+        #        color = (0, 255, 255)  # Yellow for current target
+        #    else:
+        #        color = (0, 0, 255)  # Red for future waypoints
+        #    cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
         if pathFollower.lookahead_point is not None:
             pt = pathFollower.lookahead_point
             if pt is not None and all(np.isfinite(pt)):

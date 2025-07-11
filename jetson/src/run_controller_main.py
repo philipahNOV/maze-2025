@@ -94,9 +94,9 @@ def main(tracker: TrackerService,
             #cv2.imshow("Ball tracking", cropped_frame)
             #if cv2.waitKey(1) & 0xFF == ord('q'):
             #    break
-
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
+            print(sleep_time)
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
