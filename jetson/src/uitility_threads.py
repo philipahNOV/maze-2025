@@ -86,7 +86,7 @@ class PathFindingThread(threading.Thread):
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
             print("[PathFindingThread] Ball position is None or stop requested. Aborting.")
-            return
+            return None, None
 
         ball_pos = (ball_pos[1], ball_pos[0])
         start = find_nearest_walkable(safe_mask, ball_pos)
@@ -109,7 +109,7 @@ class PathFindingThread(threading.Thread):
                 self.path_cache.cache_path(start, self.goal, path)
             else:
                 print("[PathMemory] Pathfinding failed. Not caching empty path.")
-                return  # exit early if pathfinding failed
+                return None, None  # exit early if pathfinding failed
 
         if self._stop_event.is_set():
             return

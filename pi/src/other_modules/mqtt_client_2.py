@@ -27,6 +27,7 @@ class MQTTClientPi(threading.Thread):
         self.timeout = False
         self.path_found = False
         self.finding_path = False
+        self.path_failed = False
         
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
@@ -85,6 +86,10 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode() == "path_found":
                 print("[Pi] Path found by Jetson.")
                 self.finding_path = False
+            if msg.payload.decode() == "path_not_found":
+                print("[Pi] Path not found by Jetson.")
+                self.finding_path = False
+                self.path_failed = True
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True
