@@ -91,10 +91,11 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
 
-            # Display the visual overlay
-            #cv2.imshow("Ball tracking", cropped_frame)
-            #if cv2.waitKey(1) & 0xFF == ord('q'):
-            #    break
+            cv2.imshow("Ball tracking", frame)
+            print(f"[INFO] Ball position: {ball_pos}")
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+               break
+
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:
