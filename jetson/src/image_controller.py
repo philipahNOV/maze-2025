@@ -20,11 +20,19 @@ class ImageController:
 
     def __init__(self, config):
         # Crop coordinates: [(top-left, top-right), (bottom-left, bottom-right)]
+        self.padding = config['camera'].get('padding', 10)  # Padding around the maze image
         self.top_left = config['camera'].get('top_left', (430, 27))
         self.top_right = config['camera'].get('top_right', (1085, 27))
         self.bottom_left = config['camera'].get('bottom_left', (430, 682))
         self.bottom_right = config['camera'].get('bottom_right', (1085, 682))
+
+        # Apply padding outward from each corner
+        self.top_left = (self.top_left[0] - self.padding, self.top_left[1] - self.padding)
+        self.top_right = (self.top_right[0] + self.padding, self.top_right[1] - self.padding)
+        self.bottom_left = (self.bottom_left[0] - self.padding, self.bottom_left[1] + self.padding)
+        self.bottom_right = (self.bottom_right[0] + self.padding, self.bottom_right[1] + self.padding)
         self.frame_corners = (self.top_left, self.top_right, self.bottom_left, self.bottom_right)
+
         self.frame = None
         self.cropped_frame = None
         self.last_sent_frame_time = time.time()
