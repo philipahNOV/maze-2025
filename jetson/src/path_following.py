@@ -26,13 +26,12 @@ class PathFollower:
             automatic recovery if the object is stuck or goes behind a previously visited waypoint.
     """
 
-    def __init__(self, path_array, controller: pos2.Controller):
+    def __init__(self, path_array, controller: pos2.Controller, config):
 
         self.path = []
         self.length = 0
 
-        # self.camera_offset_x = 420
-        # self.camera_offset_y = 10
+        self.config = config
 
         self.camera_offset_x = 0
         self.camera_offset_y = 0
@@ -47,15 +46,15 @@ class PathFollower:
         self.prev_time = None
         self.prev_ball_pos = None
 
-        self.vel_threshold = 50
+        self.vel_threshold = self.config["path_following"]["normal"].get("velocity_threshold", 50)  # pixels per second
 
         self.prev_progress_time = None
-        self.stuck_retry_time = 3
+        self.stuck_retry_time = self.config["path_following"]["normal"].get("stuck_retry_time", 3)  # seconds before retrying if stuck
         self.forward = True  # Start moving forward
 
         self.inside_target_radius = False
         self.time_entered_radius = None
-        self.radius_dwell_time = 0.7  # seconds before allowing progress while stationary
+        self.radius_dwell_time = self.config["path_following"]["normal"].get("dwell_time", 0.7)  # seconds before allowing progress while stationary
 
         if path_array:
             self.path = []

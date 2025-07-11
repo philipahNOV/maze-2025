@@ -13,6 +13,7 @@ class LocatingScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
         self.custom = False
+        self.animation_fps = self.controller.config["animations"]["locating_ball"].get("fps", 30)
 
         self.image_paths = []
         for i in range(1, 27):
@@ -37,7 +38,7 @@ class LocatingScreen(tk.Frame):
     def cycle_images(self):
         self.image_label.configure(image=self.images[self.image_index])
         self.image_index = (self.image_index + 1) % len(self.images)
-        self.after(int(1000 / 30), lambda: self.after_idle(self.cycle_images))
+        self.after(int(1000 / self.animation_fps), lambda: self.after_idle(self.cycle_images))
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")

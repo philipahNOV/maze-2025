@@ -53,14 +53,15 @@ class LookForBall:
         self._stop_event.set()
 
 class PathFindingThread(threading.Thread):
-    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0):
+    def __init__(self, tracking_service, goal, on_path_found, config):
         super().__init__(daemon=True)
         self.tracking_service = tracking_service
+        self.config = config
         self.goal = goal
         self.on_path_found = on_path_found
-        self.repulsion_weight = repulsion_weight
-        self.scale = scale
-        self.path_cache = PathMemory(max_paths=30, tolerance=15, cache_file="astar/path_cache.json")
+        self.repulsion_weight = self.config['path_finding'].get('repulsion_weight', 5)
+        self.scale = self.config['path_finding'].get('astar_downscale', 1.0)
+        self.path_cache = PathMemory(max_paths=self.config['path_finding'].get('path_cache_size', 30), tolerance=self.config['path_finding'].get('path_cache_tolerance', 15), cache_file="astar/path_cache.json")
         self._stop_event = threading.Event()
 
     def run(self):
@@ -114,8 +115,8 @@ class PathFindingThread(threading.Thread):
             return
 
         print(f"[PathFindingThread] Path length: {len(path)}")
-        waypoints = sample_waypoints(path, safe_mask)
-        waypoints_lookahead = sample_waypoints(path, safe_mask, waypoint_spacing=50)
+        waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('normal_path_wpt_spacing', 160))
+        waypoints_lookahead = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('lookahead_path_wpt_spacing', 50))
 
         if self._stop_event.is_set():
             return

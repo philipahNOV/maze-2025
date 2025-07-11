@@ -9,9 +9,9 @@ import pos2
 import numpy as np
 import run_controller_main
 import threading
-import subprocess
 import os
 import sys
+from typing import Dict, Any
 
 
 class SystemState(Enum):
@@ -25,7 +25,7 @@ class SystemState(Enum):
     CONTROLLING = auto()
 
 class HMIController:
-    def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson):
+    def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
         self.state = SystemState.BOOTING
         self.tracking_service = tracking_service
         self.arduino_thread = arduino_thread
@@ -36,7 +36,7 @@ class HMIController:
         self.path_lookahead = None
         self.image_controller = ImageController()
         self.image_thread = None
-        self.controller = pos2.Controller(arduino_thread, tracking_service)
+        self.controller = pos2.Controller(arduino_thread, tracking_service, config)
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
@@ -44,6 +44,7 @@ class HMIController:
         self.disco_mode = 0
         self.disco_thread = None
         self.loop_path = False
+        self.config = config
 
     def restart_program(self):
         print("Restart requested...")
@@ -108,7 +109,10 @@ class HMIController:
                 )
             self.ball_finder.start_ball_check()
 
-    def is_in_elevator(self, ball_pos, center_x: int = 1030, center_y: int = 630, radius: int = 60):
+    def is_in_elevator(self, ball_pos):
+        center_x = self.config['camera'].get('elevator_center_x', 1030)
+        center_y = self.config['camera'].get('elevator_center_y', 630)
+        radius = self.config['camera'].get('elevator_radius', 60)
         if ball_pos is None:
             return False
         x, y = ball_pos
@@ -122,8 +126,8 @@ class HMIController:
         self.path_lookahead = path_lookahead
         if self.path is not None:
             self.mqtt_client.client.publish("pi/info", "path_found")
-        self.remove_withing_elevator(self.path, radius=60)
-        self.remove_withing_elevator(self.path_lookahead, radius=80)
+        self.remove_withing_elevator(self.path, radius=self.config['camera'].get('elevator_radius', 60))
+        self.remove_withing_elevator(self.path_lookahead, radius=self.config['camera'].get('elevator_radius', 60)+20)
         self.image_controller.set_new_path(self.path)
         if self.image_thread is None:
             self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
@@ -150,10 +154,13 @@ class HMIController:
             tracking_service=self.tracking_service,
             goal=goal,
             on_path_found=self.on_path_found,
+            config=self.config,
         )
         self.path_thread.start()
 
-    def remove_withing_elevator(self, path, center_x: int = 1030, center_y: int = 630, radius: int = 80):
+    def remove_withing_elevator(self, path, radius: int = 80):
+        center_x = self.config['camera'].get('elevator_center_x', 1030)
+        center_y = self.config['camera'].get('elevator_center_y', 630)
         within_indexes = []
         if path is None:
             return
@@ -358,7 +365,7 @@ class HMIController:
                     if self.controller_thread is None or not self.controller_thread.is_alive():
                         self.controller_thread = threading.Thread(
                             target=run_controller_main.main,
-                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event),
+                            args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event, self.config),
                             daemon=True
                         )
                         self.controller_thread.start()

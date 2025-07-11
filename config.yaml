@@ -1,0 +1,72 @@
+#--- For position_controller.py ---
+controller:
+  stuck_wiggle_amplitude: 0.8 #deg, amplitude of the wiggle when stuck
+  stuck_wiggle_frequency: 10 #Hz, frequency of the wiggle
+  position_controller_normal:
+    kp_x: 0.00003
+    kp_y: 0.00003
+    kd_x: 0.000145
+    kd_y: 0.000145
+    ki_x: 0.0002
+    ki_y: 0.0002
+    position_tolerance: 40 #px
+    velocity_tolerance: 20 #px/s
+    feedforward_t: 5.3
+  position_controller_lookahead:
+    kp_x: 0.000015
+    kp_y: 0.000015
+    kd_x: 0.0002
+    kd_y: 0.0002
+    ki_x: 0.0
+    ki_y: 0.0
+    position_tolerance: 40 #px
+    velocity_tolerance: 20 #px/s
+    feedforward_t: 6.0
+  angular_controller:
+    kp: 6500
+    max_angle: 1.8 #deg
+    command_delay: 0.0001
+  arduino:
+    x_offset: 0.002 #rad, used to correct the angle of the robot
+    y_offset: 0.001 #rad, used to correct the angle of the robot
+    minimum_velocity: 22
+    maximum_velocity: 100
+    minimum_velocity_difference: 10 #required difference between velocity commands to send them to the arduino
+
+path_following:
+  lookahead:
+    lookahead_distance: 80 #px, default lookahead distance
+    adaptive: false #if true, the lookahead distance will be adapted based on velocity and path angle
+    lookahead_distance_min: 50 #px, used for adaptive lookahead
+    lookahead_distance_max: 80 #px, used for adaptive lookahead
+    smoothing_alpha: 0.03 #smoothing factor for the adaptive lookahead distance
+    velocity_gain: 100 #controls how much the lookahead distance is affected by velocity, higher value = less influence
+    curvature_gain: 0.99 #controls how much the lookahead distance is affected by path curvature, higher value = less influence
+  normal:
+    velocity_threshold: 50 #px/s, velocity that is considered being stuck
+    stuck_retry_time: 3 #s, time to wait before reverting waypoint if stuck
+    dwell_time: 0.7 #s, time to wait at a waypoint before moving on
+
+camera:
+  maze_width: 730 #px
+  maze_height: 710 #px
+  maze_offset_x: 390 #px
+  maze_offset_y: 10 #px
+  maze_image_scale: 0.8 #Scale factor for the maze image shown in pathfinding screen
+  elevator_center_x: 1030 #px
+  elevator_center_y: 630 #px
+  elevator_radius: 60 #px
+
+path_finding:
+  repulsion_weight: 5 #Weight of the repulsion force in the path finding algorithm
+  normal_path_wpt_spacing: 160
+  lookahead_path_wpt_spacing: 50
+  astar_downscale: 1.0 #Downscale factor for the A* algorithm, used to reduce the resolution of the maze for faster pathfinding
+  path_cache_size: 30 #Maximum number of paths to cache
+  path_cache_tolerance: 15 #Tolerance for path caching in pixels
+
+animations:
+  locating_ball:
+    fps: 30
+  path_finding:
+    fps: 8

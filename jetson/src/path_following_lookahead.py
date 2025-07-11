@@ -3,12 +3,13 @@ import numpy as np
 import time
 
 class PathFollower:
-    def __init__(self, path_array, controller: position_controller.Controller):
+    def __init__(self, path_array, controller: position_controller.Controller, config):
         self.path = [(x, y) for x, y in path_array]
         self.controller = controller
         self.length = len(self.path)
+        self.config = config
 
-        self.lookahead_distance = 80  # pixels
+        self.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
@@ -18,17 +19,19 @@ class PathFollower:
         self.stuck_retry_time = 3
         self.lookahead_point = None
         self.lookahead_index = 0
-        self.adaptive_lookahead = False  # Enable adaptive lookahead
+        self.adaptive_lookahead = self.config["path_following"]["lookahead"].get("adaptive", False)  # Enable adaptive lookahead
+        self.curvature_gain = self.config["path_following"]["lookahead"].get("curvature_gain", 0.99)  # How much curvature affects lookahead
+        self.velocity_gain = self.config["path_following"]["lookahead"].get("velocity_gain", 100)  # Controls how steeply it ramps up
 
         self.looping = False
         self.forward = True
 
         self.path_np = np.array(path_array, dtype=np.float64)
 
-        self.filtered_lookahead = 80  # initial default
-        self.alpha = 0.03             # low-pass factor, smaller = smoother
-        self.min_lookahead = 50          # minimum lookahead distance
-        self.max_lookahead = 80         # maximum lookahead distance
+        self.filtered_lookahead = self.lookahead_distance  # initial default
+        self.alpha = self.config["path_following"]["lookahead"].get("smoothing_alpha", 0.03)  # low-pass factor, smaller = smoother
+        self.min_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_min", 50)  # minimum lookahead distance
+        self.max_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_max", 80)  # maximum lookahead distance
 
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
@@ -79,12 +82,11 @@ class PathFollower:
             target_lookahead = self.lookahead_distance
             if vel is not None:
                 # Choose dynamic target between min and max
-                k = 100  # Controls how steeply it ramps up — tweak as needed
                 target_lookahead = self.min_lookahead + (
-                    (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
+                    (self.max_lookahead - self.min_lookahead) * (vel / (vel + self.velocity_gain))
                 )
 
-            curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
+            curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * self.curvature_gain
             target_lookahead *= curvature_scale
 
             self.filtered_lookahead = (

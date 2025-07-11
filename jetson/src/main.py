@@ -1,12 +1,11 @@
 from mqtt_client_2 import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-import rl2
 import pos2
 from camera.tracker_service import TrackerService
-import queue
-import threading
 import time
 from fsm2 import HMIController
+import yaml
+from pathlib import Path
 
 
 def initialize_component(component, name, retries=5, delay=2):
@@ -19,6 +18,18 @@ def initialize_component(component, name, retries=5, delay=2):
             print(f"Failed to initialize {name} on attempt {attempt + 1}: {e}")
             time.sleep(delay)
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
+
+def load_config():
+    # Get path to project root from the current file (assuming this file is in jetson/src/)
+    project_root = Path(__file__).resolve().parents[2]  # up from src → jetson → maze-2025
+    config_path = project_root / "config.yaml"
+
+    if not config_path.exists():
+        raise FileNotFoundError(f"Config file not found at {config_path}")
+
+    with config_path.open('r') as file:
+        config = yaml.safe_load(file)
+    return config
 
 
 try:
@@ -44,7 +55,7 @@ except Exception as e:
     print(e)
     exit(1)
 
-fsm = HMIController(tracker_service, arduino_thread, mqtt_client)
+fsm = HMIController(tracker_service, arduino_thread, mqtt_client, load_config())
 mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")

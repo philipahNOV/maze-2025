@@ -18,7 +18,8 @@ def main(tracker: TrackerService,
          mqtt_client: MQTTClientJetson,
          path_array=None,
          image_controller:ImageController = None,
-         stop_event=None):
+         stop_event=None,
+         config=None):
 
     smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
 
@@ -32,10 +33,10 @@ def main(tracker: TrackerService,
 
     if controller.lookahead:
         print("[INFO] Using lookahead path following.")
-        pathFollower = path_following_lookahead.PathFollower(path_array, controller)
+        pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
     else:
         print("[INFO] Using standard path following.")
-        pathFollower = path_following.PathFollower(path_array, controller)
+        pathFollower = path_following.PathFollower(path_array, controller, config)
 
     image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
     image_controller.set_new_path(path_array)

@@ -13,11 +13,12 @@ class CustomPathScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
-        self.scale_ratio = 0.8
-        self.true_width = 730
-        self.true_height = 710
-        self.offset_x = 390
-        self.offset_y = 10
+        self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.8)
+        self.true_width = controller.config['camera'].get('maze_width', 730)
+        self.true_height = controller.config['camera'].get('maze_height', 710)
+        self.offset_x = controller.config['camera'].get('maze_offset_x', 390)
+        self.offset_y = controller.config['camera'].get('maze_offset_y', 10)
+        self.animation_fps = controller.config["animations"]["pathfinding"].get("fps", 8)
 
         self.has_pathfinded = False
         self.awaiting_path = False
@@ -162,7 +163,7 @@ class CustomPathScreen(tk.Frame):
             return
         self.animation_label.configure(image=self.pathfinding_images[self.animation_index])
         self.animation_index = (self.animation_index + 1) % len(self.pathfinding_images)
-        self.after(int(1000 / 8), self.animate_pathfinding)  # ~20 FPS
+        self.after(int(1000 / self.animation_fps), self.animate_pathfinding)
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(

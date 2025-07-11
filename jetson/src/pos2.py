@@ -12,7 +12,8 @@ class Controller:
     def __init__(self, arduinoThread: arduino_connection.ArduinoConnection,
                  tracker: TrackerService,
                  path_following=True,
-                 lookahead=False):
+                 lookahead=False,
+                 config=None):
         self.arduinoThread = arduinoThread
         self.tracker = tracker
 
@@ -41,48 +42,98 @@ class Controller:
         self.prev_vel_y = 0
         self.prev_command_time = time.time()
 
+        # # === ARDUINO PARAMETERS ===
+        # self.x_offset = 0.002
+        # self.y_offset = 0.001
+        # self.min_velocity = 22
+        # self.min_vel_diff = 10
+        # self.vel_max = 100
+
+        # # === PID TUNING PARAMETERS ===
+        # self.lookahead = lookahead
+        # if self.lookahead:
+        #     self.kp_x = 0.000015
+        #     self.kd_x = 0.0002
+        #     self.kp_y = 0.000015
+        #     self.kd_y = 0.0002
+        #     self.ki_y = 0.0
+        #     self.ki_x = 0.0
+        #     self.kf_min = 0.02
+        #     self.kf_max = 0.005
+        #     self.deadzone_pos_tol = 30
+        #     self.deadzone_vel_tol = 10
+        #     self.deadzone_tilt = np.deg2rad(0)
+        #     self.pos_tol = 40
+        #     self.vel_tol = 20
+        # else:
+        #     self.kp_x = 0.00003
+        #     self.kd_x = 0.000145
+        #     self.kp_y = 0.00003
+        #     self.kd_y = 0.000145
+        #     self.ki_y = 0.0002
+        #     self.ki_x = 0.0002
+        #     self.kf_min = 0.02
+        #     self.kf_max = 0.005
+        #     self.deadzone_pos_tol = 30
+        #     self.deadzone_vel_tol = 10
+        #     self.deadzone_tilt = np.deg2rad(0)
+        #     self.pos_tol = 40
+        #     self.vel_tol = 20
+
+        # # === AXIS CONTROL ===
+        # self.kp_theta = 6500
+        # self.max_angle = 1.8  # degrees
+        # self.command_delay = 0.0001
+
         # === ARDUINO PARAMETERS ===
-        self.x_offset = 0.002
-        self.y_offset = 0.001
-        self.min_velocity = 22
-        self.min_vel_diff = 10
-        self.vel_max = 100
+        self.x_offset = config["controller"]["arduino"].get("x_offset", 0.002)
+        self.y_offset = config["controller"]["arduino"].get("y_offset", 0.001)
+        self.min_velocity = config["controller"]["arduino"].get("minimum_velocity", 22)
+        self.min_vel_diff = config["controller"]["arduino"].get("minimum_velocity_difference", 10)
+        self.vel_max = config["controller"]["arduino"].get("maximum_velocity", 100)
 
         # === PID TUNING PARAMETERS ===
         self.lookahead = lookahead
         if self.lookahead:
-            self.kp_x = 0.000015
-            self.kd_x = 0.0002
-            self.kp_y = 0.000015
-            self.kd_y = 0.0002
-            self.ki_y = 0.0
-            self.ki_x = 0.0
+            self.kp_x = config["controller"]["position_controller_lookahead"].get("kp_x", 0.000015)
+            self.kd_x = config["controller"]["position_controller_lookahead"].get("kd_x", 0.0002)
+            self.kp_y = config["controller"]["position_controller_lookahead"].get("kp_y", 0.000015)
+            self.kd_y = config["controller"]["position_controller_lookahead"].get("kd_y", 0.0002)
+            self.ki_y = config["controller"]["position_controller_lookahead"].get("ki_y", 0.0)
+            self.ki_x = config["controller"]["position_controller_lookahead"].get("ki_x", 0.0)
             self.kf_min = 0.02
             self.kf_max = 0.005
             self.deadzone_pos_tol = 30
             self.deadzone_vel_tol = 10
             self.deadzone_tilt = np.deg2rad(0)
-            self.pos_tol = 40
-            self.vel_tol = 20
+            self.pos_tol = config["controller"]["position_controller_lookahead"].get("position_tolerance", 40)
+            self.vel_tol = config["controller"]["position_controller_lookahead"].get("velocity_tolerance", 20)
         else:
-            self.kp_x = 0.00003
-            self.kd_x = 0.000145
-            self.kp_y = 0.00003
-            self.kd_y = 0.000145
-            self.ki_y = 0.0002
-            self.ki_x = 0.0002
+            self.kp_x = config["controller"]["position_controller_normal"].get("kp_x", 0.00003)
+            self.kd_x = config["controller"]["position_controller_normal"].get("kd_x", 0.000145)
+            self.kp_y = config["controller"]["position_controller_normal"].get("kp_y", 0.00003)
+            self.kd_y = config["controller"]["position_controller_normal"].get("kd_y", 0.000145)
+            self.ki_y = config["controller"]["position_controller_normal"].get("ki_y", 0.0002)
+            self.ki_x = config["controller"]["position_controller_normal"].get("ki_x", 0.0002)
             self.kf_min = 0.02
             self.kf_max = 0.005
             self.deadzone_pos_tol = 30
             self.deadzone_vel_tol = 10
             self.deadzone_tilt = np.deg2rad(0)
-            self.pos_tol = 40
-            self.vel_tol = 20
+            self.pos_tol = config["controller"]["position_controller_normal"].get("position_tolerance", 40)
+            self.vel_tol = config["controller"]["position_controller_normal"].get("velocity_tolerance", 20)
 
         # === AXIS CONTROL ===
-        self.kp_theta = 6500
-        self.max_angle = 1.8  # degrees
-        self.command_delay = 0.0001
+        self.kp_theta = config["controller"]["angular_controller"].get("kp", 6500)
+        self.max_angle = config["controller"]["angular_controller"].get("max_angle", 1.8)
+        self.command_delay = config["controller"]["angular_controller"].get("command_delay", 0.0001)
+
+        # ====================
+
+        self.ff_t_lookahead = config["controller"]["position_controller_lookahead"].get("feedforward_t", 6)
+        self.ff_t_normal = config["controller"]["position_controller_normal"].get("feedforward_t", 5.3)
+        self.stuck_wiggle_amplitude = config["controller"].get("stuck_wiggle_amplitude", 0.8)  # degrees
+        self.stuck_wiggle_frequency = config["controller"].get("stuck_wiggle_frequency", 10)  # Hz
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
@@ -141,9 +192,9 @@ class Controller:
             distance = np.linalg.norm((dx, dy))
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
             if self.lookahead:
-                t_estimate = 6
+                t_estimate = self.ff_t_lookahead
             else:
-                t_estimate = 5.3
+                t_estimate = self.ff_t_normal
             a_mag = 2 * distance / (t_estimate ** 2)
             a_x = a_mag * direction[0]
             a_y = a_mag * direction[1]
@@ -191,8 +242,8 @@ class Controller:
             self.stuck = False
 
         if self.stuck:
-            theta_x += np.sign(e_x) * np.deg2rad(0.8) * np.sin(time.time() * 10)
-            theta_y += np.sign(e_y) * np.deg2rad(0.8) * np.sin(time.time() * 10)
+            theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
+            theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
