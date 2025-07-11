@@ -85,8 +85,8 @@ class ImageController:
         if self.frame is None:
             return None
 
-        x1, y1 = self.frame_corners[0][0]
-        x2, y2 = self.frame_corners[1][1]
+        x1, y1 = self.frame_corners[0]
+        x2, y2 = self.frame_corners[3]
         self.cropped_frame = self.frame[y1:y2, x1:x2]
         self.cropped_frame = cv2.rotate(self.cropped_frame, cv2.ROTATE_180)
 
