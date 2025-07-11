@@ -121,8 +121,12 @@ class PathFollower:
                 stuck_within_waypoint = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius
 
                 # Normal backstep
-                self.next_waypoint = max(self.next_waypoint - 1, 0)
-                self.prev_waypoint = max(self.next_waypoint - 1, 0)
+                if self.forward:
+                    self.next_waypoint = max(self.next_waypoint - 1, 0)
+                    self.prev_waypoint = max(self.next_waypoint - 1, 0)
+                else:
+                    self.next_waypoint = min(self.next_waypoint + 1, self.length - 1)
+                    self.prev_waypoint = min(self.next_waypoint + 1, self.length - 1)
                 print(f"Stuck — reverting to waypoint {self.next_waypoint}")
 
                 self.prev_progress_time = None
