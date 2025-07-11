@@ -484,5 +484,5 @@ class HMIController:
                     self.controller.looping = True
                 elif cmd.endswith("Off"):
                     self.controller.looping = False
-        elif cmd == "Restart":
+        if cmd == "Restart":
             self.restart_program()
