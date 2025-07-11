@@ -27,8 +27,8 @@ controller:
     max_angle: 1.8 #deg
     command_delay: 0.0001
   arduino:
-    x_offset: 0.002 #rad, used to correct the angle of the robot
-    y_offset: 0.001 #rad, used to correct the angle of the robot
+    x_offset: 0.01 #rad, used to correct the angle of the robot
+    y_offset: 0.006 #rad, used to correct the angle of the robot
     minimum_velocity: 22
     maximum_velocity: 100
     minimum_velocity_difference: 10 #required difference between velocity commands to send them to the arduino
