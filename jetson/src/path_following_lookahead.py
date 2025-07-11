@@ -24,8 +24,8 @@ class PathFollower:
 
         self.filtered_lookahead = 80  # initial default
         self.alpha = 0.03             # low-pass factor, smaller = smoother
-        self.min_lookahead = 60          # minimum lookahead distance
-        self.max_lookahead = 100         # maximum lookahead distance
+        self.min_lookahead = 50          # minimum lookahead distance
+        self.max_lookahead = 80         # maximum lookahead distance
 
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
