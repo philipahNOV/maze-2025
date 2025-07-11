@@ -96,7 +96,6 @@ def main(tracker: TrackerService,
             #    break
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
-            print(sleep_time)
             if sleep_time > 0:
                 time.sleep(sleep_time)
 
