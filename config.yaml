@@ -3,15 +3,15 @@ controller:
   stuck_wiggle_amplitude: 0.8 #deg, amplitude of the wiggle when stuck
   stuck_wiggle_frequency: 10 #Hz, frequency of the wiggle
   position_controller_normal:
-    kp_x: 0.000035
-    kp_y: 0.000035
-    kd_x: 0.00013
-    kd_y: 0.00013
+    kp_x: 0.00003
+    kp_y: 0.00003
+    kd_x: 0.00015
+    kd_y: 0.00015
     ki_x: 0.0002
     ki_y: 0.0002
     position_tolerance: 40 #px
     velocity_tolerance: 20 #px/s
-    feedforward_t: 5.3
+    feedforward_t: 5.1
   position_controller_lookahead:
     kp_x: 0.000015
     kp_y: 0.000015
@@ -28,7 +28,7 @@ controller:
     command_delay: 0.0001
   arduino:
     x_offset: 0.01 #rad, used to correct the angle of the robot
-    y_offset: 0.006 #rad, used to correct the angle of the robot
+    y_offset: 0.0 #rad, used to correct the angle of the robot
     minimum_velocity: 22
     maximum_velocity: 100
     minimum_velocity_difference: 10 #required difference between velocity commands to send them to the arduino
