@@ -18,7 +18,7 @@ class CustomPathScreen(tk.Frame):
         self.true_height = controller.config['camera'].get('maze_height', 710)
         self.offset_x = controller.config['camera'].get('maze_offset_x', 390)
         self.offset_y = controller.config['camera'].get('maze_offset_y', 10)
-        self.animation_fps = controller.config["animations"]["pathfinding"].get("fps", 8)
+        self.animation_fps = controller.config["animations"]["path_finding"].get("fps", 8)
 
         self.has_pathfinded = False
         self.awaiting_path = False
