@@ -39,13 +39,17 @@ except Exception as e:
     print(e)
     exit(1)
 
+config = load_config()
+print("Config loaded successfully.")
+
 tracker_service = TrackerService(model_path="camera/v8-291.pt")
 tracker_service.camera.init_camera()
 controller = pos2.Controller(
     arduinoThread=arduino_thread,
     tracker=tracker_service,
     path_following=True,
-    lookahead=False
+    lookahead=False,
+    config=config
 )
 controller.horizontal()
 
@@ -55,7 +59,7 @@ except Exception as e:
     print(e)
     exit(1)
 
-fsm = HMIController(tracker_service, arduino_thread, mqtt_client, load_config())
+fsm = HMIController(tracker_service, arduino_thread, mqtt_client, config=config)
 mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")
