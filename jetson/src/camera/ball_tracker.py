@@ -15,7 +15,7 @@ class BallTracker:
         self.ball_confirm_threshold = 1
 
         self.hsv_fail_counter = 0
-        self.hsv_fail_threshold = 12
+        self.hsv_fail_threshold = 30
         self.yolo_cooldown = 0
         self.yolo_cooldown_period = 15
 
