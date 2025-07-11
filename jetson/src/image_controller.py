@@ -39,6 +39,7 @@ class ImageController:
         self.frame_send_hz = 5  # Number of frames to send per second
         self.current_path = None  # Holds the active path
         self.new_path_available = False  # Flag to track if we need to update the drawing
+        self.maze_angle = config['camera'].get('maze_relative_angle', 1.0)  # Angle of the maze relative to the camera frame
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
@@ -95,8 +96,24 @@ class ImageController:
 
         x1, y1 = self.frame_corners[0]
         x2, y2 = self.frame_corners[3]
-        self.cropped_frame = self.frame[y1:y2, x1:x2]
-        self.cropped_frame = cv2.rotate(self.cropped_frame, cv2.ROTATE_180)
+        # Step 1: Crop first
+        cropped = self.frame[y1:y2, x1:x2]
+
+        # Step 2: Rotate 180°
+        rotated = cv2.rotate(cropped, cv2.ROTATE_180)
+
+        # Step 3: Apply small additional rotation
+        angle = self.maze_angle  # degrees, negative = clockwise
+        (h, w) = rotated.shape[:2]
+        center = (w // 2, h // 2)
+
+        # Rotation matrix
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+        # Apply affine transformation
+        rotated_corrected = cv2.warpAffine(rotated, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+
+        self.cropped_frame = rotated_corrected
 
     def send_frame_to_pi(self, mqtt_client: MQTTClientJetson):
         """Encode and send the cropped frame to the Raspberry Pi over MQTT."""
