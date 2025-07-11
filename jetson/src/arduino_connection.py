@@ -165,5 +165,3 @@ class ArduinoConnection(threading.Thread):
             self.connect()
         except ConnectionError as e:
             print(e)
-
-

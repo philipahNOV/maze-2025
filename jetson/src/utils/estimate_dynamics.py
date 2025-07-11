@@ -19,7 +19,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
     print("[INFO] Tracking started. Press 'q' to quit.")
 
     reached = False
-     # Define horizontal lines (adjust based on resolution)
     line_top_y = 100     # upper threshold line
     line_bottom_y = 600    # lower threshold line
     state = "waiting_above"
@@ -56,7 +55,6 @@ def main(tracker: tracking.BallTracker, controller: positionController_2.Control
                         was_above = False  # reset after valid transition
 
                 elif state == "timing" and ball_y >= line_bottom_y:
-                    # Ball exited the region
                     t_exit = current_time
                     time_elapsed = t_exit - t_entry
                     exit_ori = tracker.get_orientation()

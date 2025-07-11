@@ -24,7 +24,7 @@ class BallTracker:
 
         self.WINDOW_SIZE = 80
         self.INIT_BALL_REGION = ((390, 10), (1120, 720))
-        self.HSV_RANGE = (np.array([35, 80, 80]), np.array([85, 255, 255]))
+        self.HSV_RANGE = (np.array([35, 80, 80]), np.array([85, 255, 255])) # works for light green ball
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
