@@ -81,7 +81,7 @@ class PathFollower:
             )
 
         curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.9
-        target_lookahead = 90
+        target_lookahead = self.filtered_lookahead
         target_lookahead *= curvature_scale
 
         self.filtered_lookahead = (
