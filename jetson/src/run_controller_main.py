@@ -67,7 +67,7 @@ def main(tracker: TrackerService,
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
-                pathFollower.follow_path(ball_pos)
+                #pathFollower.follow_path(ball_pos)
                 #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
