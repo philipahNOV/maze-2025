@@ -8,7 +8,7 @@ class PathFollower:
         self.controller = controller
         self.length = len(self.path)
 
-        self.lookahead_distance = 90  # pixels
+        self.lookahead_distance = 80  # pixels
         self.acceptance_radius = controller.pos_tol
 
         self.prev_time = None
@@ -18,6 +18,7 @@ class PathFollower:
         self.stuck_retry_time = 3
         self.lookahead_point = None
         self.lookahead_index = 0
+        self.adaptive_lookahead = False  # Enable adaptive lookahead
 
         self.looping = False
         self.forward = True
@@ -74,22 +75,23 @@ class PathFollower:
             if dt > 0:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
 
-        target_lookahead = self.lookahead_distance
-        if vel is not None:
-            # Choose dynamic target between min and max
-            k = 100  # Controls how steeply it ramps up — tweak as needed
-            target_lookahead = self.min_lookahead + (
-                (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
-            )
+        if self.adaptive_lookahead:
+            target_lookahead = self.lookahead_distance
+            if vel is not None:
+                # Choose dynamic target between min and max
+                k = 100  # Controls how steeply it ramps up — tweak as needed
+                target_lookahead = self.min_lookahead + (
+                    (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
+                )
 
-        #curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
-        #target_lookahead *= curvature_scale
+            curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
+            target_lookahead *= curvature_scale
 
-        self.filtered_lookahead = (
-                self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
-            )
-        self.filtered_lookahead = np.clip(self.filtered_lookahead, self.min_lookahead, self.max_lookahead)
-        self.lookahead_distance = self.filtered_lookahead
+            self.filtered_lookahead = (
+                    self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
+                )
+            self.filtered_lookahead = np.clip(self.filtered_lookahead, self.min_lookahead, self.max_lookahead)
+            self.lookahead_distance = self.filtered_lookahead
         
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
