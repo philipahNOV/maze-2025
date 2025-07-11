@@ -55,11 +55,6 @@ class HMIController:
         subprocess.Popen([python, script], start_new_session=True)
         sys.exit(0)
 
-    def stop_program(self):
-        print("Stopping program...")
-        self.stop_threads()
-        sys.exit(0)
-
     def stop_threads(self):
         try:
             self.mqtt_client.stop()
@@ -85,6 +80,11 @@ class HMIController:
             self.disco_thread = None
         self.tracking_service.stop_tracker()
         self.tracking_service.camera.close()
+
+    def stop_program(self):
+        print("Stopping program...")
+        self.stop_threads()
+        sys.exit(0)
 
     def densify_path(self, path, factor=6):
         new_path = []
