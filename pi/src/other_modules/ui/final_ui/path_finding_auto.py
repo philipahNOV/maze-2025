@@ -41,6 +41,10 @@ class AutoPathScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
+    def on_button_click_exit(self):
+        self.mqtt_client.client.publish("jetson/command", "Exit")
+        self.controller.on_close()
+
     def enable_buttons(self):
         self.start_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
         self.retry_button.config(state="normal", bg="#EE3229", activebackground="#B82F27", fg="white", activeforeground="#DFDFDF")
@@ -89,7 +93,7 @@ class AutoPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.controller.on_close  # or self.controller.destroy
+            command=self.on_button_click_exit  # or self.controller.destroy
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
 

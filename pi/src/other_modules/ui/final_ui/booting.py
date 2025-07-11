@@ -33,6 +33,11 @@ class BootScreen(tk.Frame):
         # Begin MQTT handshake
         self.mqtt_client.initiate_handshake()
 
+    def on_button_click_exit(self):
+        if self.mqtt_client.handshake_complete:
+            self.mqtt_client.client.publish("jetson/command", "Exit")
+        self.controller.on_close()
+
     def create_widgets(self):
         # Initialize with the first image
         self.bg_label = tk.Label(self, image=self.images[self.image_index])
@@ -49,7 +54,7 @@ class BootScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.controller.on_close  # or self.controller.destroy
+            command=self.on_button_click_exit  # or self.controller.destroy
         )
         self.exit_button.place(x=964, y=10, width=50, height=50)
 

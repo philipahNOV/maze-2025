@@ -47,8 +47,22 @@ class HMIController:
 
     def restart_program(self):
         print("Restart requested...")
+        self.stop_threads()
+        # Launch a new process first
+        python = sys.executable
+        script = os.path.abspath(sys.argv[0])
+        print(f"Launching new process: {python} {script}")
+        subprocess.Popen([python, script], start_new_session=True)
+        sys.exit(0)
+
+    def stop_program(self):
+        print("Stopping program...")
+        self.stop_threads()
+        sys.exit(0)
+
+    def stop_threads(self):
         try:
-            self.mqtt_client.shut_down()
+            self.mqtt_client.stop()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
         if self.image_thread is not None:
@@ -71,13 +85,6 @@ class HMIController:
             self.disco_thread = None
         self.tracking_service.stop_tracker()
         self.tracking_service.camera.close()
-
-        # Launch a new process first
-        python = sys.executable
-        script = os.path.abspath(sys.argv[0])
-        print(f"Launching new process: {python} {script}")
-        subprocess.Popen([python, script], start_new_session=True)
-        sys.exit(0)
 
     def densify_path(self, path, factor=6):
         new_path = []
@@ -487,3 +494,5 @@ class HMIController:
                     self.controller.looping = False
         if cmd == "Restart":
             self.restart_program()
+        elif cmd == "Exit":
+            self.stop_program()
