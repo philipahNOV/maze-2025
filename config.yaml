@@ -48,14 +48,18 @@ path_following:
     dwell_time: 0.7 #s, time to wait at a waypoint before moving on
 
 camera:
-  maze_width: 730 #px
-  maze_height: 710 #px
-  maze_offset_x: 390 #px
-  maze_offset_y: 10 #px
+  maze_width: 655 #px
+  maze_height: 655 #px
+  maze_offset_x: 430 #px
+  maze_offset_y: 27 #px
   maze_image_scale: 0.8 #Scale factor for the maze image shown in pathfinding screen
-  elevator_center_x: 1030 #px
-  elevator_center_y: 630 #px
+  elevator_center_x: 998 #OPPDATERT x center
+  elevator_center_y: 588 #OPPDATERT y center
   elevator_radius: 60 #px
+  bottom_right: [1085, 682]
+  bottom_left: [430, 682]
+  top_right: [1085, 27]
+  top_left: [430, 27]
 
 path_finding:
   repulsion_weight: 5 #Weight of the repulsion force in the path finding algorithm

@@ -81,7 +81,7 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        cv2.circle(safe_mask, (1030, 630), 70, 255, -1)
+        cv2.circle(safe_mask, (998, 588), 70, 255, -1)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
