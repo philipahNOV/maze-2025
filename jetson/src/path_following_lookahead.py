@@ -17,6 +17,7 @@ class PathFollower:
         self.prev_progress_time = None
         self.stuck_retry_time = 3
         self.lookahead_point = None
+        self.lookahead_index = 0
 
         self.looping = False
         self.forward = True
@@ -36,6 +37,28 @@ class PathFollower:
         self.max_skip_ahead = max(5, int(self.length / 5))
         self.max_skip_behind = max(5, int(self.length / 10))
 
+    def get_path_curvature_at_index(self, idx):
+        if idx <= 0 or idx >= self.length - 2:
+            return 0  # assume straight at ends
+
+        p0 = np.array(self.path[idx - 1])
+        p1 = np.array(self.path[idx])
+        p2 = np.array(self.path[idx + 1])
+
+        v1 = p1 - p0
+        v2 = p2 - p1
+
+        if np.linalg.norm(v1) < 1e-3 or np.linalg.norm(v2) < 1e-3:
+            return 0
+
+        v1 /= np.linalg.norm(v1)
+        v2 /= np.linalg.norm(v2)
+
+        dot = np.clip(np.dot(v1, v2), -1.0, 1.0)
+        angle = np.arccos(dot)  # in radians
+
+        return angle / np.pi  # angle between segments at idx (0 = straight, 1 = U-turn)
+
     def follow_path(self, ballPos):
         if not ballPos:
             return
@@ -49,18 +72,24 @@ class PathFollower:
             if dt > 0:
                 vel = np.linalg.norm(np.array(ballPos) - np.array(self.prev_ball_pos)) / dt
 
+        target_lookahead = self.lookahead_distance
         if vel is not None:
             # Choose dynamic target between min and max
             k = 100  # Controls how steeply it ramps up — tweak as needed
             target_lookahead = self.min_lookahead + (
                 (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
             )
-            self.filtered_lookahead = (
+
+        curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.9
+        target_lookahead = 90
+        target_lookahead *= curvature_scale
+
+        self.filtered_lookahead = (
                 self.alpha * target_lookahead + (1 - self.alpha) * self.filtered_lookahead
             )
-            self.filtered_lookahead = np.clip(self.filtered_lookahead, self.min_lookahead, self.max_lookahead)
-            self.lookahead_distance = self.filtered_lookahead
-
+        self.filtered_lookahead = np.clip(self.filtered_lookahead, self.min_lookahead, self.max_lookahead)
+        self.lookahead_distance = self.filtered_lookahead
+        
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
 
@@ -78,7 +107,7 @@ class PathFollower:
                 return
 
         # Compute lookahead target
-        lookahead_point = self.get_lookahead_point(ballPos, self.lookahead_distance)
+        lookahead_point, self.lookahead_index = self.get_lookahead_point(ballPos, self.lookahead_distance)
         self.lookahead_point = lookahead_point
 
         # Feedforward direction
@@ -134,7 +163,7 @@ class PathFollower:
             if total_dist + seg_len >= lookahead_dist:
                 ratio = (lookahead_dist - total_dist) / seg_len
                 lookahead_point = a + (b - a) * ratio
-                return tuple(lookahead_point)
+                return tuple(lookahead_point), j
 
             total_dist += seg_len
             a = b  # Move to next segment
@@ -149,7 +178,7 @@ class PathFollower:
             return self.path[self.last_closest_index]
         else:
             print("[LOOKAHEAD] No lookahead segment in range — using closest projection.")
-            return tuple(closest_proj)
+            return tuple(closest_proj), closest_index
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
