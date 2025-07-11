@@ -30,6 +30,7 @@ class MainApp(tk.Tk):
         self.nov_red = "#EE3229"
         self.nov_grey = "#60666C"
         self.nov_background = "#D9D9D9"
+        self.reset_jetson_on_exit = False
 
         self.script_dir = os.path.dirname(os.path.abspath(__file__))
         self.image_path = os.path.abspath(os.path.join(self.script_dir, '..', 'data'))

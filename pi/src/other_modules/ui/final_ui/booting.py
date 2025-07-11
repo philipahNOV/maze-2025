@@ -3,7 +3,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main import MainApp
+    from main2 import MainApp
 import os
 
 class BootScreen(tk.Frame):
@@ -34,12 +34,13 @@ class BootScreen(tk.Frame):
         self.mqtt_client.initiate_handshake()
 
     def on_button_click_exit(self):
-        if self.mqtt_client.handshake_complete:
+        if self.mqtt_client.handshake_complete and self.controller.reset_jetson_on_exit:
             self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.on_close()
 
     def on_button_click_restart(self):
-        self.mqtt_client.client.publish("jetson/command", "Restart")
+        if self.mqtt_client.handshake_complete:
+            self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
     def create_widgets(self):

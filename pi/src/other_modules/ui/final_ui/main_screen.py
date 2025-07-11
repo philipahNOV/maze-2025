@@ -38,7 +38,8 @@ class MainScreen(tk.Frame):
         self.controller.show_frame("InfoScreen")
 
     def on_button_click_exit(self):
-        self.mqtt_client.client.publish("jetson/command", "Restart")
+        if self.controller.reset_jetson_on_exit:
+            self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.on_close()
 
     def add_essential_buttons(self):
