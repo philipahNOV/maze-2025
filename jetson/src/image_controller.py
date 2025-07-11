@@ -20,17 +20,26 @@ class ImageController:
 
     def __init__(self, config):
         # Crop coordinates: [(top-left, top-right), (bottom-left, bottom-right)]
+        self.padding = config['camera'].get('padding', 10)  # Padding around the maze image
         self.top_left = config['camera'].get('top_left', (430, 27))
         self.top_right = config['camera'].get('top_right', (1085, 27))
         self.bottom_left = config['camera'].get('bottom_left', (430, 682))
         self.bottom_right = config['camera'].get('bottom_right', (1085, 682))
+
+        # Apply padding outward from each corner
+        self.top_left = (self.top_left[0] - self.padding, self.top_left[1] - self.padding)
+        self.top_right = (self.top_right[0] + self.padding, self.top_right[1] - self.padding)
+        self.bottom_left = (self.bottom_left[0] - self.padding, self.bottom_left[1] + self.padding)
+        self.bottom_right = (self.bottom_right[0] + self.padding, self.bottom_right[1] + self.padding)
         self.frame_corners = (self.top_left, self.top_right, self.bottom_left, self.bottom_right)
+
         self.frame = None
         self.cropped_frame = None
         self.last_sent_frame_time = time.time()
         self.frame_send_hz = 5  # Number of frames to send per second
         self.current_path = None  # Holds the active path
         self.new_path_available = False  # Flag to track if we need to update the drawing
+        self.maze_angle = config['camera'].get('maze_relative_angle', 1.0)  # Angle of the maze relative to the camera frame
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
@@ -87,8 +96,24 @@ class ImageController:
 
         x1, y1 = self.frame_corners[0]
         x2, y2 = self.frame_corners[3]
-        self.cropped_frame = self.frame[y1:y2, x1:x2]
-        self.cropped_frame = cv2.rotate(self.cropped_frame, cv2.ROTATE_180)
+        # Step 1: Crop first
+        cropped = self.frame[y1:y2, x1:x2]
+
+        # Step 2: Rotate 180°
+        rotated = cv2.rotate(cropped, cv2.ROTATE_180)
+
+        # Step 3: Apply small additional rotation
+        angle = self.maze_angle  # degrees, negative = clockwise
+        (h, w) = rotated.shape[:2]
+        center = (w // 2, h // 2)
+
+        # Rotation matrix
+        M = cv2.getRotationMatrix2D(center, angle, 1.0)
+
+        # Apply affine transformation
+        rotated_corrected = cv2.warpAffine(rotated, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
+
+        self.cropped_frame = rotated_corrected
 
     def send_frame_to_pi(self, mqtt_client: MQTTClientJetson):
         """Encode and send the cropped frame to the Raspberry Pi over MQTT."""
