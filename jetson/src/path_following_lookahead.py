@@ -80,7 +80,7 @@ class PathFollower:
                 (self.max_lookahead - self.min_lookahead) * (vel / (vel + k))
             )
 
-        curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.9
+        curvature_scale = 1.0 - self.get_path_curvature_at_index(self.lookahead_index) * 0.99
         target_lookahead *= curvature_scale
 
         self.filtered_lookahead = (
