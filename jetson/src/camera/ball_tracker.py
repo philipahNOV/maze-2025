@@ -15,7 +15,7 @@ class BallTracker:
         self.ball_confirm_threshold = 1
 
         self.hsv_fail_counter = 0
-        self.hsv_fail_threshold = 5
+        self.hsv_fail_threshold = 12
         self.yolo_cooldown = 0
         self.yolo_cooldown_period = 15
 
@@ -66,7 +66,13 @@ class BallTracker:
                 new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
 
                 if new_pos:
-                    self.ball_position = new_pos
+                    if self.ball_position:
+                        alpha = 0.5  # smoothing factor (lower = smoother, slower response)
+                        x = int(alpha * new_pos[0] + (1 - alpha) * self.ball_position[0])
+                        y = int(alpha * new_pos[1] + (1 - alpha) * self.ball_position[1])
+                        self.ball_position = (x, y)
+                    else:
+                        self.ball_position = new_pos
                     self.hsv_fail_counter = 0
                 else:
                     self.ball_position = None
