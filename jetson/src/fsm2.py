@@ -70,6 +70,7 @@ class HMIController:
             self.disco_thread.join()
             self.disco_thread = None
         self.tracking_service.stop_tracker()
+        self.tracking_service.camera.close()
 
         # Launch a new process first
         python = sys.executable
@@ -484,5 +485,5 @@ class HMIController:
                     self.controller.looping = True
                 elif cmd.endswith("Off"):
                     self.controller.looping = False
-        elif cmd == "Restart":
+        if cmd == "Restart":
             self.restart_program()
