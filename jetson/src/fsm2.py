@@ -36,7 +36,7 @@ class HMIController:
         self.path_lookahead = None
         self.image_controller = ImageController()
         self.image_thread = None
-        self.controller = pos2.Controller(arduino_thread, tracking_service, config)
+        self.controller = pos2.Controller(arduino_thread, tracking_service, config=config)
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
