@@ -52,8 +52,9 @@ class HMIController:
         python = sys.executable
         script = os.path.abspath(sys.argv[0])
         print(f"Launching new process: {python} {script}")
-        subprocess.Popen([python, script], start_new_session=True)
-        sys.exit(0)
+        #subprocess.Popen([python, script], start_new_session=True)
+        #sys.exit(0)
+        os.execv(python, [python, script])
 
     def stop_threads(self):
         try:
