@@ -61,6 +61,7 @@ camera:
   top_right: [1085, 27]
   top_left: [430, 27]
   padding: 10 #px, padding around the maze image
+  maze_relative_angle: 1.0 #deg, angle of the maze relative to the camera frame
 
 path_finding:
   repulsion_weight: 5 #Weight of the repulsion force in the path finding algorithm
