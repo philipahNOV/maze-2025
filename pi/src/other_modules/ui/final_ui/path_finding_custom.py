@@ -42,11 +42,16 @@ class CustomPathScreen(tk.Frame):
         self.update_image()  # Start updating the image
 
     def update_image(self):
+        # Pathfinding is complete, image is ready
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             if not self.has_pathfinded:
-                return  # Wait until path is truly marked as found
+                print("[UI] Path found. Enabling START buttons.")
+                self.has_pathfinded = True
+                self.enable_button_start()
+
             self._animating = False
             self.animation_label.place_forget()
+
             # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
@@ -57,18 +62,17 @@ class CustomPathScreen(tk.Frame):
 
             self.image = ImageTk.PhotoImage(img_scaled)
             self.canvas.itemconfig(self.image_id, image=self.image)
-
-            # Hide status text
             self.status_label.place_forget()
-            if self.has_pathfinded:
-                self.enable_button_start()
+
         else:
-            # Show blank image and animated text
-            self.has_pathfinded = True
+            self.has_pathfinded = False  # ← Force consistent state
+            self.disable_button_start()
+
             if not self._animating:
                 self._animating = True
                 self.animation_label.place(x=442, y=300, width=100, height=100, anchor="center")
                 self.animate_pathfinding()
+
             blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
             img_scaled = blank_img.resize(
                 (int(self.true_width * self.scale_ratio), int(self.true_height * self.scale_ratio)),
@@ -76,11 +80,10 @@ class CustomPathScreen(tk.Frame):
             )
             self.image = ImageTk.PhotoImage(img_scaled)
             self.canvas.itemconfig(self.image_id, image=self.image)
-
             self.status_label.place(x=442, y=370, anchor="n")
-            self.disable_button_start()
 
-        self.after(200, self.update_image)  # update every 200 ms 
+        self.after(200, self.update_image)
+
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -290,13 +293,13 @@ class CustomPathScreen(tk.Frame):
 
     def show(self):
         """Make this frame visible"""
-        #self.update_image()  # Start updating the image
         self.mqtt_client.finding_path = False
         self.has_pathfinded = False
         if hasattr(self, 'click_marker') and self.click_marker is not None:
-                self.canvas.delete(self.click_marker)
+            self.canvas.delete(self.click_marker)
         self.disable_button_calculate()
         self.disable_button_start()
+
 
     def hide(self):
         """Hide this frame"""
