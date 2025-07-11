@@ -52,9 +52,9 @@ class Controller:
         self.lookahead = lookahead
         if self.lookahead:
             self.kp_x = 0.00002
-            self.kd_x = 0.00017
+            self.kd_x = 0.0002
             self.kp_y = 0.00002
-            self.kd_y = 0.00017
+            self.kd_y = 0.0002
             self.ki_y = 0.0
             self.ki_x = 0.0
             self.kf_min = 0.02
@@ -140,7 +140,10 @@ class Controller:
             dy = self.ref[1] - self.pos[1]
             distance = np.linalg.norm((dx, dy))
             direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
-            t_estimate = 5.3
+            if self.lookahead:
+                t_estimate = 6
+            else:
+                t_estimate = 5.3
             a_mag = 2 * distance / (t_estimate ** 2)
             a_x = a_mag * direction[0]
             a_y = a_mag * direction[1]
