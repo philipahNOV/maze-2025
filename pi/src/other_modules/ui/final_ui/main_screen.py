@@ -70,7 +70,7 @@ class MainScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_restart
         )
-        self.exit_button.place(x=125, y=10, width=50, height=50)
+        self.exit_button.place(x=904, y=10, width=50, height=50)
 
     def create_widgets(self):
         self.update()  # ensure layout updates

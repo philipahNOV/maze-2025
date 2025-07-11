@@ -80,7 +80,7 @@ class LocatingScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_restart
         )
-        self.exit_button.place(x=125, y=10, width=50, height=50)
+        self.exit_button.place(x=904, y=10, width=50, height=50)
 
     def create_widgets(self):
         #self.update()
@@ -103,7 +103,7 @@ class LocatingScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back,
         )
-        self.back_button.place(x=804, y=10, width=150, height=50)
+        self.back_button.place(x=754, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,
