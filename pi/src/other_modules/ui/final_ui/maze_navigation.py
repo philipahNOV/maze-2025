@@ -39,6 +39,10 @@ class NavigationScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
+    def on_button_click_exit(self):
+        self.mqtt_client.client.publish("jetson/command", "Exit")
+        self.controller.on_close()
+
     def on_button_click_safe(self):
         self.controller.show_frame("LocatingScreen")
         self.controller.frames["LocatingScreen"].custom = self.custom.get()
@@ -67,7 +71,7 @@ class NavigationScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.controller.on_close  # or self.controller.destroy
+            command=self.on_button_click_exit  # or self.controller.destroy
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
 

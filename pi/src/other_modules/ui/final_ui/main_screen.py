@@ -37,6 +37,10 @@ class MainScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Info")
         self.controller.show_frame("InfoScreen")
 
+    def on_button_click_exit(self):
+        self.mqtt_client.client.publish("jetson/command", "Exit")
+        self.controller.on_close()
+
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
             self,
@@ -49,7 +53,7 @@ class MainScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.controller.on_close
+            command=self.on_button_click_exit
         )
         self.exit_button.place(x=964, y=10, width=50, height=50)
 
