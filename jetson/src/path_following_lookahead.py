@@ -45,8 +45,8 @@ class PathFollower:
         p1 = np.array(self.path[idx])
         p2 = np.array(self.path[idx + 1])
 
-        v1 = p1 - p0
-        v2 = p2 - p1
+        v1 = (p1 - p0).astype(np.float64)
+        v2 = (p2 - p1).astype(np.float64)
 
         if np.linalg.norm(v1) < 1e-3 or np.linalg.norm(v2) < 1e-3:
             return 0
