@@ -110,7 +110,7 @@ class NavigationScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=754, y=10, width=150, height=50)
+        self.back_button.place(x=744, y=10, width=150, height=50)
 
         self.get_ball_button = tk.Button(
             self,
