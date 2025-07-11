@@ -67,7 +67,7 @@ def main(tracker: TrackerService,
 
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
-                #pathFollower.follow_path(ball_pos)
+                pathFollower.follow_path(ball_pos)
                 #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
@@ -91,10 +91,9 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
 
-            cv2.imshow("Ball tracking", frame)
-            print(tracker.get_orientation())
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-               break
+            # cv2.imshow("Ball tracking", frame)
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #    break
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
