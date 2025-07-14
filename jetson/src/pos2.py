@@ -223,7 +223,8 @@ class Controller:
 
         vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), self.vel_max)
         vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
-
+        if self.logger is not None:
+            self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
         if self.stuck or self.significant_motor_change(vel_x, vel_y):
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
@@ -256,8 +257,6 @@ class Controller:
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
 
             self.arduinoThread.send_speed(vel_x, vel_y)
-            if self.logger is not None:
-                self.logger.update_state(self.pos, orientation, self.ball_velocity, (vel_x, vel_y))
             time.sleep(self.command_delay)
 
         print("Deadline reached, stopping motors.")
