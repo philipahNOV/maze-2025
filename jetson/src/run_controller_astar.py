@@ -85,6 +85,8 @@ def main(tracker: BallTracker, controller: position_controller.Controller, mqtt_
     path = astar_downscaled(safe_mask, start, goal, repulsion_weight=5.0, scale=1.0)
     waypoints = sample_waypoints(path, safe_mask)
     path_array = [(x, y) for y, x in waypoints]
+    print(waypoints)
+    print(path_array)
     pathFollower = path_following.PathFollower(path_array, controller)
 
     controller.horizontal()
