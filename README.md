@@ -37,7 +37,7 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
   - [5. Fallback and Recovery](#5-fallback-and-recovery)
   - [6. Tracker Service](#6-trackerservice-trackerservice)
   - [7. Vision Utilities](#7-vision-utilities-vision_utils)
-  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning-guide)
+  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning)
 - [A* Pathfinding](#a-pathfinding)
   - [1. A* Algorithm with Repulsion Field](#1-a-algorithm-with-repulsion-field)
   - [2. Downscaled Pathfinding](#2-downscaled-pathfinding)
@@ -46,9 +46,9 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
   - [5. Path Drawing](#5-path-drawing)
   - [6. Path Memory Caching](#6-path-memory-caching)
   - [7. Nearest Walkable Point](#7-nearest-walkable-point)
-  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning)
+  - [8. A* Troubleshooting and Tuning](#8-troubleshooting-and-tuning-1)
 - [Troubleshooting](#troubleshooting)
-- [License / Authors / Acknowledgements](#license--authors--acknowledgements)
+- [Authors](#authors)
 - [Password](#password)
 
 ## Introduction
@@ -642,13 +642,13 @@ compute_repulsion_cost(..., min_safe_dist=14)
 
 #### scale in `astar_downscaled()`
 
-The downscale factor can be tuned in `config.yaml` using `path_finding.astar_downscale`. A value of 1.0 means no scaling.
+The downscale factor can be tuned in `config.yaml` using `path_finding.astar_downscale`. The default value of 1.0 means no scaling, but this can be changed to 0.5-0.8 for faster processing. Be careful as downscaling can result in `A* failed in downscaled space` error as downscaling the pixels can interfere with the threshold masking.
 
 ```python
 astar_downscaled(..., scale=1.0)
 ```
 
-Lower values improve speed but reduce precision.
+Basically, lower values improve speed but reduce precision.
 
 #### waypoint_spacing and angle_threshold
 
@@ -672,7 +672,7 @@ Increase to enable more cache hits, but at the cost of re-using less precise pat
 
 ## Troubleshooting
 
-## License / Authors / Acknowledgements
+## Authors
 
 ## Password
 
