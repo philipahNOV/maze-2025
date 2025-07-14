@@ -1,12 +1,3 @@
-Exception in thread Thread-9 (main):
-Traceback (most recent call last):
-  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
-    self.run()
-  File "/usr/lib/python3.10/threading.py", line 953, in run
-    self._target(*self._args, **self._kwargs)
-  File "/home/student/Documents/maze-2025/jetson/src/run_controller_main.py", line 39, in main
-    pathFollower = path_following.PathFollower(path_array, controller, config)
-  File "/home/student/Documents/maze-2025/jetson/src/path_following.py", line 49, in __init__
-    self.vel_threshold = self.config["path_following"]["normal"].get("velocity_threshold", 50)  # pixels per second
-TypeError: 'NoneType' object is not subscriptable
+[(598, 1018), (577, 955), (494, 934), (343, 918), (317, 980), (289, 1036), (182, 1055), (162, 976), (195, 920), (236, 818), (161, 808), (163, 732), (243, 727), (321, 733), (352, 786), (411, 812), (527, 832), (642, 837), (649, 770), (578, 756), (542, 672), (581, 575), (597, 471), (527, 466), (493, 516), (446, 553), (416, 607), (315, 649), (271, 608), (221, 573), (146, 563), (72, 569), (67, 731), (68, 779)]
+[(1018, 598), (955, 577), (934, 494), (918, 343), (980, 317), (1036, 289), (1055, 182), (976, 162), (920, 195), (818, 236), (808, 161), (732, 163), (727, 243), (733, 321), (786, 352), (812, 411), (832, 527), (837, 642), (770, 649), (756, 578), (672, 542), (575, 581), (471, 597), (466, 527), (516, 493), (553, 446), (607, 416), (649, 315), (608, 271), (573, 221), (563, 146), (569, 72), (731, 67), (779, 68)]
 

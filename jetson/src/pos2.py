@@ -223,7 +223,8 @@ class Controller:
 
         vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * min(max(int(self.kp_theta * abs(e_x)), self.min_velocity), self.vel_max)
         vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
-
+        if self.logger is not None:
+            self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
         if self.stuck or self.significant_motor_change(vel_x, vel_y):
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
@@ -235,7 +236,7 @@ class Controller:
         print("Stabilizing horizontally...")
         kp = self.config["controller"]["horizontal_controller"].get("kp", 700)
         tol = self.config["controller"]["horizontal_controller"].get("tolerance", 0.0015)
-        timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 20)
+        timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 300)
         deadline = time.time() + timeLimit
         self.arduinoThread.send_speed(0, 0)
 
@@ -254,10 +255,9 @@ class Controller:
 
             vel_x = 0 if abs(theta_x) < tol else -np.sign(theta_x) * min(max(int(kp * abs(theta_x)), self.min_velocity), 255)
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
-
+            print(self.ori)
+            print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
             self.arduinoThread.send_speed(vel_x, vel_y)
-            if self.logger is not None:
-                self.logger.update_state(self.pos, orientation, self.ball_velocity, (vel_x, vel_y))
             time.sleep(self.command_delay)
 
         print("Deadline reached, stopping motors.")
