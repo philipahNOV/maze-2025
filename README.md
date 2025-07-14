@@ -253,7 +253,7 @@ def get_orientation(self):
 
 ### 3. Object Detection (`YOLOModel`)
 
-The YOLOv8 model is loaded and initialized at runtime using the Ultralytics API. The model path is defined in `config.yaml` under `tracking.model_path`.
+The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class 'ball'. The model path is defined in `config.yaml` under `tracking.model_path`.
 
 After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to ensure deterministic and consistent outputs.
 
