@@ -70,9 +70,9 @@ class LoggingThread(threading.Thread):
                 self.logger.log_step(
                     state=self.prev_state,
                     action=self.prev_action,
-                    reward=self.prev_reward,  # Placeholder for reward, can be modified later
+                    reward=self.prev_reward,
                     next_state=state,
-                    done=done  # Placeholder for done, can be modified later
+                    done=done
                 )
 
             self.prev_state = state
