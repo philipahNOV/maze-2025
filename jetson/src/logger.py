@@ -54,6 +54,7 @@ class LoggingThread(threading.Thread):
 
         self.prev_state = None
         self.prev_action = None
+        self.prev_reward = 0
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -62,18 +63,21 @@ class LoggingThread(threading.Thread):
 
             state = [*self.ball_position, *self.ball_velocity, *self.orientation] # [x, y, vx, vy, theta_x, theta_y]
             action = [*self.motor_input]  # [motor_x, motor_y]
+            reward, done = self.calculate_reward()
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
+                self.reward += reward
                 self.logger.log_step(
                     state=self.prev_state,
                     action=self.prev_action,
-                    reward=0,  # Placeholder for reward, can be modified later
+                    reward=self.prev_reward,  # Placeholder for reward, can be modified later
                     next_state=state,
-                    done=False  # Placeholder for done, can be modified later
+                    done=done  # Placeholder for done, can be modified later
                 )
 
             self.prev_state = state
             self.prev_action = action
+            self.prev_reward = self.reward
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
@@ -99,12 +103,16 @@ class LoggingThread(threading.Thread):
             if self.current_waypoint > self.prev_waypoint:
                 if abs(self.current_waypoint - self.prev_waypoint) > 1:
                     reward -= 3  # Penalty for skipping waypoints
-                reward += 5  # Bonus for moving to a new waypoint
+                if self.current_waypoint == len(self.path) - 1:
+                    reward += 100
+                    return reward, True  # Reached goal
+                else:
+                    reward += 5  # Bonus for moving to a new waypoint
             elif self.current_waypoint < self.prev_waypoint:
                 reward -= 10  # Penalty for moving back to a previous waypoint
             self.prev_waypoint = self.current_waypoint
 
-        return reward
+        return reward, False
     
     def set_waypoint(self, waypoint):
         self.current_waypoint = self.path.index(waypoint) if waypoint in self.path else None
