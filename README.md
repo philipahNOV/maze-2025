@@ -14,6 +14,43 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
 
 ---
 
+<summary><h3>Table of Contents</h3></summary>
+
+- [Introduction](#introduction)
+- [System Overview](#system-overview)
+- [Setup & Configuration](#setup--configuration)
+  - [3.1 Dependencies](#31-dependencies)
+- [Run Controller](#run-controller)
+  - [1. System Components](#1-system-components)
+  - [2. Control Execution Flow](#2-control-execution-flow)
+  - [3. Controller Configuration](#3-controller-configuration)
+  - [4. Path Execution](#4-path-execution)
+  - [5. Horizontal Calibration](#5-horizontal-calibration)
+  - [6. MQTT Command Integration](#6-mqtt-command-integration)
+  - [7. Troubleshooting](#7-troubleshooting)
+  - [8. Tuning Tips](#8-tuning-tips)
+- [Ball Detection](#ball-detection)
+  - [1. System Architecture](#1-system-architecture)
+  - [2. Camera Acquisition](#2-camera-acquisition-cameramanager)
+  - [3. Object Detection](#3-object-detection-yolomodel)
+  - [4. Ball Tracking](#4-ball-tracking-balltracker)
+  - [5. Fallback and Recovery](#5-fallback-and-recovery)
+  - [6. Tracker Service](#6-trackerservice-trackerservice)
+  - [7. Vision Utilities](#7-vision-utilities-vision_utils)
+  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning-guide)
+- [A* Pathfinding](#a-pathfinding)
+  - [1. A* Algorithm with Repulsion Field](#1-a-algorithm-with-repulsion-field)
+  - [2. Downscaled Pathfinding](#2-downscaled-pathfinding)
+  - [3. Binary Mask Preprocessing](#3-binary-mask-preprocessing)
+  - [4. Waypoint Sampling](#4-waypoint-sampling)
+  - [5. Path Drawing](#5-path-drawing)
+  - [6. Path Memory Caching](#6-path-memory-caching)
+  - [7. Nearest Walkable Point](#7-nearest-walkable-point)
+  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning)
+- [Troubleshooting](#troubleshooting)
+- [License / Authors / Acknowledgements](#license--authors--acknowledgements)
+- [Password](#password)
+
 ## Introduction
 
 This project integrates multiple subsystems including camera-based ball tracking, a PID controller, MQTT communication, pathfinding via A*, and offline reinforcement learning potential. It runs on Jetson (for vision and control) and communicates with a Raspberry Pi interface for external monitoring and feedback.
@@ -42,6 +79,123 @@ This project integrates multiple subsystems including camera-based ball tracking
 Install via `requirements.txt`:
 
 `pip install -r requirements.txt`
+
+## Run Controller
+
+This part of the system is responsible for coordinating ball tracking, control execution, and path-following logic. It serves as the core runtime loop of the Jetson system and interfaces directly with the tracker, controller, image pipeline, and the HMI via MQTT.
+
+---
+
+### 1. System Components
+
+- **HMIController** (`fsm2.py`): A central FSM (finite state machine) that reacts to commands from the Pi (via MQTT) and manages system transitions (e.g., from navigation to control).
+- **Controller** (`pos2.py`): Implements PID-based position control and axis-level motor commands, driven by camera tracking and waypoint reference signals.
+- **Main Loop** (`run_controller_main.py`): Continuously reads the ball position, smooths it, and invokes control logic to reach the next target in the path.
+- **ImageController**: Updates HMI visuals with the latest camera frame and path overlay.
+- **MQTTClientJetson**: Handles all MQTT communication and command/event publishing.
+- **utility_threads**: Provides supporting threads for blinking LEDs, elevator escape, and pathfinding.
+
+---
+
+### 2. Control Execution Flow
+
+1. On boot, the system enters the `BOOTING` state.
+2. The Pi sends a `"booted"` MQTT message to unlock the main screen.
+3. User sends `"Locate"` → triggers `start_tracker()` and begins ball tracking.
+4. After the ball is found, the system can either:
+   - Auto-calculate a path (`"AutoPath"`)
+   - Wait for a custom goal from the HMI
+5. When `"Start"` is received, control enters the `CONTROLLING` state:
+   - The PID controller is run in a 60Hz loop
+   - The controller calculates tilt angles and sends velocity commands to the Arduino
+   - Camera feedback updates ball position
+
+---
+
+### 3. Controller Configuration
+
+All controller gains, tolerances, and hardware offsets are defined in `config.yaml` under the `controller:` section.
+
+Example:
+
+```yaml
+controller:
+  stuck_wiggle_amplitude: 0.8
+  stuck_wiggle_frequency: 10
+  angular_controller:
+    kp: 6500
+    max_angle: 1.8
+    command_delay: 0.0001
+  arduino:
+    x_offset: 0.01
+    y_offset: 0.0
+    minimum_velocity: 22
+    maximum_velocity: 100
+    minimum_velocity_difference: 10
+```
+
+The controller supports both standard and lookahead PID gains (configurable via the `lookahead` toggle).
+
+---
+
+### 4. Path Execution
+
+- The `PathFollower` classes take a list of waypoints and automatically handle:
+  - Velocity estimation
+  - Waypoint switching
+  - Stuck detection
+  - Looping and dwell times
+- The control loop (`run_controller_main.py`) executes path-following in real time, keeping to a target frame rate defined by `TARGET_HZ` (60Hz by default).
+
+---
+
+### 5. Horizontal Calibration
+
+Before control begins, `controller.horizontal()` is called to zero the maze and make sure that tilt angles are neutral, for consistent starting conditions.
+
+```python
+controller.horizontal()  # waits until within tolerance or timeout
+```
+
+Calibration parameters (time limit, tolerance, gain) are also set in `config.yaml`.
+
+---
+
+### 6. MQTT Command Integration
+
+Commands from the Pi HMI are parsed inside the `HMIController.on_command()` method. Available commands include:
+
+- `Locate`, `AutoPath`, `CustomPath`, `Start`, `Back`, `Restart`, `Exit`
+- `Elevator` to retrieve the ball
+- `Horizontal` for flat calibration
+- `LoopOn` / `LoopOff` to toggle waypoint looping
+- `Goal_set:x,y` and `CalculatePath` for custom pathfinding
+
+All command triggers are mapped to state transitions in a finite-state machine.
+
+---
+
+### 7. Troubleshooting
+
+| Issue | Resolution |
+|-------|------------|
+| Ball not found | Can happen along the edge opposite of where the camera is mounted. See if the camera is properly angled and lighting is sufficient. Check HSV range. |
+| Motors not responding | Check Arduino connection and serial port. Try rebooting the Arduino. |
+| Control loop unresponsive | Check if the tracker is initialized and goal path is valid. |
+| Path not followed | Confirm waypoints are outside elevator zone and control loop is active. |
+| MQTT command ignored | Verify Pi is sending valid command strings to expected topics. |
+
+---
+
+### 8. Tuning Tips
+
+- Increase `stuck_wiggle_amplitude` or `stuck_wiggle_frequency` to help escape dead zones.
+- Adjust `position_tolerance` and `velocity_tolerance` for tighter or looser control.
+- Use `controller.lookahead = True` for faster, more aggressive control.
+- Enable or disable looping behavior with the `"LoopOn"` / `"LoopOff"` MQTT commands.
+- Tune `feedforward_t` values for more/less anticipatory movement based on distance to next waypoint.
+
+---
 
 
 ## Ball Detection
@@ -99,9 +253,9 @@ def get_orientation(self):
 
 ### 3. Object Detection (`YOLOModel`)
 
-The YOLOv8 model is loaded and initialized at runtime using the Ultralytics API. The model path is defined in `config.yaml` under `tracking.model_path`.
+The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class `ball`. The model path is defined in `config.yaml` under `tracking.model_path`.
 
-After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to ensure deterministic and consistent outputs.
+After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to give deterministic and consistent outputs.
 
 
 ```python
@@ -241,7 +395,7 @@ def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
 
 ---
 
-### 8. Known Issues and Tuning Guide
+### 8. Troubleshooting and Tuning
 
 ### hsv_fail_threshold
 
@@ -466,7 +620,7 @@ If not, it searches in a radius using a distance transform to locate the nearest
 
 ---
 
-### 8. Known Issues and Tuning
+### 8. Troubleshooting and Tuning
 
 #### repulsion_weight
 
