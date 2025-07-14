@@ -16,7 +16,7 @@ class BallTracker:
             np.array(tracking_config["hsv_range"]["lower"]),
             np.array(tracking_config["hsv_range"]["upper"]),
         )
-        self.INIT_BALL_REGION = tuple(map(tuple, tracking_config["init_ball_region"]))
+        self.INIT_BALL_REGION = ((tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]), (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"]))
         self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
 
         self.ball_position = None
