@@ -37,8 +37,10 @@ tracking:
   yolo_cooldown_period: 15   # frames before allowing YOLO recheck
 
 controller:
-  stuck_wiggle_amplitude: 0.8     # deg
-  stuck_wiggle_frequency: 10      # Hz
+  stuck_wiggle_amplitude: 0.8     # deg, amplitude of wiggle when stuck
+  stuck_wiggle_frequency: 10      # Hz, frequency of wiggle when stuck
+  integration_pos_threshold: 60        # px, reset integral if error exceeds this
+  integration_vel_threshold: 30        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
     kp_x: 0.00003
     kp_y: 0.00003
@@ -63,6 +65,11 @@ controller:
     kp: 6500
     max_angle: 1.8                # deg
     command_delay: 0.0001
+    angle_tolerance: 0.001      # rad
+  horizontal_controller:
+    kp: 700
+    tolerance: 0.0015         # rad
+    time_limit: 20           # seconds
   arduino:
     x_offset: 0.01                # rad
     y_offset: 0.0                 # rad
