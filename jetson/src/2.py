@@ -75,8 +75,7 @@ def get_dynamic_path(tracker, smoother):
     safe_mask = dilate_mask(binary_mask)
     safe_mask = (safe_mask > 0).astype(np.uint8) * 255
 
-    start_pad = (630, 1030)
-    cv2.circle(safe_mask, (start_pad[1], start_pad[0]), 70, 255, -1)
+    cv2.circle(safe_mask, (1030, 630), 70, 255, -1)
 
     ball_pos = tracker.get_ball_position()
     while ball_pos is None:
