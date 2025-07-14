@@ -40,6 +40,7 @@ except Exception as e:
 
 config = load_config()
 tracking_config = config["tracking"]
+path_memory = PathMemory(config["path_finding"])
 print("Config loaded successfully.")
 
 tracker_service = TrackerService(

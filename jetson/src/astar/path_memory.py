@@ -3,11 +3,11 @@ import json
 import numpy as np
 
 class PathMemory:
-    def __init__(self, max_paths=30, tolerance=10, cache_file="path_cache.json"):
+    def __init__(self, config):
         self.paths = []
-        self.max_paths = max_paths
-        self.tolerance = tolerance
-        self.cache_file = cache_file
+        self.max_paths = config.get("path_cache_size", 30)
+        self.tolerance = config.get("path_cache_tolerance", 10)
+        self.cache_file = config.get("path_cache_file", "path_cache.json")
         self.load_cache()
 
     def _within_tolerance(self, p1, p2):

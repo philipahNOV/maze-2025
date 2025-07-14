@@ -84,6 +84,9 @@ path_finding:
   dilation_iterations: 2
   clahe_clip_limit: 1.0
   adaptive_threshold_target: 130
+  path_cache_size: 30                 # max_paths in PathMemory
+  path_cache_tolerance: 15           # tolerance for cache reuse
+  path_cache_file: "path_cache.json" # default cache filename
 
 path_following:
   lookahead:
