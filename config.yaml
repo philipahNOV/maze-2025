@@ -1,4 +1,3 @@
-#--- For position_controller.py ---
 controller:
   stuck_wiggle_amplitude: 0.8 #deg, amplitude of the wiggle when stuck
   stuck_wiggle_frequency: 10 #Hz, frequency of the wiggle
