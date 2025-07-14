@@ -2,6 +2,7 @@ import time
 import numpy as np
 from camera.tracker_service import TrackerService
 import arduino_connection
+from logger import LoggingThread
 
 
 class Controller:
@@ -17,6 +18,7 @@ class Controller:
         self.arduinoThread = arduinoThread
         self.tracker = tracker
         self.config = config
+        self.logger = None
 
         # === INITIALIZATION ===
         self.prevPos = None
@@ -30,6 +32,8 @@ class Controller:
         self.ori = None
         self.looping = False
         self.stuck = False
+        self.ball_velocity = None
+        self.prev_waypoint = None
 
         self.prev_vel_x = 0
         self.prev_vel_y = 0
@@ -129,6 +133,8 @@ class Controller:
         else:
             dt = 0
 
+        self.ball_velocity = (edot_x, edot_y)
+
         #--- Integral action ---
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
@@ -151,6 +157,10 @@ class Controller:
         a_model = 5.5 / 0.0122
         ff_x = a_x / a_model
         ff_y = a_y / a_model
+
+        #--- Update logger if entered a new waypoint ---
+        if np.linalg.norm(np.array(e_x, e_y)) < self.pos_tol:
+            self.logger.set_waypoint(self.ref)
 
         #--- PID Control ---
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
@@ -246,6 +256,7 @@ class Controller:
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
 
             self.arduinoThread.send_speed(vel_x, vel_y)
+            self.logger.update_state(self.pos, orientation, self.ball_velocity, (vel_x, vel_y))
             time.sleep(self.command_delay)
 
         print("Deadline reached, stopping motors.")
