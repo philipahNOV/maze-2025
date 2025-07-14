@@ -40,11 +40,11 @@ except Exception as e:
 
 config = load_config()
 tracking_config = config["tracking"]
-path_memory = config["path_finding"]
+path_finding_config = config["path_finding"]
 print("Config loaded successfully.")
 
 tracker_service = TrackerService(
-    model_path="camera/v8-291.pt",
+    model_path=tracking_config["model_path"],
     tracking_config=tracking_config
 )
 
