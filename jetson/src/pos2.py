@@ -235,6 +235,7 @@ class Controller:
     def horizontal(self):
         print("Stabilizing horizontally...")
         kp = self.config["controller"]["horizontal_controller"].get("kp", 700)
+        kp = 700
         tol = self.config["controller"]["horizontal_controller"].get("tolerance", 0.0015)
         timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 300)
         deadline = time.time() + timeLimit
@@ -255,7 +256,7 @@ class Controller:
 
             vel_x = 0 if abs(theta_x) < tol else -np.sign(theta_x) * min(max(int(kp * abs(theta_x)), self.min_velocity), 255)
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
-            print(self.ori)
+            print(orientation)
             print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
             self.arduinoThread.send_speed(vel_x, vel_y)
             time.sleep(self.command_delay)
