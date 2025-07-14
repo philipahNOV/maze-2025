@@ -48,7 +48,7 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
   - [7. Nearest Walkable Point](#7-nearest-walkable-point)
   - [8. A* Troubleshooting and Tuning](#8-troubleshooting-and-tuning-1)
 - [Troubleshooting](#troubleshooting)
-- [License / Authors / Acknowledgements](#license--authors--acknowledgements)
+- [Authors](#authors)
 - [Password](#password)
 
 ## Introduction
