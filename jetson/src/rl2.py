@@ -4,7 +4,7 @@ import numpy as np
 import queue
 
 import position_controller
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 import path_following_lookahead
 import uitility_threads
@@ -18,7 +18,7 @@ frame_queue = queue.Queue(maxsize=1)
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 
     print("[INFO] Waiting for YOLO initialization...")

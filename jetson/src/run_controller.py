@@ -2,7 +2,7 @@ import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
 import position_controller
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 from mqtt_client import MQTTClientJetson
 import queue
@@ -32,7 +32,7 @@ def main(tracker: tracking.BallTracker,
         mqtt_client (MQTTClientJetson): MQTT client for Jetson to Pi communication
     """
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
     image_controller = ImageController()
 
     print("[INFO] Waiting for YOLO initialization...")
