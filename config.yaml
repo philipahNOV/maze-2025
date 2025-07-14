@@ -1,8 +1,8 @@
 # config.yaml
 
 camera:
-  resolution: "HD720"
-  fps: 60
+  resolution: "HD720" # don't change
+  fps: 60 # don't change
   depth_mode: "NONE"
   coordinate_units: "MILLIMETER"
   maze_width: 655        # px
@@ -21,7 +21,7 @@ camera:
   maze_relative_angle: 1 # deg
 
 tracking:
-  model_path: "jetson/src/camera/v8-291.pt"
+  model_path: "jetson/src/camera/v8-291.pt" # onnx/engine?
   init_ball_region:
     x_min: 390
     y_min: 10
@@ -32,9 +32,9 @@ tracking:
     upper: [85, 255, 255]     # Light green HSV upper bound
   hsv_window_size: 80
   hsv_min_contour_area: 150  # px^2
-  smoothing_alpha: 0.5       # Smoothing factor for exponential filter
-  hsv_fail_threshold: 12     # Frames to wait before fallback to YOLO
-  yolo_cooldown_period: 15   # Frames before allowing YOLO recheck
+  smoothing_alpha: 0.5       # smoothing factor for exponential filter
+  hsv_fail_threshold: 12     # frames to wait before fallback to YOLO
+  yolo_cooldown_period: 15   # frames before allowing YOLO recheck
 
 controller:
   stuck_wiggle_amplitude: 0.8     # deg
@@ -71,17 +71,17 @@ controller:
     minimum_velocity_difference: 10
 
 path_finding:
-  repulsion_weight: 5.0           # How strongly path avoids walls
-  min_safe_distance: 14           # Distance from obstacles for safe navigation
-  astar_downscale: 1.0            # Downscaling factor
+  repulsion_weight: 5.0           # how strongly path avoids walls
+  min_safe_distance: 14           # distance from obstacles for safe navigation
+  astar_downscale: 1.0            # downscaling factor
   normal_path_wpt_spacing: 160    # px
   lookahead_path_wpt_spacing: 50  # px
   path_cache_size: 30
   path_cache_tolerance: 15        # px
   angle_threshold: 135            # deg, waypoint sampling turn filter
-  clear_path_kernel_size: 6       # Morph kernel for visibility check
+  clear_path_kernel_size: 6       # morph kernel for visibility check
   waypoint_spacing: 160           # px
-  dilation_iterations: 2          # Used in mask preprocessing
+  dilation_iterations: 2
   clahe_clip_limit: 1.0
   adaptive_threshold_target: 130
 
