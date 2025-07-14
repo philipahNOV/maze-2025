@@ -38,8 +38,8 @@ class OfflineLogger:
 class LoggingThread(threading.Thread):
     def __init__(self, path, config):
         super().__init__(daemon=True)
-        self.logger = OfflineLogger(save_path=config["logger"].get("save_path", "ORL/rl_data"), episode_limit=config["logger"].get("episode_limit", 1000))
-        self.target_hz = config["logger"].get("log_frequency", 20)
+        self.logger = OfflineLogger()
+        self.target_hz = 20
 
         self.path = path
         self.ball_position = None
