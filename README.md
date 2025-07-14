@@ -151,7 +151,7 @@ The controller supports both standard and lookahead PID gains (configurable via 
 
 ### 5. Horizontal Calibration
 
-Before control begins, `controller.horizontal()` is called to zero the maze and ensure tilt angles are neutral. This ensures consistent starting conditions.
+Before control begins, `controller.horizontal()` is called to zero the maze and make sure that tilt angles are neutral, for consistent starting conditions.
 
 ```python
 controller.horizontal()  # waits until within tolerance or timeout
@@ -179,9 +179,9 @@ All command triggers are mapped to state transitions in a finite-state machine.
 
 | Issue | Resolution |
 |-------|------------|
-| Ball not found | Ensure camera is properly angled and lighting is sufficient. Check HSV range. |
+| Ball not found | Can happen along the edge opposite of where the camera is mounted. See if the camera is properly angled and lighting is sufficient. Check HSV range. |
 | Motors not responding | Check Arduino connection and serial port. Try rebooting the Arduino. |
-| Control loop unresponsive | Ensure tracker is initialized and goal path is valid. |
+| Control loop unresponsive | Check if the tracker is initialized and goal path is valid. |
 | Path not followed | Confirm waypoints are outside elevator zone and control loop is active. |
 | MQTT command ignored | Verify Pi is sending valid command strings to expected topics. |
 
@@ -253,9 +253,9 @@ def get_orientation(self):
 
 ### 3. Object Detection (`YOLOModel`)
 
-The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class 'ball'. The model path is defined in `config.yaml` under `tracking.model_path`.
+The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class `ball`. The model path is defined in `config.yaml` under `tracking.model_path`.
 
-After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to ensure deterministic and consistent outputs.
+After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to give deterministic and consistent outputs.
 
 
 ```python
