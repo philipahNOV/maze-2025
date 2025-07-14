@@ -159,7 +159,7 @@ class Controller:
         ff_y = a_y / a_model
 
         #--- Update logger if entered a new waypoint ---
-        if np.linalg.norm(np.array(e_x, e_y)) < self.pos_tol:
+        if np.linalg.norm(np.array(e_x, e_y)) < self.pos_tol and self.logger is not None:
             self.logger.set_waypoint(self.ref)
 
         #--- PID Control ---
@@ -256,7 +256,8 @@ class Controller:
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
 
             self.arduinoThread.send_speed(vel_x, vel_y)
-            self.logger.update_state(self.pos, orientation, self.ball_velocity, (vel_x, vel_y))
+            if self.logger is not None:
+                self.logger.update_state(self.pos, orientation, self.ball_velocity, (vel_x, vel_y))
             time.sleep(self.command_delay)
 
         print("Deadline reached, stopping motors.")
