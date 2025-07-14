@@ -21,7 +21,7 @@ camera:
   maze_relative_angle: 1 # deg
 
 tracking:
-  model_path: "jetson/src/camera/v8-291.pt" # onnx/engine?
+  model_path: "camera/v8-291.pt" # onnx/engine?
   init_ball_region:
     x_min: 390
     y_min: 10
