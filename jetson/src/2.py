@@ -220,7 +220,7 @@ def main():
         if blinker:
             blinker.stop()
         controller.arduinoThread.send_speed(0, 0)
-        tracker.stop()
+        tracker.stop_tracker()
         cv2.destroyAllWindows()
 
 if __name__ == "__main__":
