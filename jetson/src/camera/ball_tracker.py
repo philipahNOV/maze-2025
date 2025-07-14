@@ -5,9 +5,19 @@ from camera.vision_utils import hsv_tracking, global_hsv_search
 from camera.model_loader import YOLOModel
 
 class BallTracker:
-    def __init__(self, camera, model_path="v8-291.pt"):
+    def __init__(self, camera, tracking_config, model_path="v8-291.pt"):
         self.camera = camera
         self.model = YOLOModel(model_path)
+
+        self.hsv_fail_threshold = tracking_config["hsv_fail_threshold"]
+        self.yolo_cooldown_period = tracking_config["yolo_cooldown_period"]
+        self.WINDOW_SIZE = tracking_config["hsv_window_size"]
+        self.HSV_RANGE = (
+            np.array(tracking_config["hsv_range"]["lower"]),
+            np.array(tracking_config["hsv_range"]["upper"]),
+        )
+        self.INIT_BALL_REGION = tuple(map(tuple, tracking_config["init_ball_region"]))
+        self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
 
         self.ball_position = None
         self.initialized = False
@@ -15,16 +25,9 @@ class BallTracker:
         self.ball_confirm_threshold = 1
 
         self.hsv_fail_counter = 0
-        self.hsv_fail_threshold = 30
         self.yolo_cooldown = 0
-        self.yolo_cooldown_period = 15
-
         self.running = False
         self.lock = threading.Lock()
-
-        self.WINDOW_SIZE = 80
-        self.INIT_BALL_REGION = ((390, 10), (1120, 720))
-        self.HSV_RANGE = (np.array([35, 80, 80]), np.array([85, 255, 255])) # works for light green ball
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None

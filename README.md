@@ -1,98 +1,526 @@
-# NOV maze 2025
+# Autonomous Maze Solver – NOV 2025
 
-This is the summer project at NOV summer 2024. 
-The goal is to balance a ball through a maze without it falling into holes along the way.
+This project is the final version of NOV’s autonomous maze-solving system, developed during Summer 2025. Building on earlier prototypes from previous years, the system is now complete and fully functional.
 
-## Getting Started
+The goal is to balance a steel ball through a physical maze using camera-based tracking, real-time control, and path planning without falling into any holes. The system is designed to operate reliably and autonomously from end to end.
 
-### Prerequisites
-- [Python 3.x](https://www.python.org/downloads/)
-- Required Python packages (listed in `requirements.txt`)
+Key features:
+- Real-time ball tracking using YOLOv8 and HSV-based refinement
+- Path planning with A* using dynamic obstacle maps
+- PID-based position control with Arduino-driven actuation
+- MQTT communication between Jetson (control) and Raspberry Pi (HMI)
 
-### Installation
-1. Clone the repository:
-    ```sh
-    git clone https://github.com/yourusername/nov-maze-2024.git
-    cd nov-maze-2024
-    ```
-2. Py Zed:
-    The project uses a Zed camera, and its special API. This need to be downloaded manually as it does not work with pip install.
-    ```sh
-    import pyzed.sl as sl
-    ```
-### Running the Code
-    There are multiple things to consider when running this code. First there is the jetson, this is the main hub. Here all calculations will be done. Then we have the Raspberry PI, here the UI is located.
-    so when running the code, start the both jetson and the raspberry. This should start a handshake, and send the jetson into state 0.0. 
-    Jetson is started by
-    ```
-    cd jetson\src
-    python3 main.py
-    ```
-    It is important to note that it has to be python3, as of right now.
-    To boot up the raspberry pi, go to the source file of the pi.
-    ```
-    cd pi\src
-    python3 main.py
-    ```
+The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-based tilt platform. It is configured through a single `config.yaml` file and is structured for maintainability and testing.
 
-# 
-For Next Year Students
-All text below is information about the system at the moment. I 100% recomend reading this before starting over.
+---
+
+## Introduction
+
+This project integrates multiple subsystems including camera-based ball tracking, a PID controller, MQTT communication, pathfinding via A*, and offline reinforcement learning potential. It runs on Jetson (for vision and control) and communicates with a Raspberry Pi interface for external monitoring and feedback.
+
+---
+
+## System Overview
+
+- **Jetson**: Main control unit; runs YOLO + HSV ball tracking and PID or RL controller.
+- **Raspberry Pi**: Displays HMI; sends goals and receives status via MQTT.
+- **Arduino**: Drives the actuators to tilt the maze.
+- **ZED Camera**: Captures real-time video of the maze and ball for tracking.
+- **Software Components**:
+  - Ball detection using YOLOv8 + HSV
+  - A* path planning using binary mask maps
+  - MQTT communication between Jetson and Pi
+  - PID-based and RL-based position control
+  - Visualization + troubleshooting tools
+
+---
+
+## Setup & Configuration
+
+### 3.1 Dependencies
+
+Install via `requirements.txt`:
+
+`pip install -r requirements.txt`
+
+
+## Ball Detection
+
+This part provides an explanation of the ball tracking system which combines object detection via YOLOv8 with real-time color-based tracking using the HSV color space. It is designed for fast visual feedback, and is implemented using modular Python components with threaded architecture for performance. This pipeline is modular and highly tunable, meaning if there are any issues then variables can easily be changed via the `config.yaml` file.
+
+---
+
+### 1. System Architecture
+
+The pipeline consists of these components:
+
+- `CameraManager`: Interfaces with the ZED stereo camera to acquire RGB/BGR frames and retrieve orientation data.
+- `YOLOModel`: Loads and runs YOLOv8 for object detection.
+- `BallTracker`: The core of the tracking system, responsible for combining YOLO and HSV tracking.
+- `vision_utils`: Contains utility functions for color tracking using OpenCV.
+- `TrackerService`: A unified interface for the rest of the application to interact with tracking functionality.
+
+All components are developed to maintain high responsiveness and frame stability using a producer-consumer threading pattern.
+
+---
+
+### 2. Camera Acquisition (`CameraManager`)
+
+The ZED camera is initialized with fixed parameters for resolution and frame rate, which can be adjusted in `config.yaml` under the `camera:` section:
+
+```python
+init_params.camera_resolution = sl.RESOLUTION.HD720
+init_params.camera_fps = 60
+init_params.depth_mode = sl.DEPTH_MODE.NONE
+```
+
+Frame acquisition is handled by:
+
+```python
+def grab_frame(self):
+    if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
+        self.zed.retrieve_image(image, sl.VIEW.LEFT)
+        bgr = image.get_data()
+        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+        return rgb, bgr
+    return None, None
+```
+
+Orientation data is retrieved from the IMU:
+
+```python
+def get_orientation(self):
+    imu_data = sensors_data.get_imu_data()
+    orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
+    return [-orientation[1] + orientation[2], orientation[0] + orientation[3]]
+```
+
+---
+
+### 3. Object Detection (`YOLOModel`)
+
+The YOLOv8 model is loaded and initialized at runtime using the Ultralytics API. The model path is defined in `config.yaml` under `tracking.model_path`.
+
+After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to ensure deterministic and consistent outputs.
+
+
+```python
+self.model = YOLO(model_path)
+self.model.fuse()
+self.model.eval()
+```
+
+Before inference begins, the model is pre-warmed using a dummy frame:
+
+```python
+dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
+self.model.predict(dummy, verbose=False)
+```
+
+Predictions are returned as:
+
+```python
+results = self.model.predict(image, conf=0.6)[0]
+```
+
+Each bounding box can be interpreted via:
+
+```python
+label = self.model.get_label(box.cls[0])
+```
+
+---
+
+### 4. Ball Tracking (`BallTracker`)
+
+The core tracking class runs two threads:
+- `producer_loop`: Continuously updates the latest RGB/BGR frames from the camera.
+- `consumer_loop`: Processes those frames to track the ball.
+
+#### Initialization Phase
+
+When the system starts, the ball must be detected by YOLO within a predefined region defined in `config.yaml` as `tracking.init_ball_region`:
+
+```python
+if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and ...
+```
+
+This makes sure that the ball is only initialized if it appears in a valid location, avoiding false starts caused by noise outside of the maze.
+
+#### HSV Tracking Phase
+
+Once the ball is initialized, frame-to-frame tracking switches to HSV. A region around the last known position is used, and the HSV color range and window size are defined in `config.yaml` under `tracking.hsv_range` and `tracking.hsv_window_size`:
+
+```python
+def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
+    roi = frame[y_min:y_max, x_min:x_max]
+    mask = cv2.inRange(cv2.cvtColor(roi, cv2.COLOR_BGR2HSV), hsv_lower, hsv_upper)
+    return get_center_of_mass(mask)
+```
+
+To improve robustness, position smoothing is applied using `tracking.smoothing_alpha`:
+
+```python
+alpha = 0.5
+x = int(alpha * new_pos[0] + (1 - alpha) * self.ball_position[0])
+y = int(alpha * new_pos[1] + (1 - alpha) * self.ball_position[1])
+self.ball_position = (x, y)
+```
+
+---
+
+### 5. Fallback and Recovery
+
+If HSV fails for several consecutive frames (defined by `self.hsv_fail_threshold` in `config.yaml` under `tracking.hsv_fail_threshold`), the system triggers a fallback process:
+
+1. A global HSV scan (`global_hsv_search`) checks for color presence in the full frame.
+2. If a candidate is found, YOLO is re-run to validate the detection.
+3. A cooldown (`self.yolo_cooldown`) prevents YOLO from running every frame, controlled by `tracking.yolo_cooldown_period`.
+
+Example fallback logic:
+
+```python
+if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
+    global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
+    if global_pos:
+        results = self.model.predict(rgb)
+        # updates the ball position if confirmed
+```
+
+---
+
+### 6. TrackerService (`tracker_service`)
+
+The `TrackerService` class simplifies external control and access:
+
+```python
+service = TrackerService()
+service.start_tracker()
+position = service.get_ball_position()
+frame = service.get_stable_frame()
+orientation = service.get_orientation()
+service.retrack()  # force re-detection
+```
+
+---
+
+### 7. Vision Utilities (`vision_utils`)
+
+These functions are used internally for HSV-based tracking and position estimation.
+
+#### Center of Mass
+
+```python
+def get_center_of_mass(mask):
+    contours = cv2.findContours(...)[0]
+    largest = max(contours, key=cv2.contourArea)
+    if cv2.contourArea(largest) < min_area:
+        return None
+    return (cx, cy)
+```
+
+The minimum contour area used for filtering can be set in `config.yaml` under `tracking.hsv_min_contour_area`.
+
+#### Global Search
+
+```python
+def global_hsv_search(frame, hsv_lower, hsv_upper):
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    return get_center_of_mass(mask)
+```
+
+#### Local Windowed Search
+
+```python
+def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
+    roi = extract around prev_pos
+    mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
+    return get_center_of_mass(mask)
+```
+
+---
+
+### 8. Known Issues and Tuning Guide
+
+### hsv_fail_threshold
+
+Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection. This can be modified in `config.yaml`:
+
+```python
+self.hsv_fail_threshold = 30  # default as it shows a good balance (0.5s at 60 FPS)
+```
+
+Increase if you’re experiencing too frequent fallback, decrease for faster recovery.
+
+#### yolo_cooldown_period
+
+Defines how many frames to wait after a YOLO attempt before allowing another. Configurable in `config.yaml`.
+
+```python
+self.yolo_cooldown_period = 15  # ~0.25s cooldown
+```
+
+Lowering this increases responsiveness at the cost of more frequent inference.
+
+#### min_area
+
+Used in `get_center_of_mass()` to ignore noise in the HSV mask. Change this via `tracking.hsv_min_contour_area` in `config.yaml`.
+
+```python
+min_area = 150  # or higher for higher-resolution cameras
+```
+
+Raise this to avoid tracking small irrelevant blobs.
+
+#### smoothing factor (alpha)
+
+Applies exponential smoothing to reduce jumpiness. Set via `tracking.smoothing_alpha`:
+
+```python
+alpha = 0.5  # lower = smoother, higher = faster reaction
+```
+
+Tune this based on the expected ball motion and latency tolerance.
+
+#### Lighting sensitivity
+
+The HSV thresholds are susceptible to changing light conditions. Tune these empirically via `tracking.hsv_range` in `config.yaml`:
+
+```python
+self.HSV_RANGE = (
+    np.array([35, 80, 80]),  # HSV lower bound for green
+    np.array([85, 255, 255]) # HSV upper bound for green
+)
+```
+
+These can be changed for different ball colors, but it is important to remember that the YOLOv8 model is mostly trained on green balls, and green is what works the best from all values in the HSV space.
+
+## A* Pathfinding
+
+This part explains the architecture and implementation of a complete A* pathfinding system built for navigating the maze using binary obstacle maps. The system includes repulsion-aware path planning, mask preprocessing, waypoint smoothing, path memory caching, and several geometric enhancements. It is modular and can generalize for any type of maze with darker walls and a light background. Configuration for key parameters can be adjusted via the `config.yaml` file.
+
+---
+
+### 1. A* Algorithm with Repulsion Field
+
+The core of the system is a modified A* algorithm (`astar.py`) that adds a **repulsion term** to avoid planning paths too close to obstacles. The algorithm uses **Manhattan distance** as its heuristic and introduces a **cost penalty** that increases near obstacles using a distance transform. The repulsion weight and minimum safe distance are configurable in `config.yaml` under `path_finding.repulsion_weight` and `path_finding.min_safe_distance`.
+
+#### Heuristic
+
+The Manhattan distance works well for grid-based maps:
+
+```python
+def heuristic(a, b):
+    return abs(a[0] - b[0]) + abs(a[1] - b[1])
+```
+
+#### Repulsion Map
+
+Repulsion cost is calculated by a distance transform on the binary obstacle map:
+
+```python
+def compute_repulsion_cost(array, min_safe_dist=14):
+    dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
+    repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
+    return repulsion, mask_safe
+```
+
+This produces a smooth cost field where grid points near obstacles are heavily penalized. The `min_safe_dist` value is set through `config.yaml`.
+
+#### Path Search
+
+The `astar()` function integrates the repulsion field into the node cost:
+
+```python
+cost = 1.0 + repulsion_weight * repulsion_map[neighbor[0], neighbor[1]]
+tentative_g = gscore[current] + cost
+```
+
+This guides the A* search away from narrow gaps and obstacle boundaries.
+
+---
+
+### 2. Downscaled Pathfinding
+
+The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance or smoothing purposes. The scale factor can be configured through `config.yaml` under `path_finding.astar_downscale`.
+
+```python
+small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
+path_small = astar(small_array, start_small, goal_small, repulsion_weight)
+```
+
+Once a path is found, it is scaled back up to the original resolution.
+
+---
+
+### 3. Binary Mask Preprocessing
+
+Binary masks are generated from RGB camera input and refined through a series of transformations in `mask_utils.py`. The goal is to extract a reliable navigable area that excludes noise, green-field artifacts, and subtle edges. CLAHE, dynamic thresholding, and edge suppression are used. Preprocessing parameters such as kernel sizes and clip limits can be adjusted in `config.yaml` under `path_finding`.
+
+#### CLAHE and Thresholding
+
+The grayscale image is equalized with CLAHE and then binarized using Otsu’s threshold:
+
+```python
+gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+enhanced = apply_clahe(gray)
+_, base_mask = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
+```
+
+#### Edge Removal and Morphology
+
+Edge noise is removed and the mask is cleaned:
+
+```python
+edges = cv2.Canny(enhanced, 100, 200)
+edges_inv = cv2.bitwise_not(cv2.dilate(edges, kernel))
+final_mask = cv2.bitwise_and(cleaned, edges_inv)
+```
+
+#### Green Area Suppression
+
+Green pixels from the ball are removed. HSV threshold values used for this suppression are tuned to avoid corrupting the mask with ball-colored areas:
+
+```python
+hsv = cv2.cvtColor(gray_to_bgr, cv2.COLOR_BGR2HSV)
+green_mask = cv2.inRange(hsv, lower_green, upper_green)
+final_mask = cv2.bitwise_or(final_mask, green_mask)
+```
+
+---
+
+### 4. Waypoint Sampling
+
+The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts smooth and valid waypoints with spacing and angular constraints. These values are configured in `config.yaml` under `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
+
+#### Spacing and Angles
+
+Waypoints are selected based on distance and turning angles:
+
+```python
+angle = angle_between(path[last_wp_idx], path[i], path[i + 1])
+if angle < angle_threshold and accumulated >= spacing / 2:
+    if is_clear_path(mask, path[last_wp_idx], path[i]):
+        waypoints.append(path[i])
+```
+
+#### Visibility Checks
+
+Every candidate waypoint is validated against a morphological corridor in the mask:
+
+```python
+def is_clear_path(mask, p1, p2, kernel_size=6):
+    cv2.line(line_img, p1, p2, 1, 1)
+    corridor = cv2.dilate(line_img, kernel)
+    return np.all(mask[corridor.astype(bool)] > 0)
+```
+
+The visibility kernel size can be configured via `path_finding.clear_path_kernel_size`.
+
+---
+
+### 5. Path Drawing
+
+The `draw_path.py` module overlays paths on images for debugging or visualization:
+
+```python
+def draw_path(image, waypoints, start, goal):
+    for x, y in waypoints:
+        cv2.circle(out, (x, y), 8, (0, 0, 255), -1)
+```
+
+The output supports grayscale or color images, and annotates start/goal locations.
+
+---
+
+### 6. Path Memory Caching
+
+To avoid recomputation, `path_memory.py` stores previously computed paths using a fuzzy match based on Euclidean distance. Caching parameters like size and tolerance are defined in `config.yaml` under `path_finding.path_cache_size` and `path_finding.path_cache_tolerance`.
+
+```python
+def get_cached_path(self, start, goal):
+    if _within_tolerance(start, cached_start) and _within_tolerance(goal, cached_goal):
+        return cached_path
+```
+
+Paths are serialized to JSON and persisted across runs:
+
+```python
+with open(self.cache_file, "w") as f:
+    json.dump(self.paths, f)
+```
+
+---
+
+### 7. Nearest Walkable Point
+
+The function `find_nearest_walkable()` makes sure that the start and goal positions fall inside valid areas:
+
+```python
+if mask[y, x] != 0:
+    return point
+```
+
+If not, it searches in a radius using a distance transform to locate the nearest walkable pixel.
+
+---
+
+### 8. Known Issues and Tuning
+
+#### repulsion_weight
+
+Controls how strongly the path avoids obstacles. Set in `config.yaml` under `path_finding.repulsion_weight`.
+
+```python
+astar(..., repulsion_weight=5.0)
+```
+
+Try values between 2.0 and 6.0 for balance.
+
+#### min_safe_dist in repulsion
+
+Defines how far from an obstacle a point must be to be considered "safe." Set in `config.yaml` as `path_finding.min_safe_distance`.
+
+```python
+compute_repulsion_cost(..., min_safe_dist=14)
+```
+
+#### scale in `astar_downscaled()`
+
+The downscale factor can be tuned in `config.yaml` using `path_finding.astar_downscale`. A value of 1.0 means no scaling.
+
+```python
+astar_downscaled(..., scale=1.0)
+```
+
+Lower values improve speed but reduce precision.
+
+#### waypoint_spacing and angle_threshold
+
+Configured in `config.yaml` as `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
+
+```python
+waypoint_spacing=160, angle_threshold=135
+```
+
+Higher spacing reduces path density; lower angle threshold improves flexibility.
+
+#### cache tolerance
+
+The threshold for cache re-use is defined in `path_finding.path_cache_tolerance` in `config.yaml`.
+
+```python
+PathMemory(tolerance=10)
+```
+
+Increase to enable more cache hits, but at the cost of re-using less precise paths.
+
+## Troubleshooting
+
+## License / Authors / Acknowledgements
+
+## Password
+
 Login for raspberrypi is: login: raspberrypi, password: raspberry
 Login for Jetson is: login: student, password: student 
-
-## Good to know consepts
-When moving the motors, you call arduino_thread.send_target_position(dir1,dir2,speed1, speend2). dir is the direction of the motor, 1/-1 makes the motor move up. 3/-3 makes them move down, and 2 is stand still. speed goes from 0 to 255, where 255 is max speed. (For the max speed look at data sheet, but i think it is 44mm/s without load.)
-The camera has a corinate system that starts on the top left corner. So x = 0 is to the left moving right. y = 0 is top and moving down. 
-Camera angle in radians is retrived with camera_thread.orientation, where [0] is x and [1] is y. The angle in degrees is retrived by camera_thread.orientation_deg. Moving the motors in a positive direction drives the angles to a potitive value. 
-
-
-## Cleaning up the code
-Eeeeee for saving time I have not fixed the fact that the actuators have flipped actuators. So when working with arduino its not (x,y,x_speed,y_speed) but (y,x,y_speed,x_speed). This is an easy fix by just flipping pin for x and y at the start, and their selective actuator feedback. But some of the code like elevator has hardcoded what to do, so that needs chaning. Also in the arduino_connection.py the function flipps the command. That is why it is (x,y,x_s,y_s) in python but not in the arduino.
-
-## Arduino to Jetson coms
-When our regulator team began working on regulating the system, they encountered a problem with the communication between the Arduino and Jetson. The primary issue was the delay in the Jetson receiving signals from the Arduino, which caused the regulation system to become unstable due to the slow speed. Although I don't have the exact numbers, I recall that the Jetson received a response in approximately 0.2 seconds. This delay made the back-and-forth communication too slow for the system's requirements. Additionally, the actuators cannot process changes in direction and speed faster than 0.2 seconds. Given the Jetson's 0.2-second delay and an additional 0.05-second delay for sending data, it results in a total of 0.25 seconds before the actuators receive information about changes. Here are my recommendations:
-1. Set up a script to measure the speed of Arduino to Jetson communication: This will provide a better understanding of the actual communication speed (note that I have not tested this myself). This is important because we have currently eliminated all communication from Arduino to Jetson, relying solely on Jetson to Arduino communication. As a result, we cannot get feedback on the actuators' positions.
-2. Stress test the actuators: Determine how quickly the actuators can change direction after receiving a command (within Arduino). 
-3. Test direct actuator feedback to Jetson: We attempted to connect the actuator feedback pins directly to the Jetson to achieve zero delay, but this approach did not work as expected. Further testing is needed to determine why this method failed and to explore the possibility of using the output pins on the Jetson.
-By addressing these issues, we can improve the communication speed and stability of the regulation system.
-
-# Explaining the code
-Code is written by Knut Selstad. If help is needed i answer on mail on knut.selstad@gmail.com
-
-First of all, I would like to emphasize that keeping as much of the existing code as possible will save you a significant amount of time. Since I did not have a physical model at the start, many of the components were created without being tested until the final week. Therefore, I suggest starting at the beginning and checking what works and what does not.
-
-The MQTT can be made much more robust than it is currently. Additionally, the AI model needs thorough testing. I also recommend reviewing each step from start to finish to determine if everything functions as intended. Since only one person developed all the code, a considerable amount of time was spent on isolated tasks, and many concepts and algorithms did not receive the necessary focus.
-
-So i want to try to explain the code. This explenation is created to follow along, so that when seeing the code for the first time, you will have an easier time getting into it. First the architecture communication between the Jetson and the pi is a Sub/Pub, MQTT communication. The communication between the them is created using static IP of 192.168.1.3 (for the jetson), and 192.168.1.2 (for the pi). This connection is created using ethernett connection (eth0). Using this method the connection can stay up without internett. The communication between the arduino and the jetson is USB. 
-Lets start at jetson/src/main.py. Here we boot up all the threads that are going to be used. The threads are 'MQTT', 'Camera', 'Arduino' and 'Main'. Lets start at the top and move down. 
-# MQTT thread
-The MQTT thread, boots up a connection to the broker on 192.168.1.3 on port 1883. It subsctibes to the topics "handshake/request", "jetson/command" and "jetson/state". So i want here to say that the jetson/command means that the pi has send jetson a command to do, and jetson/state is what state it is in. So an example is that the user presses a button on the screen, the pi sends a command to the jetson: "jetson/command:1.0". The jetson does the command, and sends "pi/state:1.0" to set the pi into the state that it commanded the jetson to go into. So command means that the main topic gets a command not sends it. When the MQTT thread is init it starts the handshake sequece. There it waits for a message on "handshake/response" if it retrives a responce it will awnser with "ack".
-# Camera thread
-For the camera thread it will start jetson/src/camera/cam_loop.py. There we init the reselution, the fps and other init states. I have added code to automaticly detect the board, so that it is the only thing that is beeing showed. This has been commented out bacuse of the lack of testing. When the next summer inters (Think the person reading this) i hope that more and better testing can be done to make it work 100% of the time. The camera thread updates the last frame and the orientation of the camera at the rate of the camera fps. The positive thing of this is that if there is any application that need the data from the camera it will gets the lates one at full fps. I think the way this thread is done is perfect. The latest frame is called: latest_frame and the last orientaion is called: orientation. So if another application is going to be calling the frame it will call: camera_thread.latest_frame or camera_thread.orientation.
-# Arduino thread
-For the 'Arduino' thread it is booting up the connection to an arduino that it finds at one of the ports to the jetson. The connection is made with a baud rate of 9600. For the Arduino it will sleep its thread until it retrives a command on the function "send_target_positions", this function is what makes the actuators move. The parameters for this fuction is dir1, dir2, speed1, speed2. Where dir is the direction of the actuator, and 1/-1 is increace the actuator heigth. 3/-3 is lowering the actuoator heigth. For speed, this is an integer between 0 and 255. where 255 is max speed. Be cearfull when working with high speeds, they are very high. The command is sent over serial, and the arduino thread is not waiting for a respose from the arduino, that means you can send commands as fast as you want. Not that it will actualy do the command that you send when having this high sending speed. So i recomend that you send a new command only if there is a change in direction or you want a speed change bigger then 20 or 30. Not overloading the arduino with unesessay commands can create a more reliable system.
-# Main
-## 0.0
-This thread is the main thread, it has no name and is the one that runs all the other code. Lets start at the top of jetson\src\main.py, here all the threads are init, and the handshake between the pi and the jetson starts. When the handshake has completed, the main thread will go into either state 1.0 or 2.0 where 1.0 is automatic (automatic is what we have done this summer), and 2.0 is manuel (we have not done anything here this summer). 
-## 1.0
-When in state 1.0 the jetson will see if it has a path loaded, if it has a path loaded, then it is possible to jump into state 1.2. If not then you will stay on state 1.0. Then the user can press the scan board button. This makes the pi send a command to jetson to go intp state 1.1. 
-## 1.1
-Now, when in state 1.1 the main thread will start of by finding the goal and start. It will do this by going over the lines_ and detect_shapes code. This algorithm has written by me (Knut Selstad), and it is not perfect. The goal is to find a pentagon and a triangle. The problem is that normaly you would do something called contours with CV2 but, i found that this does not work, because of the imperferctions in the image. So i made my own detection algorithm. Lets go over it:
-## Lines_
-The lines_ functions create small lies between strait points in the image that is longer then 1. So this will create lines of lenght 1. Then it will sort this list, and start to connect the lines that are closes to together, if they are to far apart they will not connect. Then when the lines are connected, they are passed into a rdp algorithm, this will take points from start to end and find out if you can remove some points to create straiter lines. The goal of this is to go from lines that are not strait, to one long line. Each list then has its max, min in both x and y axis checked. If the dictace between them is more then 25% they are removed. The reason for this is because the triangle and the pentagon is as wide has they are high. So if a line does not have a square feature, then they are incorrect, example of this is just a strait line. Lastly, if the start and end points are to far apart they are removed.
-## Dectect_shapes
-On this new lines we can then aply the CV2 contours. Where the len of approx for triangle is 3 and perntagon is 5. Start is the triangle and the end is the pentagon.
-## Path
-When back at the 1.1 state with start and end, path of the board is going to be found. The board of where it can go and not go is desided on where there is darkere color and where there are lighter colors. So holes and walls (dark) will become obsticals. The path is found by the use of A* algorihtm with a twist. Insted of the agent getting reward for getting closer towards the goal it gets reward for staying away from the walls and holes. The punishment of getting close to the wall is very high this creates this "have to stay away from the wall at all costs" mindset for the agent. This algorihtm works perferct. The function will return the path that will take the ball from start to end and the board, (the black and white board where black is places it is not allowed to walk on). When a path is found a rdp algorihtm is run to remove the contiues line, and make the path points instead. This makes it so that the ball can go from point to point. When a path is found it the main thread now moves over to state 1.2
-## 1.2
-This state is a form of waiting state, when in this state 4 thins can happen. A new board is chosen, and the user needs to scan the board again. Sending it over to state 1.1. The user can select to go back to the menu, sending the state back to 0.0. Then it can do one of two things, either use a PID regulator to solve it, 1.3, or use AI to solve it, 2.3.
-## The regulators
-The regulators are from this point created by two different people, so when looking at the code for the PID, will have differances to it compared to the AI solution. I have created the AI solution but have not the time to test it as i want. 
-
-# AI
-The model can output three commands: increase height, decrease height, and maintain the current height. During training, decisions were made every 0.05 seconds, equivalent to 20 frames per second (fps). The change in angle per decision is approximately 0.2 degrees. This is based on the maximum speed of the actuators, which is around 44 mm per second. Thus, 44 mm/s divided by 20 frames equals 2.2 mm per 0.05 seconds, translating to roughly 0.2 degrees.
-
-If you plan to train the model using AI, I suggest examining my approach first. Additionally, for reinforcement learning (RL), it is crucial to provide rewards and punishments based on the agent's immediate actions, rather than past actions, to avoid confusing the agent during training. My method involves a function that uses mathematical calculations to predict whether the current action is correct based on future outcomes. If you choose to use my learning method, I recommend reviewing the simulation to ensure its accuracy.
-
-Please note that I am not an expert in AI and its use on regulation systems. My recommendation to review my training steps is intended to give you an overview of what has been done, rather than implying that I have created a perfect system.

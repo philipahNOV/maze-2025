@@ -138,9 +138,6 @@ class HMIController:
         if self.image_thread is None:
             self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
             self.image_thread.start()
-        
-        #self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
-        #self.image_thread.start()
     
     def stop_controller(self):
         if self.controller_thread is not None and self.controller_thread.is_alive():

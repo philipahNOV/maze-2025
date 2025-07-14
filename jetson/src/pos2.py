@@ -16,7 +16,9 @@ class Controller:
                  config=None):
         self.arduinoThread = arduinoThread
         self.tracker = tracker
+        self.config = config
 
+        # === INITIALIZATION ===
         self.prevPos = None
         self.pos = None
         self.prevVel = None
@@ -26,64 +28,16 @@ class Controller:
         self.prevTime = None
         self.prevVelError = None
         self.ori = None
-
-        self.e_x_int = 0
-        self.e_y_int = 0
+        self.looping = False
         self.stuck = False
 
-        self.use_feedforward = False
-        self.use_feedforward_model = True
-        self.feedforward_vector = (0, 0)
-
-        self.looping = False
-
-        self.path_following = path_following
         self.prev_vel_x = 0
         self.prev_vel_y = 0
+        self.e_x_int = 0
+        self.e_y_int = 0
+        self.feedforward_vector = (0, 0)
+
         self.prev_command_time = time.time()
-
-        # # === ARDUINO PARAMETERS ===
-        # self.x_offset = 0.002
-        # self.y_offset = 0.001
-        # self.min_velocity = 22
-        # self.min_vel_diff = 10
-        # self.vel_max = 100
-
-        # # === PID TUNING PARAMETERS ===
-        # self.lookahead = lookahead
-        # if self.lookahead:
-        #     self.kp_x = 0.000015
-        #     self.kd_x = 0.0002
-        #     self.kp_y = 0.000015
-        #     self.kd_y = 0.0002
-        #     self.ki_y = 0.0
-        #     self.ki_x = 0.0
-        #     self.kf_min = 0.02
-        #     self.kf_max = 0.005
-        #     self.deadzone_pos_tol = 30
-        #     self.deadzone_vel_tol = 10
-        #     self.deadzone_tilt = np.deg2rad(0)
-        #     self.pos_tol = 40
-        #     self.vel_tol = 20
-        # else:
-        #     self.kp_x = 0.00003
-        #     self.kd_x = 0.000145
-        #     self.kp_y = 0.00003
-        #     self.kd_y = 0.000145
-        #     self.ki_y = 0.0002
-        #     self.ki_x = 0.0002
-        #     self.kf_min = 0.02
-        #     self.kf_max = 0.005
-        #     self.deadzone_pos_tol = 30
-        #     self.deadzone_vel_tol = 10
-        #     self.deadzone_tilt = np.deg2rad(0)
-        #     self.pos_tol = 40
-        #     self.vel_tol = 20
-
-        # # === AXIS CONTROL ===
-        # self.kp_theta = 6500
-        # self.max_angle = 1.8  # degrees
-        # self.command_delay = 0.0001
 
         # === ARDUINO PARAMETERS ===
         self.x_offset = config["controller"]["arduino"].get("x_offset", 0.002)
@@ -94,6 +48,8 @@ class Controller:
 
         # === PID TUNING PARAMETERS ===
         self.lookahead = lookahead
+        self.integration_pos_threshold = config["controller"].get("integration_pos_threshold", 60)  # px
+        self.integration_vel_threshold = config["controller"].get("integration_vel_threshold", 30)  # px/s
         if self.lookahead:
             self.kp_x = config["controller"]["position_controller_lookahead"].get("kp_x", 0.000015)
             self.kd_x = config["controller"]["position_controller_lookahead"].get("kd_x", 0.0002)
@@ -101,11 +57,6 @@ class Controller:
             self.kd_y = config["controller"]["position_controller_lookahead"].get("kd_y", 0.0002)
             self.ki_y = config["controller"]["position_controller_lookahead"].get("ki_y", 0.0)
             self.ki_x = config["controller"]["position_controller_lookahead"].get("ki_x", 0.0)
-            self.kf_min = 0.02
-            self.kf_max = 0.005
-            self.deadzone_pos_tol = 30
-            self.deadzone_vel_tol = 10
-            self.deadzone_tilt = np.deg2rad(0)
             self.pos_tol = config["controller"]["position_controller_lookahead"].get("position_tolerance", 40)
             self.vel_tol = config["controller"]["position_controller_lookahead"].get("velocity_tolerance", 20)
         else:
@@ -115,11 +66,6 @@ class Controller:
             self.kd_y = config["controller"]["position_controller_normal"].get("kd_y", 0.000145)
             self.ki_y = config["controller"]["position_controller_normal"].get("ki_y", 0.0002)
             self.ki_x = config["controller"]["position_controller_normal"].get("ki_x", 0.0002)
-            self.kf_min = 0.02
-            self.kf_max = 0.005
-            self.deadzone_pos_tol = 30
-            self.deadzone_vel_tol = 10
-            self.deadzone_tilt = np.deg2rad(0)
             self.pos_tol = config["controller"]["position_controller_normal"].get("position_tolerance", 40)
             self.vel_tol = config["controller"]["position_controller_normal"].get("velocity_tolerance", 20)
 
@@ -127,6 +73,7 @@ class Controller:
         self.kp_theta = config["controller"]["angular_controller"].get("kp", 6500)
         self.max_angle = config["controller"]["angular_controller"].get("max_angle", 1.8)
         self.command_delay = config["controller"]["angular_controller"].get("command_delay", 0.0001)
+        self.angle_tolerance = config["controller"]["angular_controller"].get("angle_tolerance", 0.001)  # rad
 
         # ====================
 
@@ -153,7 +100,7 @@ class Controller:
         return max(min(theta_x, rad), -rad), max(min(theta_y, rad), -rad)
 
     def posControl(self, ref):
-        self.pos = self.tracker.get_ball_position()  # ✅ updated API
+        self.pos = self.tracker.get_ball_position()
         if not self.pos:
             print("No ball detected")
             return
@@ -167,9 +114,9 @@ class Controller:
         e_x = ref[0] - self.pos[0]
         e_y = ref[1] - self.pos[1]
 
+        #--- Velocity calculation ---
         edot_x = edot_y = 0
         alpha = 0.9
-
         if self.prevError and self.prevTime:
             dt = time.time() - self.prevTime
             if dt > 0.0001:
@@ -182,55 +129,56 @@ class Controller:
         else:
             dt = 0
 
+        #--- Integral action ---
         self.e_x_int += e_x * dt
         self.e_y_int += e_y * dt
+        if abs(edot_x) > self.integration_vel_threshold or abs(e_x) > self.integration_pos_threshold: self.e_x_int = 0 # Reset integral if large error or velocity
+        if abs(edot_y) > self.integration_vel_threshold or abs(e_y) > self.integration_pos_threshold: self.e_y_int = 0 # Reset integral if large error or velocity
 
+        #--- Feedforward ---
         ff_x = ff_y = 0
-        if self.use_feedforward_model:
-            dx = self.ref[0] - self.pos[0]
-            dy = self.ref[1] - self.pos[1]
-            distance = np.linalg.norm((dx, dy))
-            direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
-            if self.lookahead:
-                t_estimate = self.ff_t_lookahead
-            else:
-                t_estimate = self.ff_t_normal
-            a_mag = 2 * distance / (t_estimate ** 2)
-            a_x = a_mag * direction[0]
-            a_y = a_mag * direction[1]
-            a_model = 5.5 / 0.0122
-            ff_x = a_x / a_model
-            ff_y = a_y / a_model
-
-        if abs(edot_x) > 30 or abs(e_x) > 60: self.e_x_int = 0
-        if abs(edot_y) > 30 or abs(e_y) > 60: self.e_y_int = 0
-
-        if abs(e_x) < self.pos_tol:
-            theta_x = 0
-        elif abs(e_x) < self.deadzone_pos_tol and abs(edot_x) < self.deadzone_vel_tol:
-            theta_x = np.sign(e_x) * self.deadzone_tilt
+        dx = self.ref[0] - self.pos[0]
+        dy = self.ref[1] - self.pos[1]
+        distance = np.linalg.norm((dx, dy))
+        direction = (dx / distance, dy / distance) if distance > 1e-6 else (0, 0)
+        if self.lookahead:
+            t_estimate = self.ff_t_lookahead
         else:
+            t_estimate = self.ff_t_normal
+        a_mag = 2 * distance / (t_estimate ** 2)
+        a_x = a_mag * direction[0]
+        a_y = a_mag * direction[1]
+        a_model = 5.5 / 0.0122
+        ff_x = a_x / a_model
+        ff_y = a_y / a_model
+
+        #--- PID Control ---
+        if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
+            # If within position and velocity tolerance, no control action
+            theta_x = 0
+        else:
+            # If outside position tolerance, apply PID control
             theta_x = self.kp_x * e_x + self.kd_x * edot_x + self.ki_x * self.e_x_int + ff_x
 
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
+            # If within position and velocity tolerance, no control action
             theta_y = 0
-        elif abs(e_y) < self.deadzone_pos_tol and abs(edot_y) < self.deadzone_vel_tol:
-            theta_y = -np.sign(e_y) * self.deadzone_tilt
         else:
+            # If outside position tolerance, apply PID control
             theta_y = self.kp_y * e_y + self.kd_y * edot_y + self.ki_y * self.e_y_int + ff_y
 
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
+            # If within all tolerances, reset integral action
             self.e_x_int = 0
             self.e_y_int = 0
-            if not self.path_following:
-                self.arduinoThread.send_speed(0, 0)
-                time.sleep(self.command_delay)
             self.prevTime = time.time()
 
+        # Update previous values for next iteration
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
 
+        #--- Stuck prevention ---
         pos = self.pos
         self.ori = self.tracker.get_orientation()
         dist = np.linalg.norm(np.array(pos) - np.array(ref))
@@ -245,13 +193,14 @@ class Controller:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
             theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
+        # Send angles to axis control
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
     def axisControl(self, ref):
         if time.time() < self.prev_command_time + self.command_delay:
             return
 
-        tol = 0.001
+        tol = self.angle_tolerance
         self.ori = self.tracker.get_orientation()
         if not self.ori:
             return
@@ -272,9 +221,11 @@ class Controller:
         self.prev_vel_x = vel_x
         self.prev_vel_y = vel_y
 
-    def horizontal(self, tol=0.0015, timeLimit=20):
+    def horizontal(self):
         print("Stabilizing horizontally...")
-        kp = 700
+        kp = self.config["controller"]["horizontal_controller"].get("kp", 700)
+        tol = self.config["controller"]["horizontal_controller"].get("tolerance", 0.0015)
+        timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 20)
         deadline = time.time() + timeLimit
         self.arduinoThread.send_speed(0, 0)
 

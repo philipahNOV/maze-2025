@@ -20,7 +20,6 @@ def initialize_component(component, name, retries=5, delay=2):
     raise Exception(f"Failed to initialize {name} after {retries} attempts")
 
 def load_config():
-    # Get path to project root from the current file (assuming this file is in jetson/src/)
     project_root = Path(__file__).resolve().parents[2]  # up from src → jetson → maze-2025
     config_path = project_root / "config.yaml"
 
@@ -40,9 +39,15 @@ except Exception as e:
     exit(1)
 
 config = load_config()
+tracking_config = config["tracking"]
+path_finding_config = config["path_finding"]
 print("Config loaded successfully.")
 
-tracker_service = TrackerService(model_path="camera/v8-291.pt")
+tracker_service = TrackerService(
+    model_path=tracking_config["model_path"],
+    tracking_config=tracking_config
+)
+
 tracker_service.camera.init_camera()
 controller = pos2.Controller(
     arduinoThread=arduino_thread,

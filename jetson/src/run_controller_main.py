@@ -1,10 +1,6 @@
 import time
-import cv2
-import numpy as np
-import queue
-
 import position_controller
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 import path_following_lookahead
 import uitility_threads
@@ -21,7 +17,7 @@ def main(tracker: TrackerService,
          stop_event=None,
          config=None):
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
 
     ball_not_found_timer = None
     ball_not_found_limit = 30  # seconds
@@ -68,15 +64,14 @@ def main(tracker: TrackerService,
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 if blinker is not None:
                     blinker.stop()
                     blinker = None
                     ball_not_found_timer = None
             else:
-                #cropped_frame = image_controller.update(ball_pos, pathFollower, mqtt_client)
                 ball_pos = smoother.update(ball_pos)
                 if blinker is None:
+                    # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
                     blinker = uitility_threads.BlinkRed(controller.arduinoThread)
                     blinker.start()
@@ -90,11 +85,8 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
-
-            # cv2.imshow("Ball tracking", frame)
-            # if cv2.waitKey(1) & 0xFF == ord('q'):
-            #    break
-
+            
+            # Keep loop running at the target frequency
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:
@@ -107,7 +99,6 @@ def main(tracker: TrackerService,
         print(f"[ERROR] Control loop crashed: {e}")
         traceback.print_exc()
     finally:
-        #cv2.destroyAllWindows()
         print("[INFO] Control thread exited.")
         if blinker is not None:
             blinker.stop()

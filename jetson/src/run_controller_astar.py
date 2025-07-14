@@ -4,7 +4,7 @@ import math
 import base64
 import numpy as np
 import position_controller
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 from mqtt_client import MQTTClientJetson
 from astar.astar import astar_downscaled
@@ -32,7 +32,7 @@ def send_frame_to_pi(mqtt_client: MQTTClientJetson, frame):
     mqtt_client.client.publish("pi/camera", jpg_as_text)
 
 def main(tracker: BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
     print("Waiting for tracking initialization...")
     while not tracker.initialized:
         time.sleep(0.1)

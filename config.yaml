@@ -1,7 +1,46 @@
-#--- For position_controller.py ---
+# config.yaml
+
+camera:
+  resolution: "HD720" # don't change
+  fps: 60 # don't change
+  depth_mode: "NONE"
+  coordinate_units: "MILLIMETER"
+  maze_width: 655        # px
+  maze_height: 655       # px
+  maze_offset_x: 430     # px
+  maze_offset_y: 27      # px
+  maze_image_scale: 0.87
+  elevator_center_x: 998
+  elevator_center_y: 588
+  elevator_radius: 60    # px
+  bottom_right: [1085, 682]
+  bottom_left: [430, 682]
+  top_right: [1085, 27]
+  top_left: [430, 27]
+  padding: 20            # px
+  maze_relative_angle: 1 # deg
+
+tracking:
+  model_path: "jetson/src/camera/v8-291.pt" # onnx/engine?
+  init_ball_region:
+    x_min: 390
+    y_min: 10
+    x_max: 1120
+    y_max: 720
+  hsv_range:
+    lower: [35, 80, 80]       # Light green HSV lower bound
+    upper: [85, 255, 255]     # Light green HSV upper bound
+  hsv_window_size: 80
+  hsv_min_contour_area: 150  # px^2
+  smoothing_alpha: 0.5       # smoothing factor for exponential filter
+  hsv_fail_threshold: 12     # frames to wait before fallback to YOLO
+  yolo_cooldown_period: 15   # frames before allowing YOLO recheck
+
 controller:
-  stuck_wiggle_amplitude: 0.8 #deg, amplitude of the wiggle when stuck
-  stuck_wiggle_frequency: 10 #Hz, frequency of the wiggle
+  stuck_wiggle_amplitude: 0.8     # deg, amplitude of wiggle when stuck
+  stuck_wiggle_frequency: 10      # Hz, frequency of wiggle when stuck
+  integration_pos_threshold: 60        # px, reset integral if error exceeds this
+  integration_vel_threshold: 30        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
     kp_x: 0.00003
     kp_y: 0.00003
@@ -9,8 +48,8 @@ controller:
     kd_y: 0.000155
     ki_x: 0.0002
     ki_y: 0.0002
-    position_tolerance: 35 #px
-    velocity_tolerance: 20 #px/s
+    position_tolerance: 40        # px
+    velocity_tolerance: 20        # px/s
     feedforward_t: 5.1
   position_controller_lookahead:
     kp_x: 0.000015
@@ -19,57 +58,56 @@ controller:
     kd_y: 0.0002
     ki_x: 0.0
     ki_y: 0.0
-    position_tolerance: 40 #px
-    velocity_tolerance: 20 #px/s
+    position_tolerance: 40        # px
+    velocity_tolerance: 20        # px/s
     feedforward_t: 6.0
   angular_controller:
     kp: 6500
-    max_angle: 1.8 #deg
+    max_angle: 1.8                # deg
     command_delay: 0.0001
+    angle_tolerance: 0.001      # rad
+  horizontal_controller:
+    kp: 700
+    tolerance: 0.0015         # rad
+    time_limit: 20           # seconds
   arduino:
-    x_offset: 0.015 #rad, used to correct the angle of the robot
-    y_offset: 0.0 #rad, used to correct the angle of the robot
+    x_offset: 0.01                # rad
+    y_offset: 0.0                 # rad
     minimum_velocity: 22
     maximum_velocity: 100
-    minimum_velocity_difference: 10 #required difference between velocity commands to send them to the arduino
+    minimum_velocity_difference: 10
+
+path_finding:
+  repulsion_weight: 5.0           # how strongly path avoids walls
+  min_safe_distance: 14           # distance from obstacles for safe navigation
+  astar_downscale: 1.0            # downscaling factor
+  normal_path_wpt_spacing: 160    # px
+  lookahead_path_wpt_spacing: 50  # px
+  path_cache_size: 30
+  path_cache_tolerance: 15        # px
+  angle_threshold: 135            # deg, waypoint sampling turn filter
+  clear_path_kernel_size: 6       # morph kernel for visibility check
+  waypoint_spacing: 160           # px
+  dilation_iterations: 2
+  clahe_clip_limit: 1.0
+  adaptive_threshold_target: 130
+  path_cache_size: 30                 # max_paths in PathMemory
+  path_cache_tolerance: 15           # tolerance for cache reuse
+  path_cache_file: "path_cache.json" # default cache filename
 
 path_following:
   lookahead:
-    lookahead_distance: 80 #px, default lookahead distance
-    adaptive: false #if true, the lookahead distance will be adapted based on velocity and path angle
-    lookahead_distance_min: 50 #px, used for adaptive lookahead
-    lookahead_distance_max: 80 #px, used for adaptive lookahead
-    smoothing_alpha: 0.03 #smoothing factor for the adaptive lookahead distance
-    velocity_gain: 100 #controls how much the lookahead distance is affected by velocity, higher value = less influence
-    curvature_gain: 0.99 #controls how much the lookahead distance is affected by path curvature, higher value = less influence
+    lookahead_distance: 80
+    adaptive: false
+    lookahead_distance_min: 50
+    lookahead_distance_max: 80
+    smoothing_alpha: 0.03
+    velocity_gain: 100
+    curvature_gain: 0.99
   normal:
-    velocity_threshold: 50 #px/s, velocity that is considered being stuck
-    stuck_retry_time: 3 #s, time to wait before reverting waypoint if stuck
-    dwell_time: 0.7 #s, time to wait at a waypoint before moving on
-
-camera:
-  maze_width: 655 #px
-  maze_height: 655 #px
-  maze_offset_x: 430 #px
-  maze_offset_y: 27 #px
-  maze_image_scale: 0.87 #Scale factor for the maze image shown in pathfinding screen
-  elevator_center_x: 998 #OPPDATERT x center
-  elevator_center_y: 588 #OPPDATERT y center
-  elevator_radius: 60 #px
-  bottom_right: [1085, 682]
-  bottom_left: [430, 682]
-  top_right: [1085, 27]
-  top_left: [430, 27]
-  padding: 20 #px, padding around the maze image
-  maze_relative_angle: 1 #deg, angle of the maze relative to the camera frame
-
-path_finding:
-  repulsion_weight: 5 #Weight of the repulsion force in the path finding algorithm
-  normal_path_wpt_spacing: 145
-  lookahead_path_wpt_spacing: 50
-  astar_downscale: 1.0 #Downscale factor for the A* algorithm, used to reduce the resolution of the maze for faster pathfinding
-  path_cache_size: 30 #Maximum number of paths to cache
-  path_cache_tolerance: 15 #Tolerance for path caching in pixels
+    velocity_threshold: 50
+    stuck_retry_time: 3
+    dwell_time: 0.7
 
 animations:
   locating_ball:

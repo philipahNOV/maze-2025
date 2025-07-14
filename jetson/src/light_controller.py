@@ -53,14 +53,16 @@ class LookForBall:
         self._stop_event.set()
 
 class PathFindingThread(threading.Thread):
-    def __init__(self, tracking_service, goal, on_path_found, repulsion_weight=5.0, scale=1.0):
+    def __init__(self, tracking_service, goal, on_path_found, config):
         super().__init__(daemon=True)
         self.tracking_service = tracking_service
         self.goal = goal
         self.on_path_found = on_path_found
-        self.repulsion_weight = repulsion_weight
-        self.scale = scale
-        self.path_cache = PathMemory(max_paths=30, tolerance=15, cache_file="astar/path_cache.json")
+        self.config = config
+        pf_config = self.config["path_finding"]
+        self.repulsion_weight = pf_config.get("repulsion_weight", 5.0)
+        self.scale = pf_config.get("astar_downscale", 1.0)
+        self.path_cache = PathMemory(pf_config)
         self._stop_event = threading.Event()
 
     def run(self):
