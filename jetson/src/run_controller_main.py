@@ -8,6 +8,7 @@ from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 from camera.tracker_service import TrackerService
+from logger import LoggingThread
 
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
@@ -43,6 +44,10 @@ def main(tracker: TrackerService,
     escape_thread.start()
     time.sleep(escape_thread.duration)
     controller.horizontal()
+
+    logger = LoggingThread(path_array, config)
+    logger.start()
+    controller.logger = logger
 
     # Set control loop parameters
     TARGET_HZ = 60

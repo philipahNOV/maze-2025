@@ -114,3 +114,8 @@ animations:
     fps: 30
   path_finding:
     fps: 8
+
+logger:
+  save_path: "ORL/rl_data"
+  episode_limit: 1000
+  log_frequency: 20

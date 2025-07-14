@@ -6,7 +6,7 @@ import uitility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 import pos2
-import numpy as np
+from utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
 import threading
 import os
@@ -88,38 +88,14 @@ class HMIController:
         self.stop_threads()
         sys.exit(0)
 
-    def densify_path(self, path, factor=6):
-        new_path = []
-        for i in range(len(path) - 1):
-            p1 = np.array(path[i])
-            p2 = np.array(path[i + 1])
-            new_path.append(tuple(p1))
-            for j in range(1, factor):
-                interp = p1 + (p2 - p1) * (j / factor)
-                new_path.append(tuple(interp.astype(int)))
-        new_path.append(path[-1])
-        return new_path
-
     def on_ball_found(self):
-        if self.is_in_elevator(self.tracking_service.get_ball_position()):
+        if is_in_elevator(self.config, self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
         else:
             self.ball_finder = uitility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
             self.ball_finder.start_ball_check()
-
-    def is_in_elevator(self, ball_pos):
-        center_x = self.config['camera'].get('elevator_center_x', 1030)
-        center_y = self.config['camera'].get('elevator_center_y', 630)
-        radius = self.config['camera'].get('elevator_radius', 60)
-        if ball_pos is None:
-            return False
-        x, y = ball_pos
-        dx = x - center_x
-        dy = y - center_y
-        distance_squared = dx * dx + dy * dy
-        return distance_squared <= radius * radius
 
     def on_path_found(self, path, path_lookahead):
         self.path = path
@@ -132,8 +108,8 @@ class HMIController:
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
             return
-        self.remove_withing_elevator(self.path, radius=self.config['camera'].get('elevator_radius', 60))
-        self.remove_withing_elevator(self.path_lookahead, radius=self.config['camera'].get('elevator_radius', 60)+20)
+        self.path = remove_withing_elevator(self.config, self.path, radius=self.config['camera'].get('elevator_radius', 60))
+        self.path_lookahead = remove_withing_elevator(self.config, self.path_lookahead, radius=self.config['camera'].get('elevator_radius', 60)+20)
         self.image_controller.set_new_path(self.path)
         if self.image_thread is None:
             self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
@@ -160,22 +136,6 @@ class HMIController:
             config=self.config,
         )
         self.path_thread.start()
-
-    def remove_withing_elevator(self, path, radius: int = 80):
-        center_x = self.config['camera'].get('elevator_center_x', 1030)
-        center_y = self.config['camera'].get('elevator_center_y', 630)
-        within_indexes = []
-        if path is None:
-            return
-        for i in range(len(path)):
-            x, y = path[i]
-            dx = x - center_x
-            dy = y - center_y
-            distance_squared = dx * dx + dy * dy
-            if distance_squared <= radius * radius:
-                within_indexes.append(i)
-        for i in reversed(within_indexes):
-            path.pop(i)
 
     def on_command(self, cmd):
         print(f"[FSM] State: {self.state.name} | Command received: {cmd}")
