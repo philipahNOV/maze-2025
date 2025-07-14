@@ -2,7 +2,7 @@ import time
 import cv2
 import numpy as np
 import position_controller
-import jetson.src.low_pass_filter as low_pass_filter
+import low_pass_filter as low_pass_filter
 import path_following
 import path_following_lookahead
 import uitility_threads
