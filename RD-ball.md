@@ -1,6 +1,6 @@
 # Ball Detection
 
-This part provides an explanation of the ball tracking system which combines object detection via YOLOv8 with real-time color-based tracking using the HSV color space. It is designed for fast visual feedback, and is implemented using modular Python components with threaded architecture for performance. This pipeline is modular and highly tunable, meaning if there are any issues then variables can easily be changed.
+This part provides an explanation of the ball tracking system which combines object detection via YOLOv8 with real-time color-based tracking using the HSV color space. It is designed for fast visual feedback, and is implemented using modular Python components with threaded architecture for performance. This pipeline is modular and highly tunable, meaning if there are any issues then variables can easily be changed via the `config.yaml` file.
 
 ---
 
@@ -20,7 +20,7 @@ All components are developed to maintain high responsiveness and frame stability
 
 ## 2. Camera Acquisition (`CameraManager`)
 
-The ZED camera is initialized with fixed parameters for resolution and frame rate:
+The ZED camera is initialized with fixed parameters for resolution and frame rate, which can be adjusted in `config.yaml` under the `camera:` section:
 
 ```python
 init_params.camera_resolution = sl.RESOLUTION.HD720
@@ -53,7 +53,7 @@ def get_orientation(self):
 
 ## 3. Object Detection (`YOLOModel`)
 
-The YOLOv8 model is loaded and prepared at runtime:
+The YOLOv8 model is loaded and prepared at runtime. The model path is configured through `config.yaml` under `tracking.model_path`.
 
 ```python
 self.model = YOLO(model_path)
@@ -90,7 +90,7 @@ The core tracking class runs two threads:
 
 ### Initialization Phase
 
-When the system starts, the ball must be detected by YOLO within a predefined region:
+When the system starts, the ball must be detected by YOLO within a predefined region defined in `config.yaml` as `tracking.init_ball_region`:
 
 ```python
 if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and ...
@@ -100,7 +100,7 @@ This makes sure that the ball is only initialized if it appears in a valid locat
 
 ### HSV Tracking Phase
 
-Once the ball is initialized, frame-to-frame tracking switches to HSV. A region around the last known position is used:
+Once the ball is initialized, frame-to-frame tracking switches to HSV. A region around the last known position is used, and the HSV color range and window size are defined in `config.yaml` under `tracking.hsv_range` and `tracking.hsv_window_size`:
 
 ```python
 def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
@@ -109,7 +109,7 @@ def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
     return get_center_of_mass(mask)
 ```
 
-To improve robustness, position smoothing is applied:
+To improve robustness, position smoothing is applied using `tracking.smoothing_alpha`:
 
 ```python
 alpha = 0.5
@@ -122,11 +122,11 @@ self.ball_position = (x, y)
 
 ## 5. Fallback and Recovery
 
-If HSV fails for several consecutive frames (defined by `self.hsv_fail_threshold`), the system triggers a fallback process:
+If HSV fails for several consecutive frames (defined by `self.hsv_fail_threshold` in `config.yaml` under `tracking.hsv_fail_threshold`), the system triggers a fallback process:
 
 1. A global HSV scan (`global_hsv_search`) checks for color presence in the full frame.
 2. If a candidate is found, YOLO is re-run to validate the detection.
-3. A cooldown (`self.yolo_cooldown`) prevents YOLO from running every frame.
+3. A cooldown (`self.yolo_cooldown`) prevents YOLO from running every frame, controlled by `tracking.yolo_cooldown_period`.
 
 Example fallback logic:
 
@@ -170,6 +170,8 @@ def get_center_of_mass(mask):
     return (cx, cy)
 ```
 
+The minimum contour area used for filtering can be set in `config.yaml` under `tracking.hsv_min_contour_area`.
+
 ### Global Search
 
 ```python
@@ -194,7 +196,7 @@ def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
 
 ### hsv_fail_threshold
 
-Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection.
+Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection. This can be modified in `config.yaml`:
 
 ```python
 self.hsv_fail_threshold = 30  # default as it shows a good balance (0.5s at 60 FPS)
@@ -204,7 +206,7 @@ Increase if you’re experiencing too frequent fallback, decrease for faster rec
 
 ### yolo_cooldown_period
 
-Defines how many frames to wait after a YOLO attempt before allowing another.
+Defines how many frames to wait after a YOLO attempt before allowing another. Configurable in `config.yaml`.
 
 ```python
 self.yolo_cooldown_period = 15  # ~0.25s cooldown
@@ -214,7 +216,7 @@ Lowering this increases responsiveness at the cost of more frequent inference.
 
 ### min_area
 
-Used in `get_center_of_mass()` to ignore noise in the HSV mask.
+Used in `get_center_of_mass()` to ignore noise in the HSV mask. Change this via `tracking.hsv_min_contour_area` in `config.yaml`.
 
 ```python
 min_area = 150  # or higher for higher-resolution cameras
@@ -224,7 +226,7 @@ Raise this to avoid tracking small irrelevant blobs.
 
 ### smoothing factor (alpha)
 
-Applies exponential smoothing to reduce jumpiness:
+Applies exponential smoothing to reduce jumpiness. Set via `tracking.smoothing_alpha`:
 
 ```python
 alpha = 0.5  # lower = smoother, higher = faster reaction
@@ -234,7 +236,7 @@ Tune this based on the expected ball motion and latency tolerance.
 
 ### Lighting sensitivity
 
-The HSV thresholds are susceptible to changing light conditions. Tune these empirically:
+The HSV thresholds are susceptible to changing light conditions. Tune these empirically via `tracking.hsv_range` in `config.yaml`:
 
 ```python
 self.HSV_RANGE = (

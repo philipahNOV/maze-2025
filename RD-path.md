@@ -1,12 +1,12 @@
 # A* Pathfinding
 
-This part explains the architecture and implementation of a complete A* pathfinding system built for navigating the maze using binary obstacle maps. The system includes repulsion-aware path planning, mask preprocessing, waypoint smoothing, path memory caching, and several geometric enhancements. It is modular and can generalize for any type of maze with darker walls and a light background.
+This part explains the architecture and implementation of a complete A* pathfinding system built for navigating the maze using binary obstacle maps. The system includes repulsion-aware path planning, mask preprocessing, waypoint smoothing, path memory caching, and several geometric enhancements. It is modular and can generalize for any type of maze with darker walls and a light background. Configuration for key parameters can be adjusted via the `config.yaml` file.
 
 ---
 
 ## 1. A* Algorithm with Repulsion Field
 
-The core of the system is a modified A* algorithm (`astar.py`) that adds a **repulsion term** to avoid planning paths too close to obstacles. The algorithm uses **Manhattan distance** as its heuristic and introduces a **cost penalty** that increases near obstacles using a distance transform.
+The core of the system is a modified A* algorithm (`astar.py`) that adds a **repulsion term** to avoid planning paths too close to obstacles. The algorithm uses **Manhattan distance** as its heuristic and introduces a **cost penalty** that increases near obstacles using a distance transform. The repulsion weight and minimum safe distance are configurable in `config.yaml` under `path_finding.repulsion_weight` and `path_finding.min_safe_distance`.
 
 ### Heuristic
 
@@ -28,7 +28,7 @@ def compute_repulsion_cost(array, min_safe_dist=14):
     return repulsion, mask_safe
 ```
 
-This produces a smooth cost field where grid points near obstacles are heavily penalized.
+This produces a smooth cost field where grid points near obstacles are heavily penalized. The `min_safe_dist` value is set through `config.yaml`.
 
 ### Path Search
 
@@ -45,7 +45,7 @@ This guides the A* search away from narrow gaps and obstacle boundaries.
 
 ## 2. Downscaled Pathfinding
 
-The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance or smoothing purposes:
+The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance or smoothing purposes. The scale factor can be configured through `config.yaml` under `path_finding.astar_downscale`.
 
 ```python
 small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
@@ -58,7 +58,7 @@ Once a path is found, it is scaled back up to the original resolution.
 
 ## 3. Binary Mask Preprocessing
 
-Binary masks are generated from RGB camera input and refined through a series of transformations in `mask_utils.py`. The goal is to extract a reliable navigable area that excludes noise, green-field artifacts, and subtle edges.
+Binary masks are generated from RGB camera input and refined through a series of transformations in `mask_utils.py`. The goal is to extract a reliable navigable area that excludes noise, green-field artifacts, and subtle edges. CLAHE, dynamic thresholding, and edge suppression are used. Preprocessing parameters such as kernel sizes and clip limits can be adjusted in `config.yaml` under `path_finding`.
 
 ### CLAHE and Thresholding
 
@@ -82,7 +82,7 @@ final_mask = cv2.bitwise_and(cleaned, edges_inv)
 
 ### Green Area Suppression
 
-Green pixels from the ball are removed:
+Green pixels from the ball are removed. HSV threshold values used for this suppression are tuned to avoid corrupting the mask with ball-colored areas:
 
 ```python
 hsv = cv2.cvtColor(gray_to_bgr, cv2.COLOR_BGR2HSV)
@@ -94,7 +94,7 @@ final_mask = cv2.bitwise_or(final_mask, green_mask)
 
 ## 4. Waypoint Sampling
 
-The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts smooth and valid waypoints with spacing and angular constraints.
+The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts smooth and valid waypoints with spacing and angular constraints. These values are configured in `config.yaml` under `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
 
 ### Spacing and Angles
 
@@ -118,6 +118,8 @@ def is_clear_path(mask, p1, p2, kernel_size=6):
     return np.all(mask[corridor.astype(bool)] > 0)
 ```
 
+The visibility kernel size can be configured via `path_finding.clear_path_kernel_size`.
+
 ---
 
 ## 5. Path Drawing
@@ -136,7 +138,7 @@ The output supports grayscale or color images, and annotates start/goal location
 
 ## 6. Path Memory Caching
 
-To avoid recomputation, `path_memory.py` stores previously computed paths using a fuzzy match based on Euclidean distance.
+To avoid recomputation, `path_memory.py` stores previously computed paths using a fuzzy match based on Euclidean distance. Caching parameters like size and tolerance are defined in `config.yaml` under `path_finding.path_cache_size` and `path_finding.path_cache_tolerance`.
 
 ```python
 def get_cached_path(self, start, goal):
@@ -150,8 +152,6 @@ Paths are serialized to JSON and persisted across runs:
 with open(self.cache_file, "w") as f:
     json.dump(self.paths, f)
 ```
-
-Up to `max_paths` are retained and replaced in FIFO order.
 
 ---
 
@@ -172,7 +172,7 @@ If not, it searches in a radius using a distance transform to locate the nearest
 
 ### repulsion_weight
 
-Controls how strongly the path avoids obstacles. Too low and the path hugs walls; too high and paths become over-conservative.
+Controls how strongly the path avoids obstacles. Set in `config.yaml` under `path_finding.repulsion_weight`.
 
 ```python
 astar(..., repulsion_weight=5.0)
@@ -182,38 +182,38 @@ Try values between 2.0 and 6.0 for balance.
 
 ### min_safe_dist in repulsion
 
-Defines how far from an obstacle a point must be to be considered "safe." Experience has shown that somewhere between 10 and 15 is the sweet spot. Larger values create wider margins:
+Defines how far from an obstacle a point must be to be considered "safe." Set in `config.yaml` as `path_finding.min_safe_distance`.
 
 ```python
 compute_repulsion_cost(..., min_safe_dist=14)
 ```
 
-Increase to reduce path tightness.
-
 ### scale in `astar_downscaled()`
 
-In this implementation it's not currently used (scale=1.0), but here the scale factor can be adjusted to control how much the input map is shrunk. Lower values increase smoothness, loading time and performance but reduce precision and can make A* fail in downscaled space.
+The downscale factor can be tuned in `config.yaml` using `path_finding.astar_downscale`. A value of 1.0 means no scaling.
 
 ```python
 astar_downscaled(..., scale=1.0)
 ```
 
+Lower values improve speed but reduce precision.
+
 ### waypoint_spacing and angle_threshold
 
-Tune these in `sample_waypoints()` to balance turning smoothness with motion efficiency:
+Configured in `config.yaml` as `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
 
 ```python
-waypoint_spacing=160, angle_threshold=135 # default values
+waypoint_spacing=160, angle_threshold=135
 ```
 
-Higher spacing means fewer waypoints. Lower angle thresholds increase turning flexibility.
+Higher spacing reduces path density; lower angle threshold improves flexibility.
 
 ### cache tolerance
 
-Controls how closely a cached path must match a new request to be reused:
+The threshold for cache re-use is defined in `path_finding.path_cache_tolerance` in `config.yaml`.
 
 ```python
 PathMemory(tolerance=10)
 ```
 
-Increase to enable more cache hits but risk path mismatch.
+Increase to enable more cache hits, but at the cost of re-using less precise paths.

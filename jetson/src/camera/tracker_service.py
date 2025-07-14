@@ -2,15 +2,16 @@ from camera.camera_manager import CameraManager
 from camera.ball_tracker import BallTracker
 
 class TrackerService:
-    def __init__(self, model_path="v8-291.pt"):
+    def __init__(self, model_path="v8-291.pt", tracking_config=None):
         self.camera = CameraManager()
         self.camera.init_camera()
         self.tracker = None
         self.started = False
         self.model_path = model_path
+        self.tracking_config = tracking_config or {}
 
     def start_tracker(self):
-        self.tracker = BallTracker(self.camera, model_path=self.model_path)
+        self.tracker = BallTracker(self.camera, self.tracking_config, model_path=self.model_path)
         self.tracker.start()
         self.started = True
 
