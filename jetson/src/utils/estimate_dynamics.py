@@ -3,14 +3,14 @@ import time
 import cv2
 import positionController_2
 import arduino_connection_test
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 from mqtt_client import MQTTClientJetson
 import numpy as np
 
 def main(tracker: tracking.BallTracker, controller: positionController_2.Controller, mqtt_client: MQTTClientJetson):
 
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.initialized:

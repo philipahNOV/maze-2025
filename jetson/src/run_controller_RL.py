@@ -2,7 +2,7 @@ import YOLO_tracking.hsv3 as tracking
 import time
 import cv2
 import position_controller
-import lowPassFilter
+import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 from mqtt_client import MQTTClientJetson
 from astar.astar import astar, astar_downscaled
@@ -133,7 +133,7 @@ def draw_path(image, path, waypoints, start, goal):
     return out
 
 def main(tracker: tracking.BallTracker, controller: position_controller.Controller, mqtt_client: MQTTClientJetson):
-    smoother = lowPassFilter.SmoothedTracker(alpha=0.5)
+    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
     logger = OfflineLogger()  # <-- NEW
     prev_state = None
     prev_action = None
