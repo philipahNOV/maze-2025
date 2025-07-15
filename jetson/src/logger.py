@@ -108,6 +108,7 @@ class LoggingThread(threading.Thread):
         progress = 0
         if self.ball_position is not None:
             progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
+            np.clip(progress, 0, 1)  # Ensure progress is between 0 and 1
         reward += progress * 20  # Reward for progress towards goal
 
         if self.ball_position is None:
