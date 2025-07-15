@@ -102,8 +102,9 @@ class LoggingThread(threading.Thread):
 
     def calculate_reward(self):
         reward = self.reward
-
-        progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
+        progress = 0
+        if self.ball_position is not None:
+            progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
         reward += progress * 20  # Reward for progress towards goal
 
         if self.ball_position is None:
