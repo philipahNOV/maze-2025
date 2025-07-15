@@ -202,7 +202,7 @@ class Controller:
         # Thresholds
         stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist_x > self.pos_tol and dist_x < self.stuck_upper_pos_threshold
         stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist_y > self.pos_tol and dist_y < self.stuck_upper_pos_threshold
-
+        print(dist_x, dist_y, stuck_x, stuck_y)
         # Apply wiggling if needed
         if stuck_x:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
