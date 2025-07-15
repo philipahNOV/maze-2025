@@ -86,6 +86,7 @@ class Controller:
         self.stuck_wiggle_amplitude = config["controller"].get("stuck_wiggle_amplitude", 0.8)  # degrees
         self.stuck_wiggle_frequency = config["controller"].get("stuck_wiggle_frequency", 10)  # Hz
         self.stuck_vel_threshold = config["controller"].get("stuck_velocity_threshold", 20)  # px/s
+        self.stuck_upper_pos_threshold = config["controller"].get("stuck_upper_position_threshold", 90)  # px
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
@@ -191,16 +192,22 @@ class Controller:
         #--- Stuck prevention ---
         pos = self.pos
         self.ori = self.tracker.get_orientation()
-        dist = np.linalg.norm(np.array(pos) - np.array(ref))
-        vel_mag = np.sqrt(edot_x ** 2 + edot_y ** 2)
+        #dist = np.linalg.norm(np.array(pos) - np.array(ref))
+        #vel_mag = np.sqrt(edot_x ** 2 + edot_y ** 2)
 
-        if vel_mag < self.stuck_vel_threshold and dist > self.pos_tol:
-            self.stuck = True
-        else:
-            self.stuck = False
+        vel_x, vel_y = (edot_x, edot_y)
+        dist_x = abs(e_x)
+        dist_y = abs(e_y)
 
-        if self.stuck:
+        # Thresholds
+        stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist_x > self.pos_tol and dist_x < self.stuck_upper_pos_threshold
+        stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist_y > self.pos_tol and dist_y < self.stuck_upper_pos_threshold
+
+        # Apply wiggling if needed
+        if stuck_x:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
+
+        if stuck_y:
             theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
         # Send angles to axis control
