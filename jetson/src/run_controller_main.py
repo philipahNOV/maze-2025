@@ -47,7 +47,7 @@ def main(tracker: TrackerService,
 
     logger = LoggingThread(path_array, config)
     logger.start()
-    controller.logger = logger
+    #controller.logger = logger
 
     # Set control loop parameters
     TARGET_HZ = 60
