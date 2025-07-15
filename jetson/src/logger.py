@@ -164,6 +164,8 @@ class LoggingThread(threading.Thread):
         """
         Projects point p onto line segment a-b and returns the projected point.
         """
+        if a is None or b is None or p is None:
+            return 10000
         ap = p - a
         ab = b - a
         ab_norm_sq = np.dot(ab, ab)
