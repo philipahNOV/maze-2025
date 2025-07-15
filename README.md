@@ -56,9 +56,7 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
   - [6. Path Memory Caching](#6-path-memory-caching)
   - [7. Nearest Walkable Point](#7-nearest-walkable-point)
   - [8. A* Troubleshooting and Tuning](#8-troubleshooting-and-tuning-1)
-- [Troubleshooting](#troubleshooting)
 - [Authors](#authors)
-- [Password](#password)
 
 ## Introduction
 
@@ -877,7 +875,5 @@ PathMemory(tolerance=10)
 ```
 
 Increase to enable more cache hits, but at the cost of re-using less precise paths.
-
-## Troubleshooting
 
 ## Authors
