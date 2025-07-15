@@ -85,6 +85,7 @@ class Controller:
         self.ff_t_normal = config["controller"]["position_controller_normal"].get("feedforward_t", 5.3)
         self.stuck_wiggle_amplitude = config["controller"].get("stuck_wiggle_amplitude", 0.8)  # degrees
         self.stuck_wiggle_frequency = config["controller"].get("stuck_wiggle_frequency", 10)  # Hz
+        self.stuck_vel_threshold = config["controller"].get("stuck_velocity_threshold", 20)  # px/s
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
@@ -193,7 +194,7 @@ class Controller:
         dist = np.linalg.norm(np.array(pos) - np.array(ref))
         vel_mag = np.sqrt(edot_x ** 2 + edot_y ** 2)
 
-        if vel_mag < self.vel_tol and dist > self.pos_tol:
+        if vel_mag < self.stuck_vel_threshold and dist > self.pos_tol:
             self.stuck = True
         else:
             self.stuck = False
