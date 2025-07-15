@@ -40,6 +40,7 @@ class LoggingThread(threading.Thread):
         super().__init__(daemon=True)
         self.logger = OfflineLogger()
         self.target_hz = 20
+        self._stop_event = threading.Event()
 
         self.path = path
         self.ball_position = None
@@ -58,7 +59,7 @@ class LoggingThread(threading.Thread):
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
-        while self.logger.episode_counter < self.logger.episode_limit:
+        while self.logger.episode_counter < self.logger.episode_limit and not self._stop_event.is_set():
             loop_start = time.time()
 
             x, y = self.ball_position if self.ball_position is not None else (0, 0)
@@ -89,6 +90,9 @@ class LoggingThread(threading.Thread):
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:
                 time.sleep(sleep_time)
+
+    def stop(self):
+        self._stop_event.set()
 
     def update_state(self, ball_position, orientation, ball_velocity, motor_input):
         self.ball_position = ball_position

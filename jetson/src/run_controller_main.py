@@ -21,7 +21,7 @@ def main(tracker: TrackerService,
     smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
 
     ball_not_found_timer = None
-    ball_not_found_limit = 30  # seconds
+    ball_not_found_limit = 60  # seconds
 
     print("[INFO] Waiting for YOLO initialization...")
     while not tracker.is_initialized:
@@ -45,6 +45,7 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
+    logger = None
     #logger = LoggingThread(path_array)
     #logger.start()
     #controller.logger = logger
@@ -112,6 +113,9 @@ def main(tracker: TrackerService,
         if image_thread.is_alive():
             image_thread.stop()
             image_thread.join()
+        if logger is not None:
+            logger.stop()
+            logger = None
 
 if __name__ == "__main__":
     main()
