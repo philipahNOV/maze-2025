@@ -60,7 +60,7 @@ class PathFindingThread(threading.Thread):
         self.on_path_found = on_path_found
         self.config = config
         pf_config = self.config["path_finding"]
-        self.repulsion_weight = pf_config.get("repulsion_weight", 5.0)
+        self.repulsion_weight = pf_config.get("repulsion_weight", 15.0)
         self.scale = pf_config.get("astar_downscale", 1.0)
         self.path_cache = PathMemory(pf_config)
         self._stop_event = threading.Event()
