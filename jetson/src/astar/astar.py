@@ -15,7 +15,7 @@ def compute_repulsion_cost(array, min_safe_dist = 14):
     repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
     return repulsion, mask_safe
 
-def astar(array, start, goal, repulsion_weight=6.0):
+def astar(array, start, goal, repulsion_weight=15.0):
     neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
     rows, cols = array.shape
     repulsion_map, walkable_mask = compute_repulsion_cost(array)
