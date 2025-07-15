@@ -37,21 +37,21 @@ tracking:
   yolo_cooldown_period: 15   # frames before allowing YOLO recheck
 
 controller:
-  stuck_wiggle_amplitude: 0.8     # deg, amplitude of wiggle when stuck
-  stuck_wiggle_frequency: 15      # Hz, frequency of wiggle when stuck
-  stuck_velocity_threshold: 20    # px/s, velocity threshold to consider stuck
+  stuck_wiggle_amplitude: 0.7     # deg, amplitude of wiggle when stuck
+  stuck_wiggle_frequency: 30      # Hz, frequency of wiggle when stuck
+  stuck_velocity_threshold: 15    # px/s, velocity threshold to consider stuck
   integration_pos_threshold: 50        # px, reset integral if error exceeds this
   integration_vel_threshold: 20        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
     kp_x: 0.00003
     kp_y: 0.00003
-    kd_x: 0.000155
-    kd_y: 0.000155
+    kd_x: 0.00015
+    kd_y: 0.00015
     ki_x: 0.0002
     ki_y: 0.0002
     position_tolerance: 30        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 5.1
+    feedforward_t: 5
   position_controller_lookahead:
     kp_x: 0.000015
     kp_y: 0.000015
@@ -73,7 +73,7 @@ controller:
     time_limit: 20           # seconds
   arduino:
     x_offset: 0.014                # rad
-    y_offset: 0.002                 # rad
+    y_offset: -0.005                 # rad
     minimum_velocity: 22
     maximum_velocity: 100
     minimum_velocity_difference: 10
@@ -106,7 +106,7 @@ path_following:
   normal:
     velocity_threshold: 50
     stuck_retry_time: 3
-    dwell_time: 1
+    dwell_time: 0.7
 
 animations:
   locating_ball:
