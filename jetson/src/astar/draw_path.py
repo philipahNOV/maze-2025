@@ -12,8 +12,11 @@ def draw_path(image, waypoints, start, goal):
     h, w = out.shape[:2]
 
     for x, y in waypoints or []:
+        if goal and abs(x - goal[1]) < 10 and abs(y - goal[0]) < 10:
+            continue
         if 0 <= y < h and 0 <= x < w:
             cv2.circle(out, (x, y), 8, (0, 0, 255), -1)
+
 
     if start:
         cv2.circle(out, (start[1], start[0]), 5, (0, 255, 0), -1)
