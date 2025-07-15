@@ -82,12 +82,12 @@ class LoggingThread(threading.Thread):
                     next_state=state,
                     done=done
                 )
-                if self.done:
+                if done:
                     self.stop()
 
             self.prev_state = state
             self.prev_action = action
-            self.prev_reward = self.reward
+            self.prev_reward = reward
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
