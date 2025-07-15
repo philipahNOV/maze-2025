@@ -61,7 +61,7 @@ class PathFindingThread(threading.Thread):
         self.on_path_found = on_path_found
         self.repulsion_weight = self.config['path_finding'].get('repulsion_weight', 5)
         self.scale = self.config['path_finding'].get('astar_downscale', 1.0)
-        self.path_cache = PathMemory(max_paths=self.config['path_finding'].get('path_cache_size', 30), tolerance=self.config['path_finding'].get('path_cache_tolerance', 15), cache_file="astar/path_cache.json")
+        self.path_cache = PathMemory(config)
         self._stop_event = threading.Event()
 
     def run(self):
