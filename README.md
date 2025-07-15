@@ -19,7 +19,7 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
 - [Introduction](#introduction)
 - [System Overview](#system-overview)
 - [Setup & Configuration](#setup--configuration)
-  - [3.1 Dependencies](#31-dependencies)
+  - [Dependencies](#dependencies)
 - [Run Controller](#run-controller)
   - [1. System Components](#1-system-components)
   - [2. Control Execution Flow](#2-control-execution-flow)
@@ -29,6 +29,15 @@ The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-ba
   - [6. MQTT Command Integration](#6-mqtt-command-integration)
   - [7. Troubleshooting](#7-troubleshooting)
   - [8. Tuning Tips](#8-tuning-tips)
+- [MQTT Communication](#mqtt-communication)
+  - [1. Overview](#1-overview)
+  - [2. Topic Structure](#2-topic-structure)
+  - [3. Handshake Protocol](#3-handshake-protocol)
+  - [4. Jetson MQTT Client](#4-jetson-mqtt-client)
+  - [5. Pi MQTT Client](#5-pi-mqtt-client)
+  - [6. Message Formats](#6-message-formats)
+  - [7. Command Flow](#7-command-flow)
+  - [8. MQTT Troubleshooting](#8-mqtt-troubleshooting)
 - [Ball Detection](#ball-detection)
   - [1. System Architecture](#1-system-architecture)
   - [2. Camera Acquisition](#2-camera-acquisition-cameramanager)
@@ -74,7 +83,7 @@ This project integrates multiple subsystems including camera-based ball tracking
 
 ## Setup & Configuration
 
-### 3.1 Dependencies
+### Dependencies
 
 Install via `requirements.txt`:
 
@@ -194,6 +203,205 @@ All command triggers are mapped to state transitions in a finite-state machine.
 - Use `controller.lookahead = True` for faster, more aggressive control.
 - Enable or disable looping behavior with the `"LoopOn"` / `"LoopOff"` MQTT commands.
 - Tune `feedforward_t` values for more/less anticipatory movement based on distance to next waypoint.
+
+---
+
+## MQTT Communication
+
+This system uses MQTT to handle communication between the Jetson (main controller) and the Raspberry Pi (HMI interface). MQTT runs on top of TCP/IP. The Jetson hosts the MQTT broker (`192.168.1.3`), while the Raspberry Pi connects as a client (`192.168.1.2`).
+
+All messages are exchanged through well-defined topics and serialized using UTF-8 text or base64-encoded binary payloads.
+
+---
+
+### Login
+
+`Raspberry Pi`: login: raspberrypi, password: raspberry \
+`Jetson`: login: student, password: student 
+
+---
+
+### 1. Overview
+
+- **MQTT version**: v3.1.1 (via `paho-mqtt`)
+- **Broker**: Hosted on Jetson (`192.168.1.3`)
+- **Client**: Pi connects to Jetson broker
+- **Port**: `1883` (default MQTT TCP port)
+- **Transport Layer**: TCP
+- **Application Layer Protocol**: MQTT
+- **Session Persistence**: No retained messages; all subscriptions are non-persistent
+
+---
+
+### 2. Topic Structure
+
+#### Jetson publishes:
+| Topic | Payload Format | Purpose |
+|-------|----------------|---------|
+| `handshake/response` | `"ack"` (string) | Acknowledges handshake from Pi |
+| `pi/command`         | `"booted"` (string) | Triggers HMI to transition UI state |
+| `pi/camera`          | `base64(JPEG)` (binary) | Compressed camera frame for HMI display |
+| `ball/info`          | `x,y` or status string | Sends ball position or system state |
+| `pi/info`            | Status keywords | `"ball_found"`, `"timeout"`, etc. |
+
+#### Jetson subscribes:
+| Topic | Source | Purpose |
+|-------|--------|---------|
+| `handshake/request` | Pi → Jetson | Initiates connection with broker |
+| `jetson/command` | Pi → Jetson | System command input |
+| `jetson/state_transition` | Pi → Jetson | Triggers FSM state |
+| `arduino/elevator` | Arduino → Jetson | Elevator trigger signal |
+| `pi/response` | Pi → Jetson | Pi-side status message |
+
+#### Pi subscribes:
+| Topic | Purpose |
+|-------|---------|
+| `handshake/response` | Acknowledgement of handshake |
+| `pi/command`         | UI control command |
+| `pi/camera`          | Image frame for HMI display |
+| `pi/info`            | Jetson-side status like `"path_found"` |
+
+---
+
+### 3. Handshake Protocol
+
+The MQTT handshake makes sure that both sides are ready before entering control flow.
+
+1. **Pi sends**:
+   ```json
+   Topic: "handshake/request"
+   Payload: "pi"
+   ```
+
+2. **Jetson responds**:
+   ```json
+   Topic: "handshake/response" → "ack"
+   Topic: "pi/command" → "booted"
+   ```
+
+3. **Both systems mark**:
+   ```python
+   handshake_complete = True
+   ```
+
+This exchange uses **QoS 1** to for delivery acknowledgment.
+
+---
+
+### 4. Jetson MQTT Client
+
+Jetson acts as both a publisher and subscriber, and also hosts the MQTT broker.
+
+Key responsibilities:
+- Responds to Pi handshake
+- Pushes commands to `command_queue`
+- Listens for state changes
+- Publishes images and system status
+
+Initialization:
+
+```python
+mqtt_client = MQTTClientJetson(
+    arduino_connection=arduino,
+    fsm=hmi_controller,
+    broker_address="192.168.1.3"
+)
+```
+
+Shutdown:
+
+```python
+mqtt_client.stop()
+```
+
+Internally uses:
+- `client.loop_start()` for non-blocking message handling
+- Thread-safe `Queue` for command processing
+
+---
+
+### 5. Pi MQTT Client
+
+The Pi connects to Jetson’s broker and listens for camera images, system commands, and info updates.
+
+Key responsibilities:
+- Publishes handshake requests
+- Subscribes to `pi/camera`, `pi/info`
+- Decodes images and updates UI
+
+Image reception and decoding:
+
+```python
+image_data = base64.b64decode(msg.payload)
+frame = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
+```
+
+Auto-reconnection is handled via a backoff loop.
+
+---
+
+### 6. Message Formats
+
+#### Ball Info Message
+
+```text
+ball/info: "x,y"
+```
+
+Used to show current ball position or trigger Pi-side feedback.
+
+#### Camera Feed
+
+Image data is sent as:
+
+- JPEG-compressed (to reduce size)
+- Base64-encoded (to fit into MQTT string payload)
+- Decoded by Pi HMI
+
+Encoding side:
+
+```python
+_, buffer = cv2.imencode('.jpg', image)
+jpeg_b64 = base64.b64encode(buffer).decode('utf-8')
+self.client.publish("pi/camera", jpeg_b64)
+```
+
+Decoding side:
+
+```python
+decoded = base64.b64decode(payload)
+image = cv2.imdecode(np.frombuffer(decoded, np.uint8), cv2.IMREAD_COLOR)
+```
+
+---
+
+### 7. Command Flow
+
+Jetson receives commands on `jetson/command`:
+
+```python
+CMD_CONTROL = "Control"
+CMD_STOP = "Stop_control"
+```
+
+And pushes them into `command_queue`, which is checked by the FSM or main loop.
+
+To send a command from Pi:
+
+```python
+client.publish("jetson/command", "Control")
+```
+
+---
+
+### 8. MQTT Troubleshooting
+
+| Symptom | Cause | Resolution |
+|---------|-------|------------|
+| No handshake | Broker not running, wrong IP | Verify broker on Jetson (`192.168.1.3`) |
+| Image not received | Frame too large or not encoded | Lower resolution or ensure base64 step |
+| Command not registered | FSM not attached or `command_queue` not polled | Check `fsm` is passed and loop is active |
+| Reconnect fails | Firewall, network config, port blocked | Check UDP 1883/TCP, LAN routing |
 
 ---
 
@@ -673,8 +881,3 @@ Increase to enable more cache hits, but at the cost of re-using less precise pat
 ## Troubleshooting
 
 ## Authors
-
-## Password
-
-Login for raspberrypi is: login: raspberrypi, password: raspberry
-Login for Jetson is: login: student, password: student 
