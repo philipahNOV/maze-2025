@@ -634,7 +634,7 @@ Try values between 2.0 and 6.0 for balance.
 
 #### min_safe_dist in repulsion
 
-Defines how far from an obstacle a point must be to be considered "safe." Set in `config.yaml` as `path_finding.min_safe_distance`.
+Defines how far from an obstacle a point must be to be considered "safe." In layman's terms; if A* manages to find a narrow path between a hole and the edge of a wall, then this value needs to be higher. Set in `config.yaml` as `path_finding.min_safe_distance`.
 
 ```python
 compute_repulsion_cost(..., min_safe_dist=14)
