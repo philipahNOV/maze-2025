@@ -194,7 +194,7 @@ class Controller:
         dist = np.linalg.norm(np.array(pos) - np.array(ref))
         vel_mag = np.sqrt(edot_x ** 2 + edot_y ** 2)
 
-        if vel_mag < self.vel_tol and dist > self.pos_tol:
+        if vel_mag < self.stuck_vel_threshold and dist > self.pos_tol:
             self.stuck = True
         else:
             self.stuck = False
