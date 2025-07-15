@@ -2,6 +2,7 @@ import math
 from .path_geometry import angle_between, is_clear_path
 
 def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
+    DISTANCE_THRESHOLD = 10
     if not path or len(path) < 2:
         return path or []
 
@@ -41,7 +42,17 @@ def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
             last_wp_idx = best_idx
             accumulated = 0.0
 
-    if waypoints[-1] != path[-1]:
-        waypoints.append(path[-1])
+    goal = path[-1]
+    waypoints.append(goal)
+
+    if len(waypoints) >= 2:
+        prev = waypoints[-2]
+        dx = goal[0] - prev[0]
+        dy = goal[1] - prev[1]
+        dist = math.hypot(dx, dy)
+
+        threshold = max(DISTANCE_THRESHOLD, 0.2 * waypoint_spacing)
+        if dist < threshold:
+            waypoints.pop(-2)
 
     return waypoints
