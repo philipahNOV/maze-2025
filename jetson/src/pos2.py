@@ -235,7 +235,6 @@ class Controller:
     def horizontal(self):
         print("Stabilizing horizontally...")
         kp = self.config["controller"]["horizontal_controller"].get("kp", 700)
-        kp = 700
         tol = self.config["controller"]["horizontal_controller"].get("tolerance", 0.0015)
         timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 300)
         deadline = time.time() + timeLimit

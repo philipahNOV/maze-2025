@@ -83,8 +83,6 @@ path_finding:
   astar_downscale: 1.0            # downscaling factor
   normal_path_wpt_spacing: 160    # px
   lookahead_path_wpt_spacing: 50  # px
-  path_cache_size: 30
-  path_cache_tolerance: 15        # px
   angle_threshold: 135            # deg, waypoint sampling turn filter
   clear_path_kernel_size: 6       # morph kernel for visibility check
   waypoint_spacing: 160           # px
