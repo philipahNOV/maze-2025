@@ -159,7 +159,7 @@ class Controller:
         ff_y = a_y / a_model
 
         #--- Update logger if entered a new waypoint ---
-        if np.linalg.norm(np.array(e_x, e_y)) < self.pos_tol and self.logger is not None:
+        if np.linalg.norm(np.array((e_x, e_y))) < self.pos_tol and self.logger is not None:
             self.logger.set_waypoint(self.ref)
 
         #--- PID Control ---
