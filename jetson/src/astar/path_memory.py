@@ -5,9 +5,9 @@ import numpy as np
 class PathMemory:
     def __init__(self, config):
         self.paths = []
-        self.max_paths = config.get("path_cache_size", 30)
-        self.tolerance = config.get("path_cache_tolerance", 10)
-        self.cache_file = config.get("path_cache_file", "path_cache.json")
+        self.max_paths = config['path_finding'].get('path_cache_size', 30)
+        self.tolerance = config['path_finding'].get("path_cache_tolerance", 10)
+        self.cache_file = config['path_finding'].get("path_cache_file", "path_cache.json")
         self.load_cache()
 
     def _within_tolerance(self, p1, p2):
