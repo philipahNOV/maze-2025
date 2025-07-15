@@ -86,6 +86,7 @@ class Controller:
         self.stuck_wiggle_amplitude = config["controller"].get("stuck_wiggle_amplitude", 0.8)  # degrees
         self.stuck_wiggle_frequency = config["controller"].get("stuck_wiggle_frequency", 10)  # Hz
         self.stuck_vel_threshold = config["controller"].get("stuck_velocity_threshold", 20)  # px/s
+        self.stuck_upper_pos_threshold = config["controller"].get("stuck_upper_position_threshold", 90)  # px
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
