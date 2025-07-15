@@ -49,8 +49,8 @@ class LoggingThread(threading.Thread):
         self.motor_input = None
         self.reward = 0
         self.done = False
-        self.current_waypoint = self.path[0] if self.path else None
-        self.prev_waypoint = None
+        self.current_waypoint = 0
+        self.prev_waypoint = 0
         self.visited_waypoints = []
 
         self.prev_state = None
