@@ -12,9 +12,15 @@ class OfflineLogger:
         self.episode_limit = episode_limit
         self.current_episode = []
         self.episodes = []
-        self.episode_counter = 0
-        os.makedirs(save_path, exist_ok=True)
         self.save_path = save_path
+        os.makedirs(save_path, exist_ok=True)
+
+        existing_files = [f for f in os.listdir(save_path) if f.startswith("episode_") and f.endswith(".json")]
+        existing_indices = [
+            int(f.split("_")[1].split(".")[0])
+            for f in existing_files if f.split("_")[1].split(".")[0].isdigit()
+        ]
+        self.episode_counter = max(existing_indices, default=-1) + 1
 
     def log_step(self, state, action, reward, next_state, done):
         self.current_episode.append({
@@ -58,6 +64,9 @@ class LoggingThread(threading.Thread):
         self.prev_action = None
         self.prev_reward = 0
 
+        self.warmup_steps = 20  # Ignore first 20 steps (1 second at 20Hz)
+        self.steps_taken = 0
+
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
         while self.logger.episode_counter < self.logger.episode_limit and not self._stop_event.is_set():
@@ -70,7 +79,11 @@ class LoggingThread(threading.Thread):
 
             state = [x, y, vel_x, vel_y, theta_x, theta_y] # [x, y, vx, vy, theta_x, theta_y]
             action = [input_x, input_y]  # [motor_x, motor_y]
-            reward, done = self.calculate_reward()
+            # Delay reward calculation until warm-up is over
+            if self.steps_taken < self.warmup_steps:
+                reward, done = 0.0, False
+            else:
+                reward, done = self.calculate_reward()
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
                 self.episode_reward += reward
