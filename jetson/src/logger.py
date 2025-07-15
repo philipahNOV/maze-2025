@@ -81,6 +81,8 @@ class LoggingThread(threading.Thread):
                     next_state=state,
                     done=done
                 )
+                if self.done:
+                    self.stop()
 
             self.prev_state = state
             self.prev_action = action
