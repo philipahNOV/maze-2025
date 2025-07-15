@@ -192,7 +192,7 @@ class Controller:
         #--- Stuck prevention ---
         pos = self.pos
         self.ori = self.tracker.get_orientation()
-        #dist = np.linalg.norm(np.array(pos) - np.array(ref))
+        dist = np.linalg.norm(np.array(pos) - np.array(ref))
         #vel_mag = np.sqrt(edot_x ** 2 + edot_y ** 2)
 
         vel_x, vel_y = (edot_x, edot_y)
@@ -200,9 +200,9 @@ class Controller:
         dist_y = abs(e_y)
 
         # Thresholds
-        stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist_x > self.pos_tol and dist_x < self.stuck_upper_pos_threshold
-        stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist_y > self.pos_tol and dist_y < self.stuck_upper_pos_threshold
-
+        stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        print(dist, stuck_x, stuck_y)
         # Apply wiggling if needed
         if stuck_x:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
