@@ -61,12 +61,18 @@ class LoggingThread(threading.Thread):
         while self.logger.episode_counter < self.logger.episode_limit:
             loop_start = time.time()
 
-            state = [*self.ball_position, *self.ball_velocity, *self.orientation] # [x, y, vx, vy, theta_x, theta_y]
-            action = [*self.motor_input]  # [motor_x, motor_y]
+            x, y = self.ball_position if self.ball_position is not None else (0, 0)
+            theta_x, theta_y = self.orientation if self.orientation is not None else (0, 0)
+            vel_x, vel_y = self.ball_velocity if self.ball_velocity is not None else (0, 0)
+            input_x, input_y = self.motor_input if self.motor_input is not None else (0, 0)
+
+            state = [x, y, vel_x, vel_y, theta_x, theta_y] # [x, y, vx, vy, theta_x, theta_y]
+            action = [input_x, input_y]  # [motor_x, motor_y]
             reward, done = self.calculate_reward()
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
                 self.reward += reward
+
                 self.logger.log_step(
                     state=self.prev_state,
                     action=self.prev_action,

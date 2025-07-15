@@ -130,10 +130,9 @@ class Controller:
                 edot_y = alpha * edot_y + (1 - alpha) * self.prevVelError[1]
                 edot_x = np.clip(edot_x, -300, 300)
                 edot_y = np.clip(edot_y, -300, 300)
+                self.ball_velocity = (edot_x, edot_y)
         else:
             dt = 0
-
-        self.ball_velocity = (edot_x, edot_y)
 
         #--- Integral action ---
         self.e_x_int += e_x * dt
