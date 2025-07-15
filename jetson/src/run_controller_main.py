@@ -66,10 +66,10 @@ def main(tracker: TrackerService,
 
             image_controller.frame = frame.copy()
             ball_pos = tracker.get_ball_position()
-
+            print("orientation:", tracker.get_orientation())
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
-                pathFollower.follow_path(ball_pos)
+                #pathFollower.follow_path(ball_pos)
                 if blinker is not None:
                     blinker.stop()
                     blinker = None
