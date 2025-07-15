@@ -1,7 +1,7 @@
 import math
 from .path_geometry import angle_between, is_clear_path
 
-def sample_waypoints(path, mask, waypoint_spacing=160, angle_threshold=150):
+def sample_waypoints(path, mask, waypoint_spacing=160, angle_threshold=120):
     if not path or len(path) < 2:
         return path or []
 
