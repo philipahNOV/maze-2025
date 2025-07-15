@@ -36,7 +36,7 @@ class OfflineLogger:
             json.dump(self.episodes[-1], f, indent=2)
 
 class LoggingThread(threading.Thread):
-    def __init__(self, path, config):
+    def __init__(self, path):
         super().__init__(daemon=True)
         self.logger = OfflineLogger()
         self.target_hz = 20
