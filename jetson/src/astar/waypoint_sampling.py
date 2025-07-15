@@ -41,7 +41,12 @@ def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
             last_wp_idx = best_idx
             accumulated = 0.0
 
-    if waypoints[-1] != path[-1]:
-        waypoints.append(path[-1])
+    goal = path[-1]
+    dx = goal[0] - waypoints[-1][0]
+    dy = goal[1] - waypoints[-1][1]
+    dist_to_goal = math.hypot(dx, dy)
+
+    if dist_to_goal > 13:
+        waypoints.append(goal)
 
     return waypoints
