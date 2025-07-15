@@ -52,6 +52,7 @@ class LoggingThread(threading.Thread):
         self.current_waypoint = 0
         self.prev_waypoint = 0
         self.visited_waypoints = []
+        self.episode_reward = 0
 
         self.prev_state = None
         self.prev_action = None
@@ -72,7 +73,7 @@ class LoggingThread(threading.Thread):
             reward, done = self.calculate_reward()
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
-                self.reward += reward
+                self.episode_reward += reward
 
                 self.logger.log_step(
                     state=self.prev_state,
@@ -103,7 +104,7 @@ class LoggingThread(threading.Thread):
         self.motor_input = motor_input
 
     def calculate_reward(self):
-        reward = self.reward
+        reward = 0
         progress = 0
         if self.ball_position is not None:
             progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
