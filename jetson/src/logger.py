@@ -164,14 +164,16 @@ class LoggingThread(threading.Thread):
         """
         Projects point p onto line segment a-b and returns the projected point.
         """
-        if (
-            p is None or a is None or b is None or
+        if np.ndim(p) == 0 or np.ndim(a) == 0 or np.ndim(b) == 0:
+            print("[Error] One of the points is a 0-d array.")
+            return (10000, 10000)
+        elif (    
             any(x is None for x in p) or
             any(x is None for x in a) or
             any(x is None for x in b)
         ):
             print("[project_point_on_segment] Invalid input detected: p={}, a={}, b={}".format(p, a, b))
-            return 10000
+            return (10000, 10000)
         ap = p - a
         ab = b - a
         ab_norm_sq = np.dot(ab, ab)
