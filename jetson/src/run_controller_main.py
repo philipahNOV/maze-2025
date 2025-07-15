@@ -45,8 +45,8 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
-    logger = LoggingThread(path_array, config)
-    logger.start()
+    #logger = LoggingThread(path_array, config)
+    #logger.start()
     #controller.logger = logger
 
     # Set control loop parameters
