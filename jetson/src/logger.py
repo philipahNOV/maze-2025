@@ -171,7 +171,7 @@ class LoggingThread(threading.Thread):
             any(x is None for x in b)
         ):
             print("[project_point_on_segment] Invalid input detected: p={}, a={}, b={}".format(p, a, b))
-            return 10000
+            return np.array([10000, 10000])  # Return a default invalid point
         ap = p - a
         ab = b - a
         ab_norm_sq = np.dot(ab, ab)
