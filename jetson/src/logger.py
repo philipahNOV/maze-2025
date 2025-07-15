@@ -49,9 +49,10 @@ class LoggingThread(threading.Thread):
         self.motor_input = None
         self.reward = 0
         self.done = False
-        self.current_waypoint = self.path[0] if self.path else None
-        self.prev_waypoint = None
+        self.current_waypoint = 0
+        self.prev_waypoint = 0
         self.visited_waypoints = []
+        self.episode_reward = 0
 
         self.prev_state = None
         self.prev_action = None
@@ -72,7 +73,7 @@ class LoggingThread(threading.Thread):
             reward, done = self.calculate_reward()
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
-                self.reward += reward
+                self.episode_reward += reward
 
                 self.logger.log_step(
                     state=self.prev_state,
@@ -81,10 +82,12 @@ class LoggingThread(threading.Thread):
                     next_state=state,
                     done=done
                 )
+                if done:
+                    self.stop()
 
             self.prev_state = state
             self.prev_action = action
-            self.prev_reward = self.reward
+            self.prev_reward = reward
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
@@ -101,9 +104,11 @@ class LoggingThread(threading.Thread):
         self.motor_input = motor_input
 
     def calculate_reward(self):
-        reward = self.reward
-
-        progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
+        reward = 0
+        progress = 0
+        if self.ball_position is not None:
+            progress = (self.compute_total_path_length() - self.distance_from_goal()) / self.compute_total_path_length()
+            np.clip(progress, 0, 1)  # Ensure progress is between 0 and 1
         reward += progress * 20  # Reward for progress towards goal
 
         if self.ball_position is None:
@@ -164,14 +169,16 @@ class LoggingThread(threading.Thread):
         """
         Projects point p onto line segment a-b and returns the projected point.
         """
-        if (
-            p is None or a is None or b is None or
+        if np.ndim(p) == 0 or np.ndim(a) == 0 or np.ndim(b) == 0:
+            print("[Error] One of the points is a 0-d array.")
+            return np.array([10000, 10000])
+        elif (
             any(x is None for x in p) or
             any(x is None for x in a) or
             any(x is None for x in b)
         ):
             print("[project_point_on_segment] Invalid input detected: p={}, a={}, b={}".format(p, a, b))
-            return np.array([10000, 10000])  # Return a default invalid point
+            return np.array([10000, 10000])
         ap = p - a
         ab = b - a
         ab_norm_sq = np.dot(ab, ab)
