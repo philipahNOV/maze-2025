@@ -1,6 +1,21 @@
 import numpy as np
 from scipy.ndimage import distance_transform_edt
-from .path_geometry import angle_between, is_clear_path
+from .path_geometry import angle_between
+import cv2
+
+def is_clear_path(mask, p1, p2, kernel_size=3, max_violation_ratio=0.05):
+    line_img = np.zeros_like(mask, dtype=np.uint8)
+    cv2.line(line_img, (p1[1], p1[0]), (p2[1], p2[0]), 1, 1)
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (kernel_size, kernel_size))
+    corridor = cv2.dilate(line_img, kernel)
+    corridor_mask = corridor.astype(bool)
+    total_pixels = np.count_nonzero(corridor_mask)
+
+    if total_pixels == 0:
+        return False  # fallback: treat as blocked
+
+    unsafe_pixels = np.count_nonzero(mask[corridor_mask] == 0)
+    return unsafe_pixels / total_pixels <= max_violation_ratio
 
 def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookahead=100, step=10):
     from scipy.ndimage import distance_transform_edt
@@ -17,7 +32,7 @@ def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookah
     N = len(path)
 
     while i < N - 1:
-        print(f"[PathFindingThread] Sampling waypoints: {i}/{N-1}")
+        #print(f"[PathFindingThread] Sampling waypoints: {i}/{N-1}")
         best = i + 1
         max_j = min(i + max_lookahead, N - 1)
 
