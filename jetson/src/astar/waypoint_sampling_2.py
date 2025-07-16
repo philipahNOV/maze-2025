@@ -2,7 +2,7 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt
 from .path_geometry import angle_between, is_clear_path
 
-def sample_waypoints(path, obstacle_mask, angle_thresh=150, buffer=10, max_lookahead=100, step=10):
+def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookahead=100, step=10):
     from scipy.ndimage import distance_transform_edt
     free = obstacle_mask == 255
     dist_map = distance_transform_edt(free)
