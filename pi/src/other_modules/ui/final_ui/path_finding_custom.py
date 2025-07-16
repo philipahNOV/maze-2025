@@ -52,7 +52,7 @@ class CustomPathScreen(tk.Frame):
                     self.awaiting_path = False
                     self.has_pathfinded = False
                     self.disable_button_start()
-                    self.path_failed_label.place(x=780, y=135)
+                    self.path_failed_label.place(x=730, y=135)
                 else:
                     print("[UI] Path found. Enabling START buttons.")
                     self.awaiting_path = False
