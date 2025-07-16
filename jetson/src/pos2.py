@@ -205,6 +205,8 @@ class Controller:
         # Thresholds
         #stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
         #stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        stuck_x = False
+        stuck_y = False
         if abs(vel_x) < self.stuck_vel_threshold and abs(e_x) > self.pos_tol:
             if self.stuck_timer_x is None:
                 self.stuck_timer_x = time.time()
