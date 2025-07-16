@@ -25,7 +25,7 @@ def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookah
 
     def too_close(pt):
         x, y = int(pt[0]), int(pt[1])
-        if not (0 <= x < width and 0 <= y < height):
+        if not (0 <= y < height and 0 <= x < width):  # y is row, x is column
             return True
         return dist_map[y, x] < buffer
 
