@@ -34,7 +34,7 @@ def rdp(points, epsilon):
 def interpolate_points(p1, p2, spacing, max_insertions=2):
     """Insert up to N intermediate points between two distant points."""
     dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-    if dist <= spacing * 1.5:  # only interpolate if it's well over target spacing
+    if dist <= spacing * 2.5:  # only interpolate if it's well over target spacing
         return []
 
     num_points = min(max_insertions, int(dist // spacing))
@@ -44,7 +44,7 @@ def interpolate_points(p1, p2, spacing, max_insertions=2):
     return [(int(p1[0] + dx * i), int(p1[1] + dy * i)) for i in range(1, num_points + 1)]
 
 
-def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
+def sample_waypoints(path, mask, waypoint_spacing=140, angle_threshold=120):
     DISTANCE_THRESHOLD = 10
     if not path or len(path) < 2:
         return path or []
