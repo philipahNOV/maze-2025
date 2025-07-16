@@ -41,6 +41,7 @@ controller:
   stuck_wiggle_frequency: 20      # Hz, frequency of wiggle when stuck
   stuck_velocity_threshold: 10    # px/s, velocity threshold to consider stuck
   stuck_upper_position_threshold: 70 # px, upper position threshold to consider stuck
+  stuck_time_threshold: 0.8  # seconds, time to consider stuck
   integration_pos_threshold: 50        # px, reset integral if error exceeds this
   integration_vel_threshold: 20        # px/s, reset integral if velocity exceeds this
   position_controller_normal:

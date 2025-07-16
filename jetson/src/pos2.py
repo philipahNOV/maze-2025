@@ -34,6 +34,9 @@ class Controller:
         self.stuck = False
         self.ball_velocity = None
         self.prev_waypoint = None
+        self.stuck_timer_x = None
+        self.stuck_timer_y = None
+        self.stuck_time_threshold = config["controller"].get("stuck_time_threshold", 0.8)  # seconds
 
         self.prev_vel_x = 0
         self.prev_vel_y = 0
@@ -200,8 +203,26 @@ class Controller:
         dist_y = abs(e_y)
 
         # Thresholds
-        stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
-        stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        #stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        #stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
+        if abs(vel_x) < self.stuck_vel_threshold and abs(e_x) > self.pos_tol:
+            if self.stuck_timer_x is None:
+                self.stuck_timer_x = time.time()
+            elif time.time() - self.stuck_timer_x > self.stuck_time_threshold:
+                stuck_x = True
+        else:
+            self.stuck_timer_x = None
+            stuck_x = False
+
+        if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol:
+            if self.stuck_timer_y is None:
+                self.stuck_timer_y = time.time()
+            elif time.time() - self.stuck_timer_y > self.stuck_time_threshold:
+                stuck_y = True
+        else:
+            self.stuck_timer_y = None
+            stuck_y = False
+
         print(dist, stuck_x, stuck_y)
         # Apply wiggling if needed
         if stuck_x:
