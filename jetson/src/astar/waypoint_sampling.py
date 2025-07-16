@@ -25,12 +25,15 @@ def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
 
         if i < len(path) - 1:
             angle = angle_between(path[last_wp_idx], path[i], path[i + 1])
-            if angle < angle_threshold and accumulated >= spacing / 2:
-                if is_clear_path(mask, path[last_wp_idx], path[i]):
+            if angle < angle_threshold and is_clear_path(mask, path[last_wp_idx], path[i]):
+                # Only insert waypoint if next segment is also NOT straight
+                angle_next = angle_between(path[i], path[i+1], path[i+2]) if i+2 < len(path) else 180
+                if angle_next < angle_threshold:
                     waypoints.append(path[i])
                     last_wp_idx = i
                     accumulated = 0.0
                     continue
+
 
         if accumulated >= spacing:
             best_idx = last_wp_idx + 1
@@ -38,9 +41,17 @@ def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
                 if is_clear_path(mask, path[last_wp_idx], path[j]):
                     best_idx = j
                     break
-            waypoints.append(path[best_idx])
-            last_wp_idx = best_idx
-            accumulated = 0.0
+
+            # Prefer longer segments, ignore if too short
+            dist = math.hypot(
+                path[best_idx][0] - path[last_wp_idx][0],
+                path[best_idx][1] - path[last_wp_idx][1]
+            )
+            if dist >= spacing * 0.8:
+                waypoints.append(path[best_idx])
+                last_wp_idx = best_idx
+                accumulated = 0.0
+
 
     goal = path[-1]
     waypoints.append(goal)
