@@ -6,7 +6,7 @@ def triangle_area(p1, p2, p3):
                 p2[0]*(p3[1] - p1[1]) +
                 p3[0]*(p1[1] - p2[1])) / 2.0)
 
-def simplify_visvalingam(path, area_threshold=5.0):
+def simplify_visvalingam_obstacle_aware(path, mask, area_threshold=5.0):
     if len(path) <= 2:
         return path
 
@@ -21,10 +21,11 @@ def simplify_visvalingam(path, area_threshold=5.0):
         for i in range(1, len(simplified) - 1):
             area = triangle_area(simplified[i - 1], simplified[i], simplified[i + 1])
             if area < min_area:
-                min_area = area
-                min_index = i
+                if is_clear_path(mask, simplified[i - 1], simplified[i + 1]):
+                    min_area = area
+                    min_index = i
 
-        if min_area < area_threshold:
+        if min_index != -1 and min_area < area_threshold:
             del simplified[min_index]
             changed = True
 
@@ -74,6 +75,6 @@ def sample_waypoints(path, mask, waypoint_spacing=120):
         if dist < threshold:
             waypoints.pop(-2)
 
-    waypoints = simplify_visvalingam(waypoints, area_threshold=5.0)
+    waypoints = simplify_visvalingam_obstacle_aware(waypoints, mask, area_threshold=5.0)
 
     return waypoints
