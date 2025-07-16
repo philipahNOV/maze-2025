@@ -193,7 +193,6 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Locate"):
@@ -253,7 +252,6 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 print("[FSM] Transitioned to MAIN_SCREEN")
             elif cmd == "BallFound":
                 # Transition to CUSTOM_PATH and set up image thread
@@ -332,7 +330,6 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
@@ -360,7 +357,6 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
@@ -421,7 +417,6 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
         # --- CONTROLLING STATE ---
@@ -439,7 +434,6 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd == "timeout":
@@ -455,7 +449,6 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread)
                 self.disco_thread.start()
-                self.disco_thread.toggle_mode()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Loop"):

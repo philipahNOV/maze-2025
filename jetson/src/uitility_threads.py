@@ -7,7 +7,7 @@ from astar.waypoint_sampling import sample_waypoints
 from astar.path_memory import PathMemory
 import colorsys
 import cv2
-import astar.waypoint_sampling_2
+import random
 
 
 class BlinkRed(threading.Thread):
@@ -167,9 +167,9 @@ class DiscoThread(threading.Thread):
 
     def run(self):
         print("[DiscoThread] Starting disco...")
+        hue = random.randrange(0, 100) / 100.0  # Random initial hue
         while not self._stop_event.is_set():
             if self.mode == 1:
-                hue = 0.0
                 # Convert hue to RGB (colorsys returns floats 0–1)
                 r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
                 r, g, b = int(r * 255), int(g * 255), int(b * 255)
