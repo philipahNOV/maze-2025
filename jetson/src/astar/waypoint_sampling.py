@@ -32,7 +32,6 @@ def rdp(points, epsilon):
         return [points[0], points[-1]]
 
 def interpolate_points(p1, p2, spacing):
-    """Insert intermediate points between two points if distance > spacing."""
     dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
     if dist <= spacing:
         return []
