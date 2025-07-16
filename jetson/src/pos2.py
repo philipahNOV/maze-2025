@@ -243,12 +243,12 @@ class Controller:
             else:
                 self.unstuck_timer_y = None
 
-        print(dist, stuck_x, stuck_y)
+        print(dist, self.stuck_x_active, self.stuck_y_active)
         # Apply wiggling if needed
-        if stuck_x:
+        if self.stuck_x_active:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
-        if stuck_y:
+        if self.stuck_y_active:
             theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
         # Send angles to axis control
