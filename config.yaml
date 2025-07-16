@@ -1,5 +1,8 @@
 # config.yaml
 
+general:
+  idle_light_time: 15 # seconds, time to wait before going idle
+
 camera:
   resolution: "HD720" # don't change
   fps: 60 # don't change
