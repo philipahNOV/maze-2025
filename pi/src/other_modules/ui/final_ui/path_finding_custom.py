@@ -268,8 +268,8 @@ class CustomPathScreen(tk.Frame):
 
         self.start_button = tk.Button(
             self,
-            text="START ROBOT",
-            font=("Jockey One", 20),
+            text="START ROBOT\nSAFE CONTROLLER",
+            font=("Jockey One", 14),
             fg="#9E9E9E",
             bg="#723D3A",           
             activebackground="#331E1D",
@@ -277,6 +277,7 @@ class CustomPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
+            justify="center",         # Horizontal alignment of lines
             state="disabled",  # Initially disabled
             command=self.on_button_click_start,
         )
@@ -284,8 +285,8 @@ class CustomPathScreen(tk.Frame):
 
         self.start_speed_button = tk.Button(
             self,
-            text="START SPEED",
-            font=("Jockey One", 20),
+            text="START ROBOT\nFAST CONTROLLER",
+            font=("Jockey One", 14),
             fg="#9E9E9E",
             bg="#723D3A",           
             activebackground="#331E1D",
@@ -293,6 +294,7 @@ class CustomPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
+            justify="center",         # Horizontal alignment of lines
             state="disabled",  # Initially disabled
             command=self.on_button_click_start_speed,
         )
