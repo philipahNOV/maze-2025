@@ -274,7 +274,7 @@ class Controller:
         vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
         if self.logger is not None:
             self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
-        if self.stuck or self.significant_motor_change(vel_x, vel_y):
+        if self.stuck_x_active or self.stuck_y_active or self.significant_motor_change(vel_x, vel_y):
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
 
