@@ -13,7 +13,7 @@ import yaml
 import pos2
 from arduino_connection import ArduinoConnection
 
-from astar.astar import astar_downscaled
+from astar import astar_cy
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
