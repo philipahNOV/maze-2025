@@ -25,7 +25,9 @@ def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookah
 
     def too_close(pt):
         x, y = int(pt[0]), int(pt[1])
-        return not (0 <= x < width and 0 <= y < height) or dist_map[y, x] < buffer
+        if not (0 <= x < width and 0 <= y < height):
+            return True
+        return dist_map[y, x] < buffer
 
     simplified = [path[0]]
     i = 0
@@ -46,7 +48,11 @@ def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookah
                 close = too_close(b)
 
                 if close:
-                    print(f"REJECTED: too_close @ {k} (dist_map={dist_map[int(b[1]), int(b[0])]})")
+                    x, y = int(b[0]), int(b[1])
+                    if 0 <= y < dist_map.shape[0] and 0 <= x < dist_map.shape[1]:
+                        print(f"REJECTED: too_close @ {k} (dist_map={dist_map[y, x]:.2f})")
+                    else:
+                        print(f"REJECTED: too_close @ {k} (out of bounds x={x}, y={y})")
                     disqualified = True
                     break
                 if angle < angle_thresh:
