@@ -4,7 +4,7 @@ from .path_geometry import angle_between, is_clear_path
 
 def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookahead=100, step=10):
     from scipy.ndimage import distance_transform_edt
-    free = obstacle_mask == 255
+    free = obstacle_mask > 0
     dist_map = distance_transform_edt(free)
     height, width = dist_map.shape
 
