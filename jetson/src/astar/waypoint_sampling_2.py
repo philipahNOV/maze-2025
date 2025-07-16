@@ -32,22 +32,40 @@ def sample_waypoints(path, obstacle_mask, angle_thresh=120, buffer=3, max_lookah
     N = len(path)
 
     while i < N - 1:
-        #print(f"[PathFindingThread] Sampling waypoints: {i}/{N-1}")
         best = i + 1
-        max_j = min(i + max_lookahead, N - 1)
+        max_j = min(i + max_lookahead, N - 1)  # ← this is needed
 
         for j in range(i + step, max_j + 1, step):
-            # Precheck: geometry + clearance only on 2 samples
             mid_idxs = [i + (j - i) // 3, i + 2 * (j - i) // 3]
-            if any(
-                too_close(path[k]) or angle_between(path[i], path[k], path[j]) < angle_thresh
-                for k in mid_idxs
-            ):
+            disqualified = False
+            for k in mid_idxs:
+                a = path[i]
+                b = path[k]
+                c = path[j]
+                angle = angle_between(a, b, c)
+                close = too_close(b)
+
+                if close:
+                    print(f"REJECTED: too_close @ {k} (dist_map={dist_map[int(b[1]), int(b[0])]})")
+                    disqualified = True
+                    break
+                if angle < angle_thresh:
+                    print(f"REJECTED: angle {angle:.1f}° < {angle_thresh} @ {k}")
+                    disqualified = True
+                    break
+
+            if disqualified:
                 continue
 
-            # Do LOS check last (expensive)
             if is_clear_path(obstacle_mask, path[i], path[j]):
+                print(f"ACCEPTED: {i} → {j} via mid {mid_idxs}")
                 best = j
+            else:
+                print(f"REJECTED: LOS failed from {i} → {j}")
+
+        simplified.append(path[best])
+        i = best
+
 
         simplified.append(path[best])
         i = best
