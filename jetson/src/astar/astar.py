@@ -16,20 +16,26 @@ def compute_repulsion_cost(array, min_safe_dist = 14):
     return repulsion, mask_safe
 
 def astar(array, start, goal, repulsion_weight=15.0):
-    neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
     rows, cols = array.shape
     repulsion_map, walkable_mask = compute_repulsion_cost(array)
 
-    close_set = set()
-    open_set = {start}
-    came_from = {}
-    gscore = {start: 0}
-    fscore = {start: heuristic(start, goal)}
-    oheap = [(fscore[start], start)]
+    neighbors = [(0, 1), (1, 0), (-1, 0), (0, -1)]
 
-    while oheap:
-        _, current = heapq.heappop(oheap)
-        open_set.discard(current)
+    open_heap = []
+    heapq.heappush(open_heap, (0 + heuristic(start, goal), 0, start))
+
+    came_from = {}
+    g_score = np.full(array.shape, np.inf, dtype=np.float32)
+    g_score[start] = 0
+
+    in_open = set()
+    in_open.add(start)
+
+    closed = np.zeros(array.shape, dtype=bool)
+
+    while open_heap:
+        _, cost_so_far, current = heapq.heappop(open_heap)
+        in_open.discard(current)
 
         if current == goal:
             path = []
@@ -39,29 +45,29 @@ def astar(array, start, goal, repulsion_weight=15.0):
             path.reverse()
             return path
 
-        close_set.add(current)
+        closed[current] = True
 
         for dx, dy in neighbors:
-            neighbor = current[0] + dx, current[1] + dy
-            if not (0 <= neighbor[0] < rows and 0 <= neighbor[1] < cols):
-                continue
-            if walkable_mask[neighbor[0], neighbor[1]] == 0:
-                continue
+            nx, ny = current[0] + dx, current[1] + dy
 
-            cost = 1.0 + repulsion_weight * repulsion_map[neighbor[0], neighbor[1]]
-            tentative_g = gscore[current] + cost
-
-            if neighbor in close_set and tentative_g >= gscore.get(neighbor, float('inf')):
+            if not (0 <= nx < rows and 0 <= ny < cols):
+                continue
+            if walkable_mask[nx, ny] == 0 or closed[nx, ny]:
                 continue
 
-            if tentative_g < gscore.get(neighbor, float('inf')) or neighbor not in open_set:
+            neighbor = (nx, ny)
+            move_cost = 1.0 + repulsion_weight * repulsion_map[nx, ny]
+            tentative_g = cost_so_far + move_cost
+
+            if tentative_g < g_score[neighbor]:
                 came_from[neighbor] = current
-                gscore[neighbor] = tentative_g
-                fscore[neighbor] = tentative_g + heuristic(neighbor, goal)
-                heapq.heappush(oheap, (fscore[neighbor], neighbor))
-                open_set.add(neighbor)
+                g_score[neighbor] = tentative_g
+                fscore = tentative_g + heuristic(neighbor, goal)
+                if neighbor not in in_open:
+                    heapq.heappush(open_heap, (fscore, tentative_g, neighbor))
+                    in_open.add(neighbor)
 
-    return False
+    return []
 
 # default scale is 0.60, shows a good balanace, adjust based on needs
 def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=1.0):
