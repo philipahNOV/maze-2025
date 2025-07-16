@@ -2,7 +2,7 @@ from enum import Enum, auto
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
-import uitility_threads
+import utility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 import pos2
@@ -92,7 +92,7 @@ class HMIController:
         if is_in_elevator(self.config, self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
         else:
-            self.ball_finder = uitility_threads.LookForBall(
+            self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
             self.ball_finder.start_ball_check()
@@ -129,7 +129,7 @@ class HMIController:
         else:
             goal = (49, 763)
 
-        self.path_thread = uitility_threads.PathFindingThread(
+        self.path_thread = utility_threads.PathFindingThread(
             tracking_service=self.tracking_service,
             goal=goal,
             on_path_found=self.on_path_found,
@@ -145,15 +145,13 @@ class HMIController:
             if cmd == "booted":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
         
         # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
             if cmd == "Info":
                 # Stop disco thread if running before going to Info screen
-                if self.disco_thread is not None:
-                    self.disco_thread.stop()
-                    self.disco_thread.join()
-                    self.disco_thread = None
                 self.state = SystemState.INFO_SCREEN
                 print("[FSM] Transitioned to INFO_SCREEN")
 
@@ -167,21 +165,8 @@ class HMIController:
                 print("[FSM] Transitioned to NAVIGATION")
 
             elif cmd == "Disco":
-                # Cycle through disco modes (0–5), restart thread accordingly
-                self.disco_mode += 1
-                self.disco_mode = self.disco_mode % 6
-                if self.disco_mode == 0:
-                    if self.disco_thread is not None:
-                        self.disco_thread.stop()
-                        self.disco_thread.join()
-                        self.disco_thread = None
-                    print("[FSM] Disco mode stopped")
-                else:
-                    if self.disco_thread is not None:
-                        self.disco_thread.stop()
-                        self.disco_thread.join()
-                    self.disco_thread = uitility_threads.DiscoThread(self.arduino_thread, self.disco_mode)
-                    self.disco_thread.start()
+                if self.disco_thread is not None:
+                    self.disco_thread.toggle_mode()
             elif cmd.startswith("Locate"):
                 # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
@@ -190,8 +175,11 @@ class HMIController:
                     self.disco_thread.join()
                     self.disco_thread = None
                 print("[FSM] Transitioned to LOCATING")
+                if self.controller.elevator_state == "down":
+                    #SEND ELEVATOR UP COMMAND
+                    pass
                 self.tracking_service.start_tracker()
-                self.ball_finder = uitility_threads.LookForBall(
+                self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
@@ -199,7 +187,6 @@ class HMIController:
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
-                self.disco_mode = 0
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
@@ -207,7 +194,8 @@ class HMIController:
         elif self.state == SystemState.NAVIGATION:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
-                self.disco_mode = 0
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Locate"):
@@ -226,7 +214,7 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
-                self.ball_finder = uitility_threads.LookForBall(
+                self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
@@ -265,7 +253,8 @@ class HMIController:
                     self.ball_finder.stop()
                     self.ball_finder = None
                 self.state = SystemState.MAIN_SCREEN
-                self.disco_mode = 0
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
             elif cmd == "BallFound":
                 # Transition to CUSTOM_PATH and set up image thread
@@ -307,7 +296,7 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 self.tracking_service.start_tracker()
-                self.ball_finder = uitility_threads.LookForBall(
+                self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
@@ -342,6 +331,8 @@ class HMIController:
                 print("[FSM] Timeout command received in AUTO_PATH")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
@@ -367,6 +358,8 @@ class HMIController:
                     self.custom_goal = None
                 
                 self.state = SystemState.MAIN_SCREEN
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
@@ -425,7 +418,8 @@ class HMIController:
                     self.image_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                self.disco_mode = 0
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
         # --- CONTROLLING STATE ---
@@ -441,7 +435,8 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 self.state = SystemState.MAIN_SCREEN
-                self.disco_mode = 0
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd == "timeout":
@@ -455,7 +450,8 @@ class HMIController:
                     self.image_thread = None
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                self.disco_mode = 0
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
+                self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Loop"):

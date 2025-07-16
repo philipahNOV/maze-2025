@@ -99,7 +99,7 @@ class MainScreen(tk.Frame):
 
         self.info_button = tk.Button(
             self,
-            text="INFO",
+            text="GUIDE",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
@@ -113,7 +113,7 @@ class MainScreen(tk.Frame):
 
         self.disco_button = tk.Button(
             self,
-            text="DISCO",
+            text="TOGGLE LIGHTS",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,

@@ -3,7 +3,7 @@ import position_controller
 import low_pass_filter
 import path_following
 import path_following_lookahead
-import uitility_threads
+import utility_threads
 from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
 from image_controller import ImageSenderThread
@@ -40,7 +40,7 @@ def main(tracker: TrackerService,
     image_thread.start()
 
     controller.horizontal()
-    escape_thread = uitility_threads.EscapeElevatorThread(controller.arduinoThread)
+    escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread)
     escape_thread.start()
     time.sleep(escape_thread.duration)
     controller.horizontal()
@@ -79,7 +79,7 @@ def main(tracker: TrackerService,
                 if blinker is None:
                     # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = uitility_threads.BlinkRed(controller.arduinoThread)
+                    blinker = utility_threads.BlinkRed(controller.arduinoThread)
                     blinker.start()
                     ball_not_found_timer = time.time()
 
