@@ -31,16 +31,18 @@ def rdp(points, epsilon):
     else:
         return [points[0], points[-1]]
 
-def interpolate_points(p1, p2, spacing):
+def interpolate_points(p1, p2, spacing, max_insertions=2):
+    """Insert up to N intermediate points between two distant points."""
     dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
-    if dist <= spacing:
+    if dist <= spacing * 1.5:  # only interpolate if it's well over target spacing
         return []
-    
-    num_points = int(dist // spacing)
+
+    num_points = min(max_insertions, int(dist // spacing))
     dx = (p2[0] - p1[0]) / (num_points + 1)
     dy = (p2[1] - p1[1]) / (num_points + 1)
 
     return [(int(p1[0] + dx * i), int(p1[1] + dy * i)) for i in range(1, num_points + 1)]
+
 
 def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
     DISTANCE_THRESHOLD = 10
@@ -55,7 +57,7 @@ def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
     spacing = total_length / target_count
 
     # Step 1: Simplify path
-    simplified_path = rdp(path, epsilon=10)
+    simplified_path = rdp(path, epsilon=7)
 
     # Step 2: Build BRIO-style waypoints from RDP path
     waypoints = [simplified_path[0]]
