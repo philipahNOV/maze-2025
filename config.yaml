@@ -26,18 +26,18 @@ camera:
 tracking:
   model_path: "camera/v8-291.pt" # onnx/engine?
   init_ball_region:
-    x_min: 390
-    y_min: 10
-    x_max: 1120
-    y_max: 720
+    x_min: 420
+    y_min: 25
+    x_max: 1200
+    y_max: 700
   hsv_range:
     lower: [35, 55, 55]       # Light green HSV lower bound
     upper: [85, 255, 255]     # Light green HSV upper bound
   hsv_window_size: 80
   hsv_min_contour_area: 150  # px^2
   smoothing_alpha: 0.5       # smoothing factor for exponential filter
-  hsv_fail_threshold: 20     # frames to wait before fallback to YOLO
-  yolo_cooldown_period: 15   # frames before allowing YOLO recheck
+  hsv_fail_threshold: 40     # frames to wait before fallback to YOLO
+  yolo_cooldown_period: 20   # frames before allowing YOLO recheck
 
 controller:
   stuck_wiggle_amplitude: 1     # deg, amplitude of wiggle when stuck
@@ -45,7 +45,7 @@ controller:
   stuck_velocity_threshold: 10    # px/s, velocity threshold to consider stuck
   stuck_upper_position_threshold: 70 # px, upper position threshold to consider stuck
   stuck_time_threshold: 0.8  # seconds, time to consider stuck
-  stuck_unstuck_hold_time: 0.25 # seconds, time to hold before unsticking
+  stuck_unstuck_hold_time: 0.2 # seconds, time to hold before unsticking
   integration_pos_threshold: 50        # px, reset integral if error exceeds this
   integration_vel_threshold: 20        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
@@ -55,19 +55,19 @@ controller:
     kd_y: 0.00015
     ki_x: 0.0002
     ki_y: 0.0002
-    position_tolerance: 35        # px
+    position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 4.8
+    feedforward_t: 4.9
   position_controller_lookahead:
-    kp_x: 0.000015
-    kp_y: 0.000015
-    kd_x: 0.0002
-    kd_y: 0.0002
+    kp_x: 0.00002
+    kp_y: 0.00002
+    kd_x: 0.0003
+    kd_y: 0.0003
     ki_x: 0.0
     ki_y: 0.0
     position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 6.0
+    feedforward_t: 6
   angular_controller:
     kp: 6500
     max_angle: 1.8                # deg
@@ -92,7 +92,7 @@ path_finding:
   lookahead_path_wpt_spacing: 50  # px
   angle_threshold: 120            # deg, waypoint sampling turn filter
   clear_path_kernel_size: 6       # morph kernel for visibility check
-  waypoint_spacing: 120           # px
+  waypoint_spacing: 100           # px
   dilation_iterations: 2
   clahe_clip_limit: 1.0
   adaptive_threshold_target: 130
@@ -102,9 +102,9 @@ path_finding:
 
 path_following:
   lookahead:
-    lookahead_distance: 80
+    lookahead_distance: 70
     adaptive: false
-    lookahead_distance_min: 50
+    lookahead_distance_min: 55
     lookahead_distance_max: 80
     smoothing_alpha: 0.03
     velocity_gain: 100
