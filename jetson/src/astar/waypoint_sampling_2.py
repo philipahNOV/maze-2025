@@ -2,36 +2,42 @@ import numpy as np
 from scipy.ndimage import distance_transform_edt
 from .path_geometry import angle_between, is_clear_path
 
-def sample_waypoints(path, obstacle_mask, angle_thresh=150, buffer=10):
+def sample_waypoints(path, obstacle_mask, angle_thresh=150, buffer=10, max_lookahead=100, step=5):
     free = obstacle_mask == 255
     dist_map = distance_transform_edt(free)
     height, width = dist_map.shape
 
     def too_close(pt):
         x, y = int(pt[0]), int(pt[1])
-        if not (0 <= x < width and 0 <= y < height):
-            return True
-        return dist_map[y, x] < buffer
+        return not (0 <= x < width and 0 <= y < height) or dist_map[y, x] < buffer
 
     simplified = [path[0]]
     i = 0
-    while i < len(path) - 1:
-        # Try to find the furthest j we can skip to
-        furthest = i + 1
-        for j in range(i + 2, len(path)):
-            if is_clear_path(obstacle_mask, path[i], path[j]):
-                # Check all intermediate points for angle + wall proximity
-                valid = True
-                for k in range(i + 1, j):
-                    if angle_between(path[i], path[k], path[j]) < angle_thresh or too_close(path[k]):
-                        valid = False
-                        break
-                if valid:
-                    furthest = j
-            else:
-                break  # no LOS anymore
-        simplified.append(path[furthest])
-        i = furthest
+    N = len(path)
+
+    while i < N - 1:
+        print(f"[PathFindingThread] Sampling waypoints: {i}/{N-1}")
+        best = i + 1
+        max_j = min(i + max_lookahead, N - 1)
+
+        for j in range(i + step, max_j + 1, step):
+            if not is_clear_path(obstacle_mask, path[i], path[j]):
+                break
+
+            # Sample only a few intermediate points
+            check_idxs = range(i + 1, j, max((j - i) // 5, 1))
+            valid = True
+            for k in check_idxs:
+                pt = path[k]
+                if too_close(pt) or angle_between(path[i], pt, path[j]) < angle_thresh:
+                    valid = False
+                    break
+            if valid:
+                best = j
+
+        simplified.append(path[best])
+        i = best
 
     return simplified
+
 
