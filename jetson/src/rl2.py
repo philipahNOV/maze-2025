@@ -7,7 +7,7 @@ import position_controller
 import jetson.src.low_pass_filter as low_pass_filter
 import path_following
 import path_following_lookahead
-import uitility_threads
+import utility_threads
 from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
 
@@ -85,7 +85,7 @@ def main(tracker: TrackerService,
                 ball_pos = smoother.update(ball_pos)
                 if blinker is None:
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = uitility_threads.BlinkRed(controller.arduinoThread)
+                    blinker = utility_threads.BlinkRed(controller.arduinoThread)
                     blinker.start()
 
             # Display the visual overlay
