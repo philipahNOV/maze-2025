@@ -37,6 +37,11 @@ class Controller:
         self.stuck_timer_x = None
         self.stuck_timer_y = None
         self.stuck_time_threshold = config["controller"].get("stuck_time_threshold", 0.8)  # seconds
+        self.stuck_x_active = False
+        self.stuck_y_active = False
+        self.unstuck_timer_x = None
+        self.unstuck_timer_y = None
+        self.stuck_unstuck_hold_time = config["controller"].get("stuck_unstuck_hold_time", 0.25)  # seconds
 
         self.prev_vel_x = 0
         self.prev_vel_y = 0
@@ -211,19 +216,32 @@ class Controller:
             if self.stuck_timer_x is None:
                 self.stuck_timer_x = time.time()
             elif time.time() - self.stuck_timer_x > self.stuck_time_threshold:
-                stuck_x = True
+                self.stuck_x_active = True
+                self.unstuck_timer_x = None
         else:
             self.stuck_timer_x = None
-            stuck_x = False
-
+            if self.stuck_x_active:
+                if self.unstuck_timer_x is None:
+                    self.unstuck_timer_x = time.time()
+                elif time.time() - self.unstuck_timer_x > self.stuck_unstuck_hold_time:
+                    self.stuck_x_active = False
+            else:
+                self.unstuck_timer_x = None
         if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol:
             if self.stuck_timer_y is None:
                 self.stuck_timer_y = time.time()
             elif time.time() - self.stuck_timer_y > self.stuck_time_threshold:
-                stuck_y = True
+                self.stuck_y_active = True
+                self.unstuck_timer_y = None
         else:
             self.stuck_timer_y = None
-            stuck_y = False
+            if self.stuck_y_active:
+                if self.unstuck_timer_y is None:
+                    self.unstuck_timer_y = time.time()
+                elif time.time() - self.unstuck_timer_y > self.stuck_unstuck_hold_time:
+                    self.stuck_y_active = False
+            else:
+                self.unstuck_timer_y = None
 
         print(dist, stuck_x, stuck_y)
         # Apply wiggling if needed
