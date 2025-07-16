@@ -39,13 +39,6 @@ def _douglas_peucker(pts, eps):
     return left[:-1] + right
 
 def sample_waypoints(path, mask):
-    """
-    1) Rasterize path into H/V hops.
-    2) Collapse straight runs to endpoints.
-    3) Insert strict L-pivots at every 90° corner.
-    4) Set ε = mean segment length * log(raw_path_length), then DP-simplify.
-    Always ends with `return waypoints`.
-    """
     # 1) build raw H/V hops
     raw = [path[0]]
     y, x = path[0]
@@ -81,12 +74,10 @@ def sample_waypoints(path, mask):
         full.append(pts[-1])
 
     # 4) adaptive ε based on raw-path length
-    # use mean segment length times a log scale of the raw hop count
     seg_dists = [math.hypot(y2-y1, x2-x1) for (y1,x1),(y2,x2) in zip(full, full[1:])]
     mean_seg = sum(seg_dists)/len(seg_dists) if seg_dists else 0.0
     raw_len = len(raw)
     eps = mean_seg * math.log(raw_len + 1)
 
-    # DP simplify
     waypoints = _douglas_peucker(full, eps)
     return waypoints
