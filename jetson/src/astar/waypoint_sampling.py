@@ -2,16 +2,6 @@ import math
 from .path_geometry import is_clear_path
 
 def rdp(points, epsilon):
-    """
-    Simplify a path using the Ramer-Douglas-Peucker algorithm.
-
-    Args:
-        points (list): List of (y, x) points in path.
-        epsilon (float): Distance threshold for simplification.
-
-    Returns:
-        list: Simplified list of (y, x) points.
-    """
     if len(points) < 3:
         return points
 
@@ -41,33 +31,54 @@ def rdp(points, epsilon):
     else:
         return [points[0], points[-1]]
 
+def interpolate_points(p1, p2, spacing):
+    """Insert intermediate points between two points if distance > spacing."""
+    dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+    if dist <= spacing:
+        return []
+    
+    num_points = int(dist // spacing)
+    dx = (p2[0] - p1[0]) / (num_points + 1)
+    dy = (p2[1] - p1[1]) / (num_points + 1)
+
+    return [(int(p1[0] + dx * i), int(p1[1] + dy * i)) for i in range(1, num_points + 1)]
 
 def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
     DISTANCE_THRESHOLD = 10
-
     if not path or len(path) < 2:
         return path or []
 
-    # Step 1: Simplify path using RDP
-    simplified_path = rdp(path, epsilon=5)
+    total_length = sum(
+        math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        for p1, p2 in zip(path[:-1], path[1:])
+    )
+    target_count = max(2, int(total_length / waypoint_spacing))
+    spacing = total_length / target_count
 
-    # Step 2: Filter waypoints by visibility (optional)
+    # Step 1: Simplify path
+    simplified_path = rdp(path, epsilon=10)
+
+    # Step 2: Build BRIO-style waypoints from RDP path
     waypoints = [simplified_path[0]]
     for i in range(1, len(simplified_path)):
-        if is_clear_path(mask, waypoints[-1], simplified_path[i]):
-            waypoints.append(simplified_path[i])
-        else:
-            # Fall back to mid-point if path is blocked
-            midpoint = simplified_path[i - 1]
-            if midpoint != waypoints[-1]:
-                waypoints.append(midpoint)
-            waypoints.append(simplified_path[i])
+        start = waypoints[-1]
+        end = simplified_path[i]
 
-    # Step 3: Always append goal
+        # Interpolate midpoints if long and straight
+        mids = interpolate_points(start, end, spacing)
+        for pt in mids:
+            if is_clear_path(mask, waypoints[-1], pt):
+                waypoints.append(pt)
+
+        # Always try to add end point of segment
+        if is_clear_path(mask, waypoints[-1], end):
+            waypoints.append(end)
+
+    # Step 3: Append the actual goal
     goal = path[-1]
     waypoints.append(goal)
 
-    # Step 4: Remove redundant point before goal if too close
+    # Step 4: Remove second-to-last point if it's too close to goal
     if len(waypoints) >= 2:
         prev = waypoints[-2]
         dx = goal[0] - prev[0]
