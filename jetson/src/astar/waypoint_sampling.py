@@ -1,54 +1,56 @@
 import math
-from .path_geometry import is_clear_path, angle_between
+from .path_geometry import angle_between, is_clear_path
 
 def sample_waypoints(path, mask, waypoint_spacing=120, angle_threshold=120):
     DISTANCE_THRESHOLD = 10
     if not path or len(path) < 2:
         return path or []
 
+    total_length = sum(
+        math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        for p1, p2 in zip(path[:-1], path[1:])
+    )
+    target_count = max(2, int(total_length / waypoint_spacing))
+    spacing = total_length / target_count
+
     waypoints = [path[0]]
     last_wp_idx = 0
-    prev_direction = None
+    accumulated = 0.0
 
     for i in range(1, len(path)):
-        prev = path[i - 1]
-        curr = path[i]
-        dx = curr[1] - prev[1]
-        dy = curr[0] - prev[0]
-        mag = math.hypot(dx, dy)
+        p1 = path[i - 1]
+        p2 = path[i]
+        step_dist = math.hypot(p2[0] - p1[0], p2[1] - p1[1])
+        accumulated += step_dist
 
-        if mag == 0:
-            continue
+        if i < len(path) - 1:
+            angle = angle_between(path[last_wp_idx], path[i], path[i + 1])
+            if angle < angle_threshold and accumulated >= spacing / 2:
+                if is_clear_path(mask, path[last_wp_idx], path[i]):
+                    waypoints.append(path[i])
+                    last_wp_idx = i
+                    accumulated = 0.0
+                    continue
 
-        # Get unit direction vector
-        direction = (round(dx / mag), round(dy / mag))
+        if accumulated >= spacing:
+            best_idx = last_wp_idx + 1
+            for j in range(i, last_wp_idx, -1):
+                if is_clear_path(mask, path[last_wp_idx], path[j]):
+                    best_idx = j
+                    break
+            waypoints.append(path[best_idx])
+            last_wp_idx = best_idx
+            accumulated = 0.0
 
-        # Check direction change
-        if prev_direction is not None and direction != prev_direction:
-            if is_clear_path(mask, waypoints[-1], prev):
-                waypoints.append(prev)
-                last_wp_idx = i - 1
-                prev_direction = direction
-                continue
-
-        # Check if line of sight is broken (e.g. hallway curve)
-        if not is_clear_path(mask, waypoints[-1], curr):
-            if path[i - 1] != waypoints[-1]:
-                waypoints.append(path[i - 1])
-                last_wp_idx = i - 1
-
-        prev_direction = direction
-
-    # Always append the goal
     goal = path[-1]
     waypoints.append(goal)
 
-    # Remove second-to-last waypoint if too close to goal
     if len(waypoints) >= 2:
         prev = waypoints[-2]
         dx = goal[0] - prev[0]
         dy = goal[1] - prev[1]
         dist = math.hypot(dx, dy)
+
         threshold = max(DISTANCE_THRESHOLD, 0.2 * waypoint_spacing)
         if dist < threshold:
             waypoints.pop(-2)
