@@ -206,3 +206,5 @@ class DiscoThread(threading.Thread):
         self.mode = 0
         self.arduino_thread.send_color(255, 255, 255)
         self._stop_event.set()
+
+        

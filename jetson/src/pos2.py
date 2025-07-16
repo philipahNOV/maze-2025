@@ -19,6 +19,7 @@ class Controller:
         self.tracker = tracker
         self.config = config
         self.logger = None
+        self.elevator_state = "down"  # Initial elevator state
 
         # === INITIALIZATION ===
         self.prevPos = None

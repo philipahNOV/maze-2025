@@ -175,6 +175,9 @@ class HMIController:
                     self.disco_thread.join()
                     self.disco_thread = None
                 print("[FSM] Transitioned to LOCATING")
+                if self.controller.elevator_state == "down":
+                    #SEND ELEVATOR UP COMMAND
+                    pass
                 self.tracking_service.start_tracker()
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
