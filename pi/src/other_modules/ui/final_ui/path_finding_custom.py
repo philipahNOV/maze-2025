@@ -52,7 +52,7 @@ class CustomPathScreen(tk.Frame):
                     self.awaiting_path = False
                     self.has_pathfinded = False
                     self.disable_button_start()
-                    self.path_failed_label.place(x=442, y=420, anchor="n")
+                    self.path_failed_label.place(x=780, y=135)
                 else:
                     print("[UI] Path found. Enabling START buttons.")
                     self.awaiting_path = False
@@ -310,7 +310,7 @@ class CustomPathScreen(tk.Frame):
         self.path_failed_label = tk.Label(
             self,
             text="⚠ Pathfinding Failed. Try Again.",
-            font=("Jockey One", 18),
+            font=("Jockey One", 16),
             fg=self.controller.nov_red,
             bg="#D9D9D9",
         )
