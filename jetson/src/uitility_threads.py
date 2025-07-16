@@ -159,41 +159,46 @@ class EscapeElevatorThread(threading.Thread):
         self.arduino_thread.send_speed(0, 0)
 
 class DiscoThread(threading.Thread):
-    def __init__(self, arduino_thread):
+    def __init__(self, arduino_thread, idle_time=15):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self._stop_event = threading.Event()
         self.mode = 0
+        self.last_mode_zero_time = time.time()
+        self.idle_time = idle_time  # seconds, time to wait before going idle
 
     def run(self):
         print("[DiscoThread] Starting disco...")
         hue = random.randrange(0, 100) / 100.0  # Random initial hue
+
         while not self._stop_event.is_set():
             if self.mode == 1:
-                # Convert hue to RGB (colorsys returns floats 0–1)
                 r, g, b = colorsys.hsv_to_rgb(hue, 1.0, 1.0)
                 r, g, b = int(r * 255), int(g * 255), int(b * 255)
-
-                # Send color to Arduino
                 self.arduino_thread.send_color(r, g, b)
 
-                # Increment hue and wrap around
                 hue += 0.005
                 if hue > 1.0:
                     hue = 0.0
 
                 time.sleep(0.1)
+
             else:
+                if time.time() - self.last_mode_zero_time >= self.idle_time:
+                    print(f"[DiscoThread] Auto-reactivating disco mode after {self.idle_time} seconds.")
+                    self.mode = 1
                 time.sleep(0.2)
 
     def toggle_mode(self):
         self.mode = (self.mode + 1) % 2
         print(f"[DiscoThread] Toggled disco mode to {self.mode}")
         if self.mode == 0:
+            self.last_mode_zero_time = time.time()
             self.arduino_thread.send_color(255, 255, 255)
 
     def off(self):
         self.mode = 0
+        self.last_mode_zero_time = time.time()
         self.arduino_thread.send_color(255, 255, 255)
 
     def stop(self):
