@@ -7,6 +7,7 @@ from astar.waypoint_sampling import sample_waypoints
 from astar.path_memory import PathMemory
 import colorsys
 import cv2
+import astar.waypoint_sampling_2
 
 
 class BlinkRed(threading.Thread):
@@ -116,9 +117,10 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        print(f"[PathFindingThread] Path length: {len(path)}")
-        waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('normal_path_wpt_spacing', 160))
+        #waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('normal_path_wpt_spacing', 160))
+        waypoints = astar.waypoint_sampling_2.sample_waypoints(path, safe_mask)
         waypoints_lookahead = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('lookahead_path_wpt_spacing', 50))
+        print(f"[PathFindingThread] Path length: {len(path)}")
 
         if self._stop_event.is_set():
             return
