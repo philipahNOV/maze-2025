@@ -148,7 +148,7 @@ class HMIController:
                 self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
                 self.disco_thread.start()
                 if self.controller.elevator_state is not None:
-                    self.arduino_thread.send_elevator(-1)
+                    self.arduino_thread.send_elevator(1)
                     self.controller.elevator_state = "up"
         
         # --- MAIN_SCREEN STATE ---
