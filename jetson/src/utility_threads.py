@@ -172,6 +172,7 @@ class EscapeElevatorThread(threading.Thread):
             time.sleep(0.1)
         time.sleep(1)
         if self.controller.elevator_state is not None:
+            print("[EscapeElevatorThread] Sending elevator down command.")
             self.arduino_thread.send_elevator(-1)
             self.controller.elevator_state = "down"
         
