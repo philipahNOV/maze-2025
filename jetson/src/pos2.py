@@ -305,8 +305,8 @@ class Controller:
 
             vel_x = 0 if abs(theta_x) < tol else -np.sign(theta_x) * min(max(int(kp * abs(theta_x)), self.min_velocity), 255)
             vel_y = 0 if abs(theta_y) < tol else -np.sign(theta_y) * min(max(int(kp * abs(theta_y)), self.min_velocity), 255)
-            print(orientation)
-            print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
+            #print(orientation)
+            #print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
             self.arduinoThread.send_speed(vel_x, vel_y)
             time.sleep(self.command_delay)
 
