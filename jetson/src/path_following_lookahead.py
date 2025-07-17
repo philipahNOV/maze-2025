@@ -1,9 +1,9 @@
-import position_controller
+import pos2
 import numpy as np
 import time
 
 class PathFollower:
-    def __init__(self, path_array, controller: position_controller.Controller, config):
+    def __init__(self, path_array, controller: pos2.Controller, config):
         self.path = [(x, y) for x, y in path_array]
         self.controller = controller
         self.length = len(self.path)

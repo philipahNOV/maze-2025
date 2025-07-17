@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import time
 import base64
-from mqtt_client import MQTTClientJetson
+from mqtt_client_2 import MQTTClientJetson
 import threading
 from astar.draw_path import draw_path
 
