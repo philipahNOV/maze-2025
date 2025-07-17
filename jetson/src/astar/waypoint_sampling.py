@@ -1,21 +1,5 @@
 import math
-from .path_geometry import angle_between, is_clear_path
-
-def _bresenham_clear(p0, p1, mask):
-    y0, x0 = p0; y1, x1 = p1
-    dy, dx = abs(y1 - y0), abs(x1 - x0)
-    sy, sx = (1 if y0 < y1 else -1), (1 if x0 < x1 else -1)
-    err = dx - dy; y, x = y0, x0
-    while True:
-        if not mask[y][x]:
-            return False
-        if (y, x) == (y1, x1):
-            return True
-        e2 = err*2
-        if e2 > -dy:
-            err -= dy; x += sx
-        if e2 <  dx:
-            err += dx; y += sy
+from .path_geometry import _clear_path
 
 def _perp_dist(pt, a, b):
     (y0, x0), (y1, x1), (y2, x2) = pt, a, b
@@ -66,7 +50,7 @@ def sample_waypoints(path, mask):
     for a, b, c in zip(pts, pts[1:], pts[2:]):
         if (a[0]==b[0] and b[1]!=c[1]) or (a[1]==b[1] and b[0]!=c[0]):
             for p in ((a[0], c[1]), (c[0], c[1])):
-                if p != full[-1] and _bresenham_clear(full[-1], p, mask):
+                if p != full[-1] and _clear_path(full[-1], p, mask):
                     full.append(p)
         if b != full[-1]:
             full.append(b)
