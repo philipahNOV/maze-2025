@@ -39,7 +39,7 @@ class BlinkRed(threading.Thread):
                     self.arduino_thread.send_elevator(0)
                 self.arduino_thread.send_color(*white)
                 self.triggered = True  # Avoid retriggering
-                self.controller.elevator_state = "up"
+                #self.controller.elevator_state = "up"
 
             time.sleep(4)
 
@@ -182,7 +182,7 @@ class EscapeElevatorThread(threading.Thread):
             self.arduino_thread.send_elevator(-1)
             time.sleep(0.2)
             self.arduino_thread.send_elevator(0)
-            self.controller.elevator_state = "down"
+            #self.controller.elevator_state = "down"
         
         self.arduino_thread.send_speed(0, 0)
 
