@@ -3,7 +3,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main2 import MainApp
+    from main import MainApp
 import os
 
 class BootScreen(tk.Frame):

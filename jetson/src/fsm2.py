@@ -1,6 +1,6 @@
 from enum import Enum, auto
 import time
-from mqtt_client import MQTTClientJetson
+from mqtt_client_2 import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
 import utility_threads

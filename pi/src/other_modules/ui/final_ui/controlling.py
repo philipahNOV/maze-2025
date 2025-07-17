@@ -3,7 +3,7 @@ from PIL import Image, ImageTk
 import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from main2 import MainApp
+    from main import MainApp
 import cv2
 
 

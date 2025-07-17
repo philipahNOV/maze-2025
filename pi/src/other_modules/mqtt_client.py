@@ -4,7 +4,6 @@ import time
 import base64
 import numpy as np
 import cv2
-from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
     def __init__(self, broker_address='192.168.1.3', port=1883):

@@ -8,7 +8,7 @@ from other_modules.ui.final_ui.locating_ball import LocatingScreen
 from other_modules.ui.final_ui.main_screen import MainScreen
 from other_modules.ui.final_ui.path_finding_auto import AutoPathScreen
 from other_modules.ui.final_ui.path_finding_custom import CustomPathScreen
-from other_modules.mqtt_client_2 import MQTTClientPi
+from other_modules.mqtt_client import MQTTClientPi
 
 import signal
 import sys
