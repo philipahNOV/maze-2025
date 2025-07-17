@@ -1,5 +1,5 @@
 import math
-from .path_geometry import _clear_path
+from .path_geometry import clear_path
 
 def _perp_dist(pt, a, b):
     (y0, x0), (y1, x1), (y2, x2) = pt, a, b
@@ -40,17 +40,19 @@ def sample_waypoints(path, mask):
 
     # 2) collapse straight runs to endpoints
     pts = [raw[0]]
-    for prev, curr, nxt in zip(raw, raw[1:], raw[2:]):
-        if (curr[0]-prev[0], curr[1]-prev[1]) != (nxt[0]-curr[0], nxt[1]-curr[1]):
-            pts.append(curr)
+    for i, (prev, curr, nxt) in enumerate(zip(raw, raw[1:], raw[2:])):
+        if (curr[0] - prev[0], curr[1] - prev[1]) != (nxt[0] - curr[0], nxt[1] - curr[1]):
+            if i % 1 == 0:
+                pts.append(curr)
     pts.append(raw[-1])
+
 
     # 3) insert L-pivots at 90° corners
     full = [pts[0]]
     for a, b, c in zip(pts, pts[1:], pts[2:]):
         if (a[0]==b[0] and b[1]!=c[1]) or (a[1]==b[1] and b[0]!=c[0]):
             for p in ((a[0], c[1]), (c[0], c[1])):
-                if p != full[-1] and _clear_path(full[-1], p, mask):
+                if p != full[-1] and clear_path(full[-1], p, mask):
                     full.append(p)
         if b != full[-1]:
             full.append(b)

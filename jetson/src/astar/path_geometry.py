@@ -1,6 +1,4 @@
-import numpy as np
-
-def _clear_path(p0, p1, mask):
+def clear_path(p0, p1, mask):
     y0, x0 = p0; y1, x1 = p1
     dy, dx = abs(y1 - y0), abs(x1 - x0)
     sy, sx = (1 if y0 < y1 else -1), (1 if x0 < x1 else -1)
