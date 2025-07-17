@@ -752,31 +752,58 @@ final_mask = cv2.bitwise_or(final_mask, green_mask)
 
 ### 4. Waypoint Sampling
 
-The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts smooth and valid waypoints with spacing and angular constraints. These values are configured in `config.yaml` under `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
+The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts a simplified list of axis-aligned waypoints for clean tilt control.
 
-#### Spacing and Angles
+#### Grid Expansion
 
-Waypoints are selected based on distance and turning angles:
-
+Each segment in the A* path is expanded into horizontal and vertical steps. Movement happens along one axis at a time, aligning the path with the maze's physical structure.
 ```python
-angle = angle_between(path[last_wp_idx], path[i], path[i + 1])
-if angle < angle_threshold and accumulated >= spacing / 2:
-    if is_clear_path(mask, path[last_wp_idx], path[i]):
-        waypoints.append(path[i])
+for ty, tx in path[1:]:
+    for xx in range(...):
+        if mask[y][xx]:
+            raw.append((y, xx))
+    for yy in range(...):
+        if mask[yy][x]:
+            raw.append((yy, x))
+
 ```
 
-#### Visibility Checks
+#### Straight-Line Collapse
 
-Every candidate waypoint is validated against a morphological corridor in the mask:
+Sequences of points with constant direction are collapsed to their endpoints. This reduces waypoint count while preserving directional flow.
 
 ```python
-def is_clear_path(mask, p1, p2, kernel_size=6):
-    cv2.line(line_img, p1, p2, 1, 1)
-    corridor = cv2.dilate(line_img, kernel)
-    return np.all(mask[corridor.astype(bool)] > 0)
+if direction to next ≠ direction from previous:
+    keep current
 ```
 
-The visibility kernel size can be configured via `path_finding.clear_path_kernel_size`.
+#### L-Pivot Injection
+
+At 90 degrees turns, explicit corner pivots are added. These are necessary to guide the PID and the ball through tight turns without diagnoal shortcuts, which could lead to the ball getting stuck. Pivots are added only if a clear line to them exists.
+
+```python
+if horizontal followed by vertical (or vice versa):
+    add intermediate corner
+```
+
+#### Algorithms for Simplification and Visibility Checks
+
+The reduced path is further simplified using a Douglas-Peucker variant. The simplification tolerance is based on the mean segment length and total raw path length.
+
+```python
+eps = mean_segment_length * log(raw_path_length + 1)
+waypoints = _douglas_peucker(path, eps)
+```
+
+All candidate waypoints are tested using a pixel-accurate Bresenham algorithm. This rejects any path segment that intersect obstacles.
+
+```python
+def _clear_path(p0, p1, mask):
+    for each pixel on the line:
+        if mask[y][x] == 0:
+            return False
+    return True
+```
 
 ---
 
@@ -855,16 +882,6 @@ astar_downscaled(..., scale=1.0)
 ```
 
 Basically, lower values improve speed but reduce precision.
-
-#### waypoint_spacing and angle_threshold
-
-Configured in `config.yaml` as `path_finding.waypoint_spacing` and `path_finding.angle_threshold`.
-
-```python
-waypoint_spacing=160, angle_threshold=135
-```
-
-Higher spacing reduces path density; lower angle threshold improves flexibility.
 
 #### cache tolerance
 
