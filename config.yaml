@@ -113,6 +113,7 @@ path_following:
     velocity_threshold: 50
     stuck_retry_time: 3
     dwell_time: 0.7
+    checkpoint_timeout: 10  # seconds, time to wait before changing checkpoint
 
 animations:
   locating_ball:
