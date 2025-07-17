@@ -11,17 +11,19 @@ import random
 
 
 class BlinkRed(threading.Thread):
-    def __init__(self, arduino_thread, config):
+    def __init__(self, arduino_thread, config, controller):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self._stop_event = threading.Event()
         self.trigger_delay = config["general"].get("get_ball_delay", 5)  # seconds before elevator triggers
         self.start_time = None
         self.triggered = False
+        self.controller = controller
 
     def run(self):
         red = (255, 0, 0)
         white = (255, 255, 255)
+        self.start_time = time.time()
         while not self._stop_event.is_set():
             self.arduino_thread.send_color(*red)
             time.sleep(0.2)
@@ -32,6 +34,7 @@ class BlinkRed(threading.Thread):
                 print("BlinkRed active too long — triggering elevator up.")
                 self.arduino_thread.send_elevator(1)
                 self.triggered = True  # Avoid retriggering
+                self.controller.elevator_state = "up"
 
             time.sleep(4)
 
