@@ -291,6 +291,12 @@ void read_serial()
         return; // Hvis det ikke er noen data tilgjengelig, bare avslutt funksjonen.
     }
 
+    // Nullstiller verdiene
+    serial_messages::value_1 = 0; 
+    serial_messages::value_2 = 0;
+    serial_messages::value_3 = 0;
+    serial_messages::value_4 = 0;
+
     char buffer[64]; // Buffer for å lagre innkommende data
     int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser data til linjeskift eller buffer er fullt
 
