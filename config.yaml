@@ -89,11 +89,7 @@ path_finding:
   repulsion_weight: 10           # how strongly path avoids walls
   min_safe_distance: 14           # distance from obstacles for safe navigation
   astar_downscale: 1.0            # downscaling factor
-  normal_path_wpt_spacing: 170    # px
-  lookahead_path_wpt_spacing: 50  # px
-  angle_threshold: 120            # deg, waypoint sampling turn filter
   clear_path_kernel_size: 6       # morph kernel for visibility check
-  waypoint_spacing: 100           # px
   dilation_iterations: 2
   clahe_clip_limit: 1.0
   adaptive_threshold_target: 130

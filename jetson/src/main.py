@@ -72,17 +72,3 @@ while not mqtt_client.handshake_complete:
     time.sleep(1)
 
 print("Connected!")
-
-#tracker_service.start_tracker()
-#while tracker_service.tracker is None:
-#    time.sleep(0.1)
-#
-#tracker = tracker_service.tracker
-#ballPos = tracker_service.get_ball_position()
-#while ballPos is None:
-#    ballPos = tracker_service.get_ball_position()
-#    time.sleep(0.1)
-#
-#print("Ball found at:", ballPos)
-#
-#mqtt_client.client.publish("pi/info", "ball_found")
