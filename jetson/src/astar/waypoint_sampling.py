@@ -1,4 +1,5 @@
 import math
+import statistics
 from .path_geometry import clear_path
 
 def _perp_dist(pt, a, b):
@@ -27,12 +28,12 @@ def sample_waypoints(path, mask):
     raw = [path[0]]
     y, x = path[0]
     for ty, tx in path[1:]:
-        dx, sx = tx-x, 1 if tx>x else -1
+        sx = tx-x, 1 if tx>x else -1
         for xx in range(x+sx, tx+sx, sx):
             if mask[y][xx]:
                 raw.append((y, xx))
         x = tx
-        dy, sy = ty-y, 1 if ty>y else -1
+        sy = ty-y, 1 if ty>y else -1
         for yy in range(y+sy, ty+sy, sy):
             if mask[yy][x]:
                 raw.append((yy, x))
@@ -66,4 +67,26 @@ def sample_waypoints(path, mask):
     eps = mean_seg * math.log(raw_len + 1)
 
     waypoints = _douglas_peucker(full, eps)
+
+    if len(waypoints) >= 2:
+        seg_lens = [
+            math.hypot(b[0] - a[0], b[1] - a[1])
+            for a, b in zip(waypoints[:-1], waypoints[1:])
+        ]
+
+        avg = statistics.mean(seg_lens)
+        std = statistics.stdev(seg_lens) if len(seg_lens) > 1 else 0.0
+        threshold = avg + std
+
+        new_wps = [waypoints[0]]
+        for i in range(1, len(waypoints)):
+            a, b = waypoints[i - 1], waypoints[i]
+            dist = math.hypot(b[0] - a[0], b[1] - a[1])
+            if dist > threshold:
+                mid = ((a[0] + b[0]) // 2, (a[1] + b[1]) // 2)
+                new_wps.append(mid)
+            new_wps.append(b)
+
+        waypoints = new_wps
+
     return waypoints
