@@ -241,22 +241,24 @@ void elevator(int8_t elevator_dir)
     // Funksjon for å kontrollere heisen
     lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
 
-    if (elevator_dir == -1)
+    if (elevator_dir == -1) // Kjører heisen opp
     {
         // Kjør heisen ned
+        lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
         lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
-        delay(100); // Venter 100 ms for at heisen skal nå ned
     }
     
-    else if (elevator_dir == 1)
+    else if (elevator_dir == 1) // Kjører heisen ned
     {
+        lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
         lift_servo::lift.write(lift_servo::lift_up); // Setter heisen til høy posisjon
-        delay(100); // Venter 100 ms for at heisen skal nå opp
     }
 
-    // Stoper heisen
+    else  // Stoper heisen
+    {
     lift_servo::lift.write(lift_servo::lift_stop);
     lift_servo::lift.detach(); // Frakobler servoen
+    }
 }
 
 // Funksjon for å sette fargen på LED stripen
