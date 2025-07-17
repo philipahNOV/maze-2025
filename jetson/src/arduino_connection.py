@@ -6,7 +6,7 @@ from enum import Enum
 
 class ArduinoState(Enum):
     IDLE = 0
-    GET_BALL = 1
+    ELEVATOR = 1
     CONTROL = 2
     SET_COLOR = 3
 
@@ -79,11 +79,11 @@ class ArduinoConnection(threading.Thread):
         """
         self._send_command(ArduinoState.IDLE)
 
-    def send_get_ball(self):
+    def send_elevator(self, direction):
         """
-        Sends "GET_BALL" state to the Arduino.
+        Sends "ELEVATOR" state to the Arduino.
         """
-        self._send_command(ArduinoState.GET_BALL)
+        self._send_command(ArduinoState.ELEVATOR, int(direction))
 
     def send_speed(self, speed1: int, speed2: int):
         """

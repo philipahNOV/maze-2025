@@ -147,6 +147,9 @@ class HMIController:
                 print("[FSM] Transitioned to MAIN_SCREEN")
                 self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
                 self.disco_thread.start()
+                if self.controller.elevator_state is not None:
+                    self.arduino_thread.send_elevator(1)
+                    self.controller.elevator_state = "up"
         
         # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
@@ -170,6 +173,9 @@ class HMIController:
             elif cmd.startswith("Locate"):
                 # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
+                if self.controller.elevator_state is not None:
+                    self.arduino_thread.send_elevator(1)
+                    self.controller.elevator_state = "up"
                 if self.disco_thread is not None:
                     self.disco_thread.stop()
                     self.disco_thread.join()
@@ -221,7 +227,7 @@ class HMIController:
 
             elif cmd == "Elevator":
                 # Send elevator retrieval command
-                self.arduino_thread.send_get_ball()
+                pass
 
             elif cmd == "Horizontal":
                 # Trigger horizontal calibration/control

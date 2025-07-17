@@ -138,7 +138,7 @@ class PathFindingThread(threading.Thread):
         self._stop_event.set()
 
 class EscapeElevatorThread(threading.Thread):
-    def __init__(self, arduino_thread):
+    def __init__(self, arduino_thread, controller):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self.duration = 2.2
@@ -146,6 +146,7 @@ class EscapeElevatorThread(threading.Thread):
         self.speed = 150  # absolute motor speed
         self._stop_event = threading.Event()
         self.start_time = time.time()
+        self.controller = controller
 
     def run(self):
         print("[EscapeElevatorThread] Starting escape...")
@@ -156,6 +157,11 @@ class EscapeElevatorThread(threading.Thread):
             else:
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
+        time.sleep(1)
+        if self.controller.elevator_state is not None:
+            self.arduino_thread.send_elevator(-1)
+            self.controller.elevator_state = "down"
+        
         self.arduino_thread.send_speed(0, 0)
 
 class DiscoThread(threading.Thread):
