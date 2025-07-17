@@ -45,6 +45,9 @@ class PathFollower:
 
         self.prev_time = None
         self.prev_ball_pos = None
+        self.last_checkpoint_change_time = time.time()
+        self.checkpoint_timeout = self.config["path_following"]["normal"].get("checkpoint_timeout", 10)  # seconds
+        self.prev_checkpoint = self.next_waypoint
 
         self.vel_threshold = self.config["path_following"]["normal"].get("velocity_threshold", 50)  # pixels per second
 
@@ -99,6 +102,10 @@ class PathFollower:
         vel = None
         self.looping = self.controller.looping
 
+        if self.next_waypoint != self.prev_checkpoint:
+            self.last_checkpoint_change_time = time.time()
+            self.prev_checkpoint = self.next_waypoint
+
         if self.prev_time and self.prev_ball_pos:
             dt = time.time() - self.prev_time
             if dt > 0.000001:
@@ -129,6 +136,18 @@ class PathFollower:
                 print(f"Stuck — reverting to waypoint {self.next_waypoint}")
 
                 self.prev_progress_time = None
+
+        # === Timeout revert logic ===
+        if time.time() - self.last_checkpoint_change_time > self.checkpoint_timeout:
+            print(f"Checkpoint timeout — reverting from waypoint {self.next_waypoint}")
+            self.last_checkpoint_change_time = time.time()  # Reset timeout timer
+
+            if self.forward:
+                self.next_waypoint = max(self.next_waypoint - 1, 0)
+                self.prev_waypoint = max(self.next_waypoint - 1, 0)
+            else:
+                self.next_waypoint = min(self.next_waypoint + 1, self.length - 1)
+                self.prev_waypoint = min(self.next_waypoint + 1, self.length - 1)
 
         
         self.controller.posControl(self.path[self.next_waypoint])
