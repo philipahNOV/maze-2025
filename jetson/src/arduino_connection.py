@@ -71,6 +71,8 @@ class ArduinoConnection(threading.Thread):
             # Lager en kommando-streng fra alle argumentene pluss state
             command_parts = list(map(str, args)) + [str(state.value)]
             self.command_to_send = ",".join(command_parts) + "\n"
+            if state == ArduinoState.ELEVATOR:
+                print(f"Sending command to Arduino: {self.command_to_send.encode()}")
             self.condition.notify()
     
     def send_idle(self):
@@ -83,7 +85,6 @@ class ArduinoConnection(threading.Thread):
         """
         Sends "ELEVATOR" state to the Arduino.
         """
-        print(f"[ArduinoConnection] Sending elevator command: {direction}")
         self._send_command(ArduinoState.ELEVATOR, int(direction))
 
     def send_speed(self, speed1: int, speed2: int):
