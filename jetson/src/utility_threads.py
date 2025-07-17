@@ -117,9 +117,9 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        waypoints = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('normal_path_wpt_spacing', 160))
+        waypoints = sample_waypoints(path, safe_mask)
         #waypoints = astar.waypoint_sampling_2.sample_waypoints(path, safe_mask)
-        waypoints_lookahead = sample_waypoints(path, safe_mask, waypoint_spacing=self.config['path_finding'].get('lookahead_path_wpt_spacing', 50))
+        waypoints_lookahead = sample_waypoints(path, safe_mask)
         print(f"[PathFindingThread] Path length: {len(path)}")
 
         if self._stop_event.is_set():

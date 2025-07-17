@@ -1,41 +1,83 @@
 import math
 from .path_geometry import angle_between, is_clear_path
 
-def sample_waypoints(path, mask, waypoint_spacing=120):
-    DISTANCE_THRESHOLD = 10
-    if not path or len(path) < 2:
-        return path or []
+def _bresenham_clear(p0, p1, mask):
+    y0, x0 = p0; y1, x1 = p1
+    dy, dx = abs(y1 - y0), abs(x1 - x0)
+    sy, sx = (1 if y0 < y1 else -1), (1 if x0 < x1 else -1)
+    err = dx - dy; y, x = y0, x0
+    while True:
+        if not mask[y][x]:
+            return False
+        if (y, x) == (y1, x1):
+            return True
+        e2 = err*2
+        if e2 > -dy:
+            err -= dy; x += sx
+        if e2 <  dx:
+            err += dx; y += sy
 
-    waypoints = [path[0]]
-    current_idx = 0
-    n = len(path)
+def _perp_dist(pt, a, b):
+    (y0, x0), (y1, x1), (y2, x2) = pt, a, b
+    num = abs((x1-x0)*(y2-y0) - (x2-x0)*(y1-y0))
+    den = math.hypot(y2-y1, x2-x1) or 1.0
+    return num/den
 
-    while current_idx < n - 1:
-        # Try to go directly to the goal
-        for i in range(n - 1, current_idx, -1):
-            if is_clear_path(mask, path[current_idx], path[i]):
-                current_idx = i
-                waypoints.append(path[i])
-                break
-        else:
-            # No straight path — we must go around the obstacle
-            # Try stepping in axis-aligned directions
-            curr = path[current_idx]
-            directions = [(1,0), (-1,0), (0,1), (0,-1)]  # Down, Up, Right, Left
+def _douglas_peucker(pts, eps):
+    if len(pts) < 3:
+        return pts
+    a, b = pts[0], pts[-1]
+    idx, dmax = 0, 0.0
+    for i in range(1, len(pts)-1):
+        d = _perp_dist(pts[i], a, b)
+        if d > dmax:
+            idx, dmax = i, d
+    if dmax <= eps:
+        return [a, b]
+    left = _douglas_peucker(pts[:idx+1], eps)
+    right = _douglas_peucker(pts[idx:], eps)
+    return left[:-1] + right
 
-            for dx, dy in directions:
-                for step in range(1, 20):  # Try stepping out 20 pixels
-                    next_pt = (curr[0] + dx * step, curr[1] + dy * step)
-                    if 0 <= next_pt[0] < mask.shape[0] and 0 <= next_pt[1] < mask.shape[1]:
-                        if is_clear_path(mask, curr, next_pt):
-                            waypoints.append(next_pt)
-                            path.insert(current_idx + 1, next_pt)  # Insert into path for future loops
-                            break
-                else:
-                    continue
-                break
-            else:
-                # Dead end
-                break
+def sample_waypoints(path, mask):
+    # 1) build raw H/V hops
+    raw = [path[0]]
+    y, x = path[0]
+    for ty, tx in path[1:]:
+        dx, sx = tx-x, 1 if tx>x else -1
+        for xx in range(x+sx, tx+sx, sx):
+            if mask[y][xx]:
+                raw.append((y, xx))
+        x = tx
+        dy, sy = ty-y, 1 if ty>y else -1
+        for yy in range(y+sy, ty+sy, sy):
+            if mask[yy][x]:
+                raw.append((yy, x))
+        y = ty
 
+    # 2) collapse straight runs to endpoints
+    pts = [raw[0]]
+    for prev, curr, nxt in zip(raw, raw[1:], raw[2:]):
+        if (curr[0]-prev[0], curr[1]-prev[1]) != (nxt[0]-curr[0], nxt[1]-curr[1]):
+            pts.append(curr)
+    pts.append(raw[-1])
+
+    # 3) insert L-pivots at 90° corners
+    full = [pts[0]]
+    for a, b, c in zip(pts, pts[1:], pts[2:]):
+        if (a[0]==b[0] and b[1]!=c[1]) or (a[1]==b[1] and b[0]!=c[0]):
+            for p in ((a[0], c[1]), (c[0], c[1])):
+                if p != full[-1] and _bresenham_clear(full[-1], p, mask):
+                    full.append(p)
+        if b != full[-1]:
+            full.append(b)
+    if pts[-1] != full[-1]:
+        full.append(pts[-1])
+
+    # 4) adaptive ε based on raw-path length
+    seg_dists = [math.hypot(y2-y1, x2-x1) for (y1,x1),(y2,x2) in zip(full, full[1:])]
+    mean_seg = sum(seg_dists)/len(seg_dists) if seg_dists else 0.0
+    raw_len = len(raw)
+    eps = mean_seg * math.log(raw_len + 1)
+
+    waypoints = _douglas_peucker(full, eps)
     return waypoints
