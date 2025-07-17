@@ -72,6 +72,17 @@ def main(tracker: TrackerService,
                 pathFollower.follow_path(ball_pos)
                 if blinker is not None:
                     blinker.stop()
+                    if blinker.triggered:
+                        escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
+                        escape_thread.start()
+                        time.sleep(escape_thread.duration)
+                        controller.horizontal()
+                        if controller.lookahead:
+                            print("[INFO] Using lookahead path following.")
+                            pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
+                        else:
+                            print("[INFO] Using standard path following.")
+                            pathFollower = path_following.PathFollower(path_array, controller, config)
                     blinker = None
                     ball_not_found_timer = None
             else:
@@ -79,7 +90,7 @@ def main(tracker: TrackerService,
                 if blinker is None:
                     # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = utility_threads.BlinkRed(controller.arduinoThread)
+                    blinker = utility_threads.BlinkRed(controller.arduinoThread, config)
                     blinker.start()
                     ball_not_found_timer = time.time()
 
