@@ -40,7 +40,7 @@ def main(tracker: TrackerService,
     image_thread.start()
 
     controller.horizontal()
-    escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread)
+    escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
     escape_thread.start()
     time.sleep(escape_thread.duration)
     controller.horizontal()

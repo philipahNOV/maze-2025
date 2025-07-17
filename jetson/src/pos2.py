@@ -19,7 +19,7 @@ class Controller:
         self.tracker = tracker
         self.config = config
         self.logger = None
-        self.elevator_state = "down"  # Initial elevator state
+        self.elevator_state = None  # Set to none if not using elevator, "down" otherwise
 
         # === INITIALIZATION ===
         self.prevPos = None

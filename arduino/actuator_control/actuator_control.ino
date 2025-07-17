@@ -42,7 +42,7 @@ namespace serial_messages {
     enum class State
     {
         IDLE, // Tilstand for å vente på kommandoer
-        GET_BALL, // Tilstand for å hente ball
+        ELEVATOR, // Tilstand for å hente ball
         CONTROL, // Tilstand for å kontrollere aktuatorene
         SET_COLOR // Tilstand for å sette farge på LED stripen
     };
@@ -67,7 +67,7 @@ void stop_actuators(); // Funksjon for å stoppe aktuatorene
 void actuator_position(); // Funksjon for posisjonen til aktuatoren
 void actuator_limit_check(); // Funksjon for å sjekke om aktuatoren er over eller under ønsket maks eller min høyde
 void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2); // Funksjon for å bevege begge aktuatorene med hastighetene i actuator_speeds
-void get_ball(); // Funksjon for å kontrollere heisen for å hente ball
+void elevator(int8_t elevator_dir); // Funksjon for å kontrollere heisen for å hente ball
 void set_led_color(uint8_t r, uint8_t g, uint8_t b, int8_t led_number); // Funksjon for å sette fargen på LED stripen
 void read_serial(); // Funksjon for å lese innkommende seriedata
 
@@ -104,11 +104,11 @@ void loop() {
 
     switch (serial_messages::state) // Sjekker hvilken tilstand programmet er i
     {
-        case serial_messages::State::GET_BALL: // Tilstand 0: Heis klar til å hente ball
-            get_ball(); // Henter ballen
+        case serial_messages::State::ELEVATOR: // Tilstand 0: Heis klar til å hente ball
+            elevator(serial_messages::value_1); // Kjører heisen
             serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
             break;
-        case serial_messages::State::CONTROL: // Tilstand 1: Heis klar til å motta kommandoer
+        case serial_messages::State::CONTROL: // Tilstand 1: Kontrollerer aktuatorene
             actuator_limit_check(); // Sjekker om aktuatorene er over eller under grensen og oppdaterer distance_status
             move_speed(serial_messages::value_1, serial_messages::value_2); // Setter motor hastighetene
             break;
@@ -236,23 +236,26 @@ void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2)
     }
 }
 
-void get_ball()
+void elevator(int8_t elevator_dir)
 {
     // Funksjon for å kontrollere heisen
     lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
 
-    // 1. Kjør heisen ned for å hente ballen
-    lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
-    delay(100); // Venter 100 ms for at heisen skal nå ned
+    if (elevator_dir == -1)
+    {
+        // Kjør heisen ned
+        lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
+        delay(100); // Venter 100 ms for at heisen skal nå ned
+    }
+    
+    else if (elevator_dir == 1)
+    {
+        lift_servo::lift.write(lift_servo::lift_up); // Setter heisen til høy posisjon
+        delay(100); // Venter 100 ms for at heisen skal nå opp
+    }
 
-    // 2. Stoper heisen for å la ballen renne ned
-    lift_servo::lift.write(lift_servo::lift_stop); // Setter heisen til høy posisjon
-    delay(1000); // Venter 1 sekund for at baller kan renne på heisen
-
-    // 3. Kjør heisen opp med ballen
-    lift_servo::lift.write(lift_servo::lift_up); // Setter heisen
-    delay(100); // Venter 100 ms for at heisen skal nå opp
-
+    // Stoper heisen
+    lift_servo::lift.write(lift_servo::lift_stop);
     lift_servo::lift.detach(); // Frakobler servoen
 }
 
@@ -283,67 +286,106 @@ void set_led_color(uint8_t r, uint8_t g, uint8_t b, int8_t led_number) {
 void read_serial()
 {
     // Leser innkommende seriedata fra Jetson
-    if (Serial.available() > 0)
+    if (Serial.available() <= 0)
     {
-        char buffer[64]; // Buffer for å lagre innkommende data
-        int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser data til linjeskift eller buffer er fullt
+        return; // Hvis det ikke er noen data tilgjengelig, bare avslutt funksjonen.
+    }
 
-        // Legg til sjekk for å sikre at vi faktisk leste noe før vi parser
-        if (len > 0)
-        {
-            buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
-             
-            int v1, v2, v3, v4, incoming_state;
+    char buffer[64]; // Buffer for å lagre innkommende data
+    int len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1); // Leser data til linjeskift eller buffer er fullt
 
-            // Tell antall kommaer for å bestemme meldingstype raskt
-            uint8_t comma_count = 0;
-            for (int i = 0; i < len; i++)
-            {
-                if (buffer[i] == ',')
-                {
-                    comma_count++;
-                }
-            }
+    // Legg til sjekk for å sikre at vi faktisk leste noe før vi parser
+    if (len > 0)
+    {
+        buffer[len] = '\0'; // Null-terminerer strengen for sikkerhet
             
-            // Sjekk for den vanligste meldingen FØRST: CONTROL (2 hastigheter + state)
-            if (comma_count == 2) // For CONTROL-meldinger (f.eks. "25,200,1")
+        int v1, v2, v3, v4, incoming_state;
+
+        // Tell antall kommaer for å bestemme meldingstype raskt
+        uint8_t comma_count = 0;
+        for (int i = 0; i < len; i++)
+        {
+            if (buffer[i] == ',')
             {
-                if (sscanf(buffer, "%d,%d,%d", &v1, &v2, &incoming_state) == 3)
-                {
-                    serial_messages::value_1 = v1;
-                    serial_messages::value_2 = v2;
-                    if (incoming_state >= 0 && incoming_state <= 3)
-                    {
-                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
-                    }
-                }
+                comma_count++;
             }
-            // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
-            else if (comma_count == 4) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
+        }
+        
+        // Sjekk for den vanligste meldingen FØRST: CONTROL (2 hastigheter + state)
+        if (comma_count == 2) // For CONTROL-meldinger (f.eks. "25,200,1")
+        {
+            if (sscanf(buffer, "%d,%d,%d", &v1, &v2, &incoming_state) != 3)
             {
-                if (sscanf(buffer, "%d,%d,%d,%d,%d", &v1, &v2, &v3, &v4, &incoming_state) == 5)
-                {
-                    serial_messages::value_1 = v1;
-                    serial_messages::value_2 = v2;
-                    serial_messages::value_3 = v3;
-                    serial_messages::value_4 = v4;
-                    if (incoming_state >= 0 && incoming_state <= 5)
-                    {
-                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
-                    }
-                }
+                return; // Ugyldig format, ignorer meldingen
             }
-            // Sjekk til slutt for den korteste: IDLE/GET_BALL (kun state)
-            else if (comma_count == 0) // For IDLE/GET_BALL-meldinger (f.eks. "0")
+
+            if (incoming_state < 0 || incoming_state > 3)
             {
-                if (sscanf(buffer, "%d", &incoming_state) == 1)
-                {
-                    if (incoming_state >= 0 && incoming_state <= 3)
-                    {
-                        serial_messages::state = static_cast<serial_messages::State>(incoming_state);
-                    }
-                }
+                return; // Ugyldig state, ignorer meldingen
             }
+
+            serial_messages::value_1 = v1;
+            serial_messages::value_2 = v2;
+            serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+
+            return; // Avslutter funksjonen siden meldingen er lest
+        }
+
+        // Sjekker for get_ball-meldinger: GET_BALL
+        else if (comma_count == 1) // For GET_BALL-meldinger (f.eks. "1, 0" eller "-1, 1")
+        {
+            if (sscanf(buffer, "%d,%d", &v1, &incoming_state) != 2)
+            {
+                return; // Ugyldig format, ignorer meldingen
+            } 
+                
+            if (incoming_state < 0 || incoming_state > 3)
+            {
+                return; // Ugyldig state, ignorer meldingen
+            }
+
+            serial_messages::value_1 = v1;
+            serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+
+            return; // Avslutter funksjonen siden meldingen er lest
+        }
+
+        // Sjekk deretter for den lengste: SET_COLOR (3 fargeverdier + state)
+        else if (comma_count == 4) // For SET_COLOR-meldinger (f.eks. "255,0,0,3")
+        {
+            if (sscanf(buffer, "%d,%d,%d,%d,%d", &v1, &v2, &v3, &v4, &incoming_state) != 5)
+            {
+                return; // Ugyldig format, ignorer meldingen
+            }
+
+            if (incoming_state < 0 || incoming_state > 3)
+            {
+                return; // Ugyldig state, ignorer meldingen
+            }
+
+            serial_messages::value_1 = v1;
+            serial_messages::value_2 = v2;
+            serial_messages::value_3 = v3;
+            serial_messages::value_4 = v4;
+            serial_messages::state = static_cast<serial_messages::State>(incoming_state);
+
+            return; // Avslutter funksjonen siden meldingen er lest
+        }
+
+        // Sjekk til slutt for den korteste: IDLE/GET_BALL (kun state)
+        else if (comma_count == 0) // For IDLE/GET_BALL-meldinger (f.eks. "0")
+        {
+            if (sscanf(buffer, "%d", &incoming_state) != 1)
+            {
+                return; // Hvis sscanf ikke klarer å lese fem verdier, hopp over denne meldingen
+            }
+
+            if (incoming_state < 0 || incoming_state > 3)
+            {
+                return; // Hvis state ikke er gyldig, hopp over denne meldingen
+            }
+
+            serial_messages::state = static_cast<serial_messages::State>(incoming_state);
         }
     }
 }
