@@ -1,4 +1,5 @@
 from enum import Enum, auto
+import time
 from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
@@ -149,6 +150,8 @@ class HMIController:
                 self.disco_thread.start()
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)
+                    time.sleep(0.2)
+                    self.arduino_thread.send_elevator(0)
                     self.controller.elevator_state = "up"
         
         # --- MAIN_SCREEN STATE ---
@@ -175,16 +178,14 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)
+                    time.sleep(0.2)
+                    self.arduino_thread.send_elevator(0)
                     self.controller.elevator_state = "up"
                 if self.disco_thread is not None:
                     self.disco_thread.stop()
                     self.disco_thread.join()
                     self.disco_thread = None
                 print("[FSM] Transitioned to LOCATING")
-                if self.controller.elevator_state == "down":
-                    self.arduino_thread.send_elevator(1)
-                    self.controller.elevator_state = "up"
-                    pass
                 self.tracking_service.start_tracker()
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
