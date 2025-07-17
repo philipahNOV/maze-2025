@@ -83,6 +83,7 @@ class ArduinoConnection(threading.Thread):
         """
         Sends "ELEVATOR" state to the Arduino.
         """
+        print(f"[ArduinoConnection] Sending elevator command: {direction}")
         self._send_command(ArduinoState.ELEVATOR, int(direction))
 
     def send_speed(self, speed1: int, speed2: int):
