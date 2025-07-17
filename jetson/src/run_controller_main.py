@@ -90,7 +90,7 @@ def main(tracker: TrackerService,
                 if blinker is None:
                     # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
-                    blinker = utility_threads.BlinkRed(controller.arduinoThread, config)
+                    blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
                     blinker.start()
                     ball_not_found_timer = time.time()
 

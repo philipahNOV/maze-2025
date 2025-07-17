@@ -182,7 +182,8 @@ class HMIController:
                     self.disco_thread = None
                 print("[FSM] Transitioned to LOCATING")
                 if self.controller.elevator_state == "down":
-                    #SEND ELEVATOR UP COMMAND
+                    self.arduino_thread.send_elevator(1)
+                    self.controller.elevator_state = "up"
                     pass
                 self.tracking_service.start_tracker()
                 self.ball_finder = utility_threads.LookForBall(
