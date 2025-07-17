@@ -47,16 +47,16 @@ controller:
   stuck_upper_position_threshold: 70 # px, upper position threshold to consider stuck
   stuck_time_threshold: 0.8  # seconds, time to consider stuck
   stuck_unstuck_hold_time: 0.2 # seconds, time to hold before unsticking
-  integration_pos_threshold: 50        # px, reset integral if error exceeds this
+  integration_pos_threshold: 60        # px, reset integral if error exceeds this
   integration_vel_threshold: 20        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
-    kp_x: 0.00004
-    kp_y: 0.00004
-    kd_x: 0.00015
-    kd_y: 0.00015
-    ki_x: 0.0002
-    ki_y: 0.0002
-    position_tolerance: 40        # px
+    kp_x: 0.00003
+    kp_y: 0.00003
+    kd_x: 0.00018
+    kd_y: 0.00018
+    ki_x: 0.0003
+    ki_y: 0.0003
+    position_tolerance: 25        # px
     velocity_tolerance: 20        # px/s
     feedforward_t: 4.9
   position_controller_lookahead:
@@ -76,8 +76,8 @@ controller:
     angle_tolerance: 0.001      # rad
   horizontal_controller:
     kp: 900
-    tolerance: 0.0015         # rad
-    time_limit: 20           # seconds
+    tolerance: 0.002         # rad
+    time_limit: 10           # seconds
   arduino:
     x_offset: 0.014                # rad
     y_offset: -0.0035                 # rad
@@ -113,8 +113,8 @@ path_following:
   normal:
     velocity_threshold: 50
     stuck_retry_time: 3
-    dwell_time: 0.7
-    checkpoint_timeout: 10  # seconds, time to wait before changing checkpoint
+    dwell_time: 1
+    checkpoint_timeout: 15  # seconds, time to wait before changing checkpoint
 
 animations:
   locating_ball:
