@@ -154,9 +154,9 @@ class EscapeElevatorThread(threading.Thread):
     def __init__(self, arduino_thread, controller):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
-        self.duration = 2.2
-        self.y_duration = 0.2
-        self.speed = 150  # absolute motor speed
+        self.duration = 1.5
+        self.y_duration = 0.1
+        self.speed = 200  # absolute motor speed
         self._stop_event = threading.Event()
         self.start_time = time.time()
         self.controller = controller
@@ -170,7 +170,7 @@ class EscapeElevatorThread(threading.Thread):
             else:
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
-        time.sleep(1)
+        time.sleep(0.3)
         print(self.controller.elevator_state)
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
