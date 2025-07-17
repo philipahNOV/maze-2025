@@ -28,12 +28,12 @@ def sample_waypoints(path, mask):
     raw = [path[0]]
     y, x = path[0]
     for ty, tx in path[1:]:
-        dx, sx = tx-x, 1 if tx>x else -1
+        sx = tx-x, 1 if tx>x else -1
         for xx in range(x+sx, tx+sx, sx):
             if mask[y][xx]:
                 raw.append((y, xx))
         x = tx
-        dy, sy = ty-y, 1 if ty>y else -1
+        sy = ty-y, 1 if ty>y else -1
         for yy in range(y+sy, ty+sy, sy):
             if mask[yy][x]:
                 raw.append((yy, x))
@@ -88,5 +88,5 @@ def sample_waypoints(path, mask):
             new_wps.append(b)
 
         waypoints = new_wps
-        
+
     return waypoints
