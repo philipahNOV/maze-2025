@@ -80,9 +80,11 @@ def main(tracker: TrackerService,
                         if controller.lookahead:
                             print("[INFO] Using lookahead path following.")
                             pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
+                            image_thread.path_follower = pathFollower
                         else:
                             print("[INFO] Using standard path following.")
                             pathFollower = path_following.PathFollower(path_array, controller, config)
+                            image_thread.path_follower = pathFollower
                     blinker = None
                     ball_not_found_timer = None
             else:
