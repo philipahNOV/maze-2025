@@ -4,7 +4,6 @@ import time
 import base64
 import numpy as np
 import cv2
-from other_modules.ui import tuning_screen
 
 class MQTTClientPi(threading.Thread):
     def __init__(self, broker_address='192.168.1.3', port=1883):
@@ -22,8 +21,12 @@ class MQTTClientPi(threading.Thread):
         self.img = None
         self.jetson_path = "None"
         self.screen2_instance = None
-        self.ball_info = None
+        self.ball_found = None
         self.img = None
+        self.timeout = False
+        self.path_found = False
+        self.finding_path = False
+        self.path_failed = False
         
         self.connected = False
         self.retry_interval = 1  # Initial retry interval in seconds
@@ -59,6 +62,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("data/updates")
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
+            self.client.subscribe("pi/info")
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
@@ -67,35 +71,28 @@ class MQTTClientPi(threading.Thread):
 
     def on_message(self, client, userdata, msg):
         # Delegate to the appropriate handler based on the topic
-        if msg.topic == "camera/feed":
-            #image_data = base64.b64decode(msg.payload)
-            #nparr = np.frombuffer(image_data, np.uint8)
-            #frame = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            #self.img = frame
+        #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
+        if msg.topic == "pi/command":
             pass
-        elif msg.topic == "data/updates":
-            pass
-        elif msg.topic == "pi/state":
-            self.pi_state = (msg.payload.decode())
-        elif msg.topic == "pi/command":
-            if msg.payload.decode().startswith("PID:"):
-                values = msg.payload.decode().split(":")[1].split(",")
-                if self.app and "Tuning" in self.app.frames:
-                    tuning = self.app.frames["Tuning"]
-                    tuning.params = values
-                    tuning.params_recieved = False  # so poll_for_params() reloads
-                return
-            self.pi_state = (msg.payload.decode())
-            self.client.publish("jetson/state", msg.payload.decode(), 0)
-            print(f"Jetson state: {self.pi_state}")
+        elif msg.topic == "pi/info":
+            if msg.payload.decode() == "ball_found":
+                self.ball_found = True
+            if msg.payload.decode() == "ball_not_found":
+                self.ball_found = False
+            if msg.payload.decode() == "timeout":
+                print("[Pi] Ball not found for too long, returning to main menu.")
+                self.timeout = True
+            if msg.payload.decode() == "path_found":
+                print("[Pi] Path found by Jetson.")
+                self.finding_path = False
+            if msg.payload.decode() == "path_not_found":
+                print("[Pi] Path not found by Jetson.")
+                self.finding_path = False
+                self.path_failed = True
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True
                 print("Handshake completed with Jetson")
-        elif msg.topic == "jetson/path":
-            self.jetson_path = msg.payload.decode()
-        elif msg.topic == "ball/info":
-            self.ball_info = msg.payload.decode()
         elif msg.topic == "pi/camera":
             try:
                 image_data = base64.b64decode(msg.payload)

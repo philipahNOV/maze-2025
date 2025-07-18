@@ -4,6 +4,7 @@ from astar.astar import astar_downscaled
 from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 from astar.nearest_point import find_nearest_walkable
 from astar.waypoint_sampling import sample_waypoints
+from astar.waypoint_sampling_la import sample_waypoints_la
 from astar.path_memory import PathMemory
 import colorsys
 import cv2
@@ -32,9 +33,13 @@ class BlinkRed(threading.Thread):
             # Check if enough time has passed to trigger elevator
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 print("BlinkRed active too long — triggering elevator up.")
-                self.arduino_thread.send_elevator(1)
+                if self.controller.elevator_state is not None:
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.2)
+                    self.arduino_thread.send_elevator(0)
+                self.arduino_thread.send_color(*white)
                 self.triggered = True  # Avoid retriggering
-                self.controller.elevator_state = "up"
+                #self.controller.elevator_state = "up"
 
             time.sleep(4)
 
@@ -132,7 +137,7 @@ class PathFindingThread(threading.Thread):
 
         waypoints = sample_waypoints(path, safe_mask)
         #waypoints = astar.waypoint_sampling_2.sample_waypoints(path, safe_mask)
-        waypoints_lookahead = sample_waypoints(path, safe_mask)
+        waypoints_lookahead = sample_waypoints_la(path, safe_mask, waypoint_spacing=120, angle_threshold=135)
         print(f"[PathFindingThread] Path length: {len(path)}")
 
         if self._stop_event.is_set():
@@ -175,7 +180,9 @@ class EscapeElevatorThread(threading.Thread):
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
             self.arduino_thread.send_elevator(-1)
-            self.controller.elevator_state = "down"
+            time.sleep(0.2)
+            self.arduino_thread.send_elevator(0)
+            #self.controller.elevator_state = "down"
         
         self.arduino_thread.send_speed(0, 0)
 
@@ -190,7 +197,7 @@ class DiscoThread(threading.Thread):
 
     def run(self):
         print("[DiscoThread] Starting disco...")
-        hue = random.randrange(0, 100) / 100.0  # Random initial hue
+        hue = random.randrange(0, 100) / 100.0
 
         while not self._stop_event.is_set():
             if self.mode == 1:
@@ -227,5 +234,3 @@ class DiscoThread(threading.Thread):
         self.mode = 0
         self.arduino_thread.send_color(255, 255, 255)
         self._stop_event.set()
-
-        

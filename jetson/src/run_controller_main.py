@@ -1,10 +1,10 @@
 import time
+from mqtt_client import MQTTClientJetson
 import position_controller
-import low_pass_filter
+import utils.low_pass_filter
 import path_following
 import path_following_lookahead
 import utility_threads
-from mqtt_client import MQTTClientJetson
 from image_controller import ImageController
 from image_controller import ImageSenderThread
 from camera.tracker_service import TrackerService
@@ -18,7 +18,7 @@ def main(tracker: TrackerService,
          stop_event=None,
          config=None):
 
-    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
+    smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
 
     ball_not_found_timer = None
     ball_not_found_limit = 60  # seconds
@@ -46,11 +46,10 @@ def main(tracker: TrackerService,
     controller.horizontal()
 
     logger = None
-    #logger = LoggingThread(path_array)
-    #logger.start()
-    #controller.logger = logger
+    logger = LoggingThread(path_array)
+    logger.start()
+    controller.logger = logger
 
-    # Set control loop parameters
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
     blinker = None
@@ -80,9 +79,11 @@ def main(tracker: TrackerService,
                         if controller.lookahead:
                             print("[INFO] Using lookahead path following.")
                             pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
+                            image_thread.path_follower = pathFollower
                         else:
                             print("[INFO] Using standard path following.")
                             pathFollower = path_following.PathFollower(path_array, controller, config)
+                            image_thread.path_follower = pathFollower
                     blinker = None
                     ball_not_found_timer = None
             else:
@@ -103,7 +104,6 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
             
-            # Keep loop running at the target frequency
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:

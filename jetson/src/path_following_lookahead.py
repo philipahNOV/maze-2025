@@ -36,10 +36,8 @@ class PathFollower:
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
 
-        # Optimization: cache the last closest segment index
         self.last_closest_index = 0
 
-        # Limit how far ahead we can skip (in waypoints)
         self.max_skip_ahead = max(5, int(self.length / 10))
         self.max_skip_behind = max(5, int(self.length / 15))
 
@@ -71,7 +69,6 @@ class PathFollower:
 
         self.looping = self.controller.looping
 
-        # Compute velocity
         vel = None
         if self.prev_time and self.prev_ball_pos:
             dt = time.time() - self.prev_time
@@ -81,7 +78,6 @@ class PathFollower:
         if self.adaptive_lookahead:
             target_lookahead = self.lookahead_distance
             if vel is not None:
-                # Choose dynamic target between min and max
                 target_lookahead = self.min_lookahead + (
                     (self.max_lookahead - self.min_lookahead) * (vel / (vel + self.velocity_gain))
                 )

@@ -1,4 +1,4 @@
-import pos2
+import position_controller
 import numpy as np
 import time
 
@@ -26,7 +26,7 @@ class PathFollower:
             automatic recovery if the object is stuck or goes behind a previously visited waypoint.
     """
 
-    def __init__(self, path_array, controller: pos2.Controller, config):
+    def __init__(self, path_array, controller: position_controller.Controller, config):
 
         self.path = []
         self.length = 0
@@ -75,7 +75,7 @@ class PathFollower:
                 if self.looping:
                     print("Reached end — reversing direction.")
                     self.forward = False
-                    self.next_waypoint = self.length - 2  # Step back
+                    self.next_waypoint = self.length - 2
                     self.prev_waypoint = self.length - 1
                 else:
                     print("Done following path (forward).")
@@ -123,7 +123,6 @@ class PathFollower:
                 self.prev_progress_time = None
                 #print(f"Progressing again. Velocity: {vel}")
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
-                # Check if we're stuck within the current waypoint's acceptance radius
                 stuck_within_waypoint = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint])) < self.acceptance_radius
 
                 # Normal backstep
@@ -155,14 +154,13 @@ class PathFollower:
         
         current_time = time.time()
 
-        # Distance to relevant waypoints
         dist_to_next = np.linalg.norm(np.array(ballPos) - np.array(self.path[self.next_waypoint]))
-        dist_to_prev = (
-            np.linalg.norm(np.array(ballPos) - np.array(self.path[self.prev_waypoint]))
-            if self.prev_waypoint is not None else float('inf')
-        )
+        # dist_to_prev = (
+        #     np.linalg.norm(np.array(ballPos) - np.array(self.path[self.prev_waypoint]))
+        #     if self.prev_waypoint is not None else float('inf')
+        # )
 
-        # === Backward skipping (keep this first!) ===
+        # === Backward skipping ===
         for i in reversed(range(self.length)):
             wpt = self.path[i]
             dist = np.linalg.norm(np.array(ballPos) - np.array(wpt))
@@ -205,5 +203,3 @@ class PathFollower:
             self.controller.feedforward_vector = (dx / norm, dy / norm)
         else:
             self.controller.feedforward_vector = (0, 0)
-
-    

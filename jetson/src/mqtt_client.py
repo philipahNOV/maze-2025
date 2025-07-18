@@ -4,7 +4,6 @@ from arduino_connection import ArduinoConnection
 from queue import Queue, Empty
 import time
 
-# Constants
 CMD_CONTROL = "Control"
 CMD_STOP = "Stop_control"
 
@@ -63,21 +62,10 @@ class MQTTClientJetson(threading.Thread):
                 self.client.publish("handshake/response", "ack", qos=1)
                 self.client.publish("pi/command", "booted", qos=1)
                 self.handshake_complete = True
-
-        elif topic == "jetson/command":
-            self.command_queue.put(payload)
-            if payload == CMD_CONTROL:
-                self.stop_control = False
-            elif payload == CMD_STOP:
-                self.stop_control = True
-        elif topic == "jetson/state_transition":
-            state = msg.payload.decode()
-            self.fsm.set_state(state)
-        elif topic == "arduino/elevator":
-            self.elevator = payload
-
         elif topic == "pi/response":
             self.pi_state = payload
+        else:
+            self.fsm.on_command(payload)
 
     def publish_image(self, image):
         self.client.publish("camera/feed", image, qos=0)
