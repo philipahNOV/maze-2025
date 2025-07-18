@@ -25,14 +25,14 @@ namespace actuators {
 
 namespace lift_servo {
     Servo lift; // Servo for heis
-    const uint8_t servo_pin = 2; // Pinne for servo
+    const uint8_t servo_pin = 13; // Pinne for servo
     const uint8_t lift_down = 180; // Lav posisjon for heis
     const uint8_t lift_up = 0; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
 }
 
 namespace led_strips {
-    const uint8_t led_pin = 30; // Pinne for LED strip
+    const uint8_t led_pin = 8; // Pinne for LED strip
     const uint16_t num_leds = 10; // Antall LED i stripen
     Adafruit_NeoPixel strip = Adafruit_NeoPixel(num_leds, led_pin, NEO_GRB + NEO_KHZ800); // Initialiserer LED stripen
 }
