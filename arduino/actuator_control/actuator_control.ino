@@ -238,28 +238,29 @@ void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2)
 
 void elevator(int8_t elevator_dir)
 {
-    // Funksjon for å kontrollere heisen
-    lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-
-    if (elevator_dir == -1) // Kjører heisen opp
-    {
-        // Kjør heisen ned
-        lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-        lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
+    if (elevator_dir == -1) {  // Move down
+        if (!elevator_attached) {
+            lift_servo::lift.attach(lift_servo::servo_pin);
+            elevator_attached = true;
+        }
+        lift_servo::lift.write(lift_servo::lift_down);
     }
-    
-    else if (elevator_dir == 1) // Kjører heisen ned
-    {
-        lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-        lift_servo::lift.write(lift_servo::lift_up); // Setter heisen til høy posisjon
+    else if (elevator_dir == 1) {  // Move up
+        if (!elevator_attached) {
+            lift_servo::lift.attach(lift_servo::servo_pin);
+            elevator_attached = true;
+        }
+        lift_servo::lift.write(lift_servo::lift_up);
     }
-
-    else  // Stoper heisen
-    {
-    lift_servo::lift.write(lift_servo::lift_stop);
-    lift_servo::lift.detach(); // Frakobler servoen
+    else {  // elevator_dir == 0 → stop and optionally detach
+        if (elevator_attached) {
+            lift_servo::lift.write(lift_servo::lift_stop);  // optional: neutral hold position
+            lift_servo::lift.detach();
+            elevator_attached = false;
+        }
     }
 }
+
 
 // Funksjon for å sette fargen på LED stripen
 void set_led_color(uint8_t r, uint8_t g, uint8_t b, int8_t led_number) {
