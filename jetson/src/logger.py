@@ -83,7 +83,6 @@ class LoggingThread(threading.Thread):
             state = [x, y, vel_x, vel_y, theta_x, theta_y]
             action = [input_x, input_y]
 
-            # Combined warm-up check
             if self.steps_taken < self.warmup_steps or self.current_waypoint <= 0:
                 reward, done = 0.0, False
             else:
@@ -121,31 +120,35 @@ class LoggingThread(threading.Thread):
         self.motor_input = motor_input
 
     def calculate_reward(self):
-        reward = 0
-        progress = 0
-        if self.ball_position is not None:
-            path_length = self.compute_total_path_length()
-            if path_length > 0:
-                progress = (path_length - self.distance_from_goal()) / path_length
-                progress = np.clip(progress, 0, 1)
-        reward += progress * 20
-
         if self.ball_position is None:
-            reward -= 100
+            return -100.0, True
+
+        reward = 0.0
+
+        path_length = self.compute_total_path_length()
+        if path_length > 0:
+            progress = (path_length - self.distance_from_goal()) / path_length
+            progress = np.clip(progress, 0, 1)
+            reward += progress * 10.0
 
         if self.current_waypoint != self.prev_waypoint:
             if self.current_waypoint > self.prev_waypoint:
-                if abs(self.current_waypoint - self.prev_waypoint) > 1:
-                    reward -= 3
+                delta = self.current_waypoint - self.prev_waypoint
+
+                if delta > 1:
+                    reward -= 3.0  # skipped waypoints penalty
+                reward += 5.0 * delta  # encourage multi-step forward progress
+
                 if self.current_waypoint == len(self.path) - 1:
-                    reward += 100
+                    reward += 100.0  # terminal bonus
                     return reward, True
-                else:
-                    reward += 5
+
             elif self.current_waypoint < self.prev_waypoint:
-                reward -= 10
+                reward -= 10.0  # penalty for going backward
+
             self.prev_waypoint = self.current_waypoint
 
+        reward = np.clip(reward, -100.0, 100.0)  # avoid extreme values
         return reward, False
 
     def set_waypoint(self, waypoint):

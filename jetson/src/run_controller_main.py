@@ -18,7 +18,7 @@ def main(tracker: TrackerService,
          stop_event=None,
          config=None):
 
-    smoother = low_pass_filter.SmoothedTracker(alpha=0.5)
+    smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
 
     ball_not_found_timer = None
     ball_not_found_limit = 60  # seconds
@@ -46,9 +46,9 @@ def main(tracker: TrackerService,
     controller.horizontal()
 
     logger = None
-    #logger = LoggingThread(path_array)
-    #logger.start()
-    #controller.logger = logger
+    logger = LoggingThread(path_array)
+    logger.start()
+    controller.logger = logger
 
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
