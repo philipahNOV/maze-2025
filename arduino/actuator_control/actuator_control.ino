@@ -126,7 +126,7 @@ void loop() {
 
     if (elevator_running) // Sjekker om heisen er aktiv
     {
-        if (elevator_start_time + 200 >= millis()) // Sjekker heisen hver 10. loop
+        if (millis() - elevator_start_time >= 200) // Sjekker heisen hver 10. loop
         {
             elevator(0); // Kjører heisen
         }
@@ -249,6 +249,11 @@ void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2)
 
 void elevator(int8_t elevator_dir)
 {
+    // Hvis en bevegelse er i gang OG den nye kommandoen også er en bevegelse, ignorer den.
+    if (elevator_running && elevator_dir != 0) {
+        return;
+    }
+
     if (elevator_dir == -1) {  // Move down
         elevator_running = true; // Setter heisen til aktiv
         elevator_start_time = millis(); // Setter tidspunktet for når heisen startet å kjøre
