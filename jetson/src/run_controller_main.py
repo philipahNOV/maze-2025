@@ -73,7 +73,7 @@ def main(tracker: TrackerService,
                     logger.update_state(
                         ball_position=ball_pos,
                         orientation=tracker.get_orientation(),
-                        ball_velocity=tracker.get_ball_velocity(),
+                        ball_velocity=controller.ball_velocity,
                         motor_input=controller.get_last_command()
                     )
                     logger.set_waypoint(pathFollower.get_current_waypoint())
