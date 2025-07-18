@@ -311,3 +311,6 @@ class Controller:
             time.sleep(self.command_delay)
 
         print("Deadline reached, stopping motors.")
+
+    def get_last_command(self):
+        return (self.prev_vel_x, self.prev_vel_y)

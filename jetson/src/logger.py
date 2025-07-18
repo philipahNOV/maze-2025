@@ -100,6 +100,7 @@ class LoggingThread(threading.Thread):
                 if done:
                     print(f"[LoggingThread] Episode complete. Total reward: {self.episode_reward}")
                     self.stop()
+                    break
 
             self.prev_state = state
             self.prev_action = action

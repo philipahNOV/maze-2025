@@ -203,3 +203,6 @@ class PathFollower:
             self.controller.feedforward_vector = (dx / norm, dy / norm)
         else:
             self.controller.feedforward_vector = (0, 0)
+    
+    def get_current_waypoint(self):
+        return self.next_waypoint

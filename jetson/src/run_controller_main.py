@@ -69,6 +69,15 @@ def main(tracker: TrackerService,
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
+                if logger is not None and ball_pos is not None:
+                    logger.update_state(
+                        ball_position=ball_pos,
+                        orientation=tracker.get_orientation(),
+                        ball_velocity=tracker.get_ball_velocity(),
+                        motor_input=controller.get_last_command()
+                    )
+                    logger.set_waypoint(pathFollower.get_current_waypoint())
+
                 if blinker is not None:
                     blinker.stop()
                     if blinker.triggered:
@@ -88,6 +97,14 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
             else:
                 ball_pos = smoother.update(ball_pos)
+                if logger is not None:
+                    logger.update_state(
+                        ball_position=None,
+                        orientation=None,
+                        ball_velocity=None,
+                        motor_input=None
+                    )
+
                 if blinker is None:
                     # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
