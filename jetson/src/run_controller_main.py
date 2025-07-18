@@ -1,7 +1,7 @@
 import time
-from mqtt_client_2 import MQTTClientJetson
-import pos2
-import low_pass_filter
+from mqtt_client import MQTTClientJetson
+import position_controller
+import utils.low_pass_filter
 import path_following
 import path_following_lookahead
 import utility_threads
@@ -11,7 +11,7 @@ from camera.tracker_service import TrackerService
 from logger import LoggingThread
 
 def main(tracker: TrackerService,
-         controller: pos2.Controller,
+         controller: position_controller.Controller,
          mqtt_client: MQTTClientJetson,
          path_array=None,
          image_controller:ImageController = None,
@@ -50,7 +50,6 @@ def main(tracker: TrackerService,
     #logger.start()
     #controller.logger = logger
 
-    # Set control loop parameters
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
     blinker = None
@@ -105,7 +104,6 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
             
-            # Keep loop running at the target frequency
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:

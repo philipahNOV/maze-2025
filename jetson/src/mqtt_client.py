@@ -4,7 +4,6 @@ from arduino_connection import ArduinoConnection
 from queue import Queue, Empty
 import time
 
-# Constants
 CMD_CONTROL = "Control"
 CMD_STOP = "Stop_control"
 

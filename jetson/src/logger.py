@@ -5,7 +5,7 @@ import threading
 import time
 import numpy as np
 from camera.tracker_service import TrackerService
-import low_pass_filter
+import utils.low_pass_filter
 
 class OfflineLogger:
     def __init__(self, save_path="ORL/rl_data", episode_limit=100):

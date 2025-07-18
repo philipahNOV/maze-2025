@@ -1,9 +1,9 @@
-from mqtt_client_2 import MQTTClientJetson
+from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-import pos2
+import position_controller
 from camera.tracker_service import TrackerService
 import time
-from fsm2 import HMIController
+from finite_state_machine import HMIController
 import yaml
 from pathlib import Path
 
@@ -49,7 +49,7 @@ tracker_service = TrackerService(
 )
 
 tracker_service.camera.init_camera()
-controller = pos2.Controller(
+controller = position_controller.Controller(
     arduinoThread=arduino_thread,
     tracker=tracker_service,
     path_following=True,

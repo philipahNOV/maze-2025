@@ -1,12 +1,12 @@
 from enum import Enum, auto
 import time
-from mqtt_client_2 import MQTTClientJetson
+from mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from camera.tracker_service import TrackerService
 import utility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
-import pos2
+import position_controller
 from utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
 import threading
@@ -37,7 +37,7 @@ class HMIController:
         self.path_lookahead = None
         self.image_controller = ImageController(config)
         self.image_thread = None
-        self.controller = pos2.Controller(arduino_thread, tracking_service, config=config)
+        self.controller = position_controller.Controller(arduino_thread, tracking_service, config=config)
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
@@ -50,7 +50,6 @@ class HMIController:
     def restart_program(self):
         print("Restart requested...")
         self.stop_threads()
-        # Launch a new process first
         python = sys.executable
         script = os.path.abspath(sys.argv[0])
         print(f"Launching new process: {python} {script}")
@@ -157,12 +156,10 @@ class HMIController:
         # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
             if cmd == "Info":
-                # Stop disco thread if running before going to Info screen
                 self.state = SystemState.INFO_SCREEN
                 print("[FSM] Transitioned to INFO_SCREEN")
 
             elif cmd == "Navigate":
-                # Stop disco thread before navigating
                 if self.disco_thread is not None:
                     self.disco_thread.stop()
                     self.disco_thread.join()
@@ -207,7 +204,6 @@ class HMIController:
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Locate"):
-                # Configure loop and lookahead based on command
                 if "loop" in cmd:
                     self.loop_control = True
                 elif "dont_loop" in cmd:
@@ -228,11 +224,9 @@ class HMIController:
                 self.ball_finder.start_ball_check()
 
             elif cmd == "Elevator":
-                # Send elevator retrieval command
                 pass
 
             elif cmd == "Horizontal":
-                # Trigger horizontal calibration/control
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
         # --- LOCATING STATE ---
@@ -353,7 +347,6 @@ class HMIController:
         # --- CUSTOM_PATH STATE ---
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
-                # Stop controller and clean up threads and resources
                 self.stop_controller()
                 self.tracking_service.stop_tracker()
                 if self.path_thread is not None:

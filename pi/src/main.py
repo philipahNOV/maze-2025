@@ -46,7 +46,6 @@ class MainApp(tk.Tk):
 
         self.current_frame = "BootScreen"
         self.mqtt_client = mqtt_client
-        # Container to hold all the frames
         container = tk.Frame(self)
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
@@ -64,7 +63,7 @@ class MainApp(tk.Tk):
         self.show_frame("BootScreen")
 
     def get_current_screen(self):
-        return self.current_screen  # Returns the current active screen
+        return self.current_screen 
 
     def show_frame(self, page_name):
         """Show a frame for the given page name"""
@@ -73,7 +72,6 @@ class MainApp(tk.Tk):
         frame = self.frames[page_name]
         frame.tkraise()
 
-        # If the frame has a custom `show()` method, call it
         if hasattr(frame, "show"):
             frame.show()
 
@@ -92,7 +90,6 @@ class MainApp(tk.Tk):
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
 
-        # Launch a new process first
         python = sys.executable
         script = os.path.abspath(sys.argv[0])
         print(f"Launching new process: {python} {script}")
@@ -101,7 +98,6 @@ class MainApp(tk.Tk):
         os.execv(python, [python, script])
 
 def load_config():
-    # Get path to project root from the current file (assuming this file is in jetson/src/)
     project_root = Path(__file__).resolve().parents[2]  # up from src → jetson → maze-2025
     config_path = project_root / "config.yaml"
 

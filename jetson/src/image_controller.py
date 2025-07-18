@@ -4,7 +4,7 @@ import numpy as np
 import cv2
 import time
 import base64
-from mqtt_client_2 import MQTTClientJetson
+from mqtt_client import MQTTClientJetson
 import threading
 from astar.draw_path import draw_path
 
@@ -90,38 +90,27 @@ class ImageController:
         cv2.circle(self.frame, ball_pos, 8, (255, 165, 0), -1)
 
     def crop_and_rotate_frame(self):
-        """Crop and rotate the frame based on predefined coordinates."""
         if self.frame is None:
             return None
 
         x1, y1 = self.frame_corners[0]
         x2, y2 = self.frame_corners[3]
-        # Step 1: Crop first
         cropped = self.frame[y1:y2, x1:x2]
-
-        # Step 2: Rotate 180°
         rotated = cv2.rotate(cropped, cv2.ROTATE_180)
-
-        # Step 3: Apply small additional rotation
         angle = self.maze_angle  # degrees, negative = clockwise
         (h, w) = rotated.shape[:2]
         center = (w // 2, h // 2)
 
-        # Rotation matrix
         M = cv2.getRotationMatrix2D(center, angle, 1.0)
-
-        # Apply affine transformation
         rotated_corrected = cv2.warpAffine(rotated, M, (w, h), flags=cv2.INTER_LINEAR, borderMode=cv2.BORDER_REFLECT)
-
         self.cropped_frame = rotated_corrected
 
     def send_frame_to_pi(self, mqtt_client: MQTTClientJetson):
-        """Encode and send the cropped frame to the Raspberry Pi over MQTT."""
         if self.cropped_frame is None:
             return
 
         if time.time() > self.last_sent_frame_time + 1 / self.frame_send_hz:
-            scale = 0.5  # Scale down for bandwidth efficiency
+            scale = 0.5
             height, width = self.cropped_frame.shape[:2]
             new_size = (int(width * scale), int(height * scale))
 
@@ -133,17 +122,6 @@ class ImageController:
             self.last_sent_frame_time = time.time()
 
     def update(self, ballPos, pathFollower: PathFollower = None, mqtt_client: MQTTClientJetson = None, path=None):
-        """
-        Main update routine: draw overlays, crop, rotate, and send frame.
-
-        Args:
-            ballPos (tuple): Ball position in pixel coordinates.
-            pathFollower (PathFollower): Path planning module.
-            mqtt_client (MQTTClientJetson): Communication module.
-
-        Returns:
-            np.ndarray: The final processed frame ready for display.
-        """
         if pathFollower is not None:
             if isinstance(pathFollower, PathFollowerLookahead):
                 self.draw_waypoints_lookahead(pathFollower)
@@ -169,7 +147,7 @@ class ImageSenderThread(threading.Thread):
         self.path = path
         self.path_follower = path_follower
         self.running = False
-        self.sleep_interval = 0.20  # 5 FPS update loop; actual send rate is limited by image_controller
+        self.sleep_interval = 0.20  # 5 fps update loop; actual send rate is limited by image_controller
         self.stop_event = stop_event
 
     def run(self):
@@ -190,4 +168,3 @@ class ImageSenderThread(threading.Thread):
     def stop(self):
         self.running = False
         print("[ImageSenderThread] Stopped")
-

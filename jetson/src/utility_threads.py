@@ -197,7 +197,7 @@ class DiscoThread(threading.Thread):
 
     def run(self):
         print("[DiscoThread] Starting disco...")
-        hue = random.randrange(0, 100) / 100.0  # Random initial hue
+        hue = random.randrange(0, 100) / 100.0
 
         while not self._stop_event.is_set():
             if self.mode == 1:
@@ -234,5 +234,3 @@ class DiscoThread(threading.Thread):
         self.mode = 0
         self.arduino_thread.send_color(255, 255, 255)
         self._stop_event.set()
-
-        
