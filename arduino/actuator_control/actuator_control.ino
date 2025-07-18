@@ -60,6 +60,8 @@ namespace serial_messages {
 namespace {
     // Teller for hvor ofte grensen sjekkes for aktuatorene
     uint8_t limit_check_counter = 0;
+    uint8_t elevator_check_counter = 0; // Teller for hvor ofte heisen sjekkes
+    bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
 }
 
 // Initialiserer funksjoner
@@ -119,6 +121,17 @@ void loop() {
         default: // Standard tilstand: Ingen handling
             stop_actuators(); // Stopper aktuatorene
             break;
+    }
+
+    if (elevator_running) // Sjekker om heisen er aktiv
+    {
+        elevator_check_counter++; // Øker telleren for hvor ofte heisen sjekkes
+        if (elevator_check_counter >= 500) // Sjekker heisen hver 10. loop
+        {
+            elevator_check_counter = 0; // Nullstiller telleren
+            elevator_running = false; // Setter heisen til inaktiv
+            elevator(0); // Kjører heisen
+        }
     }
 }
 
@@ -244,12 +257,14 @@ void elevator(int8_t elevator_dir)
     if (elevator_dir == -1) // Kjører heisen opp
     {
         // Kjør heisen ned
+        elevator_running = true; // Setter heisen til aktiv
         lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
         lift_servo::lift.write(lift_servo::lift_down); // Setter heisen til lav posisjon
     }
     
     else if (elevator_dir == 1) // Kjører heisen ned
     {
+        elevator_running = true; // Setter heisen til aktiv
         lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
         lift_servo::lift.write(lift_servo::lift_up); // Setter heisen til høy posisjon
     }
