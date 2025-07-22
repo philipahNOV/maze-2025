@@ -6,6 +6,7 @@ from camera.tracker_service import TrackerService
 import utility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
+from xbox import XboxController
 import position_controller
 from utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
@@ -24,6 +25,7 @@ class SystemState(Enum):
     AUTO_PATH = auto()
     CUSTOM_PATH = auto()
     CONTROLLING = auto()
+    XBOX_CONTROLLER = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -158,6 +160,15 @@ class HMIController:
             if cmd == "Info":
                 self.state = SystemState.INFO_SCREEN
                 print("[FSM] Transitioned to INFO_SCREEN")
+            
+            elif cmd == "Xbox":
+                print("[FSM] Transitioned to XBOX_CONTROLLER")
+                self.state = SystemState.XBOX_CONTROLLER
+                self.xbox_controller = XboxController(self.arduino_thread)
+                self.xbox_thread = threading.Thread(target=self.xbox_controller.start, daemon=True)
+                self.xbox_thread.start()
+                self.mqtt_client.client.publish("pi/command", "show_xbox_screen")  # optional for UI sync
+
 
             elif cmd == "Navigate":
                 if self.disco_thread is not None:
@@ -194,6 +205,24 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+
+        # --- XBOX_CONTROLLER STATE ---
+        elif self.state == SystemState.XBOX_CONTROLLER:
+            if cmd == "Back":
+                print("[FSM] Exiting XBOX_CONTROLLER...")
+                if hasattr(self, 'xbox_controller'):
+                    self.xbox_controller.stop()
+                if hasattr(self, 'xbox_thread') and self.xbox_thread.is_alive():
+                    self.xbox_thread.join()
+                self.arduino_thread.send_speed(0, 0)
+                self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN")
+                self.disco_thread = utility_threads.DiscoThread(
+                    self.arduino_thread, self.config['general'].get('idle_light_time', 15)
+                )
+                self.disco_thread.start()
+
+
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:

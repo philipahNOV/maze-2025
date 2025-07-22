@@ -398,7 +398,6 @@ client.publish("jetson/command", "Control")
 |---------|-------|------------|
 | No handshake | Broker not running, wrong IP | Verify broker on Jetson (`192.168.1.3`) |
 | Image not received | Frame too large or not encoded | Lower resolution or ensure base64 step |
-| Command not registered | FSM not attached or `command_queue` not polled | Check `fsm` is passed and loop is active |
 | Reconnect fails | Firewall, network config, port blocked | Check UDP 1883/TCP, LAN routing |
 
 ---
@@ -664,7 +663,7 @@ This part explains the architecture and implementation of a complete A* pathfind
 
 ### 1. A* Algorithm with Repulsion Field
 
-The core of the system is a modified A* algorithm (`astar.py`) that adds a **repulsion term** to avoid planning paths too close to obstacles. The algorithm uses **Manhattan distance** as its heuristic and introduces a **cost penalty** that increases near obstacles using a distance transform. The repulsion weight and minimum safe distance are configurable in `config.yaml` under `path_finding.repulsion_weight` and `path_finding.min_safe_distance`.
+The core of the system is a modified A* algorithm (`astar.py`) that adds a repulsion term to avoid planning paths too close to obstacles. The algorithm uses Manhattan distance as its heuristic and introduces a cost penalty that increases near obstacles using a distance transform. The repulsion weight and minimum safe distance are configurable in `config.yaml` under `path_finding.repulsion_weight` and `path_finding.min_safe_distance`.
 
 #### Heuristic
 

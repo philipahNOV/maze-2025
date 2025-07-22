@@ -25,6 +25,10 @@ class MainScreen(tk.Frame):
     def on_button_click_disco(self):
         self.mqtt_client.client.publish("jetson/command", "Disco")
 
+    def on_button_click_xbox(self):
+        self.mqtt_client.client.publish("jetson/command", "Xbox")
+        self.controller.show_frame("XboxScreen")
+
     def on_button_click_restart(self):
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
