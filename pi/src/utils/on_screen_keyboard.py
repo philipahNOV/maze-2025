@@ -38,3 +38,7 @@ class OnScreenKeyboard(tk.Toplevel):
             self.target_entry.insert(tk.END, " ")
         else:
             self.target_entry.insert(tk.END, key)
+
+        # Trigger check in parent to enable start button
+        if hasattr(self.master, 'check_start_ready'):
+            self.master.check_start_ready()

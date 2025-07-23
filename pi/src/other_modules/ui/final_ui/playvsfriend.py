@@ -2,6 +2,7 @@ import tkinter as tk
 from PIL import Image, ImageTk
 from typing import TYPE_CHECKING
 from utils.on_screen_keyboard import OnScreenKeyboard
+import functools
 
 if TYPE_CHECKING:
     from main import MainApp
@@ -84,8 +85,8 @@ class PlayVsFriendScreen(tk.Frame):
 
             entry = tk.Entry(self.input_frame, font=("Jockey One", 18), width=20)
             entry.grid(row=i, column=1, padx=10, pady=5)
-            entry.bind("<FocusIn>", lambda e, ent=entry: self.show_keyboard(ent))
-            entry.bind("<KeyRelease>", lambda e: self.check_start_ready())
+            entry.bind("<FocusIn>", functools.partial(self.show_keyboard, entry))
+            entry.bind("<KeyRelease>", lambda e, ent=entry: self.check_start_ready())
 
             self.input_fields.append(entry)
 
