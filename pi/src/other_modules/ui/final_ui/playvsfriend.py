@@ -32,7 +32,7 @@ class PlayVsFriendScreen(tk.Frame):
         tk.Label(self, text="NUMBER OF PLAYERS:", font=("Jockey One", 24), bg="#D9D9D9", fg="#1A1A1A")\
             .place(x=360, y=100)
 
-        dropdown = tk.OptionMenu(self, self.num_players_var, *[str(i) for i in range(2, 6)], command=self.update_input_fields)
+        dropdown = tk.OptionMenu(self, self.num_players_var, *[str(i) for i in range(2, 6)], command=lambda val: self.update_input_fields(str(val)))
         dropdown.config(font=("Jockey One", 20))
         dropdown.place(x=450, y=160)
 
@@ -86,7 +86,8 @@ class PlayVsFriendScreen(tk.Frame):
 
             entry = tk.Entry(self.input_frame, font=("Jockey One", 18), width=20)
             entry.grid(row=i, column=1, padx=10, pady=5)
-            entry.bind("<FocusIn>", functools.partial(self.show_keyboard, entry))
+            entry.bind("<FocusIn>", lambda e, ent=entry: self.show_keyboard(ent))
+            entry.bind("<Button-1>", lambda e, ent=entry: self.show_keyboard(ent))
             entry.bind("<KeyRelease>", lambda e, ent=entry: self.check_start_ready())
 
             self.input_fields.append(entry)
@@ -101,7 +102,11 @@ class PlayVsFriendScreen(tk.Frame):
             self.start_button.config(state="disabled", bg="gray")
 
     def show_keyboard(self, entry):
-        OnScreenKeyboard(self, entry)
+        if hasattr(self, 'keyboard') and self.keyboard.winfo_exists():
+            self.keyboard.destroy()
+
+        self.keyboard = OnScreenKeyboard(self, entry)
+
 
     def start_game(self):
         names = [entry.get().strip() for entry in self.input_fields]
