@@ -25,9 +25,9 @@ class MainScreen(tk.Frame):
     def on_button_click_disco(self):
         self.mqtt_client.client.publish("jetson/command", "Disco")
 
-    def on_button_click_xbox(self):
-        self.mqtt_client.client.publish("jetson/command", "Xbox")
-        self.controller.show_frame("XboxScreen")
+    def on_button_click_human_mode(self):
+        self.mqtt_client.client.publish("jetson/command", "Human")
+        self.controller.show_frame("HumanScreen")
 
     def on_button_click_restart(self):
         self.mqtt_client.client.publish("jetson/command", "Restart")
@@ -116,20 +116,20 @@ class MainScreen(tk.Frame):
         )
         self.navigation_button.place(x=391, y=235, width=243, height=74)
 
-        self.xbox_button = tk.Button(
-            self,
-            text="HUMAN MODE",
-            font=("Jockey One", 30),
-            fg="white",
-            borderwidth=0,
-            highlightthickness=0,
-            background="#60666C",
-            activebackground="#4B4C4C",
-            activeforeground="#DFDFDF",
-            command=self.on_button_click_xbox
+        self.human_button = tk.Button(
+        self,
+        text="HUMAN MODE",
+        font=("Jockey One", 30),
+        fg="white",
+        borderwidth=0,
+        highlightthickness=0,
+        background="#60666C",
+        activebackground="#4B4C4C",
+        activeforeground="#DFDFDF",
+        command=self.on_button_click_human_mode
         )
-    
-        self.xbox_button.place(x=391, y=320, width=243, height=74)
+        self.human_button.place(x=391, y=320, width=243, height=74)
+
 
         self.disco_button = tk.Button(
             self,

@@ -4,7 +4,7 @@ from functools import wraps
 from arduino_connection import ArduinoConnection
 
 
-class XboxController:
+class JoystickController:
     def __init__(self, arduino: ArduinoConnection):
         self.arduino = arduino
         self.running = False
