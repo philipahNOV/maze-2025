@@ -3,16 +3,28 @@ import time
 from arduino_connection import ArduinoConnection
 
 class XboxController:
-    def __init__(self, arduino: ArduinoConnection, deadzone=0.1, scale=100):
+    def __init__(self, arduino: ArduinoConnection):
         self.arduino = arduino
-        self.deadzone = deadzone
-        self.scale = scale
         self.running = False
+
+    def scaled_output(self, value):
+        """
+        Skaler joystickverdi med dødsone til området -255 til 255.
+        """
+        DEADZONE = 5000
+        MAX_RAW = 32767
+
+        raw = int(value * MAX_RAW)
+
+        if abs(raw) <= DEADZONE:
+            return 0
+        else:
+            scaled = (abs(raw) - DEADZONE) / (MAX_RAW - DEADZONE) * 254 + 1
+            return int(scaled) if raw > 0 else -int(scaled)
 
     def start(self):
         """
-        Starts the Xbox controller thread.
-        Initializes pygame and starts the controller event loop.
+        Starter kontrolleren og leser joystickverdier i 60 Hz.
         """
         pygame.init()
         pygame.joystick.init()
@@ -21,24 +33,25 @@ class XboxController:
         self.running = True
         print("Xbox Controller started.")
 
+        target_interval = 1.0 / 60  # 60 Hz kontrollsløyfe
+
         try:
             while self.running:
-                pygame.event.pump()
-                x_axis = joystick.get_axis(0)
-                y_axis = joystick.get_axis(1)
+                loop_start = time.time()
 
-                if abs(x_axis) < self.deadzone:
-                    x_axis = 0
-                if abs(y_axis) < self.deadzone:
-                    y_axis = 0
-                
-                vel_x = int(x_axis * self.scale)
-                vel_y = int(y_axis * self.scale)
+                pygame.event.pump()
+                x_axis = joystick.get_axis(0)  # venstre horisontal
+                y_axis = joystick.get_axis(1)  # venstre vertikal
+
+                vel_x = self.scaled_output(x_axis)
+                vel_y = self.scaled_output(y_axis)
 
                 self.arduino.send_speed(vel_x, vel_y)
 
-                time.sleep(0.02)
-                
+                elapsed = time.time() - loop_start
+                sleep_time = max(0, target_interval - elapsed)
+                time.sleep(sleep_time)
+
         except KeyboardInterrupt:
             print("Xbox Controller stopped.")
 
@@ -49,8 +62,7 @@ class XboxController:
     
     def stop(self):
         """
-        Stops the Xbox controller thread.
-        Sets the running flag to False to exit the event loop.
+        Stopper kontrolleren.
         """
         self.running = False
         print("Stopping Xbox Controller...")
