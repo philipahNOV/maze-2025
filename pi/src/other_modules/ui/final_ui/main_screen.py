@@ -142,7 +142,7 @@ class MainScreen(tk.Frame):
             command=self.on_button_click_xbox
         )
     
-        self.disco_button.place(x=391, y=500, width=243, height=74)
+        self.xbox_button.place(x=391, y=500, width=243, height=74)
 
         self.title = tk.Label(
             self,
