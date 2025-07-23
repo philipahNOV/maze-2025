@@ -26,6 +26,7 @@ class SystemState(Enum):
     CUSTOM_PATH = auto()
     CONTROLLING = auto()
     HUMAN_CONTROLLER = auto()
+    PRACTICE = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -237,8 +238,9 @@ class HMIController:
                 self.disco_thread.start()
 
             elif cmd == "Practice":
-                print("[FSM] Entering Practice mode")
+                print("[FSM] Entering PRACTICE mode")
                 self.mqtt_client.client.publish("pi/command", "display_practice_message")
+                self.state = SystemState.PRACTICE
                 self._start_joystick_control()
 
             elif cmd == "PlayVsAI":
@@ -281,6 +283,24 @@ class HMIController:
 
             elif cmd == "Horizontal":
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
+
+        elif self.state == SystemState.PRACTICE:
+            if cmd == "Back":
+                print("[FSM] Exiting PRACTICE mode...")
+
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                
+                if hasattr(self, 'joystick_thread'):
+                    if self.joystick_thread.is_alive():
+                        self.joystick_thread.join()
+                    del self.joystick_thread
+
+                self.arduino_thread.send_speed(0, 0)
+                self.state = SystemState.HUMAN_CONTROLLER
+                print("[FSM] Returned to HUMAN_CONTROLLER")
+
 
         # --- LOCATING STATE ---
         elif self.state == SystemState.LOCATING:
