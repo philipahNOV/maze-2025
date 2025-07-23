@@ -163,6 +163,12 @@ class HMIController:
             
             elif cmd == "Xbox":
                 print("[FSM] Transitioned to XBOX_CONTROLLER")
+
+                if self.disco_thread is not None:
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
+                    
                 self.state = SystemState.XBOX_CONTROLLER
                 self.xbox_controller = XboxController(self.arduino_thread)
                 self.xbox_thread = threading.Thread(target=self.xbox_controller.start, daemon=True)

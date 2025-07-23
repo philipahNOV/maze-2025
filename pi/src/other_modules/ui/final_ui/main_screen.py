@@ -131,7 +131,7 @@ class MainScreen(tk.Frame):
 
         self.xbox_button = tk.Button(
             self,
-            text="TOGGLE LIGHTS",
+            text="JOYSTICK MODE",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
@@ -142,7 +142,7 @@ class MainScreen(tk.Frame):
             command=self.on_button_click_xbox
         )
     
-        self.xbox_button.place(x=391, y=500, width=243, height=74)
+        self.xbox_button.place(x=391, y=490, width=243, height=74)
 
         self.title = tk.Label(
             self,
