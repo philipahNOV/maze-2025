@@ -129,6 +129,21 @@ class MainScreen(tk.Frame):
         )
         self.disco_button.place(x=391, y=405, width=243, height=74)
 
+        self.xbox_button = tk.Button(
+            self,
+            text="TOGGLE LIGHTS",
+            font=("Jockey One", 30),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_xbox
+        )
+    
+        self.disco_button.place(x=391, y=500, width=243, height=74)
+
         self.title = tk.Label(
             self,
             text="WELCOME",
