@@ -32,7 +32,7 @@ class PracticeScreen(tk.Frame):
         controller_label.image = self.controller_image  # Prevent garbage collection
 
         # Center horizontally and vertically (adjust x/y if needed)
-        controller_label.place(relx=0.57, rely=0.5, anchor="center")
+        controller_label.place(relx=0.52, rely=0.5, anchor="center")
 
         # Back button
         tk.Button(
