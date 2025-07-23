@@ -125,6 +125,16 @@ class HMIController:
         self.arduino_thread.send_speed(0, 0)
         threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
+    def _start_joystick_control(self): # could be moved to sep file
+        if hasattr(self, 'joystick_controller'):
+            self.joystick_controller.stop()
+            if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                self.joystick_thread.join()
+
+        self.joystick_controller = JoystickController(self.arduino_thread)
+        self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
+        self.joystick_thread.start()
+
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
             goal = (custom_goal[1], custom_goal[0])
@@ -229,10 +239,7 @@ class HMIController:
             elif cmd == "Practice":
                 print("[FSM] Entering Practice mode")
                 self.mqtt_client.client.publish("pi/command", "display_practice_message")
-                
-                self.joystick_controller = JoystickController(self.arduino_thread)
-                self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
-                self.joystick_thread.start()
+                self._start_joystick_control()
 
             elif cmd == "PlayVsAI":
                 print("[FSM] Play vs AI — not implemented yet")

@@ -12,18 +12,40 @@ class HumanScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
-        self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
+        try:
+            self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
+        except Exception as e:
+            print("Error loading background image:", e)
+            self.background_image = None
+
         self.create_widgets()
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("MainScreen")
 
+    def on_button_click_restart(self):
+        self.mqtt_client.client.publish("jetson/command", "Restart")
+        self.controller.restart_program()
+
+    def on_button_click_exit(self):
+        if self.controller.reset_jetson_on_exit:
+            self.mqtt_client.client.publish("jetson/command", "Restart")
+        self.controller.on_close()
+
+    def on_button_click_info(self):
+        self.mqtt_client.client.publish("jetson/command", "Info")
+        self.controller.show_frame("InfoScreen")
+
     def create_widgets(self):
         self.update()
-        bg_label = tk.Label(self, image=self.background_image)
-        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
+        if self.background_image:
+            bg_label = tk.Label(self, image=self.background_image)
+            bg_label.image = self.background_image
+            bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        # --- Title ---
         tk.Label(
             self,
             text="HUMAN MODE",
@@ -32,6 +54,53 @@ class HumanScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=350, y=40)
 
+        # --- Top Buttons ---
+        self.exit_button = tk.Button(
+            self,
+            text="✖",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_exit
+        )
+        self.exit_button.place(x=964, y=10, width=50, height=50)
+
+        self.restart_button = tk.Button(
+            self,
+            text="⟲",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_restart
+        )
+        self.restart_button.place(x=904, y=10, width=50, height=50)
+
+        self.info_button = tk.Button(
+            self,
+            text="📄",
+            font=("Jockey One", 26),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+            command=self.on_button_click_info
+        )
+        self.info_button.place(x=844, y=10, width=50, height=50)
+
+        # --- Center Buttons ---
         button_config = {
             "font": ("Jockey One", 24),
             "fg": "white",
@@ -63,14 +132,14 @@ class HumanScreen(tk.Frame):
         ).place(x=10, y=10, width=120, height=50)
 
     def play_vs_ai(self):
-        print("[XboxScreen] Play vs AI selected")
+        print("[HumanScreen] Play vs AI selected")
 
     def play_vs_friend(self):
-        print("[XboxScreen] Play vs Friend selected")
+        print("[HumanScreen] Play vs Friend selected")
 
     def practice_mode(self):
         self.mqtt_client.client.publish("jetson/command", "Practice")
         self.controller.show_frame("PracticeScreen")
 
     def show_leaderboard(self):
-        print("[XboxScreen] Leaderboard requested")
+        print("[HumanScreen] Leaderboard requested")
