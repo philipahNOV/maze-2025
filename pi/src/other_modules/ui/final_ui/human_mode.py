@@ -121,7 +121,7 @@ class HumanScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.play_alone
         )
-        self.play_friend_button.place(x=391, y=320, width=243, height=74)
+        self.play_alone_button.place(x=391, y=320, width=243, height=74)
 
         self.practice_button = tk.Button(
             self,
