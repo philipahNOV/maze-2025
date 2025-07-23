@@ -16,10 +16,16 @@ class PlayVsFriendScreen(tk.Frame):
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
         self.num_players_var = tk.StringVar(value="2")
+        self.num_players_var.trace_add("write", self.on_player_count_changed)
+
         self.input_fields = []
         self.input_frame = None
 
         self.create_widgets()
+
+    def on_player_count_changed(self, *args):
+        selected = self.num_players_var.get()
+        self.update_input_fields(selected)
 
     def create_widgets(self):
         self.update()
@@ -102,10 +108,17 @@ class PlayVsFriendScreen(tk.Frame):
             self.start_button.config(state="disabled", bg="gray")
 
     def show_keyboard(self, entry):
+        # Only create one keyboard instance
         if hasattr(self, 'keyboard') and self.keyboard.winfo_exists():
-            self.keyboard.destroy()
+            # Re-target if user taps another entry
+            self.keyboard.target_entry = entry
+            return
 
+        # Create new keyboard window
         self.keyboard = OnScreenKeyboard(self, entry)
+        self.keyboard.transient(self)
+        self.keyboard.grab_set()  # Force focus to keyboard window
+        self.keyboard.focus_force()
 
 
     def start_game(self):
