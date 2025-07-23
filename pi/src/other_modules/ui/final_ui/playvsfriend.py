@@ -36,8 +36,6 @@ class PlayVsFriendScreen(tk.Frame):
         dropdown.config(font=("Jockey One", 20))
         dropdown.place(x=450, y=160)
 
-        self.update_input_fields("2")
-
         self.start_button = tk.Button(
             self,
             text="START",
@@ -68,6 +66,9 @@ class PlayVsFriendScreen(tk.Frame):
             command=self.on_button_click_back
         )
         self.back_button.place(x=844, y=10, width=50, height=50)
+
+        self.update_input_fields("2")
+
 
     def update_input_fields(self, selected):
         count = int(selected)
