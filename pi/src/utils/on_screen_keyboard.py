@@ -40,8 +40,6 @@ class OnScreenKeyboard(tk.Toplevel):
         else:
             self.target_entry.insert(tk.END, key)
 
-        # Call check_start_ready on the parent screen if it exists
         parent = self.master
         if hasattr(parent, 'check_start_ready'):
             parent.check_start_ready()
-

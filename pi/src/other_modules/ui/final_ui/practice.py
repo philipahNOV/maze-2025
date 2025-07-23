@@ -12,10 +12,7 @@ class PracticeScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
-
-        # Load controller image
         self.xbox_controller_image_path = os.path.join(self.controller.image_path, 'xbox_controller.png')
         self.controller_image = ImageTk.PhotoImage(Image.open(self.xbox_controller_image_path))
 
@@ -26,15 +23,10 @@ class PracticeScreen(tk.Frame):
 
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        # Centered Controller Image
         controller_label = tk.Label(self, image=self.controller_image, bg="#D9D9D9")
-        controller_label.image = self.controller_image  # Prevent garbage collection
-
-        # Center horizontally and vertically (adjust x/y if needed)
+        controller_label.image = self.controller_image  # anti garbage collection
         controller_label.place(relx=0.52, rely=0.5, anchor="center")
 
-        # Back button
         tk.Button(
             self,
             text="BACK",

@@ -28,7 +28,7 @@ class SystemState(Enum):
     CONTROLLING = auto()
     HUMAN_CONTROLLER = auto()
     PRACTICE = auto()
-    PLAYVSFRIEND = auto()
+    PLAYALONE = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -249,10 +249,10 @@ class HMIController:
                 print("[FSM] Play vs AI — not implemented yet")
                 # Placeholder: self._start_joystick_control()  # Uncomment when logic is added
 
-            elif cmd == "PlayVsFriend":
-                print("[FSM] Entering PLAYVSFRIEND mode")
-                self.state = SystemState.PLAYVSFRIEND
-                self.mqtt_client.client.publish("pi/command", "show_playvsfriend_screen")
+            elif cmd == "PlayAlone":
+                print("[FSM] Entering PLAYALONE mode")
+                self.state = SystemState.PLAYALONE
+                self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
