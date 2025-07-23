@@ -33,15 +33,15 @@ class XboxController:
         self.running = True
         print("Xbox Controller started.")
 
-        target_interval = 1.0 / 60  # 60 Hz kontrollsløyfe
+        target_interval = 1.0 / 120  # 60 Hz kontrollsløyfe
 
         try:
             while self.running:
                 loop_start = time.time()
 
                 pygame.event.pump()
-                x_axis = joystick.get_axis(0)  # venstre horisontal
-                y_axis = joystick.get_axis(1)  # venstre vertikal
+                x_axis = -joystick.get_axis(1)  # venstre horisontal
+                y_axis = -joystick.get_axis(0)  # venstre vertikal
 
                 vel_x = self.scaled_output(x_axis)
                 vel_y = self.scaled_output(y_axis)
