@@ -95,8 +95,8 @@ This part of the system is responsible for coordinating ball tracking, control e
 
 ### 1. System Components
 
-- **HMIController** (`fsm2.py`): A central FSM (finite state machine) that reacts to commands from the Pi (via MQTT) and manages system transitions (e.g., from navigation to control).
-- **Controller** (`pos2.py`): Implements PID-based position control and axis-level motor commands, driven by camera tracking and waypoint reference signals.
+- **HMI controller** (`finite_state_machine.py`): A central FSM that reacts to commands from the Pi and manages system transitions.
+- **Controller** (`position_controller.py`): Implements PID-based position control and axis-level motor commands, driven by camera tracking and waypoint references.
 - **Main Loop** (`run_controller_main.py`): Continuously reads the ball position, smooths it, and invokes control logic to reach the next target in the path.
 - **ImageController**: Updates HMI visuals with the latest camera frame and path overlay.
 - **MQTTClientJetson**: Handles all MQTT communication and command/event publishing.
@@ -158,7 +158,7 @@ The controller supports both standard and lookahead PID gains (configurable via 
 
 ### 5. Horizontal Calibration
 
-Before control begins, `controller.horizontal()` is called to zero the maze and make sure that tilt angles are neutral, for consistent starting conditions.
+Before control begins, `controller.horizontal()` is called to zero the maze and make sure that tilt angles are neutral.
 
 ```python
 controller.horizontal()  # waits until within tolerance or timeout
@@ -175,7 +175,7 @@ Commands from the Pi HMI are parsed inside the `HMIController.on_command()` meth
 - `Locate`, `AutoPath`, `CustomPath`, `Start`, `Back`, `Restart`, `Exit`
 - `Elevator` to retrieve the ball
 - `Horizontal` for flat calibration
-- `LoopOn` / `LoopOff` to toggle waypoint looping
+- `Loop_Path` to toggle waypoint looping
 - `Goal_set:x,y` and `CalculatePath` for custom pathfinding
 
 All command triggers are mapped to state transitions in a finite-state machine.
@@ -186,7 +186,7 @@ All command triggers are mapped to state transitions in a finite-state machine.
 
 | Issue | Resolution |
 |-------|------------|
-| Ball not found | Can happen along the edge opposite of where the camera is mounted. See if the camera is properly angled and lighting is sufficient. Check HSV range. |
+| Ball not found | Make sure the ball is green. See if the camera is properly angled and lighting is sufficient. Check HSV range. |
 | Motors not responding | Check Arduino connection and serial port. Try rebooting the Arduino. |
 | Control loop unresponsive | Check if the tracker is initialized and goal path is valid. |
 | Path not followed | Confirm waypoints are outside elevator zone and control loop is active. |
@@ -396,9 +396,9 @@ client.publish("jetson/command", "Control")
 
 | Symptom | Cause | Resolution |
 |---------|-------|------------|
-| No handshake | Broker not running, wrong IP | Verify broker on Jetson (`192.168.1.3`) |
+| No handshake | Broker not running, wrong IP | Verify broker on Jetson (`192.168.1.3`), check if possible to ping |
 | Image not received | Frame too large or not encoded | Lower resolution or ensure base64 step |
-| Reconnect fails | Firewall, network config, port blocked | Check UDP 1883/TCP, LAN routing |
+| Reconnect fails | Network config, port blocked | Check UDP 1883/TCP, LAN routing |
 
 ---
 
@@ -460,7 +460,7 @@ def get_orientation(self):
 
 The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class `ball`. The model path is defined in `config.yaml` under `tracking.model_path`.
 
-After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to give deterministic and consistent outputs.
+After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to give deterministic and consistent outputs. Other hyperparameters include AdamW as the optimizer, 16 as the batch size, 0.01 as the learning rate, and 1.5 as the distribution focal loss gain.
 
 
 ```python
@@ -517,7 +517,7 @@ def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
     return get_center_of_mass(mask)
 ```
 
-To improve robustness, position smoothing is applied using `tracking.smoothing_alpha`:
+To improve the tracking further, position smoothing is applied using `tracking.smoothing_alpha`:
 
 ```python
 alpha = 0.5
@@ -604,7 +604,7 @@ def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
 
 ### hsv_fail_threshold
 
-Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection. This can be modified in `config.yaml`:
+Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection. Change this via `tracking.hsv_fail_threshold` in `config.yaml`.
 
 ```python
 self.hsv_fail_threshold = 30  # default as it shows a good balance (0.5s at 60 FPS)
@@ -614,7 +614,7 @@ Increase if you’re experiencing too frequent fallback, decrease for faster rec
 
 #### yolo_cooldown_period
 
-Defines how many frames to wait after a YOLO attempt before allowing another. Configurable in `config.yaml`.
+Defines how many frames to wait after a YOLO attempt before allowing another. Change this via `tracking.yolo_cooldown_period` in `config.yaml`.
 
 ```python
 self.yolo_cooldown_period = 15  # ~0.25s cooldown
@@ -634,7 +634,7 @@ Raise this to avoid tracking small irrelevant blobs.
 
 #### smoothing factor (alpha)
 
-Applies exponential smoothing to reduce jumpiness. Set via `tracking.smoothing_alpha`:
+Applies exponential smoothing to reduce jumpiness. Change this via `tracking.smoothing_alpha` in `config.yaml`.
 
 ```python
 alpha = 0.5  # lower = smoother, higher = faster reaction
@@ -667,7 +667,7 @@ The core of the system is a modified A* algorithm (`astar.py`) that adds a repul
 
 #### Heuristic
 
-The Manhattan distance works well for grid-based maps:
+The Manhattan distance works well for this maze because A* operates on a discrete grid, only allowing 4-directional movement. It accurately estimates how far the ball is from its goal by summing the number of grid steps it needs to take along the X and Y directions.
 
 ```python
 def heuristic(a, b):
@@ -702,7 +702,7 @@ This guides the A* search away from narrow gaps and obstacle boundaries.
 
 ### 2. Downscaled Pathfinding
 
-The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance or smoothing purposes. The scale factor can be configured through `config.yaml` under `path_finding.astar_downscale`.
+The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance purposes. The scale factor can be configured through `config.yaml` under `path_finding.astar_downscale`.
 
 ```python
 small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
@@ -856,7 +856,7 @@ If not, it searches in a radius using a distance transform to locate the nearest
 
 #### repulsion_weight
 
-Controls how strongly the path avoids obstacles. Set in `config.yaml` under `path_finding.repulsion_weight`.
+Controls how strongly the path avoids obstacles. Change this via `path_finding.repulsion_weight` in `config.yaml`.
 
 ```python
 astar(..., repulsion_weight=5.0)
@@ -866,7 +866,7 @@ Try values between 2.0 and 6.0 for balance.
 
 #### min_safe_dist in repulsion
 
-Defines how far from an obstacle a point must be to be considered "safe." In layman's terms; if A* manages to find a narrow path between a hole and the edge of a wall, then this value needs to be higher. Set in `config.yaml` as `path_finding.min_safe_distance`.
+Defines how far from an obstacle a point must be to be considered "safe." In layman's terms; if A* manages to find a narrow path between a hole and the edge of a wall, then this value needs to be higher. Change this via `path_finding.min_safe_distance` in `config.yaml`.
 
 ```python
 compute_repulsion_cost(..., min_safe_dist=14)
@@ -880,7 +880,7 @@ The downscale factor can be tuned in `config.yaml` using `path_finding.astar_dow
 astar_downscaled(..., scale=1.0)
 ```
 
-Basically, lower values improve speed but reduce precision.
+Basically, lower values improve calculating speed but reduce precision.
 
 #### cache tolerance
 
