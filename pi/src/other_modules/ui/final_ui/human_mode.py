@@ -85,7 +85,7 @@ class HumanScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=844, y=10, width=150, height=50)
+        self.back_button.place(x=734, y=10, width=150, height=50)
 
         # --- Title ---
         self.title = tk.Label(
