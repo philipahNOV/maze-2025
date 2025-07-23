@@ -155,9 +155,9 @@ class HumanScreen(tk.Frame):
     def play_vs_ai(self):
         print("[HumanScreen] Play vs AI selected")
 
-    def play_vs_friend(self):
-        self.mqtt_client.client.publish("jetson/command", "PlayVsFriend")
-        self.controller.show_frame("PlayVsFriendScreen")
+    def play_alone(self):
+        self.mqtt_client.client.publish("jetson/command", "PlayAlone")
+        self.controller.show_frame("PlayAloneScreen")
 
     def practice_mode(self):
         self.mqtt_client.client.publish("jetson/command", "Practice")
