@@ -1,3 +1,4 @@
+import cmd
 from enum import Enum, auto
 import time
 from mqtt_client import MQTTClientJetson
@@ -6,7 +7,7 @@ from camera.tracker_service import TrackerService
 import utility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
-from xbox import XboxController
+from utils.joystick_controller import JoystickController
 import position_controller
 from utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
@@ -25,7 +26,9 @@ class SystemState(Enum):
     AUTO_PATH = auto()
     CUSTOM_PATH = auto()
     CONTROLLING = auto()
-    XBOX_CONTROLLER = auto()
+    HUMAN_CONTROLLER = auto()
+    PRACTICE = auto()
+    PLAYVSFRIEND = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -125,6 +128,16 @@ class HMIController:
         self.arduino_thread.send_speed(0, 0)
         threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
+    def _start_joystick_control(self): # could be moved to sep file
+        if hasattr(self, 'joystick_controller'):
+            self.joystick_controller.stop()
+            if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                self.joystick_thread.join()
+
+        self.joystick_controller = JoystickController(self.arduino_thread)
+        self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
+        self.joystick_thread.start()
+
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
             goal = (custom_goal[1], custom_goal[0])
@@ -161,20 +174,16 @@ class HMIController:
                 self.state = SystemState.INFO_SCREEN
                 print("[FSM] Transitioned to INFO_SCREEN")
             
-            elif cmd == "Xbox":
-                print("[FSM] Transitioned to XBOX_CONTROLLER")
+            elif cmd == "Human":
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
 
-                if self.disco_thread is not None:
+                if self.disco_thread:
                     self.disco_thread.stop()
                     self.disco_thread.join()
                     self.disco_thread = None
-                    
-                self.state = SystemState.XBOX_CONTROLLER
-                self.xbox_controller = XboxController(self.arduino_thread)
-                self.xbox_thread = threading.Thread(target=self.xbox_controller.start, daemon=True)
-                self.xbox_thread.start()
-                self.mqtt_client.client.publish("pi/command", "show_xbox_screen")  # optional for UI sync
 
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
 
             elif cmd == "Navigate":
                 if self.disco_thread is not None:
@@ -212,23 +221,38 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
-        # --- XBOX_CONTROLLER STATE ---
-        elif self.state == SystemState.XBOX_CONTROLLER:
+        # --- HUMAN STATE ---
+        elif self.state == SystemState.HUMAN_CONTROLLER:
             if cmd == "Back":
-                print("[FSM] Exiting XBOX_CONTROLLER...")
-                if hasattr(self, 'xbox_controller'):
-                    self.xbox_controller.stop()
-                if hasattr(self, 'xbox_thread') and self.xbox_thread.is_alive():
-                    self.xbox_thread.join()
+                print("[FSM] Exiting HUMAN_CONTROLLER...")
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
                 self.arduino_thread.send_speed(0, 0)
+
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+
                 self.disco_thread = utility_threads.DiscoThread(
                     self.arduino_thread, self.config['general'].get('idle_light_time', 15)
                 )
                 self.disco_thread.start()
 
+            elif cmd == "Practice":
+                print("[FSM] Entering PRACTICE mode")
+                self.mqtt_client.client.publish("pi/command", "display_practice_message")
+                self.state = SystemState.PRACTICE
+                self._start_joystick_control()
 
+            elif cmd == "PlayVsAI":
+                print("[FSM] Play vs AI — not implemented yet")
+                # Placeholder: self._start_joystick_control()  # Uncomment when logic is added
+
+            elif cmd == "PlayVsFriend":
+                print("[FSM] Entering PLAYVSFRIEND mode")
+                self.state = SystemState.PLAYVSFRIEND
+                self.mqtt_client.client.publish("pi/command", "show_playvsfriend_screen")
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
@@ -264,6 +288,29 @@ class HMIController:
             elif cmd == "Horizontal":
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
+        elif self.state == SystemState.PRACTICE:
+            if cmd == "Back":
+                print("[FSM] Exiting PRACTICE mode...")
+
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                
+                if hasattr(self, 'joystick_thread'):
+                    if self.joystick_thread.is_alive():
+                        self.joystick_thread.join()
+                    del self.joystick_thread
+
+                self.arduino_thread.send_speed(0, 0)
+                self.state = SystemState.HUMAN_CONTROLLER
+                print("[FSM] Returned to HUMAN_CONTROLLER")
+
+        elif self.state == SystemState.PLAYVSFRIEND:
+            if cmd == "Back":
+                print("[FSM] Exiting PLAYVSFRIEND...")
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
+
         # --- LOCATING STATE ---
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
@@ -284,7 +331,6 @@ class HMIController:
                 self.image_thread.start()
 
             elif cmd == "Back":
-                # Cleanup ball finder and tracking before going back
                 self.tracking_service.stop_tracker()
                 if self.ball_finder:
                     self.ball_finder.stop()
@@ -294,7 +340,6 @@ class HMIController:
                 self.disco_thread.start()
                 print("[FSM] Transitioned to MAIN_SCREEN")
             elif cmd == "BallFound":
-                # Transition to CUSTOM_PATH and set up image thread
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None
@@ -342,7 +387,6 @@ class HMIController:
                     self.controller_thread = None
 
             elif cmd == "Start":
-                # Start the control loop if path is ready
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
@@ -364,7 +408,6 @@ class HMIController:
                     print("[FSM] Transitioned to CONTROLLING")
 
             elif cmd == "timeout":
-                # Handle inactivity timeout
                 print("[FSM] Timeout command received in AUTO_PATH")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
@@ -401,20 +444,17 @@ class HMIController:
                 print("[FSM] Transitioned to MAIN_SCREEN")
 
             elif cmd.startswith("Goal_set:"):
-                # Parse and set custom goal coordinates
                 coords = cmd.split(":")[1]
                 x, y = map(int, coords.split(","))
                 self.custom_goal = (x, y)
 
             elif cmd == "CalculatePath":
-                # Initiate custom pathfinding to goal
                 if self.custom_goal is None:
                     print("[FSM] No custom goal set, cannot calculate path.")
                 else:
                     self.start_path_finding(custom_goal=self.custom_goal)
 
             elif cmd.startswith("Start"):
-                # Start controller thread with custom path
                 if self.path is None:
                     print("[FSM] No path found, cannot start.")
                 else:
@@ -443,7 +483,6 @@ class HMIController:
                     print("[FSM] Transitioned to CONTROLLING")
 
             elif cmd == "timeout":
-                # Timeout handling for custom path mode
                 print("[FSM] Timeout command received in AUTO_PATH")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
@@ -461,7 +500,6 @@ class HMIController:
         # --- CONTROLLING STATE ---
         elif self.state == SystemState.CONTROLLING:
             if cmd == "Back":
-                # Stop controller and clean up threads and resources
                 self.stop_controller()
                 self.tracking_service.stop_tracker()
                 if self.image_thread is not None:

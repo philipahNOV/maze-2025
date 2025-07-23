@@ -9,7 +9,9 @@ from other_modules.ui.final_ui.main_screen import MainScreen
 from other_modules.ui.final_ui.path_finding_auto import AutoPathScreen
 from other_modules.ui.final_ui.path_finding_custom import CustomPathScreen
 from other_modules.mqtt_client import MQTTClientPi
-from other_modules.ui.final_ui.xbox import XboxScreen
+from other_modules.ui.final_ui.human_mode import HumanScreen
+from other_modules.ui.final_ui.practice import PracticeScreen
+from other_modules.ui.final_ui.playvsfriend import PlayVsFriendScreen
 
 import signal
 import sys
@@ -53,7 +55,8 @@ class MainApp(tk.Tk):
         container.grid_columnconfigure(0, weight=1)
 
         self.frames = {}
-        for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, XboxScreen):
+        for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,
+                  PlayVsFriendScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             frame.grid(row=0, column=0, sticky="nsew")
             frame.lower()
