@@ -6,7 +6,7 @@ from camera.tracker_service import TrackerService
 import utility_threads
 from image_controller import ImageController
 from image_controller import ImageSenderThread
-from xbox import XboxController
+from utils.joystick_controller import XboxController
 import position_controller
 from utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
@@ -168,7 +168,7 @@ class HMIController:
                     self.disco_thread.stop()
                     self.disco_thread.join()
                     self.disco_thread = None
-                    
+
                 self.state = SystemState.XBOX_CONTROLLER
                 self.xbox_controller = XboxController(self.arduino_thread)
                 self.xbox_thread = threading.Thread(target=self.xbox_controller.start, daemon=True)
