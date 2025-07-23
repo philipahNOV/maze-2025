@@ -10,6 +10,7 @@ class OnScreenKeyboard(tk.Toplevel):
         self.title("Keyboard")
         self.geometry("+200+600")  # Adjust position if needed
         self.create_keyboard()
+        self.lift()
 
     def create_keyboard(self):
         keys = [
@@ -39,6 +40,8 @@ class OnScreenKeyboard(tk.Toplevel):
         else:
             self.target_entry.insert(tk.END, key)
 
-        # Trigger check in parent to enable start button
-        if hasattr(self.master, 'check_start_ready'):
-            self.master.check_start_ready()
+        # Call check_start_ready on the parent screen if it exists
+        parent = self.master
+        if hasattr(parent, 'check_start_ready'):
+            parent.check_start_ready()
+
