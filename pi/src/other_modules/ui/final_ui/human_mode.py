@@ -69,7 +69,8 @@ class HumanScreen(tk.Frame):
         print("[XboxScreen] Play vs Friend selected")
 
     def practice_mode(self):
-        print("[XboxScreen] Practice mode selected")
+        self.mqtt_client.client.publish("jetson/command", "Practice")
+        self.controller.show_frame("PracticeScreen")
 
     def show_leaderboard(self):
         print("[XboxScreen] Leaderboard requested")

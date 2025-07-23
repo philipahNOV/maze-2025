@@ -15,44 +15,46 @@ class PracticeScreen(tk.Frame):
         self.create_widgets()
 
     def create_widgets(self):
-        self.bg_label = tk.Label(self, image=self.background_image)
-        self.bg_label.image = self.background_image
-        self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.update()
+        bg_label = tk.Label(self, image=self.background_image)
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Title text
-        self.title = tk.Label(
+        tk.Label(
             self,
             text="PRACTICE MODE",
-            font=("Jockey One", 42),
-            fg="#1A1A1A",
-            bg="#D9D9D9"
-        )
-        self.title.place(x=300, y=100)
+            font=("Jockey One", 40),
+            bg="#D9D9D9",
+            fg="#1A1A1A"
+        ).place(x=320, y=50)
 
-        # Description
-        self.description = tk.Label(
+        tk.Label(
             self,
-            text="Move around freely using the joystick",
-            font=("Jockey One", 24),
-            fg="#333333",
-            bg="#D9D9D9"
-        )
-        self.description.place(x=250, y=180)
+            text="Move the ball using the joystick\nFreely explore the maze.",
+            font=("Jockey One", 22),
+            justify="center",
+            bg="#D9D9D9",
+            fg="#333"
+        ).place(x=270, y=200)
 
-        # Back button
-        self.back_button = tk.Button(
+        tk.Button(
             self,
-            text="← BACK",
-            font=("Jockey One", 24),
+            text="BACK",
+            font=("Jockey One", 20),
             fg="white",
-            bg="#60666C",
-            activebackground="#4B4C4C",
+            bg="#EE3229",
+            activebackground="#B82F27",
             borderwidth=0,
             highlightthickness=0,
+            relief="flat",
             command=self.on_back
-        )
-        self.back_button.place(x=30, y=20, width=140, height=50)
+        ).place(x=10, y=10, width=120, height=50)
 
     def on_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
+
+    def show(self):
+        self.update_idletasks()
+
+    def hide(self):
+        self.pack_forget()
