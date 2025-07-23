@@ -77,6 +77,21 @@ class MainScreen(tk.Frame):
         )
         self.exit_button.place(x=904, y=10, width=50, height=50)
 
+        self.info_button = tk.Button(
+        self,
+        text="📄",
+        font=("Jockey One", 26),
+        fg="white",
+        bg="#EE3229",
+        activebackground="#B82F27",
+        activeforeground="#DFDFDF",
+        borderwidth=0,
+        highlightthickness=0,
+        relief="flat",
+        command=self.on_button_click_info
+        )
+        self.info_button.place(x=844, y=10, width=50, height=50)
+
     def create_widgets(self):
         self.update()  # ensure layout updates
 
@@ -89,7 +104,7 @@ class MainScreen(tk.Frame):
 
         self.navigation_button = tk.Button(
             self,
-            text="MAZE NAVIGATION",
+            text="ROBOT MODE",
             font=("Jockey One", 25),
             fg="white",
             borderwidth=0,
@@ -101,9 +116,9 @@ class MainScreen(tk.Frame):
         )
         self.navigation_button.place(x=391, y=235, width=243, height=74)
 
-        self.info_button = tk.Button(
+        self.xbox_button = tk.Button(
             self,
-            text="GUIDE",
+            text="HUMAN MODE",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
@@ -111,13 +126,14 @@ class MainScreen(tk.Frame):
             background="#60666C",
             activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
-            command=self.on_button_click_info
+            command=self.on_button_click_xbox
         )
-        self.info_button.place(x=391, y=320, width=243, height=74)
+    
+        self.xbox_button.place(x=391, y=320, width=243, height=74)
 
         self.disco_button = tk.Button(
             self,
-            text="TOGGLE LIGHTS",
+            text="LIGHTS MODE",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
@@ -129,21 +145,6 @@ class MainScreen(tk.Frame):
         )
         self.disco_button.place(x=391, y=405, width=243, height=74)
 
-        self.xbox_button = tk.Button(
-            self,
-            text="JOYSTICK MODE",
-            font=("Jockey One", 30),
-            fg="white",
-            borderwidth=0,
-            highlightthickness=0,
-            background="#60666C",
-            activebackground="#4B4C4C",
-            activeforeground="#DFDFDF",
-            command=self.on_button_click_xbox
-        )
-    
-        self.xbox_button.place(x=391, y=490, width=243, height=74)
-
         self.title = tk.Label(
             self,
             text="WELCOME",
@@ -154,7 +155,6 @@ class MainScreen(tk.Frame):
         self.title.place(x=380, y=100)
 
     def show(self):
-        """Make this frame visible and ensure redraw"""
         self.update_idletasks()
 
     def hide(self):
