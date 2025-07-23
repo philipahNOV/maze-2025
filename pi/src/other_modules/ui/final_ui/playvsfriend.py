@@ -1,68 +1,83 @@
 import tkinter as tk
+from tkinter import ttk
 from PIL import Image, ImageTk
 from typing import TYPE_CHECKING
-from utils.on_screen_keyboard import OnScreenKeyboard
-import functools
 
 if TYPE_CHECKING:
     from main import MainApp
-
 
 class PlayVsFriendScreen(tk.Frame):
     def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
-
-        self.num_players_var = tk.StringVar(value="2")
-        self.num_players_var.trace_add("write", self.on_player_count_changed)
-
-        self.input_fields = []
-        self.input_frame = None
+        self.player_entries = []
 
         self.create_widgets()
-
-    def on_player_count_changed(self, *args):
-        selected = self.num_players_var.get()
-        self.update_input_fields(selected)
 
     def create_widgets(self):
         self.update()
 
-        if self.background_image:
-            bg_label = tk.Label(self, image=self.background_image)
-            bg_label.image = self.background_image
-            bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+        bg_label = tk.Label(self, image=self.background_image)
+        bg_label.image = self.background_image
+        bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        tk.Label(self, text="NUMBER OF PLAYERS:", font=("Jockey One", 24), bg="#D9D9D9", fg="#1A1A1A")\
-            .place(x=360, y=100)
+        # Title
+        tk.Label(
+            self,
+            text="PLAY VS FRIEND",
+            font=("Jockey One", 40),
+            bg="#D9D9D9",
+            fg="#1A1A1A"
+        ).place(x=300, y=30)
 
-        dropdown = tk.OptionMenu(self, self.num_players_var, *[str(i) for i in range(2, 6)], command=lambda val: self.update_input_fields(str(val)))
-        dropdown.config(font=("Jockey One", 20))
-        dropdown.place(x=450, y=160)
+        # Player count dropdown
+        tk.Label(
+            self,
+            text="Number of Players:",
+            font=("Jockey One", 20),
+            bg="#D9D9D9"
+        ).place(x=340, y=120)
 
+        self.player_count_var = tk.StringVar(value="2")
+        self.dropdown = ttk.Combobox(
+            self,
+            textvariable=self.player_count_var,
+            values=[str(i) for i in range(2, 6)],
+            state="readonly",
+            font=("Jockey One", 16),
+            width=5
+        )
+        self.dropdown.place(x=580, y=125)
+        self.dropdown.bind("<<ComboboxSelected>>", self.update_player_fields)
+
+        # Frame for player name inputs
+        self.input_frame = tk.Frame(self, bg="#D9D9D9")
+        self.input_frame.place(x=350, y=170)
+
+        # Start button
         self.start_button = tk.Button(
             self,
             text="START",
             font=("Jockey One", 24),
             fg="white",
-            bg="gray",
+            bg="#A0A0A0",
+            activeforeground="white",
             activebackground="#4B4C4C",
-            activeforeground="#DFDFDF",
             borderwidth=0,
             highlightthickness=0,
-            width=20,
-            height=2,
             state="disabled",
             command=self.start_game
         )
-        self.start_button.place(x=355, y=450)
+        self.start_button.place(x=420, y=440, width=200, height=60)
 
+        # Back button
         self.back_button = tk.Button(
             self,
-            text="BACK",
-            font=("Jockey One", 20),
+            text="←",
+            font=("Jockey One", 30),
             fg="white",
             bg="#EE3229",
             activebackground="#B82F27",
@@ -73,58 +88,36 @@ class PlayVsFriendScreen(tk.Frame):
         )
         self.back_button.place(x=844, y=10, width=50, height=50)
 
-        self.update_input_fields("2")
+        self.update_player_fields()  # Initialize with 2 players
 
+    def update_player_fields(self, event=None):
+        for widget in self.input_frame.winfo_children():
+            widget.destroy()
+        self.player_entries.clear()
 
-    def update_input_fields(self, selected):
-        count = int(selected)
+        count = int(self.player_count_var.get())
 
-        if self.input_frame:
-            self.input_frame.destroy()
-
-        self.input_frame = tk.Frame(self, bg="#D9D9D9")
-        self.input_frame.place(x=300, y=240)
-
-        self.input_fields = []
         for i in range(count):
-            label = tk.Label(self.input_frame, text=f"Player {i+1}:", font=("Jockey One", 18), bg="#D9D9D9")
-            label.grid(row=i, column=0, padx=10, pady=5, sticky='e')
+            label = tk.Label(self.input_frame, text=f"Player {i+1} Name:", font=("Jockey One", 18), bg="#D9D9D9")
+            label.grid(row=i, column=0, padx=5, pady=8, sticky='e')
+            entry = tk.Entry(self.input_frame, font=("Jockey One", 16), width=18)
+            entry.grid(row=i, column=1, padx=5, pady=8)
+            entry.bind("<KeyRelease>", self.check_all_fields)
+            self.player_entries.append(entry)
 
-            entry = tk.Entry(self.input_frame, font=("Jockey One", 18), width=20)
-            entry.grid(row=i, column=1, padx=10, pady=5)
-            entry.bind("<FocusIn>", lambda e, ent=entry: self.show_keyboard(ent))
-            entry.bind("<Button-1>", lambda e, ent=entry: self.show_keyboard(ent))
-            entry.bind("<KeyRelease>", lambda e, ent=entry: self.check_start_ready())
+        self.check_all_fields()
 
-            self.input_fields.append(entry)
-
-        self.check_start_ready()
-
-    def check_start_ready(self):
-        all_filled = all(entry.get().strip() for entry in self.input_fields)
+    def check_all_fields(self, event=None):
+        all_filled = all(entry.get().strip() for entry in self.player_entries)
         if all_filled:
             self.start_button.config(state="normal", bg="#60666C")
         else:
-            self.start_button.config(state="disabled", bg="gray")
-
-    def show_keyboard(self, entry):
-        # Only create one keyboard instance
-        if hasattr(self, 'keyboard') and self.keyboard.winfo_exists():
-            # Re-target if user taps another entry
-            self.keyboard.target_entry = entry
-            return
-
-        # Create new keyboard window
-        self.keyboard = OnScreenKeyboard(self, entry)
-        self.keyboard.transient(self)
-        self.keyboard.grab_set()  # Force focus to keyboard window
-        self.keyboard.focus_force()
-
+            self.start_button.config(state="disabled", bg="#A0A0A0")
 
     def start_game(self):
-        names = [entry.get().strip() for entry in self.input_fields]
-        print("Starting game with players:", names)
-        # Placeholder for FSM or MQTT command to begin game logic
+        names = [entry.get().strip() for entry in self.player_entries]
+        print(f"Starting game with players: {names}")
+        # Future: Send this list via MQTT or transition to gameplay screen
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
