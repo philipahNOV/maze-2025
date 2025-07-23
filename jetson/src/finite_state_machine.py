@@ -1,3 +1,4 @@
+import cmd
 from enum import Enum, auto
 import time
 from mqtt_client import MQTTClientJetson
@@ -27,6 +28,7 @@ class SystemState(Enum):
     CONTROLLING = auto()
     HUMAN_CONTROLLER = auto()
     PRACTICE = auto()
+    PLAYVSFRIEND = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -248,7 +250,9 @@ class HMIController:
                 # Placeholder: self._start_joystick_control()  # Uncomment when logic is added
 
             elif cmd == "PlayVsFriend":
-                print("[FSM] Play vs Friend — not implemented yet")
+                print("[FSM] Entering PLAYVSFRIEND mode")
+                self.state = SystemState.PLAYVSFRIEND
+                self.mqtt_client.client.publish("pi/command", "show_playvsfriend_screen")
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
@@ -301,6 +305,11 @@ class HMIController:
                 self.state = SystemState.HUMAN_CONTROLLER
                 print("[FSM] Returned to HUMAN_CONTROLLER")
 
+        elif self.state == SystemState.PLAYVSFRIEND:
+            if cmd == "Back":
+                print("[FSM] Exiting PLAYVSFRIEND...")
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
 
         # --- LOCATING STATE ---
         elif self.state == SystemState.LOCATING:

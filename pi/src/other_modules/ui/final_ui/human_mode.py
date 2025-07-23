@@ -33,10 +33,6 @@ class HumanScreen(tk.Frame):
             self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.on_close()
 
-    def on_button_click_info(self):
-        self.mqtt_client.client.publish("jetson/command", "Info")
-        self.controller.show_frame("InfoScreen")
-
     def create_widgets(self):
         self.update()
 
@@ -85,10 +81,11 @@ class HumanScreen(tk.Frame):
         )
         self.restart_button.place(x=904, y=10, width=50, height=50)
 
-        self.info_button = tk.Button(
+        # Back button moved to previous info button spot (x=844)
+        self.back_button = tk.Button(
             self,
-            text="📄",
-            font=("Jockey One", 26),
+            text="BACK",
+            font=("Jockey One", 30),
             fg="white",
             bg="#EE3229",
             activebackground="#B82F27",
@@ -96,9 +93,9 @@ class HumanScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.on_button_click_info
+            command=self.on_button_click_back
         )
-        self.info_button.place(x=844, y=10, width=50, height=50)
+        self.back_button.place(x=844, y=10, width=50, height=50)
 
         # --- Center Buttons ---
         button_config = {
@@ -113,23 +110,10 @@ class HumanScreen(tk.Frame):
             "highlightthickness": 0,
         }
 
-        tk.Button(self, text="PLAY VS AI", command=self.play_vs_ai, **button_config).place(x=355, y=150)
-        tk.Button(self, text="PLAY VS FRIEND", command=self.play_vs_friend, **button_config).place(x=355, y=230)
+        tk.Button(self, text="PLAY VS AI", command=self.play_vs_ai, **button_config).place(x=355, y=140)
+        tk.Button(self, text="PLAY VS FRIEND", command=self.play_vs_friend, **button_config).place(x=355, y=220)
         tk.Button(self, text="PRACTICE", command=self.practice_mode, **button_config).place(x=355, y=310)
         tk.Button(self, text="LEADERBOARD", command=self.show_leaderboard, **button_config).place(x=355, y=390)
-
-        tk.Button(
-            self,
-            text="BACK",
-            font=("Jockey One", 20),
-            fg="white",
-            bg="#EE3229",
-            activebackground="#B82F27",
-            borderwidth=0,
-            highlightthickness=0,
-            relief="flat",
-            command=self.on_button_click_back
-        ).place(x=10, y=10, width=120, height=50)
 
     def play_vs_ai(self):
         print("[HumanScreen] Play vs AI selected")
