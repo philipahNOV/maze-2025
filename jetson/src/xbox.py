@@ -30,7 +30,7 @@ class XboxController:
         self.running = True
         print("Xbox Controller started.")
 
-        target_interval = 1.0 / 120  # 120 Hz kontrollsløyfe
+        target_interval = 1.0 / 120  # 60 Hz kontrollsløyfe
 
         try:
             while self.running:
