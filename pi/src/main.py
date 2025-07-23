@@ -46,6 +46,7 @@ class MainApp(tk.Tk):
         self.touch_path = os.path.join(self.image_path, 'touch.png')
         self.loading_animation_path = os.path.join(self.image_path, 'loading_animation')
         self.pathfinding_animation_path = os.path.join(self.image_path, 'pathfinding_animation')
+        self.xbox_controller_image_path = os.path.join(self.image_path, 'xbox_controller.png')
 
         self.current_frame = "BootScreen"
         self.mqtt_client = mqtt_client

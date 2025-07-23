@@ -74,7 +74,7 @@ class HumanScreen(tk.Frame):
 
         self.back_button = tk.Button(
             self,
-            text="←",
+            text="BACK",
             font=("Jockey One", 28),
             fg="white",
             bg="#EE3229",
@@ -85,7 +85,7 @@ class HumanScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=844, y=10, width=50, height=50)
+        self.back_button.place(x=844, y=10, width=150, height=50)
 
         # --- Title ---
         self.title = tk.Label(
@@ -100,7 +100,7 @@ class HumanScreen(tk.Frame):
         # --- Main Buttons (Center) ---
         self.play_ai_button = tk.Button(
             self,
-            text="PLAY VS AI",
+            text="PLAY VS ROBOT",
             font=("Jockey One", 25),
             fg="white",
             borderwidth=0,
