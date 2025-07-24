@@ -83,7 +83,9 @@ class LoggingThread(threading.Thread):
             state = [x, y, vel_x, vel_y, theta_x, theta_y]
             action = [input_x, input_y]
 
-            if self.steps_taken < self.warmup_steps or self.current_waypoint <= 0:
+            if ( self.steps_taken < self.warmup_steps
+                    or self.current_waypoint is None
+                    or self.current_waypoint <= 0 ):
                 reward, done = 0.0, False
             else:
                 reward, done = self.calculate_reward()
