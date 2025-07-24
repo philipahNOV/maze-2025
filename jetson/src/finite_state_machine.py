@@ -141,6 +141,12 @@ class HMIController:
         self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
         self.joystick_thread.start()
 
+    def _ball_crossed_goal(self, position):
+        goal_area = self.config.get("goal_area", {"x_min": 100, "x_max": 300, "y_min": 50, "y_max": 100})
+        x, y = position
+        return (goal_area["x_min"] <= x <= goal_area["x_max"] and
+                goal_area["y_min"] <= y <= goal_area["y_max"])
+
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
 
