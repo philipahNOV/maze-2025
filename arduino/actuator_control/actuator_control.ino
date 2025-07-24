@@ -29,6 +29,8 @@ namespace lift_servo {
     const uint8_t lift_down = 180; // Lav posisjon for heis
     const uint8_t lift_up = 0; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
+    unsigned long elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
+    bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
 }
 
 namespace led_strips {
@@ -60,9 +62,6 @@ namespace serial_messages {
 namespace {
     // Teller for hvor ofte grensen sjekkes for aktuatorene
     uint8_t limit_check_counter = 0;
-    uint8_t elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
-    bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
-    bool elevator_attached = false; // Variabel for å sjekke om heisen er festet
 }
 
 // Initialiserer funksjoner
@@ -95,11 +94,6 @@ void setup() {
 
     // Setter analog pinnene til null for at motorene ikke bevege seg når programmet starter
     stop_actuators(); // Stopper aktuatorene
-
-    // Initialiserer heis servo
-    lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-    lift_servo::lift.write(0); // Setter heisen til lav posisjon
-    lift_servo::lift.detach(); // Frakobler servoen
 }
 
 void loop() {
@@ -108,7 +102,17 @@ void loop() {
     switch (serial_messages::state) // Sjekker hvilken tilstand programmet er i
     {
         case serial_messages::State::ELEVATOR: // Tilstand 0: Heis klar til å hente ball
-            elevator(serial_messages::value_1); // Kjører heisen
+
+            // Sjekk om heisen heisen står stille og om det er over 1s siden den ble kjørt sist
+            if (lift_servo::elevator_running == false && millis() - lift_servo::elevator_start_time >= 1000)
+            {
+                elevator(serial_messages::value_1); // Kjører heisen 
+            }
+            else
+            {
+                // Gjør ingen ting
+            }
+            
             serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
             break;
         case serial_messages::State::CONTROL: // Tilstand 1: Kontrollerer aktuatorene
@@ -124,12 +128,10 @@ void loop() {
             break;
     }
 
-    if (elevator_running) // Sjekker om heisen er aktiv
+    if (lift_servo::elevator_running == true && millis() - lift_servo::elevator_start_time >= 200)
     {
-        if (millis() - elevator_start_time >= 200) // Sjekker heisen hver 10. loop
-        {
-            elevator(0); // Kjører heisen
-        }
+        elevator(0);
+        lift_servo::elevator_running = false;
     }
 }
 
@@ -249,36 +251,35 @@ void move_speed(int16_t speed_actuator_1, int16_t speed_actuator_2)
 
 void elevator(int8_t elevator_dir)
 {
-    // Hvis en bevegelse er i gang OG den nye kommandoen også er en bevegelse, ignorer den.
-    if (elevator_running && elevator_dir != 0) {
+    if (lift_servo::lift.attached() == false && lift_servo::elevator_running == false)
+    {
+        lift_servo::lift.attach(lift_servo::servo_pin);
+    }
+    else if (lift_servo::lift.attached() == true && lift_servo::elevator_running == true)
+    {
+        lift_servo::lift.detach();
         return;
     }
+    else
+    {
+        // Gjør ingenting
+    }
 
-    if (elevator_dir == -1) {  // Move down
-        elevator_running = true; // Setter heisen til aktiv
-        elevator_start_time = millis(); // Setter tidspunktet for når heisen startet å kjøre
-        if (!elevator_attached) {
-            lift_servo::lift.attach(lift_servo::servo_pin);
-            elevator_attached = true;
-        }
+    if (elevator_dir == -1)
+    {
         lift_servo::lift.write(lift_servo::lift_down);
+        lift_servo::elevator_start_time = millis();
+        lift_servo::elevator_running = true;
     }
-    else if (elevator_dir == 1) {  // Move up
-        elevator_running = true; // Setter heisen til aktiv
-        elevator_start_time = millis(); // Setter tidspunktet for når heisen startet å kjøre
-        if (!elevator_attached) {
-            lift_servo::lift.attach(lift_servo::servo_pin);
-            elevator_attached = true;
-        }
+    else if (elevator_dir == 1)
+    {
         lift_servo::lift.write(lift_servo::lift_up);
+        lift_servo::elevator_start_time = millis();
+        lift_servo::elevator_running = true;
     }
-    else {  // elevator_dir == 0 → stop and optionally detach
-        if (elevator_attached) {
-            lift_servo::lift.write(lift_servo::lift_stop);  // optional: neutral hold position
-            lift_servo::lift.detach();
-            elevator_attached = false; // Frakobler servoen når heisen er stoppet
-            elevator_running = false; // Setter heisen til inaktiv
-        }
+    else
+    {
+        // Gjør ingenting
     }
 }
 
