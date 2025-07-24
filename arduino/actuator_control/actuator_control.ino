@@ -26,8 +26,8 @@ namespace actuators {
 namespace lift_servo {
     Servo lift; // Servo for heis
     const uint8_t servo_pin = 5; // Pinne for servo
-    const uint8_t lift_down = 180; // Lav posisjon for heis
-    const uint8_t lift_up = 0; // Høy posisjon for heis
+    const uint8_t lift_down = 160; // Lav posisjon for heis
+    const uint8_t lift_up = 50; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
     unsigned long elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
     bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
@@ -94,6 +94,12 @@ void setup() {
 
     // Setter analog pinnene til null for at motorene ikke bevege seg når programmet starter
     stop_actuators(); // Stopper aktuatorene
+/*
+    lift_servo::lift.attach(lift_servo::servo_pin);
+    lift_servo::lift.write(0);
+    delay(500);
+    lift_servo::lift.detach();
+    */
 }
 
 void loop() {
@@ -106,13 +112,11 @@ void loop() {
             // Sjekk om heisen heisen står stille og om det er over 1s siden den ble kjørt sist
             if (lift_servo::elevator_running == false)
             {
-              Serial.print("Kjører");
                 elevator(serial_messages::value_1); // Kjører heisen
             }
             else
             {
                 // Gjør ingen ting
-                Serial.println("Kjører alerede");
             }
             
             serial_messages::state = serial_messages::State::IDLE; // Går til neste tilstand
@@ -132,7 +136,6 @@ void loop() {
 
     if (lift_servo::elevator_running == true && millis() - lift_servo::elevator_start_time >= 200)
     {
-      Serial.print("Stopper");
         elevator(0);
         lift_servo::elevator_running = false;
         
@@ -257,16 +260,11 @@ void elevator(int8_t elevator_dir)
 {
     if (lift_servo::lift.attached() == false && lift_servo::elevator_running == false)
     {
-        Serial.print(" | attacher | ");
         lift_servo::lift.attach(lift_servo::servo_pin);
-        Serial.print(lift_servo::lift.attached());
-        Serial.print(" | ");
     }
     else if (lift_servo::lift.attached() == true && lift_servo::elevator_running == true)
     {
-        Serial.print(" | detacher | ");
         lift_servo::lift.detach();
-        Serial.println(lift_servo::lift.attached());
         return;
     }
     else
@@ -274,22 +272,21 @@ void elevator(int8_t elevator_dir)
         // Gjør ingenting
     }
 
-    if (elevator_dir == -1)
+    if (elevator_dir == -1 && lift_servo::lift.read() != lift_servo::lift_down)
     {
-      Serial.println("retning ned");
         lift_servo::lift.write(lift_servo::lift_down);
         lift_servo::elevator_start_time = millis();
         lift_servo::elevator_running = true;
     }
-    else if (elevator_dir == 1)
+    else if (elevator_dir == 1 && lift_servo::lift.read() != lift_servo::lift_up)
     {
-      Serial.println("retning opp");
         lift_servo::lift.write(lift_servo::lift_up);
         lift_servo::elevator_start_time = millis();
         lift_servo::elevator_running = true;
     }
     else
     {
+      lift_servo::lift.detach();
         // Gjør ingenting
     }
 }
