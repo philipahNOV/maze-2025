@@ -34,8 +34,6 @@ class BlinkRed(threading.Thread):
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 print("BlinkRed active too long — triggering elevator up.")
                 self.arduino_thread.send_elevator(1)
-                time.sleep(0.2)
-                self.arduino_thread.send_elevator(0)
                 self.arduino_thread.send_color(*white)
                 self.triggered = True  # Avoid retriggering
                 #self.controller.elevator_state = "up"
@@ -179,9 +177,6 @@ class EscapeElevatorThread(threading.Thread):
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
             self.arduino_thread.send_elevator(-1)
-            time.sleep(0.2)
-            self.arduino_thread.send_elevator(0)
-            #self.controller.elevator_state = "down"
         
         self.arduino_thread.send_speed(0, 0)
 
