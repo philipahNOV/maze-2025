@@ -94,11 +94,6 @@ void setup() {
 
     // Setter analog pinnene til null for at motorene ikke bevege seg når programmet starter
     stop_actuators(); // Stopper aktuatorene
-
-    // Initialiserer heis servo
-    lift_servo::lift.attach(lift_servo::servo_pin); // Fester servoen til pinnen
-    lift_servo::lift.write(0); // Setter heisen til lav posisjon
-    lift_servo::lift.detach(); // Frakobler servoen
 }
 
 void loop() {
