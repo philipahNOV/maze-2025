@@ -29,7 +29,7 @@ namespace lift_servo {
     const uint8_t lift_down = 180; // Lav posisjon for heis
     const uint8_t lift_up = 0; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
-    uint8_t elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
+    unsigned long elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
     bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
 }
 
@@ -109,7 +109,7 @@ void loop() {
         case serial_messages::State::ELEVATOR: // Tilstand 0: Heis klar til å hente ball
 
             // Sjekk om heisen heisen står stille og om det er over 1s siden den ble kjørt sist
-            if (lift_servo::elevator_running == false && lift_servo::elevator_start_time - millis() >= 1000)
+            if (lift_servo::elevator_running == false && millis() - lift_servo::elevator_start_time >= 1000)
             {
                 elevator(serial_messages::value_1); // Kjører heisen 
             }
@@ -133,10 +133,10 @@ void loop() {
             break;
     }
 
-    if (lift_servo::elevator_running == true && lift_servo::elevator_start_time - millis() >= 200)
+    if (lift_servo::elevator_running == true && millis() - lift_servo::elevator_start_time >= 200)
     {
         elevator(0);
-        lift_servo::elevator_running == false;
+        lift_servo::elevator_running = false;
     }
 }
 
@@ -273,14 +273,14 @@ void elevator(int8_t elevator_dir)
     if (elevator_dir == -1)
     {
         lift_servo::lift.write(lift_servo::lift_down);
-        lift_servo::elevator_start_time == millis();
-        lift_servo::elevator_running == true;
+        lift_servo::elevator_start_time = millis();
+        lift_servo::elevator_running = true;
     }
     else if (elevator_dir == 1)
     {
         lift_servo::lift.write(lift_servo::lift_up);
-        lift_servo::elevator_start_time == millis();
-        lift_servo::elevator_running == true;
+        lift_servo::elevator_start_time = millis();
+        lift_servo::elevator_running = true;
     }
     else
     {
