@@ -19,11 +19,9 @@ class PlayAloneScreen(tk.Frame):
     def create_widgets(self):
         self.update()
 
-        # Background
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Title
         tk.Label(
             self,
             text="PLAY ALONE",
@@ -32,7 +30,6 @@ class PlayAloneScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=30)
 
-        # Name prompt
         tk.Label(
             self,
             text="ENTER YOUR NAME:",
@@ -73,9 +70,8 @@ class PlayAloneScreen(tk.Frame):
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=110 + col_idx * 70, y=240 + row_idx * 65)
+                btn.place(x=60 + col_idx * 70, y=240 + row_idx * 85)
 
-        # Start button
         self.start_button = tk.Button(
             self,
             text="START",
@@ -91,7 +87,6 @@ class PlayAloneScreen(tk.Frame):
         )
         self.start_button.place(x=400, y=470, width=200, height=60)
 
-        # Back button
         self.back_button = tk.Button(
             self,
             text="BACK",
@@ -104,7 +99,7 @@ class PlayAloneScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=937, y=10, width=150, height=50)
+        self.back_button.place(x=857, y=10, width=150, height=50)
 
     def key_press(self, key):
         if key == "BACK":
