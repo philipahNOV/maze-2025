@@ -12,7 +12,6 @@ class MainScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
-        # Store image in a persistent instance variable to prevent garbage collection
         try:
             print("Loading background from:", controller.background_path)
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -93,7 +92,7 @@ class MainScreen(tk.Frame):
         self.info_button.place(x=734, y=10, width=150, height=50)
 
     def create_widgets(self):
-        self.update()  # ensure layout updates
+        self.update()
 
         if self.background_image:
             self.bg_label = tk.Label(self, image=self.background_image)

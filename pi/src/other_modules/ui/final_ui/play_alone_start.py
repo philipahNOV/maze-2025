@@ -81,7 +81,7 @@ class PlayAloneStartScreen(tk.Frame):
         self.image = ImageTk.PhotoImage(img_scaled)
         self.canvas.itemconfig(self.image_id, image=self.image)
 
-        self.after(200, self.update_image)  # Refresh every 200ms
+        self.after(200, self.update_image)
 
     def update_timer(self, time_sec: float):
         """Call this from MQTT or controller to update the timer display"""
