@@ -15,6 +15,8 @@ import threading
 import os
 import sys
 from typing import Dict, Any
+from utils.leaderboard_utils import add_score
+from datetime import datetime
 
 
 class SystemState(Enum):
@@ -29,6 +31,7 @@ class SystemState(Enum):
     HUMAN_CONTROLLER = auto()
     PRACTICE = auto()
     PLAYALONE = auto()
+    PLAYALONE_START = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -138,6 +141,44 @@ class HMIController:
         self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
         self.joystick_thread.start()
 
+    def run_playalone_game(self):
+        print("[PLAYALONE] Starting tracking thread...")
+
+        maze_id = self.config.get("maze_id", 1)
+        player_name = self.config.get("player_name", "Unknown")
+
+        self.tracking_service.start_tracker()
+
+        game_running = True
+        start_time = None
+        last_valid_pos_time = time.time()
+
+        while game_running:
+            ball_pos = self.tracking_service.get_ball_position()
+
+            if ball_pos is None:
+                if start_time and (time.time() - last_valid_pos_time > 3):
+                    print("[PLAYALONE] Game failed: ball lost > 3 seconds.")
+                    self.mqtt_client.client.publish("pi/command", "playalone_fail")
+                    break
+            else:
+                last_valid_pos_time = time.time()
+
+                if start_time is None:
+                    print("[PLAYALONE] Ball seen — starting timer.")
+                    start_time = time.time()
+
+                if self._ball_crossed_goal(ball_pos):
+                    duration = time.time() - start_time
+                    print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
+                    add_score(player_name, duration, maze_id)
+                    self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}")
+                    break
+
+            time.sleep(0.1)
+
+        self.tracking_service.stop_tracker()
+
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
             goal = (custom_goal[1], custom_goal[0])
@@ -246,13 +287,50 @@ class HMIController:
                 self._start_joystick_control()
 
             elif cmd == "PlayVsAI":
-                print("[FSM] Play vs AI — not implemented yet")
-                # Placeholder: self._start_joystick_control()  # Uncomment when logic is added
+                pass
 
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
                 self.state = SystemState.PLAYALONE
                 self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
+        
+        elif self.state == SystemState.PRACTICE:
+            if cmd == "Back":
+                print("[FSM] Exiting PRACTICE mode...")
+
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                
+                if hasattr(self, 'joystick_thread'):
+                    if self.joystick_thread.is_alive():
+                        self.joystick_thread.join()
+                    del self.joystick_thread
+
+                self.arduino_thread.send_speed(0, 0)
+                self.state = SystemState.HUMAN_CONTROLLER
+                print("[FSM] Returned to HUMAN_CONTROLLER")
+
+        elif self.state == SystemState.PLAYALONE:
+            if cmd == "Back":
+                self.state = SystemState.HUMAN_CONTROLLER
+            
+            elif cmd == "Start":
+                self.state = SystemState.PLAYALONE_START
+                self.tracking_service.stop_tracker()
+                self.arduino_thread.send_speed(0, 0)
+                threading.Thread(target=self.run_playalone_game, daemon=True).start()
+        
+        elif self.state == SystemState.PLAYALONE_START:
+            if cmd == "Back":
+                self.state = SystemState.HUMAN_CONTROLLER
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                    del self.joystick_thread
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
@@ -273,7 +351,6 @@ class HMIController:
                 elif cmd.endswith("speed"):
                     self.controller.lookahead = True
 
-                # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
                 self.tracking_service.start_tracker()
@@ -288,33 +365,9 @@ class HMIController:
             elif cmd == "Horizontal":
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
-        elif self.state == SystemState.PRACTICE:
-            if cmd == "Back":
-                print("[FSM] Exiting PRACTICE mode...")
-
-                if hasattr(self, 'joystick_controller'):
-                    self.joystick_controller.stop()
-                    del self.joystick_controller
-                
-                if hasattr(self, 'joystick_thread'):
-                    if self.joystick_thread.is_alive():
-                        self.joystick_thread.join()
-                    del self.joystick_thread
-
-                self.arduino_thread.send_speed(0, 0)
-                self.state = SystemState.HUMAN_CONTROLLER
-                print("[FSM] Returned to HUMAN_CONTROLLER")
-
-        elif self.state == SystemState.PLAYVSFRIEND:
-            if cmd == "Back":
-                print("[FSM] Exiting PLAYVSFRIEND...")
-                self.state = SystemState.HUMAN_CONTROLLER
-                self.mqtt_client.client.publish("pi/command", "show_human_screen")
-
         # --- LOCATING STATE ---
         elif self.state == SystemState.LOCATING:
             if cmd == "AutoPath":
-                # Transition to AUTO_PATH and start pathfinding
                 self.state = SystemState.AUTO_PATH
                 self.path = None
                 self.image_controller.set_new_path(self.path)
@@ -322,7 +375,6 @@ class HMIController:
                 self.start_path_finding()
 
             elif cmd == "CustomPath":
-                # Transition to CUSTOM_PATH and set up image thread
                 self.state = SystemState.CUSTOM_PATH
                 print("[FSM] Transitioned to CUSTOM_PATH")
                 self.path = None

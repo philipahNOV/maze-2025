@@ -12,6 +12,7 @@ from other_modules.mqtt_client import MQTTClientPi
 from other_modules.ui.final_ui.human_mode import HumanScreen
 from other_modules.ui.final_ui.practice import PracticeScreen
 from other_modules.ui.final_ui.play_alone import PlayAloneScreen
+from other_modules.ui.final_ui.play_alone_start import PlayAloneStartScreen
 
 import signal
 import sys
@@ -26,9 +27,9 @@ class MainApp(tk.Tk):
         self.title("NOV maze 2025")
         self.geometry("1024x600")
         #self.attributes("-fullscreen", True)
-        self.overrideredirect(True)  # Removes window decorations
-        self.geometry("1024x600")    # Force fixed size
-        self.resizable(False, False)  # Prevent accidental resize
+        self.overrideredirect(True)
+        self.geometry("1024x600")
+        self.resizable(False, False)
         self.current_screen = None
         self.nov_red = "#EE3229"
         self.nov_grey = "#60666C"
@@ -57,7 +58,7 @@ class MainApp(tk.Tk):
 
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,
-                  PlayAloneScreen):
+                  PlayAloneScreen, PlayAloneStartScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             frame.grid(row=0, column=0, sticky="nsew")
             frame.lower()
