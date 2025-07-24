@@ -244,7 +244,7 @@ class Controller:
             else:
                 self.unstuck_timer_y = None
 
-        print(dist, self.stuck_x_active, self.stuck_y_active)
+        #print(dist, self.stuck_x_active, self.stuck_y_active)
         # Apply wiggling if needed
         if self.stuck_x_active or self.stuck_y_active:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)

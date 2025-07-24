@@ -45,6 +45,10 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
+    print(f"[DEBUG] path_array length: {len(path_array)}")
+    print(f"[DEBUG] First 3 waypoints: {path_array[:3]}")
+
+
     logger = None
     logger = LoggingThread(path_array)
     logger.start()

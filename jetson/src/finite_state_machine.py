@@ -299,6 +299,11 @@ class HMIController:
                 print("[FSM] Entering PLAYALONE mode")
                 self.state = SystemState.PLAYALONE
                 self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
+
+            elif cmd == "Leaderboard":
+                print("[FSM] Entering LEADERBOARD mode")
+                self.state = SystemState.LEADERBOARD
+                self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
         
         elif self.state == SystemState.PRACTICE:
             if cmd == "Back":
@@ -337,6 +342,10 @@ class HMIController:
                 if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
                     self.joystick_thread.join()
                     del self.joystick_thread
+        
+        elif self.state == SystemState.LEADERBOARD:
+            if cmd == "Back":
+                self.state = SystemState.HUMAN_CONTROLLER
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
