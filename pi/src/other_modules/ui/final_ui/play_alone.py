@@ -32,15 +32,14 @@ class PlayAloneScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=30)
 
-        # Name display
-        self.name_label = tk.Label(
+        # Name prompt
+        tk.Label(
             self,
             text="ENTER YOUR NAME:",
             font=("Jockey One", 24),
             bg="#D9D9D9",
             fg="#1A1A1A"
-        )
-        self.name_label.place(x=320, y=110)
+        ).place(x=320, y=110)
 
         self.name_entry_display = tk.Label(
             self,
@@ -88,7 +87,7 @@ class PlayAloneScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             state="disabled",
-            command=self.start_game
+            command=self.on_button_click_start_game
         )
         self.start_button.place(x=400, y=470, width=200, height=60)
 
@@ -105,7 +104,7 @@ class PlayAloneScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=967, y=10, width=50, height=50)
+        self.back_button.place(x=937, y=10, width=150, height=50)
 
     def key_press(self, key):
         if key == "BACK":
@@ -119,23 +118,25 @@ class PlayAloneScreen(tk.Frame):
 
         self.name_entry_display.config(text=self.name)
 
-        # Enable START button if name is valid
         if self.name.strip():
             self.start_button.config(state="normal", bg="#60666C")
         else:
             self.start_button.config(state="disabled", bg="#A0A0A0")
 
-    def start_game(self):
+    def on_button_click_start_game(self):
         player_name = self.name.strip()
+        if not player_name:
+            print("[PlayAloneScreen] Start clicked with no name.")
+            return
+
         self.controller.player_name = player_name
-        print(f"Starting game as '{player_name}'")
+        print(f"[PlayAloneScreen] Starting game as '{player_name}'")
 
-        # Notify Jetson of player name (Jetson will pair name with time)
         self.mqtt_client.client.publish("jetson/player_name", player_name)
-
-        # Transition to game
         self.mqtt_client.client.publish("jetson/command", "StartGame")
+        self.controller.show_frame("PlayAloneStartScreen")
 
     def on_button_click_back(self):
+        print("[PlayAloneScreen] Going back to human mode screen.")
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("MainScreen")
+        self.controller.show_frame("HumanScreen")
