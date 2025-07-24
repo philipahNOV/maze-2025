@@ -82,10 +82,14 @@ class LoggingThread(threading.Thread):
             action = [input_x, input_y]
 
             # Combined warm-up check
-            if self.steps_taken < self.warmup_steps or self.current_waypoint is None or self.current_waypoint <= 0:
+            if self.steps_taken < self.warmup_steps or self.current_waypoint is None:
                 reward, done = 0.0, False
+                if self.steps_taken % 100 == 0:  # Debug every 5 seconds
+                    print(f"[Logger] Warmup: steps={self.steps_taken}/{self.warmup_steps}, waypoint={self.current_waypoint}")
             else:
                 reward, done = self.calculate_reward()
+                if self.steps_taken % 100 == 0:  # Debug every 5 seconds
+                    print(f"[Logger] Active: waypoint={self.current_waypoint}/{len(self.path)-1}, reward={reward:.2f}, done={done}")
 
             if self.prev_state is not None and self.prev_action is not None and state is not None:
                 self.episode_reward += reward
@@ -149,10 +153,15 @@ class LoggingThread(threading.Thread):
     def set_waypoint(self, waypoint):
         # waypoint is already an index from pathFollower.get_current_waypoint()
         if isinstance(waypoint, int) and 0 <= waypoint < len(self.path):
+            if waypoint != self.current_waypoint:
+                print(f"[Logger] Waypoint updated: {self.current_waypoint} -> {waypoint}")
             self.current_waypoint = waypoint
         else:
             # If it's a coordinate tuple, find its index
+            old_waypoint = self.current_waypoint
             self.current_waypoint = self.path.index(waypoint) if waypoint in self.path else None
+            if self.current_waypoint != old_waypoint:
+                print(f"[Logger] Waypoint updated (coord): {old_waypoint} -> {self.current_waypoint}")
 
     def distance_from_goal(self):
         if not self.path or len(self.path) < 2 or self.ball_position is None:
