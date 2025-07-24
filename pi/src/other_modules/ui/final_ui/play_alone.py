@@ -55,10 +55,9 @@ class PlayAloneScreen(tk.Frame):
         )
         self.name_entry_display.place(x=270, y=160, height=50)
 
-        # Keyboard layout
         keys = [
-            list("ABCDEFGHIJKL"),
-            list("MNOPQRSTUVWXYZ"),
+            list("ABCDEFGHIJKLMNO"),
+            list("PQRSTUVWXYZÆØÅ"),
             ["SPACE", "BACK", "CLEAR"]
         ]
 
@@ -75,7 +74,7 @@ class PlayAloneScreen(tk.Frame):
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=130 + col_idx * 60, y=240 + row_idx * 65)
+                btn.place(x=130 + col_idx * 70, y=240 + row_idx * 65)
 
         # Start button
         self.start_button = tk.Button(
