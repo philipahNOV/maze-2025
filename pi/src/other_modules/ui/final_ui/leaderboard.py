@@ -16,7 +16,7 @@ class LeaderboardScreen(tk.Frame):
         self.mqtt_client = mqtt_client
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.leaderboard_dir = os.path.abspath(
-            os.path.join(os.getcwd(), "..", "..", "..", "jetson", "src", "leaderboard_data")
+            os.path.join(os.getcwd(), "..", "..", "jetson", "src", "leaderboard_data")
         )
 
         self.create_widgets()
