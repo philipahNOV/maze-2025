@@ -89,7 +89,7 @@ class PlayAloneStartScreen(tk.Frame):
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("MainScreen")
+        self.controller.show_frame("HumanScreen")
 
     def add_essential_buttons(self):
         exit_btn = tk.Button(
