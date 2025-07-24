@@ -24,7 +24,6 @@ class LeaderboardScreen(tk.Frame):
     def create_widgets(self):
         self.update()
 
-        # Background
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
@@ -37,7 +36,6 @@ class LeaderboardScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=30)
 
-        # Treeview table
         columns = ("Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
@@ -47,15 +45,13 @@ class LeaderboardScreen(tk.Frame):
 
         self.tree.place(x=100, y=100)
 
-        # Scrollbar
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
         scrollbar.place(x=900, y=100, height=325)
 
-        # Toggle Maze Button
         self.maze_toggle_button = tk.Button(
             self,
-            text="Viewing Maze 1",
+            text="Switch maze",
             font=("Jockey One", 20),
             fg="white",
             bg="#60666C",
@@ -65,7 +61,6 @@ class LeaderboardScreen(tk.Frame):
         )
         self.maze_toggle_button.place(x=380, y=460, width=260, height=50)
 
-        # Back Button
         self.back_button = tk.Button(
             self,
             text="BACK",
@@ -84,7 +79,7 @@ class LeaderboardScreen(tk.Frame):
         current_id = self.controller.config.get("maze_id", 1)
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
-        self.maze_toggle_button.config(text=f"Viewing Maze {new_id}")
+        self.maze_toggle_button.config(text=f"Switch maze")
         self.load_leaderboard(new_id)
 
     def load_leaderboard(self, maze_id: int):
