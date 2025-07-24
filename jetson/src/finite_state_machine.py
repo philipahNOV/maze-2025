@@ -212,9 +212,6 @@ class HMIController:
                 self.disco_thread.start()
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)
-                    time.sleep(0.2)
-                    self.arduino_thread.send_elevator(0)
-                    #self.controller.elevator_state = "up"
         
         # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
@@ -249,8 +246,6 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)
-                    time.sleep(0.2)
-                    self.arduino_thread.send_elevator(0)
                     #self.controller.elevator_state = "up"
                 if self.disco_thread is not None:
                     self.disco_thread.stop()
