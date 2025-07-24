@@ -137,20 +137,25 @@ class LoggingThread(threading.Thread):
             progress = np.clip(progress, 0, 1)
             reward += progress * 10.0
 
-        if self.current_waypoint != self.prev_waypoint:
+        if (
+            self.current_waypoint is not None
+            and self.prev_waypoint is not None
+        ):
+
             if self.current_waypoint > self.prev_waypoint:
                 delta = self.current_waypoint - self.prev_waypoint
 
                 if delta > 1:
-                    reward -= 3.0  # skipped waypoints penalty
-                reward += 5.0 * delta  # encourage multi-step forward progress
+                    reward -= 3.0  # skipped waypoint penalty
+
+                reward += 5.0 * delta
 
                 if self.current_waypoint == len(self.path) - 1:
-                    reward += 100.0  # terminal bonus
+                    reward += 100.0
                     return reward, True
 
             elif self.current_waypoint < self.prev_waypoint:
-                reward -= 10.0  # penalty for going backward
+                reward -= 10.0  # backward penalty
 
             self.prev_waypoint = self.current_waypoint
 
