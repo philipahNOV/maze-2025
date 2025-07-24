@@ -54,13 +54,13 @@ class JoystickController:
 
                 self.arduino.send_speed(vel_x, vel_y)
 
-                elevator_down = joystick.get_button(3)
-                if elevator_up:
-                    self.arduino.send_elevator(1)
-
-                elevator_up = joystick.get_button(0)
+                elevator_down = joystick.get_button(0)
                 if elevator_down:
                     self.arduino.send_elevator(-1)
+
+                elevator_up = joystick.get_button(3)
+                if elevator_up:
+                    self.arduino.send_elevator(1)
 
                 time.sleep(max(0, interval - (time.time() - loop_start)))
 
