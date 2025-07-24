@@ -85,25 +85,30 @@ class LeaderboardScreen(tk.Frame):
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
         self.maze_toggle_button.config(text=f"Viewing Maze {new_id}")
-        print(f"[LeaderboardScreen] Switched to maze {new_id}")
         self.load_leaderboard(new_id)
 
     def load_leaderboard(self, maze_id: int):
-        self.tree.delete(*self.tree.get_children())  # Clear existing rows
+        self.tree.delete(*self.tree.get_children())
 
         file_path = os.path.join(self.leaderboard_dir, f"leaderboard_maze{maze_id}.csv")
         if not os.path.exists(file_path):
-            print(f"[LeaderboardScreen] File not found: {file_path}")
             return
-        
-        print(f"[LeaderboardScreen] Reading from: {file_path}")
 
+        entries = []
         with open(file_path, newline='') as csvfile:
             reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
                 if len(row) == 4:
                     name, time_str, date_str, maze_str = row
-                    self.tree.insert("", "end", values=(name, time_str, date_str, maze_str))
+                    try:
+                        entries.append((name, float(time_str), date_str, maze_str))
+                    except ValueError:
+                        continue
+
+        entries.sort(key=lambda x: x[1])
+
+        for row in entries:
+            self.tree.insert("", "end", values=row)
 
     def show(self):
         maze_id = self.controller.config.get("maze_id", 1)
