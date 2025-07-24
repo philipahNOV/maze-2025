@@ -324,8 +324,11 @@ class HMIController:
             
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
+                self.path = None
+                self.image_controller.set_new_path(None)
                 self.tracking_service.stop_tracker()
                 self.arduino_thread.send_speed(0, 0)
+                self._start_joystick_control()
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
         
         elif self.state == SystemState.PLAYALONE_START:

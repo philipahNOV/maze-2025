@@ -70,7 +70,7 @@ class PlayAloneScreen(tk.Frame):
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=40 + col_idx * 70, y=240 + row_idx * 85)
+                btn.place(x=20 + col_idx * 70, y=240 + row_idx * 85)
 
         self.start_button = tk.Button(
             self,
@@ -132,6 +132,8 @@ class PlayAloneScreen(tk.Frame):
         self.controller.show_frame("PlayAloneStartScreen")
 
     def on_button_click_back(self):
-        print("[PlayAloneScreen] Going back to human mode screen.")
+        self.name = ""
+        self.name_entry_display.config(text=self.name)
+        self.start_button.config(state="disabled", bg="#A0A0A0")
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
