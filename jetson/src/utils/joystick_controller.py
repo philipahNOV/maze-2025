@@ -12,6 +12,10 @@ class JoystickController:
         self.max_raw = 32767
         self.update_rate_hz = 120
 
+        self.elevator_state = 1  # start DOWN or UP, whichever is your default
+        self.prev_button_state = 0
+
+
     def _apply_deadzone(func):
         @wraps(func)
         def wrapper(self, value):
@@ -55,6 +59,7 @@ class JoystickController:
                 self.arduino.send_speed(vel_x, vel_y)
 
                 button = joystick.get_button(0)
+
                 if button and not self.prev_button_state:
                     self.elevator_state *= -1
                     self.arduino.send_elevator(self.elevator_state)
