@@ -117,4 +117,4 @@ class LeaderboardScreen(tk.Frame):
 
     def on_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("MainScreen")
+        self.controller.show_frame("HumanScreen")
