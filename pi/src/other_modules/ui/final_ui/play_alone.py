@@ -70,7 +70,7 @@ class PlayAloneScreen(tk.Frame):
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=60 + col_idx * 70, y=240 + row_idx * 85)
+                btn.place(x=40 + col_idx * 70, y=240 + row_idx * 85)
 
         self.start_button = tk.Button(
             self,

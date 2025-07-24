@@ -9,7 +9,7 @@ def get_leaderboard_file(maze_id: int):
 
 def add_score(name: str, time: float, maze_id: int):
     filepath = get_leaderboard_file(maze_id)
-    date_str = datetime.now().strftime("%Y-%m-%d")
+    date_str = datetime.now().strftime("%d-%m-%Y")
     os.makedirs(LEADERBOARD_FOLDER, exist_ok=True)
     
     with open(filepath, mode="a", newline="") as f:
@@ -36,4 +36,4 @@ def read_leaderboard(maze_id: int):
                     })
                 except ValueError:
                     continue
-        return sorted(entries, key=lambda x: x["time"])  # fastest first
+        return sorted(entries, key=lambda x: x["time"])

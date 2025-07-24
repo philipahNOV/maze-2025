@@ -81,7 +81,7 @@ class PlayAloneStartScreen(tk.Frame):
         self.image = ImageTk.PhotoImage(img_scaled)
         self.canvas.itemconfig(self.image_id, image=self.image)
 
-        self.after(200, self.update_image)  # Refresh every 200ms
+        self.after(200, self.update_image)
 
     def update_timer(self, time_sec: float):
         """Call this from MQTT or controller to update the timer display"""
@@ -89,7 +89,7 @@ class PlayAloneStartScreen(tk.Frame):
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
-        self.controller.show_frame("MainScreen")
+        self.controller.show_frame("HumanScreen")
 
     def add_essential_buttons(self):
         exit_btn = tk.Button(
