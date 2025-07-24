@@ -15,7 +15,7 @@ class PlayAloneStartScreen(tk.Frame):
 
         self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.8)
         self.true_width = controller.config['camera'].get('maze_width', 730)
-        self.true_height = controller.config['camera'].get('maze_height', 710)
+        self.true_height = controller.config['camera'].get('maze_height', 640)
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.background_label = tk.Label(self, image=self.background_image)
@@ -31,7 +31,7 @@ class PlayAloneStartScreen(tk.Frame):
             font=("Jockey One", 18),
             bg="#D9D9D9",
             fg="#1A1A1A"
-        ).place(x=200, y=30)
+        ).place(x=200, y=20)
 
         self.canvas = tk.Canvas(self, width=int(self.true_width * self.scale_ratio),
                                 height=int(self.true_height * self.scale_ratio))
@@ -40,15 +40,6 @@ class PlayAloneStartScreen(tk.Frame):
         placeholder = ImageTk.PhotoImage(Image.new("RGB", (1, 1), (0, 0, 0)))
         self.image = placeholder
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
-
-        self.timer_label = tk.Label(
-            self,
-            text="00.00s",
-            font=("Jockey One", 24),
-            fg="#1A1A1A",
-            bg="#D9D9D9"
-        )
-        self.timer_label.place(x=850, y=120)
 
         self.back_button = tk.Button(
             self,
@@ -83,9 +74,6 @@ class PlayAloneStartScreen(tk.Frame):
 
         self.after(200, self.update_image)
 
-    def update_timer(self, time_sec: float):
-        """Call this from MQTT or controller to update the timer display"""
-        self.timer_label.config(text=f"{time_sec:.2f}s")
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -130,9 +118,6 @@ class PlayAloneStartScreen(tk.Frame):
     def on_button_click_restart(self):
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
-
-    def show(self):
-        self.timer_label.config(text="00.00s")
 
     def hide(self):
         self.pack_forget()
