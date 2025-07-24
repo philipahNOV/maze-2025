@@ -95,18 +95,42 @@ class ArduinoConnection(threading.Thread):
             speed1 (int): The speed for motor 1.
             speed2 (int): The speed for motor 2.
         """
-        self._send_command(ArduinoState.CONTROL, int(speed1), int(speed2))
+        # Store previous speeds to avoid sending duplicate commands
+        if not hasattr(self, '_last_speed1'):
+            self._last_speed1 = None
+            self._last_speed2 = None
+        
+        # Only send if speeds have changed significantly (reduce buffer spam)
+        if (self._last_speed1 != speed1 or self._last_speed2 != speed2):
+            self._send_command(ArduinoState.CONTROL, int(speed1), int(speed2))
+            self._last_speed1 = speed1
+            self._last_speed2 = speed2
 
     def send_color(self, r: int, g: int, b: int, index: int = -1):
         """
         Sends target rgb value and "SET_COLOR" state to the Arduino.
+        Includes optimization to reduce unnecessary commands.
 
         Args:
             r (int): The red component of the color.
             g (int): The green component of the color.
             b (int): The blue component of the color.
         """
-        self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b), int(index))
+        # Store previous color values to avoid sending duplicate commands
+        if not hasattr(self, '_last_color_r'):
+            self._last_color_r = None
+            self._last_color_g = None
+            self._last_color_b = None
+            self._last_color_index = None
+        
+        # Only send if color has changed
+        if (self._last_color_r != r or self._last_color_g != g or 
+            self._last_color_b != b or self._last_color_index != index):
+            self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b), int(index))
+            self._last_color_r = r
+            self._last_color_g = g
+            self._last_color_b = b
+            self._last_color_index = index
 
     def run(self):
         """
