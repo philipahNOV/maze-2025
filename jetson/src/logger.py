@@ -68,6 +68,9 @@ class LoggingThread(threading.Thread):
 
         self.warmup_steps = 100  # ~5 seconds at 20Hz
         self.steps_taken = 0
+        self.current_waypoint = None
+        self.prev_waypoint = None
+
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -155,7 +158,14 @@ class LoggingThread(threading.Thread):
         return reward, False
 
     def set_waypoint(self, waypoint):
-        self.current_waypoint = self.path.index(waypoint) if waypoint in self.path else None
+        if self.path is None or not self.path:
+            self.current_waypoint = None
+            return
+
+        try:
+            self.current_waypoint = self.path.index(waypoint)
+        except ValueError:
+            self.current_waypoint = None
 
     def distance_from_goal(self):
         if not self.path or len(self.path) < 2 or self.ball_position is None:
