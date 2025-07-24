@@ -164,4 +164,5 @@ class HumanScreen(tk.Frame):
         self.controller.show_frame("PracticeScreen")
 
     def show_leaderboard(self):
-        print("[HumanScreen] Leaderboard requested")
+        self.mqtt_client.client.publish("jetson/command", "Leaderboard")
+        self.controller.show_frame("LeaderboardScreen")
