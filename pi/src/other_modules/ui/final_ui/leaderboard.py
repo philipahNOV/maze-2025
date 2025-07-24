@@ -95,9 +95,11 @@ class LeaderboardScreen(tk.Frame):
         if not os.path.exists(file_path):
             print(f"[LeaderboardScreen] File not found: {file_path}")
             return
+        
+        print(f"[LeaderboardScreen] Reading from: {file_path}")
 
         with open(file_path, newline='') as csvfile:
-            reader = csv.reader(csvfile)
+            reader = csv.reader(csvfile, delimiter=',')
             for row in reader:
                 if len(row) == 4:
                     name, time_str, date_str, maze_str = row
