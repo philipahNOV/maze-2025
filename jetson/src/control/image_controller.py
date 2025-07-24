@@ -1,12 +1,12 @@
-from paths.path_following import PathFollower
-from paths.path_following_lookahead import PathFollower as PathFollowerLookahead
+from control.paths.path_following import PathFollower
+from control.paths.path_following_lookahead import PathFollower as PathFollowerLookahead
 import numpy as np
 import cv2
 import time
 import base64
 from mqtt.mqtt_client import MQTTClientJetson
 import threading
-from astar.draw_path import draw_path
+from control.astar.draw_path import draw_path
 
 class ImageController:
     """
