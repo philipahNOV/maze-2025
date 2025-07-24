@@ -315,7 +315,7 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
             
-            elif cmd == "Start":
+            elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
                 self.tracking_service.stop_tracker()
                 self.arduino_thread.send_speed(0, 0)

@@ -74,7 +74,7 @@ class PlayAloneScreen(tk.Frame):
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=130 + col_idx * 70, y=240 + row_idx * 65)
+                btn.place(x=110 + col_idx * 70, y=240 + row_idx * 65)
 
         # Start button
         self.start_button = tk.Button(
@@ -95,7 +95,7 @@ class PlayAloneScreen(tk.Frame):
         # Back button
         self.back_button = tk.Button(
             self,
-            text="←",
+            text="BACK",
             font=("Jockey One", 30),
             fg="white",
             bg="#EE3229",
@@ -105,7 +105,7 @@ class PlayAloneScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=844, y=10, width=50, height=50)
+        self.back_button.place(x=967, y=10, width=50, height=50)
 
     def key_press(self, key):
         if key == "BACK":
