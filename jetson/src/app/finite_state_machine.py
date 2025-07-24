@@ -10,7 +10,7 @@ from control.image_controller import ImageSenderThread
 from control.joystick_controller import JoystickController
 import control.position_controller as position_controller
 from utils.utility_functions import is_in_elevator, remove_withing_elevator
-import run_controller_main
+import app.run_controller_main as run_controller_main
 import threading
 import os
 import sys
