@@ -45,10 +45,6 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
-    print(f"[DEBUG] path_array length: {len(path_array)}")
-    print(f"[DEBUG] First 3 waypoints: {path_array[:3]}")
-
-
     logger = None
     logger = LoggingThread(path_array)
     logger.start()
@@ -73,14 +69,6 @@ def main(tracker: TrackerService,
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                if logger is not None and ball_pos is not None:
-                    logger.update_state(
-                        ball_position=ball_pos,
-                        orientation=tracker.get_orientation(),
-                        ball_velocity=controller.ball_velocity,
-                        motor_input=controller.get_last_command()
-                    )
-                    logger.set_waypoint(pathFollower.get_current_waypoint())
 
                 if blinker is not None:
                     blinker.stop()
@@ -101,16 +89,8 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
             else:
                 ball_pos = smoother.update(ball_pos)
-                if logger is not None:
-                    logger.update_state(
-                        ball_position=None,
-                        orientation=None,
-                        ball_velocity=None,
-                        motor_input=None
-                    )
 
                 if blinker is None:
-                    # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
                     blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
                     blinker.start()

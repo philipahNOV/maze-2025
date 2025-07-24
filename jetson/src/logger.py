@@ -5,7 +5,6 @@ import threading
 import time
 import numpy as np
 from camera.tracker_service import TrackerService
-import utils.low_pass_filter
 
 class OfflineLogger:
     def __init__(self, save_path="ORL/rl_data", episode_limit=100):
@@ -15,7 +14,6 @@ class OfflineLogger:
         self.save_path = save_path
         os.makedirs(save_path, exist_ok=True)
 
-        # Detect existing episode files to avoid overwriting
         existing_files = [f for f in os.listdir(save_path) if f.startswith("episode_") and f.endswith(".json")]
         existing_indices = [
             int(f.split("_")[1].split(".")[0])
@@ -68,9 +66,6 @@ class LoggingThread(threading.Thread):
 
         self.warmup_steps = 100  # ~5 seconds at 20Hz
         self.steps_taken = 0
-        self.current_waypoint = None
-        self.prev_waypoint = None
-
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -86,9 +81,8 @@ class LoggingThread(threading.Thread):
             state = [x, y, vel_x, vel_y, theta_x, theta_y]
             action = [input_x, input_y]
 
-            if ( self.steps_taken < self.warmup_steps
-                    or self.current_waypoint is None
-                    or self.current_waypoint <= 0 ):
+            # Combined warm-up check
+            if self.steps_taken < self.warmup_steps or self.current_waypoint <= 0:
                 reward, done = 0.0, False
             else:
                 reward, done = self.calculate_reward()
@@ -105,7 +99,6 @@ class LoggingThread(threading.Thread):
                 if done:
                     print(f"[LoggingThread] Episode complete. Total reward: {self.episode_reward}")
                     self.stop()
-                    break
 
             self.prev_state = state
             self.prev_action = action
@@ -126,51 +119,35 @@ class LoggingThread(threading.Thread):
         self.motor_input = motor_input
 
     def calculate_reward(self):
+        reward = 0
+        progress = 0
+        if self.ball_position is not None:
+            path_length = self.compute_total_path_length()
+            if path_length > 0:
+                progress = (path_length - self.distance_from_goal()) / path_length
+                progress = np.clip(progress, 0, 1)
+        reward += progress * 20
+
         if self.ball_position is None:
-            return -100.0, True
+            reward -= 100
 
-        reward = 0.0
-
-        path_length = self.compute_total_path_length()
-        if path_length > 0:
-            progress = (path_length - self.distance_from_goal()) / path_length
-            progress = np.clip(progress, 0, 1)
-            reward += progress * 10.0
-
-        if (
-            self.current_waypoint is not None
-            and self.prev_waypoint is not None
-        ):
-
+        if self.current_waypoint != self.prev_waypoint:
             if self.current_waypoint > self.prev_waypoint:
-                delta = self.current_waypoint - self.prev_waypoint
-
-                if delta > 1:
-                    reward -= 3.0  # skipped waypoint penalty
-
-                reward += 5.0 * delta
-
+                if abs(self.current_waypoint - self.prev_waypoint) > 1:
+                    reward -= 3
                 if self.current_waypoint == len(self.path) - 1:
-                    reward += 100.0
+                    reward += 100
                     return reward, True
-
+                else:
+                    reward += 5
             elif self.current_waypoint < self.prev_waypoint:
-                reward -= 10.0  # backward penalty
-
+                reward -= 10
             self.prev_waypoint = self.current_waypoint
 
-        reward = np.clip(reward, -100.0, 100.0)  # avoid extreme values
         return reward, False
 
     def set_waypoint(self, waypoint):
-        if self.path is None or not self.path:
-            self.current_waypoint = None
-            return
-
-        try:
-            self.current_waypoint = self.path.index(waypoint)
-        except ValueError:
-            self.current_waypoint = None
+        self.current_waypoint = self.path.index(waypoint) if waypoint in self.path else None
 
     def distance_from_goal(self):
         if not self.path or len(self.path) < 2 or self.ball_position is None:
