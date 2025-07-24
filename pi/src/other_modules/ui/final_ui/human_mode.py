@@ -34,14 +34,13 @@ class HumanScreen(tk.Frame):
         self.controller.on_close()
 
     def create_widgets(self):
-        self.update()  # ensure layout updates
+        self.update()
 
         if self.background_image:
             self.bg_label = tk.Label(self, image=self.background_image)
             self.bg_label.image = self.background_image  # keep reference
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # --- Top Buttons ---
         self.exit_button = tk.Button(
             self,
             text="✖",
@@ -74,7 +73,7 @@ class HumanScreen(tk.Frame):
 
         self.back_button = tk.Button(
             self,
-            text="←",
+            text="BACK",
             font=("Jockey One", 28),
             fg="white",
             bg="#EE3229",
@@ -85,9 +84,8 @@ class HumanScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=844, y=10, width=50, height=50)
+        self.back_button.place(x=734, y=10, width=150, height=50)
 
-        # --- Title ---
         self.title = tk.Label(
             self,
             text="HUMAN MODE",
@@ -97,10 +95,9 @@ class HumanScreen(tk.Frame):
         )
         self.title.place(x=320, y=100)
 
-        # --- Main Buttons (Center) ---
         self.play_ai_button = tk.Button(
             self,
-            text="PLAY VS AI",
+            text="PLAY VS ROBOT",
             font=("Jockey One", 25),
             fg="white",
             borderwidth=0,
@@ -112,9 +109,9 @@ class HumanScreen(tk.Frame):
         )
         self.play_ai_button.place(x=391, y=235, width=243, height=74)
 
-        self.play_friend_button = tk.Button(
+        self.play_alone_button = tk.Button(
             self,
-            text="PLAY VS FRIEND",
+            text="PLAY ALONE",
             font=("Jockey One", 25),
             fg="white",
             borderwidth=0,
@@ -122,9 +119,9 @@ class HumanScreen(tk.Frame):
             background="#60666C",
             activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
-            command=self.play_vs_friend
+            command=self.play_alone
         )
-        self.play_friend_button.place(x=391, y=320, width=243, height=74)
+        self.play_alone_button.place(x=391, y=320, width=243, height=74)
 
         self.practice_button = tk.Button(
             self,
@@ -158,9 +155,9 @@ class HumanScreen(tk.Frame):
     def play_vs_ai(self):
         print("[HumanScreen] Play vs AI selected")
 
-    def play_vs_friend(self):
-        self.mqtt_client.client.publish("jetson/command", "PlayVsFriend")
-        self.controller.show_frame("PlayVsFriendScreen")
+    def play_alone(self):
+        self.mqtt_client.client.publish("jetson/command", "PlayAlone")
+        self.controller.show_frame("PlayAloneScreen")
 
     def practice_mode(self):
         self.mqtt_client.client.publish("jetson/command", "Practice")

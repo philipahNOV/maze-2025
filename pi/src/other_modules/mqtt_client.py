@@ -41,7 +41,6 @@ class MQTTClientPi(threading.Thread):
                 self.client.connect(self.broker_address, self.port, keepalive=60)
                 self.client.loop_start()
                 print("[MQTT] Connected. Waiting for on_connect callback...")
-                # Do not set self.connected = True here!
                 return  # Let on_connect() set it
             except Exception as e:
                 print(f"[MQTT] Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
@@ -70,7 +69,6 @@ class MQTTClientPi(threading.Thread):
             #self.connect_to_broker()
 
     def on_message(self, client, userdata, msg):
-        # Delegate to the appropriate handler based on the topic
         #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
             pass
@@ -102,7 +100,7 @@ class MQTTClientPi(threading.Thread):
             except Exception as e:
                 print(f"[ERROR] Failed to decode image: {e}")
         else:
-            print(f"Received message on unhandled topic: {msg.topic}")  # Debugging line
+            print(f"Received message on unhandled topic: {msg.topic}")
 
     def handshake(self, topic, message):
         self.client.publish(topic, message, 0)
@@ -116,7 +114,6 @@ class MQTTClientPi(threading.Thread):
                 self.handshake("handshake/request", "pi")
                 time.sleep(5)
         
-        # Start the handshake loop in a separate thread
         threading.Thread(target=handshake_loop, daemon=True).start()
     
     def shut_down(self):

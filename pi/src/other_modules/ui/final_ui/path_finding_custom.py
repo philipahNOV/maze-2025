@@ -182,13 +182,13 @@ class CustomPathScreen(tk.Frame):
             text="✖",
             font=("Jockey One", 30),
             fg="white",
-            bg="#EE3229",              # Red exit button
+            bg="#EE3229",
             activebackground="#B82F27",
             activeforeground="#DFDFDF",
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.on_button_click_exit  # or self.controller.destroy
+            command=self.on_button_click_exit
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
 

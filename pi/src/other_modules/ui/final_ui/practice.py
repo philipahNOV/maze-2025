@@ -1,6 +1,8 @@
 import tkinter as tk
 from PIL import Image, ImageTk
 from typing import TYPE_CHECKING
+import os
+
 if TYPE_CHECKING:
     from main import MainApp
 
@@ -10,31 +12,20 @@ class PracticeScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
+        self.xbox_controller_image_path = os.path.join(self.controller.image_path, 'xbox_controller.png')
+        self.controller_image = ImageTk.PhotoImage(Image.open(self.xbox_controller_image_path))
+
         self.create_widgets()
 
     def create_widgets(self):
         self.update()
+
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        tk.Label(
-            self,
-            text="PRACTICE MODE",
-            font=("Jockey One", 40),
-            bg="#D9D9D9",
-            fg="#1A1A1A"
-        ).place(x=320, y=50)
-
-        tk.Label(
-            self,
-            text="Move the ball using the joystick\nFreely explore the maze.",
-            font=("Jockey One", 22),
-            justify="center",
-            bg="#D9D9D9",
-            fg="#333"
-        ).place(x=270, y=200)
+        controller_label = tk.Label(self, image=self.controller_image, bg="#D9D9D9")
+        controller_label.image = self.controller_image  # anti garbage collection
+        controller_label.place(relx=0.52, rely=0.5, anchor="center")
 
         tk.Button(
             self,

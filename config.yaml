@@ -37,7 +37,7 @@ tracking:
   hsv_window_size: 80
   hsv_min_contour_area: 150  # px^2
   smoothing_alpha: 0.5       # smoothing factor for exponential filter
-  hsv_fail_threshold: 40     # frames to wait before fallback to YOLO
+  hsv_fail_threshold: 60     # frames to wait before fallback to YOLO
   yolo_cooldown_period: 20   # frames before allowing YOLO recheck
 
 controller:
@@ -54,8 +54,8 @@ controller:
     kp_y: 0.00003
     kd_x: 0.00018
     kd_y: 0.00018
-    ki_x: 0.0005
-    ki_y: 0.0005
+    ki_x: 0.0007
+    ki_y: 0.0007
     position_tolerance: 32        # px
     velocity_tolerance: 20        # px/s
     feedforward_t: 5
