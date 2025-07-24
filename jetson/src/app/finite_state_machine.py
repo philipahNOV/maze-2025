@@ -1,15 +1,15 @@
 import cmd
 from enum import Enum, auto
 import time
-from mqtt_client import MQTTClientJetson
+from mqtt.mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-from camera.tracker_service import TrackerService
-import utility_threads
-from image_controller import ImageController
-from image_controller import ImageSenderThread
-from utils.joystick_controller import JoystickController
-import position_controller
-from utility_functions import is_in_elevator, remove_withing_elevator
+from tracking.tracker_service import TrackerService
+import utils.utility_threads as utility_threads
+from control.image_controller import ImageController
+from control.image_controller import ImageSenderThread
+from control.joystick_controller import JoystickController
+import control.position_controller as position_controller
+from utils.utility_functions import is_in_elevator, remove_withing_elevator
 import run_controller_main
 import threading
 import os

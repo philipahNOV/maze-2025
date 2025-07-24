@@ -1,13 +1,13 @@
 import time
-from mqtt_client import MQTTClientJetson
-import position_controller
+from mqtt.mqtt_client import MQTTClientJetson
+import control.position_controller as position_controller
 import utils.low_pass_filter
-import path_following
-import path_following_lookahead
-import utility_threads
-from image_controller import ImageController
-from image_controller import ImageSenderThread
-from camera.tracker_service import TrackerService
+import control.paths.path_following as path_following
+import control.paths.path_following_lookahead as path_following_lookahead
+import utils.utility_threads as utility_threads
+from control.image_controller import ImageController
+from control.image_controller import ImageSenderThread
+from tracking.tracker_service import TrackerService
 from logger import LoggingThread
 
 def main(tracker: TrackerService,

@@ -1,9 +1,9 @@
-from mqtt_client import MQTTClientJetson
+from mqtt.mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
-import position_controller
-from camera.tracker_service import TrackerService
+import control.position_controller as position_controller
+from tracking.tracker_service import TrackerService
 import time
-from finite_state_machine import HMIController
+from app.finite_state_machine import HMIController
 import yaml
 from pathlib import Path
 

@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from camera.tracker_service import TrackerService
+from tracking.tracker_service import TrackerService
 import arduino_connection
 from logger import LoggingThread
 

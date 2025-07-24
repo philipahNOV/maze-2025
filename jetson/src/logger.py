@@ -4,10 +4,9 @@ import os
 import threading
 import time
 import numpy as np
-from camera.tracker_service import TrackerService
 
 class OfflineLogger:
-    def __init__(self, save_path="rl_data", episode_limit=100):
+    def __init__(self, save_path="data/rl_data", episode_limit=100):
         self.episode_limit = episode_limit
         self.current_episode = []
         self.episodes = []
