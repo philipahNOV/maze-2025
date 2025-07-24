@@ -137,3 +137,9 @@ class PlayAloneScreen(tk.Frame):
         self.start_button.config(state="disabled", bg="#A0A0A0")
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
+
+    def show(self):
+        self.focus_set()
+        self.name = ""
+        self.name_entry_display.config(text=self.name)
+        self.start_button.config(state="disabled", bg="#A0A0A0")

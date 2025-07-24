@@ -119,5 +119,9 @@ class PlayAloneStartScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
+    def show(self):
+        self.focus_set()
+        self.update_idletasks()
+
     def hide(self):
         self.pack_forget()

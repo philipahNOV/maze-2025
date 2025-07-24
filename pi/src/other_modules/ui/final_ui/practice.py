@@ -45,6 +45,7 @@ class PracticeScreen(tk.Frame):
         self.controller.show_frame("HumanScreen")
 
     def show(self):
+        self.focus_set()
         self.update_idletasks()
 
     def hide(self):

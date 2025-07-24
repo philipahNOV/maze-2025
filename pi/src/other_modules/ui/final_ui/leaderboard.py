@@ -106,6 +106,7 @@ class LeaderboardScreen(tk.Frame):
             self.tree.insert("", "end", values=row)
 
     def show(self):
+        self.focus_set()
         maze_id = self.controller.config.get("maze_id", 1)
         self.maze_toggle_button.config(text=f"Viewing Maze {maze_id}")
         self.load_leaderboard(maze_id)

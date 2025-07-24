@@ -166,3 +166,7 @@ class HumanScreen(tk.Frame):
     def show_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "Leaderboard")
         self.controller.show_frame("LeaderboardScreen")
+    
+    def show(self):
+        self.focus_set()
+        self.update_idletasks()
