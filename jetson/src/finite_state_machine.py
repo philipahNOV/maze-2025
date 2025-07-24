@@ -32,6 +32,7 @@ class SystemState(Enum):
     PRACTICE = auto()
     PLAYALONE = auto()
     PLAYALONE_START = auto()
+    LEADERBOARD = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
