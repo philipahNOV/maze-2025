@@ -576,38 +576,29 @@ class HMIController:
             
             elif cmd == "RestartPlayAlone":
                 print("[PLAYALONE] Restart requested - completely resetting image system")
-                
-                # Clear Pi's image buffer first
                 self.mqtt_client.clear_image_buffer()
                 
-                # Stop and cleanup all tracking
                 self.tracking_service.stop_tracker()
                 
-                # Stop current image thread
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
                 
-                # Reset all path data
                 self.path = None
                 self.path_lookahead = None
                 self.image_controller.set_new_path(None)
-                
-                # Clear any custom goals
                 self.custom_goal = None
                 
-                # Wait a moment for cleanup
                 time.sleep(0.5)
                 
-                # Restart tracking service fresh
                 print("[PLAYALONE] Restarting tracking service...")
-                
-                # Create fresh image thread
+                self.tracking_service.start_tracker()
+                self.arduino_thread.send_speed(0,0)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
                 
-                print("[PLAYALONE] Image system completely reset")
+                print("[PLAYALONE] Image system completely reset with tracking active")
             
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
