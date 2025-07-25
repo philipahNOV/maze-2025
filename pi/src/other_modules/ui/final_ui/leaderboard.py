@@ -80,6 +80,11 @@ class LeaderboardScreen(tk.Frame):
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
         self.maze_toggle_button.config(text=f"Switch maze")
+        
+        # Request fresh leaderboard data from Jetson for the new maze
+        self.mqtt_client.client.publish("jetson/command", f"SendLeaderboard:{new_id}")
+        
+        # Load local data as fallback while waiting for MQTT data
         self.load_leaderboard(new_id)
 
     def load_leaderboard(self, maze_id: int):
@@ -104,6 +109,40 @@ class LeaderboardScreen(tk.Frame):
 
         for row in entries:
             self.tree.insert("", "end", values=row)
+
+    def update_leaderboard_data(self, maze_id: int, csv_data: str):
+        """Update leaderboard with real-time data from MQTT"""
+        try:
+            # Check if this is the currently displayed maze
+            current_maze_id = self.controller.config.get("maze_id", 1)
+            if maze_id != current_maze_id:
+                return  # Only update if it's the currently selected maze
+            
+            # Clear current data
+            self.tree.delete(*self.tree.get_children())
+            
+            # Parse CSV data
+            entries = []
+            if csv_data.strip():  # Only process if there's actual data
+                lines = csv_data.strip().split('\n')
+                for line in lines:
+                    if line.strip():
+                        parts = line.split(',')
+                        if len(parts) == 4:
+                            name, time_str, date_str, maze_str = parts
+                            try:
+                                entries.append((name, float(time_str), date_str, maze_str))
+                            except ValueError:
+                                continue
+            
+            # Sort by time and populate tree
+            entries.sort(key=lambda x: x[1])
+            for row in entries:
+                self.tree.insert("", "end", values=row)
+                
+            print(f"[LEADERBOARD UI] Updated display with {len(entries)} entries for maze {maze_id}")
+        except Exception as e:
+            print(f"[LEADERBOARD UI] Failed to update leaderboard data: {e}")
 
     def show(self):
         self.focus_set()

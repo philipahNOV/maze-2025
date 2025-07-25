@@ -66,7 +66,7 @@ class PlayAloneScreen(tk.Frame):
                     bg="#444",
                     fg="white",
                     activebackground="#666",
-                    width=4,
+                    width=3,
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )

@@ -62,6 +62,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("jetson/path")
             self.client.subscribe("pi/info")
             self.client.subscribe("pi/tracking_status")
+            self.client.subscribe("pi/leaderboard_data/+")  # Subscribe to leaderboard data for all mazes
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
@@ -144,6 +145,19 @@ class MQTTClientPi(threading.Thread):
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=True)
                     elif payload == "ball_lost":
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+        elif msg.topic.startswith("pi/leaderboard_data/"):
+            # Handle leaderboard data updates
+            try:
+                maze_id = int(msg.topic.split("/")[-1])
+                csv_data = msg.payload.decode()
+                
+                if self.app and hasattr(self.app, 'frames'):
+                    leaderboard_frame = self.app.frames.get('LeaderboardScreen')
+                    if leaderboard_frame:
+                        leaderboard_frame.update_leaderboard_data(maze_id, csv_data)
+                        print(f"[MQTT] Updated leaderboard data for maze {maze_id}")
+            except Exception as e:
+                print(f"[MQTT] Failed to handle leaderboard data: {e}")
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True

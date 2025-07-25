@@ -164,6 +164,8 @@ class PlayAloneStartScreen(tk.Frame):
             self.reset_game_state()
             self.clear_completion_screen()
             self.status_label.config(text="Waiting for ball tracking to start...", fg="#1A1A1A")
+            # Send restart command to Jetson to restart image thread
+            self.mqtt_client.client.publish("jetson/command", "RestartPlayAlone")
             return
             
         if self.tracking_ready and self.ball_detected:

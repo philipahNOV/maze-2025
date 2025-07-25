@@ -212,7 +212,7 @@ class HMIController:
                 if self._ball_crossed_goal(ball_pos) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
-                    add_score(player_name, duration, maze_id)
+                    add_score(player_name, duration, maze_id, self.mqtt_client)
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}")
                     break
 
@@ -495,6 +495,11 @@ class HMIController:
                 print("[FSM] Entering LEADERBOARD mode")
                 self.state = SystemState.LEADERBOARD
                 self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
+                
+                # Send current leaderboard data for both mazes
+                from utils.leaderboard_utils import send_leaderboard_data
+                send_leaderboard_data(self.mqtt_client, 1)
+                send_leaderboard_data(self.mqtt_client, 2)
         
         elif self.state == SystemState.PRACTICE:
             if cmd == "Back":
@@ -569,9 +574,29 @@ class HMIController:
                 print("[PLAYALONE] Start game button clicked - activating timer")
                 self.start_playalone_timer()
             
+            elif cmd == "RestartPlayAlone":
+                print("[PLAYALONE] Restart requested - restarting image thread")
+                # Stop current image thread
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                # Reset path and restart image thread
+                self.path = None
+                self.image_controller.set_new_path(None)
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
+                print("[PLAYALONE] Image thread restarted")
+            
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
+            elif cmd.startswith("SendLeaderboard:"):
+                maze_id = int(cmd.split(":")[1])
+                print(f"[LEADERBOARD] Sending leaderboard data for maze {maze_id}")
+                from utils.leaderboard_utils import send_leaderboard_data
+                send_leaderboard_data(self.mqtt_client, maze_id)
 
         # --- PLAYVSAI STATES ---
         elif self.state == SystemState.PLAYVSAI:
