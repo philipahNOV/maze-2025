@@ -333,6 +333,8 @@ class HMIController:
                 
                 self.path = None
                 self.image_controller.set_new_path(None)
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
                 self._start_joystick_control()
                 

@@ -13,7 +13,7 @@ class PlayAloneStartScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
-        self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.8)
+        self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.65)
         self.true_width = controller.config['camera'].get('maze_width', 730)
         self.true_height = controller.config['camera'].get('maze_height', 640)
 
@@ -27,7 +27,7 @@ class PlayAloneStartScreen(tk.Frame):
     def create_widgets(self):
         tk.Label(
             self,
-            text="Timer starts when the joystick is moved and actuators begin",
+            text="Timer starts when the joystick is moved",
             font=("Jockey One", 18),
             bg="#D9D9D9",
             fg="#1A1A1A"
