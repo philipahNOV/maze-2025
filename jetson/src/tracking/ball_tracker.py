@@ -1,7 +1,7 @@
 import threading
 import time
 import numpy as np
-from tracking.vision_utils import hsv_tracking, global_hsv_search
+from tracking.vision_utils import hsv_tracking, global_hsv_search, lab_tracking, global_lab_search
 from tracking.model_loader import YOLOModel
 
 class BallTracker:
@@ -12,10 +12,24 @@ class BallTracker:
         self.hsv_fail_threshold = tracking_config["hsv_fail_threshold"]
         self.yolo_cooldown_period = tracking_config["yolo_cooldown_period"]
         self.WINDOW_SIZE = tracking_config["hsv_window_size"]
+        
         self.HSV_RANGE = (
             np.array(tracking_config["hsv_range"]["lower"]),
             np.array(tracking_config["hsv_range"]["upper"]),
         )
+        
+        if "lab_range" in tracking_config:
+            self.LAB_RANGE = (
+                np.array(tracking_config["lab_range"]["lower"]),
+                np.array(tracking_config["lab_range"]["upper"]),
+            )
+            self.use_lab = True
+            print("[BallTracker] Using LAB color space for tracking")
+        else:
+            self.LAB_RANGE = None
+            self.use_lab = False
+            print("[BallTracker] Using HSV color space for tracking")
+            
         self.INIT_BALL_REGION = ((tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]), (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"]))
         self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
 
@@ -66,7 +80,11 @@ class BallTracker:
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.initialized = True
             else:
-                new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
+                # Use LAB tracking if available, fallback to HSV
+                if self.use_lab and self.LAB_RANGE:
+                    new_pos = lab_tracking(bgr, self.ball_position, *self.LAB_RANGE, self.WINDOW_SIZE)
+                else:
+                    new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
 
                 if new_pos:
                     if self.ball_position:
@@ -82,7 +100,12 @@ class BallTracker:
                     self.hsv_fail_counter += 1
 
                     if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
-                        global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
+                        # Try global search with LAB first, then HSV
+                        if self.use_lab and self.LAB_RANGE:
+                            global_pos = global_lab_search(bgr, *self.LAB_RANGE)
+                        else:
+                            global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
+                            
                         if global_pos:
                             results = self.model.predict(rgb)
                             for box in results.boxes:
