@@ -193,8 +193,16 @@ class LoggingThread(threading.Thread):
         else:
             self.prev_distance_to_path = self.distance_to_nearest_path_point()
         
-        # 4. Time penalty (encourage efficiency)
-        reward -= 0.1  # Small constant penalty to encourage faster completion
+        # 4. Time penalty (encourage efficiency) - AGGRESSIVE for speed
+        reward -= 0.5  # Increased penalty to encourage faster completion
+        
+        # 4.1. Speed bonus (reward high velocities when safe)
+        if hasattr(self, 'ball_velocity') and self.ball_velocity is not None:
+            velocity_magnitude = np.linalg.norm(self.ball_velocity)
+            # Large bonus for high speeds when close to path
+            current_distance = self.distance_to_nearest_path_point()
+            if current_distance < 100:  # Safe zone - reward speed
+                reward += min(velocity_magnitude * 0.05, 5.0)  # Significant speed reward
         
         # 5. Velocity reward (encourage movement when far from target)
         if hasattr(self, 'ball_velocity') and self.ball_velocity is not None:
@@ -205,6 +213,12 @@ class LoggingThread(threading.Thread):
                 distance_to_target = np.linalg.norm(np.array(self.ball_position) - target_pos)
                 if distance_to_target > 50:  # If far from target
                     reward += min(velocity_magnitude * 0.01, 2.0)  # Cap velocity reward
+        
+        # 6. Action smoothness reward (encourage stable control)
+        if hasattr(self, 'prev_motor_input') and self.motor_input is not None and self.prev_motor_input is not None:
+            action_change = np.linalg.norm(np.array(self.motor_input) - np.array(self.prev_motor_input))
+            reward -= action_change * 0.001  # Small penalty for erratic movements
+        self.prev_motor_input = self.motor_input
         
         return reward, False
 
