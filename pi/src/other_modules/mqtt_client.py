@@ -62,6 +62,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
             self.client.subscribe("pi/info")
+            self.client.subscribe("pi/tracking_status")
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
@@ -87,6 +88,18 @@ class MQTTClientPi(threading.Thread):
                 print("[Pi] Path not found by Jetson.")
                 self.finding_path = False
                 self.path_failed = True
+        elif msg.topic == "pi/tracking_status":
+            # Handle tracking status updates for play alone mode
+            if self.app and hasattr(self.app, 'frames'):
+                play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                if play_alone_frame:
+                    payload = msg.payload.decode()
+                    if payload == "tracking_started":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+                    elif payload == "ball_detected":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=True)
+                    elif payload == "ball_lost":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True

@@ -155,10 +155,13 @@ class HMIController:
         player_name = self.config.get("player_name", "Unknown")
 
         self.tracking_service.start_tracker()
+        self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
 
         game_running = True
         start_time = None
         last_valid_pos_time = time.time()
+        game_timer_started = False
+        ball_previously_detected = False
 
         while game_running:
             ball_pos = self.tracking_service.get_ball_position()
@@ -168,23 +171,43 @@ class HMIController:
                     print("[PLAYALONE] Game failed: ball lost > 3 seconds.")
                     self.mqtt_client.client.publish("pi/command", "playalone_fail")
                     break
+                elif ball_previously_detected:
+                    self.mqtt_client.client.publish("pi/tracking_status", "ball_lost")
+                    ball_previously_detected = False
             else:
                 last_valid_pos_time = time.time()
+                
+                # Notify that ball is detected
+                if not ball_previously_detected:
+                    self.mqtt_client.client.publish("pi/tracking_status", "ball_detected")
+                    ball_previously_detected = True
 
-                if start_time is None:
-                    print("[PLAYALONE] Ball seen — starting timer.")
+                # Only start timer if game has been manually started
+                if game_timer_started and start_time is None:
+                    print("[PLAYALONE] Ball seen and game started — starting timer.")
                     start_time = time.time()
 
-                if self._ball_crossed_goal(ball_pos):
+                if self._ball_crossed_goal(ball_pos) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
                     add_score(player_name, duration, maze_id)
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}")
                     break
 
+            # Check if game start command was received
+            if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
+                game_timer_started = True
+                self.playalone_timer_start_requested = False
+                print("[PLAYALONE] Game start requested, timer will begin when ball is detected")
+
             time.sleep(0.1)
 
         self.tracking_service.stop_tracker()
+
+    def start_playalone_timer(self):
+        """Called when the player clicks the start game button"""
+        self.playalone_timer_start_requested = True
+        print("[PLAYALONE] Timer start requested!")
 
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
@@ -324,7 +347,10 @@ class HMIController:
             
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
-                print("[PLAYALONE] Starting manual play with joystick control")
+                print("[PLAYALONE] Entering play alone start screen")
+                
+                # Reset playalone state variables
+                self.playalone_timer_start_requested = False
                 
                 if self.image_thread is not None:
                     self.image_thread.stop()
@@ -336,10 +362,11 @@ class HMIController:
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
-                self._start_joystick_control()
                 
+                # Start tracking and joystick control, but don't start the game timer yet
+                self._start_joystick_control()
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
-                print("[PLAYALONE] Player can now control the ball manually")
+                print("[PLAYALONE] Tracking started, waiting for player to start game")
         
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
@@ -365,6 +392,10 @@ class HMIController:
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+            
+            elif cmd == "StartPlayAloneGame":
+                print("[PLAYALONE] Start game button clicked - activating timer")
+                self.start_playalone_timer()
             
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
