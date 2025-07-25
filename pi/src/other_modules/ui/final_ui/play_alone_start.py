@@ -154,6 +154,14 @@ class PlayAloneStartScreen(tk.Frame):
         self.controller.restart_program()
 
     def on_start_game_click(self):
+        # Check if this is a restart after game ended
+        button_text = self.start_button.cget("text")
+        if button_text in ["GOAL REACHED!", "TRY AGAIN"]:
+            # Reset the game state and UI
+            self.reset_game_state()
+            self.status_label.config(text="Waiting for ball tracking to start...", fg="#1A1A1A")
+            return
+            
         if self.tracking_ready and self.ball_detected:
             self.game_started = True
             self.start_button.config(state="disabled", bg="#808080", text="GAME STARTED")
@@ -191,35 +199,39 @@ class PlayAloneStartScreen(tk.Frame):
 
     def show_game_result(self, result_type, duration=None):
         """Display game result feedback on the UI"""
+        # Hide the camera image when game ends
+        self.canvas.delete("all")
+        self.canvas.create_text(
+            self.canvas_width // 2, 
+            self.canvas_height // 2, 
+            text="Game Complete", 
+            fill="white", 
+            font=("Arial", 24)
+        )
+        
         if result_type == "success" and duration:
             self.start_button.config(
-                state="disabled",
+                state="normal",  # Keep enabled so user can restart manually
                 bg="#4CAF50",
                 text="GOAL REACHED!"
             )
             self.status_label.config(
-                text=f"🎉 You win! Time: {duration} seconds 🎉",
+                text=f"🎉 You win! Time: {duration} seconds 🎉 - Click button to play again",
                 fg="#2E7D32"
             )
             print(f"[PLAYALONE UI] Player succeeded in {duration} seconds!")
             
-            # Auto-reset after 5 seconds
-            self.after(5000, self._auto_reset_after_result)
-            
         elif result_type == "failure":
             self.start_button.config(
-                state="disabled",
+                state="normal",  # Keep enabled so user can restart manually
                 bg="#F44336",
-                text="GAME FAILED"
+                text="TRY AGAIN"
             )
             self.status_label.config(
-                text="Game over!",
+                text="Game over! Click button to try again",
                 fg="#C62828"
             )
             print("[PLAYALONE UI] Player failed - ball lost!")
-            
-            # Auto-reset after 3 seconds
-            self.after(3000, self._auto_reset_after_result)
 
     def _auto_reset_after_result(self):
         """Automatically reset the game state after showing results"""

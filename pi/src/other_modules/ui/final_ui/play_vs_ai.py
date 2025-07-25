@@ -213,6 +213,16 @@ class PlayVsAIScreen(tk.Frame):
 
     def determine_winner(self):
         """Determine and display the winner"""
+        # Clear the camera image when battle ends
+        self.canvas.delete("all")
+        self.canvas.create_text(
+            self.canvas_width // 2, 
+            self.canvas_height // 2, 
+            text="Battle Complete", 
+            fill="white", 
+            font=("Arial", 24)
+        )
+        
         if self.pid_result is not None and self.human_result is not None:
             # Both succeeded - fastest wins
             if self.pid_result < self.human_result:

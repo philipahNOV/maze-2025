@@ -54,6 +54,7 @@ class HMIController:
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
         self.playvsai_goal = None
+        self.current_player_name = "Unknown"  # Will be set via MQTT
         self.path_thread = None
         self.disco_mode = 0
         self.disco_thread = None
@@ -167,10 +168,11 @@ class HMIController:
         print("[PLAYALONE] Starting tracking thread...")
         game_config = self.config.get("game", {})
         maze_id = game_config.get("maze_id", 1)
-        player_name = game_config.get("player_name", "Unknown")
+        player_name = self.current_player_name  # Use MQTT-received name
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
         print(f"[PLAYALONE] Playing on Maze {maze_id} with timeout {ball_lost_timeout}s")
+        print(f"[PLAYALONE] Player name: {player_name}")
 
         self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
