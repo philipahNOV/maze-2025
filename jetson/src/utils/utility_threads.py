@@ -32,11 +32,11 @@ class BlinkRed(threading.Thread):
 
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 print("BlinkRed active too long — triggering elevator up.")
-                for attempt in range(5):
+                for _ in range(5):
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.1)
                 self.arduino_thread.send_color(*white)
-                self.triggered = True  # Avoid retriggering
+                self.triggered = True
                 #self.controller.elevator_state = "up"
 
             time.sleep(4)
@@ -127,7 +127,7 @@ class PathFindingThread(threading.Thread):
                 self.path_cache.cache_path(start, self.goal, path)
             else:
                 print("[PathMemory] Pathfinding failed. Not caching empty path.")
-                self.on_path_found(None, None)  # exit early if pathfinding failed
+                self.on_path_found(None, None)
                 return
 
         if self._stop_event.is_set():
@@ -177,7 +177,7 @@ class EscapeElevatorThread(threading.Thread):
         print(self.controller.elevator_state)
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
-            for attempt in range(5):
+            for _ in range(5):
                     self.arduino_thread.send_elevator(-1)
                     time.sleep(0.1)
         
