@@ -218,8 +218,9 @@ class HMIController:
 
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
                 game_timer_started = True
+                start_time = time.time()  # Start timer immediately when button is pressed
                 self.playalone_timer_start_requested = False
-                print("[PLAYALONE] Game start requested, timer will begin when ball is detected")
+                print(f"[PLAYALONE] Game start requested, timer started immediately at {start_time}")
 
             time.sleep(0.1)
 
