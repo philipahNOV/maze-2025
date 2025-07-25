@@ -32,6 +32,9 @@ class SystemState(Enum):
     PRACTICE = auto()
     PLAYALONE = auto()
     PLAYALONE_START = auto()
+    PLAYVSAI = auto()
+    PLAYVSAI_PID = auto()
+    PLAYVSAI_HUMAN = auto()
     LEADERBOARD = auto()
 
 class HMIController:
@@ -50,6 +53,7 @@ class HMIController:
         self.controller_thread = None
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
+        self.playvsai_goal = None
         self.path_thread = None
         self.disco_mode = 0
         self.disco_thread = None
@@ -143,11 +147,15 @@ class HMIController:
         self.joystick_thread.start()
 
     def _ball_crossed_goal(self, position):
-        # Get goal configuration from config file
-        goal_config = self.config.get("game", {})
-        goal_pos = goal_config.get("goal_position", {"x": 49, "y": 763})
-        goal = (goal_pos["x"], goal_pos["y"])
-        radius = goal_config.get("goal_radius", 30)
+        if (self.state in [SystemState.PLAYVSAI_PID, SystemState.PLAYVSAI_HUMAN] and 
+            hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None):
+            goal = self.playvsai_goal
+            radius = 30  # Default radius for custom goals
+        else:
+            goal_config = self.config.get("game", {})
+            goal_pos = goal_config.get("goal_position", {"x": 49, "y": 763})
+            goal = (goal_pos["x"], goal_pos["y"])
+            radius = goal_config.get("goal_radius", 30)
         
         x, y = position
         goal_x, goal_y = goal
@@ -157,8 +165,6 @@ class HMIController:
 
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
-
-        # Get game configuration
         game_config = self.config.get("game", {})
         maze_id = game_config.get("maze_id", 1)
         player_name = game_config.get("player_name", "Unknown")
@@ -219,9 +225,154 @@ class HMIController:
         self.tracking_service.stop_tracker()
 
     def start_playalone_timer(self):
-        """Called when the player clicks the start game button"""
         self.playalone_timer_start_requested = True
         print("[PLAYALONE] Timer start requested!")
+
+    def run_playvsai_pid_turn(self):
+        print("[PLAYVSAI] Starting PID turn...")
+        game_config = self.config.get("game", {})
+        ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
+        self.tracking_service.start_tracker()
+        self.mqtt_client.client.publish("pi/command", "playvsai_pid_started")
+        
+        if hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None:
+            self.start_path_finding(custom_goal=self.playvsai_goal)
+        else:
+            self.start_path_finding()
+        
+        path_found = False
+        timeout_counter = 0
+        while not path_found and timeout_counter < 100:  # 10 second timeout
+            if self.path is not None:
+                path_found = True
+                break
+            time.sleep(0.1)
+            timeout_counter += 1
+        
+        if not path_found:
+            print("[PLAYVSAI] PID failed: No path found")
+            self.mqtt_client.client.publish("pi/command", "playvsai_pid_fail:no_path")
+            self.tracking_service.stop_tracker()
+            self.state = SystemState.PLAYVSAI_HUMAN
+            threading.Thread(target=self.run_playvsai_human_turn, daemon=True).start()
+            return
+        
+        if self.image_thread is not None:
+            self.image_thread.stop()
+            self.image_thread.join()
+            self.image_thread = None
+
+        self.stop_controller_event.clear()
+        if self.controller_thread is None or not self.controller_thread.is_alive():
+            self.controller_thread = threading.Thread(
+                target=run_controller_main.main,
+                args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event, self.config),
+                daemon=True
+            )
+            self.controller_thread.start()
+        
+        game_running = True
+        start_time = time.time()
+        last_valid_pos_time = time.time()
+        
+        while game_running and self.state == SystemState.PLAYVSAI_PID:
+            if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
+                print("[PLAYVSAI] PID turn stop requested")
+                break
+                
+            ball_pos = self.tracking_service.get_ball_position()
+            
+            if ball_pos is None:
+                if time.time() - last_valid_pos_time > ball_lost_timeout:
+                    print(f"[PLAYVSAI] PID failed: ball lost > {ball_lost_timeout} seconds.")
+                    self.mqtt_client.client.publish("pi/command", "playvsai_pid_fail:ball_lost")
+                    break
+            else:
+                last_valid_pos_time = time.time()
+                
+                if self._ball_crossed_goal(ball_pos):
+                    duration = time.time() - start_time
+                    print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
+                    self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
+                    break
+            
+            time.sleep(0.1)
+        
+        self.stop_controller()
+        print("[PLAYVSAI] PID turn ended")
+        
+        if self.state == SystemState.PLAYVSAI_PID:
+            self.state = SystemState.PLAYVSAI_HUMAN
+            threading.Thread(target=self.run_playvsai_human_turn, daemon=True).start()
+
+    def run_playvsai_human_turn(self):
+        print("[PLAYVSAI] Starting human turn...")
+        game_config = self.config.get("game", {})
+        ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
+        
+        self.tracking_service.start_tracker()
+        self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
+        self._start_joystick_control()
+        
+        game_running = True
+        start_time = None
+        last_valid_pos_time = time.time()
+        game_timer_started = False
+        ball_previously_detected = False
+        
+        while game_running and self.state == SystemState.PLAYVSAI_HUMAN:
+            if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
+                print("[PLAYVSAI] Human turn stop requested")
+                break
+                
+            ball_pos = self.tracking_service.get_ball_position()
+            
+            if ball_pos is None:
+                if start_time and (time.time() - last_valid_pos_time > ball_lost_timeout):
+                    print(f"[PLAYVSAI] Human failed: ball lost > {ball_lost_timeout} seconds.")
+                    self.mqtt_client.client.publish("pi/command", "playvsai_human_fail")
+                    break
+                elif ball_previously_detected:
+                    ball_previously_detected = False
+            else:
+                last_valid_pos_time = time.time()
+                
+                if not ball_previously_detected:
+                    ball_previously_detected = True
+
+                if game_timer_started and start_time is None:
+                    print("[PLAYVSAI] Human ball seen and game started — starting timer.")
+                    start_time = time.time()
+
+                if self._ball_crossed_goal(ball_pos) and start_time is not None:
+                    duration = time.time() - start_time
+                    print(f"[PLAYVSAI] Human succeeded in {duration:.2f} sec")
+                    self.mqtt_client.client.publish("pi/command", f"playvsai_human_success:{duration:.2f}")
+                    break
+
+            if hasattr(self, 'playvsai_human_timer_start_requested') and self.playvsai_human_timer_start_requested:
+                game_timer_started = True
+                self.playvsai_human_timer_start_requested = False
+                print("[PLAYVSAI] Human game start requested, timer will begin when ball is detected")
+
+            time.sleep(0.1)
+        
+        if hasattr(self, 'joystick_controller'):
+            self.joystick_controller.stop()
+        if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+            self.joystick_thread.join()
+        
+        self.tracking_service.stop_tracker()
+        print("[PLAYVSAI] Human turn ended")
+        
+        if self.state == SystemState.PLAYVSAI_HUMAN:
+            self.playvsai_goal = None
+            self.state = SystemState.HUMAN_CONTROLLER
+
+    def start_playvsai_human_timer(self):
+        """Called when the human player clicks the start button"""
+        self.playvsai_human_timer_start_requested = True
+        print("[PLAYVSAI] Human timer start requested!")
 
     def start_path_finding(self, custom_goal=None):
         if custom_goal is not None:
@@ -328,7 +479,9 @@ class HMIController:
                 self._start_joystick_control()
 
             elif cmd == "PlayVsAI":
-                pass
+                print("[FSM] Entering PLAYVSAI mode")
+                self.state = SystemState.PLAYVSAI
+                self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
@@ -366,7 +519,6 @@ class HMIController:
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
                 print("[PLAYALONE] Entering play alone start screen")
-                
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
                 
@@ -380,7 +532,6 @@ class HMIController:
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
-                
                 self._start_joystick_control()
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
 
@@ -419,6 +570,51 @@ class HMIController:
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
+
+        # --- PLAYVSAI STATES ---
+        elif self.state == SystemState.PLAYVSAI:
+            if cmd == "Back":
+                self.playvsai_goal = None
+                self.state = SystemState.HUMAN_CONTROLLER
+            
+            elif cmd.startswith("Goal_set:"):
+                coords = cmd.split(":")[1]
+                x, y = map(int, coords.split(","))
+                self.playvsai_goal = (x, y)
+                print(f"[PLAYVSAI] Goal set to ({x}, {y})")
+            
+            elif cmd == "StartBattle":
+                print("[PLAYVSAI] Starting battle - PID goes first")
+                self.state = SystemState.PLAYVSAI_PID
+                self.playvsai_stop_requested = False
+                self.playvsai_human_timer_start_requested = False
+                
+                threading.Thread(target=self.run_playvsai_pid_turn, daemon=True).start()
+
+        elif self.state == SystemState.PLAYVSAI_PID:
+            if cmd == "Back":
+                self.playvsai_goal = None
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.playvsai_stop_requested = True
+                self.stop_controller()
+                self.tracking_service.stop_tracker()
+
+        elif self.state == SystemState.PLAYVSAI_HUMAN:
+            if cmd == "Back":
+                self.playvsai_goal = None
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.playvsai_stop_requested = True
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                
+                self.tracking_service.stop_tracker()
+            
+            elif cmd == "StartHumanTurn":
+                print("[PLAYVSAI] Human start button clicked - activating timer")
+                self.start_playvsai_human_timer()
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:

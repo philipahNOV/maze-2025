@@ -83,6 +83,41 @@ class MQTTClientPi(threading.Thread):
                     play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
                     if play_alone_frame:
                         play_alone_frame.show_game_result("failure", None)
+            elif payload == "show_playvsai_screen":
+                if self.app:
+                    self.app.show_frame("PlayVsAIScreen")
+            elif payload == "playvsai_pid_started":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_pid_started()
+            elif payload.startswith("playvsai_pid_success:"):
+                duration = float(payload.split(":")[1])
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_pid_result(True, duration)
+            elif payload.startswith("playvsai_pid_fail"):
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_pid_result(False)
+            elif payload == "playvsai_human_started":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_started()
+            elif payload.startswith("playvsai_human_success:"):
+                duration = float(payload.split(":")[1])
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_result(True, duration)
+            elif payload == "playvsai_human_fail":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_result(False)
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
