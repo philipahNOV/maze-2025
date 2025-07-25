@@ -52,25 +52,54 @@ class PlayAloneScreen(tk.Frame):
         self.name_entry_display.place(x=270, y=160, height=50)
 
         keys = [
-            list("ABCDEFGHIJKLMNO"),
-            list("PQRSTUVWXYZÆØÅ"),
+            list("ABCDEFGHIJ"),
+            list("KLMNOPQRST"),
+            list("UVWXYZÆØÅ"),
             ["SPACE", "BACK", "CLEAR"]
         ]
 
+        screen_width = 1024
+        keyboard_width = screen_width - 40
+        
         for row_idx, row in enumerate(keys):
+            row_length = len(row)
+            
+            if row_idx == 4:
+                button_width = 120
+                button_spacing = 140
+                start_x = (screen_width - (2 * button_spacing - 20)) // 2
+            else:
+                button_spacing = keyboard_width // row_length
+                button_width = button_spacing - 10
+                start_x = 20 + (keyboard_width - (row_length * button_spacing - 10)) // 2
+            
             for col_idx, key in enumerate(row):
+                if key in ["SPACE", "BACK", "CLEAR"]:
+                    font_size = 14
+                    if key == "SPACE":
+                        button_text = "SPACE"
+                    else:
+                        button_text = key
+                else:
+                    font_size = 18
+                    button_text = key
+                
                 btn = tk.Button(
                     self,
-                    text=key,
-                    font=("Jockey One", 18),
+                    text=button_text,
+                    font=("Jockey One", font_size),
                     bg="#444",
                     fg="white",
                     activebackground="#666",
-                    width=3,
+                    width=max(2, button_width // 12),
                     height=2,
                     command=lambda k=key: self.key_press(k)
                 )
-                btn.place(x=20 + col_idx * 70, y=240 + row_idx * 85)
+                
+                if row_idx == 4:
+                    btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
+                else:
+                    btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
 
         self.start_button = tk.Button(
             self,
@@ -85,7 +114,7 @@ class PlayAloneScreen(tk.Frame):
             state="disabled",
             command=self.on_button_click_start_game
         )
-        self.start_button.place(x=400, y=470, width=200, height=60)
+        self.start_button.place(x=400, y=530, width=200, height=60)
 
         self.back_button = tk.Button(
             self,

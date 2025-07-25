@@ -108,8 +108,9 @@ class PlayAloneStartScreen(tk.Frame):
 
 
     def on_button_click_back(self):
+        # Reset game state and clear all memory
         self.reset_game_state()
-        self.clear_completion_screen()
+        self.clear_all_memory()
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
 
@@ -150,17 +151,20 @@ class PlayAloneStartScreen(tk.Frame):
         self.controller.on_close()
 
     def on_button_click_restart(self):
+        # Clear all game state and memory
         self.reset_game_state()
-        self.clear_completion_screen()
+        self.clear_all_memory()
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
     def on_start_game_click(self):
         button_text = self.start_button.cget("text")
         if button_text in ["GOAL REACHED!", "TRY AGAIN"]:
+            # Reset the game state and UI, clear all memory, and restart image thread
             self.reset_game_state()
-            self.clear_completion_screen()
+            self.clear_all_memory()
             self.status_label.config(text="Waiting for ball tracking to start...", fg="#1A1A1A")
+            # Send restart command to Jetson to restart image thread
             self.mqtt_client.client.publish("jetson/command", "RestartPlayAlone")
             return
             
@@ -201,6 +205,34 @@ class PlayAloneStartScreen(tk.Frame):
         self.canvas.delete("all")
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
         print("[PLAYALONE UI] Cleared completion screen, restored camera view")
+
+    def clear_all_memory(self):
+        """Clear all image memory and force a fresh start"""
+        try:
+            # Clear MQTT client image buffer
+            if hasattr(self.mqtt_client, 'img'):
+                self.mqtt_client.img = None
+            
+            # Clear canvas completely
+            self.canvas.delete("all")
+            
+            # Load blank image as placeholder
+            blank_img = Image.open(self.controller.blank_image_path).convert("RGB")
+            blank_scaled = blank_img.resize(
+                (self.canvas_width, self.canvas_height),
+                Image.Resampling.LANCZOS
+            )
+            self.image = ImageTk.PhotoImage(blank_scaled)
+            
+            # Create fresh image on canvas
+            self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
+            
+            print("[PLAYALONE UI] Cleared all memory and reset to blank image")
+        except Exception as e:
+            print(f"[PLAYALONE UI] Error clearing memory: {e}")
+            # Fallback to simple clear
+            self.canvas.delete("all")
+            self.image_id = self.canvas.create_image(0, 0, anchor="nw")
 
     def show_game_result(self, result_type, duration=None):
         """Display game result feedback on the UI"""
@@ -243,8 +275,9 @@ class PlayAloneStartScreen(tk.Frame):
         self.status_label.config(fg="#1A1A1A")  # Reset text color
 
     def show(self):
+        # Reset game state and clear all memory when screen is shown
         self.reset_game_state()
-        self.clear_completion_screen()
+        self.clear_all_memory()
         self.focus_set()
         self.update_idletasks()
 

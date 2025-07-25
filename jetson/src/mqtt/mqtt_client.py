@@ -78,6 +78,10 @@ class MQTTClientJetson(threading.Thread):
     def publish_ball_info(self, ball_info):
         self.client.publish("ball/info", ball_info, qos=0)
 
+    def clear_image_buffer(self):
+        self.client.publish("pi/command", "clear_image_buffer")
+        print("[MQTT] Sent image buffer clear command to Pi")
+
     def stop(self):
         print("Stopping Jetson MQTT client...")
         self.running = False

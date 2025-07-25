@@ -119,6 +119,10 @@ class MQTTClientPi(threading.Thread):
                     playvsai_frame = self.app.frames.get('PlayVsAIScreen')
                     if playvsai_frame:
                         playvsai_frame.handle_human_result(False)
+            elif payload == "clear_image_buffer":
+                # Clear the image buffer completely
+                print("[MQTT] Clearing image buffer")
+                self.img = None
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
