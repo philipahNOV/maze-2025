@@ -108,8 +108,9 @@ class PlayAloneStartScreen(tk.Frame):
 
 
     def on_button_click_back(self):
-        # Reset game state for next time
+        # Reset game state and clear any completion screen
         self.reset_game_state()
+        self.clear_completion_screen()
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
 
@@ -150,15 +151,18 @@ class PlayAloneStartScreen(tk.Frame):
         self.controller.on_close()
 
     def on_button_click_restart(self):
+        # Reset game state and clear any completion screen
+        self.reset_game_state()
+        self.clear_completion_screen()
         self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.restart_program()
 
     def on_start_game_click(self):
-        # Check if this is a restart after game ended
         button_text = self.start_button.cget("text")
         if button_text in ["GOAL REACHED!", "TRY AGAIN"]:
-            # Reset the game state and UI
+            # Reset the game state and UI, and clear completion screen
             self.reset_game_state()
+            self.clear_completion_screen()
             self.status_label.config(text="Waiting for ball tracking to start...", fg="#1A1A1A")
             return
             
@@ -196,6 +200,14 @@ class PlayAloneStartScreen(tk.Frame):
             text="START GAME"
         )
         self.status_label.config(text="Waiting for ball tracking to start...")
+
+    def clear_completion_screen(self):
+        """Clear any 'Game Complete' screen and restore normal camera view"""
+        # Clear all canvas items that might show completion message
+        self.canvas.delete("all")
+        # Restore the image display
+        self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
+        print("[PLAYALONE UI] Cleared completion screen, restored camera view")
 
     def show_game_result(self, result_type, duration=None):
         """Display game result feedback on the UI"""
@@ -239,8 +251,9 @@ class PlayAloneStartScreen(tk.Frame):
         self.status_label.config(fg="#1A1A1A")  # Reset text color
 
     def show(self):
-        # Reset game state when screen is shown
+        # Reset game state and clear completion screen when screen is shown
         self.reset_game_state()
+        self.clear_completion_screen()
         self.focus_set()
         self.update_idletasks()
 
