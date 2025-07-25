@@ -31,19 +31,14 @@ tracking:
     y_min: 25
     x_max: 1200
     y_max: 700
-  # New color-agnostic tracking parameters
-  smoothing_alpha: 0.7           # smoothing factor for position updates (higher = less smooth, faster response)
-  tracking_fail_threshold: 5     # frames to wait before fallback to YOLO
-  yolo_cooldown_period: 10       # frames before allowing YOLO recheck
-  search_radius: 100             # pixel radius for local tracking search
-  template_update_interval: 30   # frames between template updates (adapts to lighting changes)
-  
-  # Advanced tracking method weights (not implemented yet, for future use)
-  method_priorities:
-    optical_flow: 1     # Fastest, best for small movements
-    histogram: 2        # Good for color consistency
-    template: 3         # Shape-based matching
-    adaptive: 4         # HoughCircles fallback
+  hsv_range:
+    lower: [35, 55, 55]       # Light green HSV lower bound
+    upper: [85, 255, 255]     # Light green HSV upper bound
+  hsv_window_size: 80
+  hsv_min_contour_area: 150  # px^2
+  smoothing_alpha: 0.5       # smoothing factor for exponential filter
+  hsv_fail_threshold: 60     # frames to wait before fallback to YOLO
+  yolo_cooldown_period: 20   # frames before allowing YOLO recheck
 
 controller:
   stuck_wiggle_amplitude: 1     # deg, amplitude of wiggle when stuck
