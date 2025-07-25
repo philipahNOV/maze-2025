@@ -11,7 +11,7 @@ class YOLOModel:
         self.model.predict(dummy, verbose=False)
         print("Tracking model ready.")
 
-    def predict(self, image, conf=0.6):
+    def predict(self, image, conf=0.4):
         return self.model.predict(source=image, conf=conf)[0]
     
     def get_label(self, cls_id):
