@@ -95,7 +95,7 @@ path_finding:
   adaptive_threshold_target: 130
   path_cache_size: 30                 # max_paths in PathMemory
   path_cache_tolerance: 15           # tolerance for cache reuse
-  path_cache_file: "astar/path_cache.json" # default cache filename
+  path_cache_file: "control/astar/path_cache.json" # default cache filename
 
 path_following:
   lookahead:
