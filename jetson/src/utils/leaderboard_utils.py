@@ -2,7 +2,7 @@ import csv
 import os
 from datetime import datetime
 
-LEADERBOARD_FOLDER = "./leaderboard_data"
+LEADERBOARD_FOLDER = "./data/leaderboard_data"
 
 def get_leaderboard_file(maze_id: int):
     return os.path.join(LEADERBOARD_FOLDER, f"leaderboard_maze{maze_id}.csv")
