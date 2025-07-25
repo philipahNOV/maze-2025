@@ -324,12 +324,20 @@ class HMIController:
             
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
+                print("[PLAYALONE] Starting manual play with joystick control")
+                
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
                 self.path = None
                 self.image_controller.set_new_path(None)
-                self.tracking_service.stop_tracker()
                 self.arduino_thread.send_speed(0, 0)
                 self._start_joystick_control()
+                
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
+                print("[PLAYALONE] Player can now control the ball manually")
         
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
@@ -341,7 +349,21 @@ class HMIController:
                 if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
                     self.joystick_thread.join()
                     del self.joystick_thread
-        
+                
+                self.tracking_service.stop_tracker()
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                    self.custom_goal = None
+                
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+            
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
@@ -416,7 +438,6 @@ class HMIController:
         # --- AUTO_PATH STATE ---
         elif self.state == SystemState.AUTO_PATH:
             if cmd == "Back":
-                # Stop controller, tracker, threads, and reset path
                 self.stop_controller()
                 self.state = SystemState.NAVIGATION
                 self.tracking_service.stop_tracker()
@@ -432,7 +453,6 @@ class HMIController:
                 print("[FSM] Transitioned to NAVIGATION")
 
             elif cmd.startswith("Locate"):
-                # Go back to locating mode
                 self.stop_controller()
                 self.state = SystemState.LOCATING
                 print("[FSM] Transitioned to LOCATING")
