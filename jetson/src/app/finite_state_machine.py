@@ -594,6 +594,7 @@ class HMIController:
                 
                 print("[PLAYALONE] Restarting tracking service...")
                 self.tracking_service.start_tracker()
+                self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
                 self.arduino_thread.send_speed(0,0)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
@@ -614,6 +615,7 @@ class HMIController:
             if cmd == "Back":
                 self.playvsai_goal = None
                 self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
             
             elif cmd.startswith("Goal_set:"):
                 coords = cmd.split(":")[1]
@@ -636,6 +638,7 @@ class HMIController:
                 self.playvsai_stop_requested = True
                 self.stop_controller()
                 self.tracking_service.stop_tracker()
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
 
         elif self.state == SystemState.PLAYVSAI_HUMAN:
             if cmd == "Back":
@@ -649,6 +652,7 @@ class HMIController:
                     self.joystick_thread.join()
                 
                 self.tracking_service.stop_tracker()
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
             
             elif cmd == "StartHumanTurn":
                 print("[PLAYVSAI] Human start button clicked - activating timer")
