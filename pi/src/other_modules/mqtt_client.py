@@ -72,7 +72,19 @@ class MQTTClientPi(threading.Thread):
     def on_message(self, client, userdata, msg):
         #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
-            pass
+            # Handle playalone game results
+            payload = msg.payload.decode()
+            if payload.startswith("playalone_success:"):
+                duration = payload.split(":")[1]
+                if self.app and hasattr(self.app, 'frames'):
+                    play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                    if play_alone_frame:
+                        play_alone_frame.show_game_result("success", duration)
+            elif payload == "playalone_fail":
+                if self.app and hasattr(self.app, 'frames'):
+                    play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                    if play_alone_frame:
+                        play_alone_frame.show_game_result("failure", None)
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True

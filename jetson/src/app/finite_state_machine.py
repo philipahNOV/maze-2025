@@ -143,10 +143,13 @@ class HMIController:
         self.joystick_thread.start()
 
     def _ball_crossed_goal(self, position):
-        goal_area = self.config.get("goal_area", {"x_min": 100, "x_max": 300, "y_min": 50, "y_max": 100})
+        goal = (49, 763)
+        radius = 30
         x, y = position
-        return (goal_area["x_min"] <= x <= goal_area["x_max"] and
-                goal_area["y_min"] <= y <= goal_area["y_max"])
+        goal_x, goal_y = goal
+        
+        distance = ((x - goal_x) ** 2 + (y - goal_y) ** 2) ** 0.5
+        return distance <= radius
 
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
@@ -163,7 +166,11 @@ class HMIController:
         game_timer_started = False
         ball_previously_detected = False
 
-        while game_running:
+        while game_running and self.state == SystemState.PLAYALONE_START:
+            if hasattr(self, 'playalone_game_stop_requested') and self.playalone_game_stop_requested:
+                print("[PLAYALONE] Game stop requested, exiting game loop")
+                break
+                
             ball_pos = self.tracking_service.get_ball_position()
 
             if ball_pos is None:
@@ -177,12 +184,10 @@ class HMIController:
             else:
                 last_valid_pos_time = time.time()
                 
-                # Notify that ball is detected
                 if not ball_previously_detected:
                     self.mqtt_client.client.publish("pi/tracking_status", "ball_detected")
                     ball_previously_detected = True
 
-                # Only start timer if game has been manually started
                 if game_timer_started and start_time is None:
                     print("[PLAYALONE] Ball seen and game started — starting timer.")
                     start_time = time.time()
@@ -194,7 +199,6 @@ class HMIController:
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}")
                     break
 
-            # Check if game start command was received
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
                 game_timer_started = True
                 self.playalone_timer_start_requested = False
@@ -202,6 +206,7 @@ class HMIController:
 
             time.sleep(0.1)
 
+        print("[PLAYALONE] Game loop ended, stopping tracker")
         self.tracking_service.stop_tracker()
 
     def start_playalone_timer(self):
@@ -316,6 +321,10 @@ class HMIController:
 
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
+                
+                # Reset any previous playalone state
+                self.playalone_timer_start_requested = False
+                
                 self.state = SystemState.PLAYALONE
                 self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
 
@@ -343,6 +352,8 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE:
             if cmd == "Back":
+                # Reset playalone state when going back
+                self.playalone_timer_start_requested = False
                 self.state = SystemState.HUMAN_CONTROLLER
             
             elif cmd == "StartGame":
@@ -351,6 +362,7 @@ class HMIController:
                 
                 # Reset playalone state variables
                 self.playalone_timer_start_requested = False
+                self.playalone_game_stop_requested = False
                 
                 if self.image_thread is not None:
                     self.image_thread.stop()
@@ -372,6 +384,12 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
                 print("[FSM] Transitioned to HUMAN_CONTROLLER")
+                
+                # Reset playalone state variables and signal game loop to stop
+                self.playalone_timer_start_requested = False
+                self.playalone_game_stop_requested = True
+                
+                # Stop joystick controller
                 if hasattr(self, 'joystick_controller'):
                     self.joystick_controller.stop()
                     del self.joystick_controller
@@ -379,17 +397,22 @@ class HMIController:
                     self.joystick_thread.join()
                     del self.joystick_thread
                 
+                # Stop tracking
                 self.tracking_service.stop_tracker()
+                
+                # Stop path thread if running
                 if self.path_thread is not None and self.path_thread.is_alive():
                     self.path_thread.stop()
                     self.path_thread = None
 
+                # Stop and cleanup image thread
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
                     self.custom_goal = None
                 
+                # Reset path
                 self.path = None
                 self.image_controller.set_new_path(self.path)
             

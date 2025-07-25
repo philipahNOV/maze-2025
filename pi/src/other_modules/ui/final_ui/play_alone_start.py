@@ -108,6 +108,8 @@ class PlayAloneStartScreen(tk.Frame):
 
 
     def on_button_click_back(self):
+        # Reset game state for next time
+        self.reset_game_state()
         self.mqtt_client.client.publish("jetson/command", "Back")
         self.controller.show_frame("HumanScreen")
 
@@ -173,7 +175,60 @@ class PlayAloneStartScreen(tk.Frame):
                 self.start_button.config(state="disabled", bg="#808080", text="STARTING TRACKER...")
                 self.status_label.config(text="Starting ball tracking system...")
 
+    def reset_game_state(self):
+        """Reset all game state variables to initial state"""
+        self.tracking_ready = False
+        self.ball_detected = False
+        self.game_started = False
+        
+        # Reset UI elements to initial state
+        self.start_button.config(
+            state="disabled", 
+            bg="#808080", 
+            text="START GAME"
+        )
+        self.status_label.config(text="Waiting for ball tracking to start...")
+
+    def show_game_result(self, result_type, duration=None):
+        """Display game result feedback on the UI"""
+        if result_type == "success" and duration:
+            self.start_button.config(
+                state="disabled",
+                bg="#4CAF50",
+                text="GOAL REACHED!"
+            )
+            self.status_label.config(
+                text=f"🎉 You win! Time: {duration} seconds 🎉",
+                fg="#2E7D32"
+            )
+            print(f"[PLAYALONE UI] Player succeeded in {duration} seconds!")
+            
+            # Auto-reset after 5 seconds
+            self.after(5000, self._auto_reset_after_result)
+            
+        elif result_type == "failure":
+            self.start_button.config(
+                state="disabled",
+                bg="#F44336",
+                text="GAME FAILED"
+            )
+            self.status_label.config(
+                text="Game over!",
+                fg="#C62828"
+            )
+            print("[PLAYALONE UI] Player failed - ball lost!")
+            
+            # Auto-reset after 3 seconds
+            self.after(3000, self._auto_reset_after_result)
+
+    def _auto_reset_after_result(self):
+        """Automatically reset the game state after showing results"""
+        self.reset_game_state()
+        self.status_label.config(fg="#1A1A1A")  # Reset text color
+
     def show(self):
+        # Reset game state when screen is shown
+        self.reset_game_state()
         self.focus_set()
         self.update_idletasks()
 
