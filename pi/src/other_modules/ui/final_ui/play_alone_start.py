@@ -86,7 +86,7 @@ class PlayAloneStartScreen(tk.Frame):
             command=self.on_start_game_click,
             state="disabled"
         )
-        self.start_button.place(x=400, y=650, width=200, height=60)
+        self.start_button.place(x=770, y=385, width=200, height=75)
 
         self.add_essential_buttons()
 
