@@ -117,3 +117,12 @@ animations:
     fps: 30
   path_finding:
     fps: 8
+
+game:
+  maze_id: 1              # maze configuration (1 or 2)
+  player_name: "Player"
+  goal_position:          # goal coordinates for current maze
+    x: 49
+    y: 763
+  goal_radius: 30         # goal detection radius in pixels
+  ball_lost_timeout: 5    # seconds before game fails when ball is lost

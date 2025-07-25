@@ -143,8 +143,12 @@ class HMIController:
         self.joystick_thread.start()
 
     def _ball_crossed_goal(self, position):
-        goal = (49, 763)
-        radius = 30
+        # Get goal configuration from config file
+        goal_config = self.config.get("game", {})
+        goal_pos = goal_config.get("goal_position", {"x": 49, "y": 763})
+        goal = (goal_pos["x"], goal_pos["y"])
+        radius = goal_config.get("goal_radius", 30)
+        
         x, y = position
         goal_x, goal_y = goal
         
@@ -154,8 +158,13 @@ class HMIController:
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
 
-        maze_id = self.config.get("maze_id", 1)
-        player_name = self.config.get("player_name", "Unknown")
+        # Get game configuration
+        game_config = self.config.get("game", {})
+        maze_id = game_config.get("maze_id", 1)
+        player_name = game_config.get("player_name", "Unknown")
+        ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
+        
+        print(f"[PLAYALONE] Playing on Maze {maze_id} with timeout {ball_lost_timeout}s")
 
         self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
@@ -174,8 +183,8 @@ class HMIController:
             ball_pos = self.tracking_service.get_ball_position()
 
             if ball_pos is None:
-                if start_time and (time.time() - last_valid_pos_time > 3):
-                    print("[PLAYALONE] Game failed: ball lost > 3 seconds.")
+                if start_time and (time.time() - last_valid_pos_time > ball_lost_timeout):
+                    print(f"[PLAYALONE] Game failed: ball lost > {ball_lost_timeout} seconds.")
                     self.mqtt_client.client.publish("pi/command", "playalone_fail")
                     break
                 elif ball_previously_detected:
@@ -218,7 +227,9 @@ class HMIController:
         if custom_goal is not None:
             goal = (custom_goal[1], custom_goal[0])
         else:
-            goal = (49, 763)
+            game_config = self.config.get("game", {})
+            goal_pos = game_config.get("goal_position", {"x": 49, "y": 763})
+            goal = (goal_pos["y"], goal_pos["x"])
 
         self.path_thread = utility_threads.PathFindingThread(
             tracking_service=self.tracking_service,
@@ -321,10 +332,7 @@ class HMIController:
 
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
-                
-                # Reset any previous playalone state
                 self.playalone_timer_start_requested = False
-                
                 self.state = SystemState.PLAYALONE
                 self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
 
@@ -352,7 +360,6 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE:
             if cmd == "Back":
-                # Reset playalone state when going back
                 self.playalone_timer_start_requested = False
                 self.state = SystemState.HUMAN_CONTROLLER
             
@@ -360,7 +367,6 @@ class HMIController:
                 self.state = SystemState.PLAYALONE_START
                 print("[PLAYALONE] Entering play alone start screen")
                 
-                # Reset playalone state variables
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
                 
@@ -375,21 +381,15 @@ class HMIController:
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
                 
-                # Start tracking and joystick control, but don't start the game timer yet
                 self._start_joystick_control()
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
-                print("[PLAYALONE] Tracking started, waiting for player to start game")
-        
+
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
-                print("[FSM] Transitioned to HUMAN_CONTROLLER")
-                
-                # Reset playalone state variables and signal game loop to stop
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
                 
-                # Stop joystick controller
                 if hasattr(self, 'joystick_controller'):
                     self.joystick_controller.stop()
                     del self.joystick_controller
@@ -397,22 +397,18 @@ class HMIController:
                     self.joystick_thread.join()
                     del self.joystick_thread
                 
-                # Stop tracking
                 self.tracking_service.stop_tracker()
                 
-                # Stop path thread if running
                 if self.path_thread is not None and self.path_thread.is_alive():
                     self.path_thread.stop()
                     self.path_thread = None
 
-                # Stop and cleanup image thread
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
                     self.custom_goal = None
                 
-                # Reset path
                 self.path = None
                 self.image_controller.set_new_path(self.path)
             

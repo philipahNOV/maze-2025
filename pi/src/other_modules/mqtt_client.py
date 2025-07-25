@@ -27,9 +27,8 @@ class MQTTClientPi(threading.Thread):
         self.path_found = False
         self.finding_path = False
         self.path_failed = False
-        
         self.connected = False
-        self.retry_interval = 1  # Initial retry interval in seconds
+        self.retry_interval = 1
         
         #self.connect_to_broker()
         threading.Thread(target=self.connect_to_broker, daemon=True).start()
@@ -41,7 +40,7 @@ class MQTTClientPi(threading.Thread):
                 self.client.connect(self.broker_address, self.port, keepalive=60)
                 self.client.loop_start()
                 print("[MQTT] Connected. Waiting for on_connect callback...")
-                return  # Let on_connect() set it
+                return
             except Exception as e:
                 print(f"[MQTT] Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
                 time.sleep(self.retry_interval)
@@ -72,7 +71,6 @@ class MQTTClientPi(threading.Thread):
     def on_message(self, client, userdata, msg):
         #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
-            # Handle playalone game results
             payload = msg.payload.decode()
             if payload.startswith("playalone_success:"):
                 duration = payload.split(":")[1]
@@ -101,7 +99,6 @@ class MQTTClientPi(threading.Thread):
                 self.finding_path = False
                 self.path_failed = True
         elif msg.topic == "pi/tracking_status":
-            # Handle tracking status updates for play alone mode
             if self.app and hasattr(self.app, 'frames'):
                 play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
                 if play_alone_frame:
