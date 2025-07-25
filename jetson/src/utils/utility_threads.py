@@ -16,7 +16,7 @@ class BlinkRed(threading.Thread):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self._stop_event = threading.Event()
-        self.trigger_delay = config["general"].get("get_ball_delay", 5)  # seconds before elevator triggers
+        self.trigger_delay = config["general"].get("get_ball_delay", 7)  # seconds before elevator triggers
         self.start_time = None
         self.triggered = False
         self.controller = controller
@@ -30,7 +30,6 @@ class BlinkRed(threading.Thread):
             time.sleep(0.2)
             self.arduino_thread.send_color(*white)
 
-            # Check if enough time has passed to trigger elevator
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 print("BlinkRed active too long — triggering elevator up.")
                 for attempt in range(5):

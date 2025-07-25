@@ -74,7 +74,6 @@ class MainApp(tk.Tk):
         return self.current_screen 
 
     def show_frame(self, page_name):
-        """Show a frame for the given page name"""
         print("Attempting to show frame:", page_name)
         self.current_screen = page_name
         frame = self.frames[page_name]

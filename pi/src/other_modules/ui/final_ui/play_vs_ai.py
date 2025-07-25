@@ -12,18 +12,15 @@ class PlayVsAIScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-
         self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.65)
         self.true_width = controller.config['camera'].get('maze_width', 730)
         self.true_height = controller.config['camera'].get('maze_height', 640)
-        
         self.current_turn = "waiting"
         self.pid_result = None
         self.human_result = None
         self.tracking_ready = False
         self.ball_detected = False
         self.game_started = False
-
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.background_label = tk.Label(self, image=self.background_image)
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
@@ -157,7 +154,6 @@ class PlayVsAIScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "StartBattle")
 
     def start_human_turn(self):
-        """Start the human player's turn"""
         if self.current_turn == "human":
             self.start_human_button.config(state=tk.DISABLED)
             self.status_label.config(text="Player turn started! Control the ball to reach the goal.")
@@ -188,13 +184,11 @@ class PlayVsAIScreen(tk.Frame):
         self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#2196F3")
 
     def handle_human_started(self):
-        """Called when human turn starts"""
         self.current_turn = "human"
         self.status_label.config(text="Player turn in progress! Control the ball to reach the goal.")
         self.human_result_label.config(text="Player: Playing...", fg="#FF9800")
 
     def handle_human_result(self, success, duration=None):
-        """Called when human turn completes"""
         if success:
             self.human_result_label.config(
                 text=f"Human Player: SUCCESS ({duration:.2f}s)", 
@@ -212,8 +206,6 @@ class PlayVsAIScreen(tk.Frame):
         self.determine_winner()
 
     def determine_winner(self):
-        """Determine and display the winner"""
-        # Clear the camera image when battle ends
         self.canvas.delete("all")
         self.canvas.create_text(
             self.canvas_width // 2, 
@@ -224,7 +216,6 @@ class PlayVsAIScreen(tk.Frame):
         )
         
         if self.pid_result is not None and self.human_result is not None:
-            # Both succeeded - fastest wins
             if self.pid_result < self.human_result:
                 self.winner_label.config(text="Robot wins!", fg="#4CAF50")
                 self.status_label.config(text="Robot was faster!")
@@ -308,6 +299,5 @@ class PlayVsAIScreen(tk.Frame):
         self.after(100, self.update_image)
 
     def show(self):
-        """Called when this screen is shown"""
         self.reset_game_state()
         self.tkraise()

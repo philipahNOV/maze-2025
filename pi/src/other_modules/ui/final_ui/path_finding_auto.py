@@ -18,9 +18,8 @@ class AutoPathScreen(tk.Frame):
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
-        # Layout the widgets including the logo
         self.create_widgets()
-        self.update_image()  # Start updating the image
+        self.update_image()
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -88,7 +87,7 @@ class AutoPathScreen(tk.Frame):
             text="✖",
             font=("Jockey One", 30),
             fg="white",
-            bg="#EE3229",              # Red exit button
+            bg="#EE3229",
             activebackground="#B82F27",
             activeforeground="#DFDFDF",
             borderwidth=0,
@@ -141,8 +140,8 @@ class AutoPathScreen(tk.Frame):
             text="",
             font=("Jockey One", 35),
             fg="white",
-            bg="#4D4D4D",  # Match background or make transparent if needed
-            anchor="w",    # Left aligned
+            bg="#4D4D4D",
+            anchor="w",
             justify="left"
         )
 
@@ -157,7 +156,7 @@ class AutoPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            state="disabled",  # Initially disabled
+            state="disabled",
             command=self.on_button_click_retry,
         )
         self.retry_button.place(x=600, y=300, width=150, height=50)
@@ -173,18 +172,16 @@ class AutoPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            state="disabled",  # Initially disabled
+            state="disabled",
             command=self.on_button_click_start,
         )
         self.start_button.place(x=770, y=300, width=200, height=50)
 
 
     def show(self):
-        """Make this frame visible"""
-        self.mqtt_client.img = None  # Reset image to trigger loading state
-        self.waiting_phase = 0  # Reset waiting phase for loading state
+        self.mqtt_client.img = None
+        self.waiting_phase = 0
         #self.check_for_timeout()
 
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()

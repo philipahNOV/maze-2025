@@ -39,12 +39,10 @@ class CustomPathScreen(tk.Frame):
             Image.open(controller.touch_path).resize((30, 30), Image.Resampling.LANCZOS)
         )
 
-        # Layout the widgets including the logo
         self.create_widgets()
-        self.update_image()  # Start updating the image
+        self.update_image()
 
     def update_image(self):
-        # Pathfinding is complete, image is ready
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             if self.awaiting_path:
                 if self.mqtt_client.path_failed:
@@ -63,7 +61,6 @@ class CustomPathScreen(tk.Frame):
             self._animating = False
             self.animation_label.place_forget()
 
-            # Convert OpenCV BGR to RGB
             frame = cv2.cvtColor(self.mqtt_client.img, cv2.COLOR_BGR2RGB)
             img = Image.fromarray(frame)
             img_scaled = img.resize(
@@ -76,7 +73,7 @@ class CustomPathScreen(tk.Frame):
             self.status_label.place_forget()
 
         else:
-            self.has_pathfinded = False  # ← Force consistent state
+            self.has_pathfinded = False
             self.disable_button_start()
             self.path_failed_label.place_forget()
 
@@ -131,25 +128,20 @@ class CustomPathScreen(tk.Frame):
 
     def on_canvas_click(self, event):
         x, y = event.x, event.y
-
         canvas_width = int(self.true_width * self.scale_ratio)
         canvas_height = int(self.true_height * self.scale_ratio)
 
-        # Check if the click is within the image bounds
         if 0 <= x <= canvas_width and 0 <= y <= canvas_height:
-            # Remove previous dot if it exists
             if hasattr(self, 'click_marker') and self.click_marker is not None:
                 self.canvas.delete(self.click_marker)
 
-            # Draw new green dot
             r = 5
             self.click_marker = self.canvas.create_oval(x - r, y - r, x + r, y + r, fill="green", outline="")
 
-            # Transform coordinates
             transformed_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
             transformed_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
 
-            self.enable_button_calculate()  # Enable buttons when goal is set
+            self.enable_button_calculate()
             print(f"[CustomPathScreen] Clicked at pixel: ({transformed_x}, {transformed_y})")
             self.mqtt_client.client.publish("jetson/command", f"Goal_set:{transformed_x},{transformed_y}")
         else:
@@ -261,7 +253,7 @@ class CustomPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            state="disabled",  # Initially disabled
+            state="disabled",
             command=self.on_button_click_calculate,
         )
         self.calculate_button.place(x=770, y=300, width=200, height=75)
@@ -277,8 +269,8 @@ class CustomPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            justify="center",         # Horizontal alignment of lines
-            state="disabled",  # Initially disabled
+            justify="center",
+            state="disabled",
             command=self.on_button_click_start,
         )
         self.start_button.place(x=770, y=385, width=200, height=75)
@@ -294,8 +286,8 @@ class CustomPathScreen(tk.Frame):
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            justify="center",         # Horizontal alignment of lines
-            state="disabled",  # Initially disabled
+            justify="center",
+            state="disabled",
             command=self.on_button_click_start_speed,
         )
         self.start_speed_button.place(x=770, y=470, width=200, height=75)
@@ -328,5 +320,4 @@ class CustomPathScreen(tk.Frame):
 
 
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()

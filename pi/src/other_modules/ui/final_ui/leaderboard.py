@@ -27,7 +27,6 @@ class LeaderboardScreen(tk.Frame):
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Title
         tk.Label(
             self,
             text="LEADERBOARD",
@@ -80,11 +79,7 @@ class LeaderboardScreen(tk.Frame):
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
         self.maze_toggle_button.config(text=f"Switch maze")
-        
-        # Request fresh leaderboard data from Jetson for the new maze
         self.mqtt_client.client.publish("jetson/command", f"SendLeaderboard:{new_id}")
-        
-        # Load local data as fallback while waiting for MQTT data
         self.load_leaderboard(new_id)
 
     def load_leaderboard(self, maze_id: int):
@@ -111,19 +106,15 @@ class LeaderboardScreen(tk.Frame):
             self.tree.insert("", "end", values=row)
 
     def update_leaderboard_data(self, maze_id: int, csv_data: str):
-        """Update leaderboard with real-time data from MQTT"""
         try:
-            # Check if this is the currently displayed maze
             current_maze_id = self.controller.config.get("maze_id", 1)
             if maze_id != current_maze_id:
-                return  # Only update if it's the currently selected maze
+                return
             
-            # Clear current data
             self.tree.delete(*self.tree.get_children())
             
-            # Parse CSV data
             entries = []
-            if csv_data.strip():  # Only process if there's actual data
+            if csv_data.strip():
                 lines = csv_data.strip().split('\n')
                 for line in lines:
                     if line.strip():
@@ -135,7 +126,6 @@ class LeaderboardScreen(tk.Frame):
                             except ValueError:
                                 continue
             
-            # Sort by time and populate tree
             entries.sort(key=lambda x: x[1])
             for row in entries:
                 self.tree.insert("", "end", values=row)

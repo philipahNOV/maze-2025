@@ -30,7 +30,6 @@ class MQTTClientPi(threading.Thread):
         self.connected = False
         self.retry_interval = 1
         
-        #self.connect_to_broker()
         threading.Thread(target=self.connect_to_broker, daemon=True).start()
 
     def connect_to_broker(self):
@@ -62,7 +61,7 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("jetson/path")
             self.client.subscribe("pi/info")
             self.client.subscribe("pi/tracking_status")
-            self.client.subscribe("pi/leaderboard_data/+")  # Subscribe to leaderboard data for all mazes
+            self.client.subscribe("pi/leaderboard_data/+")
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
@@ -70,7 +69,6 @@ class MQTTClientPi(threading.Thread):
             #self.connect_to_broker()
 
     def on_message(self, client, userdata, msg):
-        #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
             payload = msg.payload.decode()
             if payload.startswith("playalone_success:"):
@@ -120,7 +118,6 @@ class MQTTClientPi(threading.Thread):
                     if playvsai_frame:
                         playvsai_frame.handle_human_result(False)
             elif payload == "clear_image_buffer":
-                # Clear the image buffer completely
                 print("[MQTT] Clearing image buffer")
                 self.img = None
         elif msg.topic == "pi/info":
@@ -150,7 +147,6 @@ class MQTTClientPi(threading.Thread):
                     elif payload == "ball_lost":
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
         elif msg.topic.startswith("pi/leaderboard_data/"):
-            # Handle leaderboard data updates
             try:
                 maze_id = int(msg.topic.split("/")[-1])
                 csv_data = msg.payload.decode()

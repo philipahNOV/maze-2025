@@ -151,7 +151,7 @@ class HMIController:
         if (self.state in [SystemState.PLAYVSAI_PID, SystemState.PLAYVSAI_HUMAN] and 
             hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None):
             goal = self.playvsai_goal
-            radius = 30  # Default radius for custom goals
+            radius = 30
         else:
             goal_config = self.config.get("game", {})
             goal_pos = goal_config.get("goal_position", {"x": 49, "y": 763})
@@ -168,7 +168,7 @@ class HMIController:
         print("[PLAYALONE] Starting tracking thread...")
         game_config = self.config.get("game", {})
         maze_id = game_config.get("maze_id", 1)
-        player_name = self.current_player_name  # Use MQTT-received name
+        player_name = self.current_player_name
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
         print(f"[PLAYALONE] Playing on Maze {maze_id} with timeout {ball_lost_timeout}s")
@@ -218,7 +218,7 @@ class HMIController:
 
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
                 game_timer_started = True
-                start_time = time.time()  # Start timer immediately when button is pressed
+                start_time = time.time()
                 self.playalone_timer_start_requested = False
                 print(f"[PLAYALONE] Game start requested, timer started immediately at {start_time}")
 
@@ -497,7 +497,6 @@ class HMIController:
                 self.state = SystemState.LEADERBOARD
                 self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
                 
-                # Send current leaderboard data for both mazes
                 from utils.leaderboard_utils import send_leaderboard_data
                 send_leaderboard_data(self.mqtt_client, 1)
                 send_leaderboard_data(self.mqtt_client, 2)
