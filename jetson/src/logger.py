@@ -67,10 +67,6 @@ class LoggingThread(threading.Thread):
         self.steps_taken = 0
         self.max_episode_steps = 6000  # 5 minutes at 20Hz
         self.episode_start_time = time.time()
-        
-        # Ball loss detection
-        self.ball_lost_start_time = None
-        self.ball_lost_threshold = 1.0  # Require ball to be lost for 1 second before terminating
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -78,19 +74,13 @@ class LoggingThread(threading.Thread):
             loop_start = time.time()
             self.steps_taken += 1
 
-            # CRITICAL: If ball position is None, we must propagate None in state 
-            # to properly detect ball loss and episode termination
-            if self.ball_position is None:
-                print(f"[Logger DEBUG] Ball position is None during run() at step {self.steps_taken}")
-                # Do not substitute default values when ball is lost
-                state = None  # Null state indicates ball is lost
-            else:
-                x, y = self.ball_position
-                theta_x, theta_y = self.orientation if self.orientation is not None else (0, 0)
-                vel_x, vel_y = self.ball_velocity if self.ball_velocity is not None else (0, 0)
-                input_x, input_y = self.motor_input if self.motor_input is not None else (0, 0)
-                state = [x, y, vel_x, vel_y, theta_x, theta_y]
-                action = [input_x, input_y]
+            x, y = self.ball_position if self.ball_position is not None else (0, 0)
+            theta_x, theta_y = self.orientation if self.orientation is not None else (0, 0)
+            vel_x, vel_y = self.ball_velocity if self.ball_velocity is not None else (0, 0)
+            input_x, input_y = self.motor_input if self.motor_input is not None else (0, 0)
+
+            state = [x, y, vel_x, vel_y, theta_x, theta_y]
+            action = [input_x, input_y]
 
             # Combined warm-up check
             if self.steps_taken < self.warmup_steps or self.current_waypoint is None:
@@ -163,24 +153,12 @@ class LoggingThread(threading.Thread):
     def calculate_reward(self):
         reward = 0
         
-        # Robust ball lost detection - require ball to be lost for a duration
+        # Terminate episode if ball is lost (fell in hole)
         if self.ball_position is None:
-            if self.ball_lost_start_time is None:
-                self.ball_lost_start_time = time.time()
-                print(f"[Logger DEBUG] Ball lost detected, starting timer...")
-            elif time.time() - self.ball_lost_start_time > self.ball_lost_threshold:
-                print(f"[Logger] Ball lost for {self.ball_lost_threshold}s! Terminating episode. Steps taken: {self.steps_taken}")
-                print(f"[Logger DEBUG] Returning done=True after {self.ball_lost_threshold}s of ball loss")
-                return -100, True
-            else:
-                # Ball just lost but not long enough to terminate
-                print(f"[Logger DEBUG] Ball lost for {time.time() - self.ball_lost_start_time:.2f}s, waiting for {self.ball_lost_threshold}s before terminating")
-                return -5, False  # Small penalty for unstable tracking but don't end yet
-        else:
-            # Ball is visible, reset lost timer
-            if self.ball_lost_start_time is not None:
-                print(f"[Logger DEBUG] Ball recovered after {time.time() - self.ball_lost_start_time:.2f}s")
-                self.ball_lost_start_time = None
+            print(f"[Logger] Ball lost! Terminating episode. Steps taken: {self.steps_taken}")
+            # Add an extra debug print for traceability
+            print(f"[Logger DEBUG] Returning done=True for None ball_position")
+            return -100, True
         
         # 1. Dense reward: Progress along the path
         path_length = self.compute_total_path_length()
