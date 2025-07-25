@@ -70,7 +70,7 @@ class LoggingThread(threading.Thread):
         
         # Ball loss detection
         self.ball_lost_start_time = None
-        self.ball_lost_threshold = 2.0  # Require ball to be lost for 1 second before terminating
+        self.ball_lost_threshold = 1.0  # Require ball to be lost for 1 second before terminating
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -90,7 +90,7 @@ class LoggingThread(threading.Thread):
                 vel_x, vel_y = self.ball_velocity if self.ball_velocity is not None else (0, 0)
                 input_x, input_y = self.motor_input if self.motor_input is not None else (0, 0)
                 state = [x, y, vel_x, vel_y, theta_x, theta_y]
-            action = [input_x, input_y]
+                action = [input_x, input_y]
 
             # Combined warm-up check
             if self.steps_taken < self.warmup_steps or self.current_waypoint is None:
@@ -110,20 +110,13 @@ class LoggingThread(threading.Thread):
                 done = True
                 reward -= 50  # Penalty for timeout
 
-            # Check if we should forcibly end the episode due to ball loss
-            if state is None:
-                print(f"[Logger DEBUG] State is None - ball is lost. Setting done=True at step {self.steps_taken}")
-                done = True
-                reward = -100
-            
-            # Only log step if we have previous state data
-            if self.prev_state is not None and self.prev_action is not None:
+            if self.prev_state is not None and self.prev_action is not None and state is not None:
                 self.episode_reward += reward
                 self.logger.log_step(
                     state=self.prev_state,
                     action=self.prev_action,
                     reward=self.prev_reward,
-                    next_state=state if state is not None else [0, 0, 0, 0, 0, 0],  # Use zeros for logging if None
+                    next_state=state,
                     done=done
                 )
                 if done:
@@ -131,11 +124,9 @@ class LoggingThread(threading.Thread):
                     print(f"[LoggingThread] Episode complete. Total reward: {self.episode_reward:.1f}, Duration: {episode_duration:.1f}s, Steps: {self.steps_taken}")
                     self.stop()
 
-            # Only update previous state if current state is valid
-            if state is not None:
-                self.prev_state = state
-                self.prev_action = action
-                self.prev_reward = reward
+            self.prev_state = state
+            self.prev_action = action
+            self.prev_reward = reward
 
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
