@@ -36,17 +36,6 @@ except Exception as e:
     print(e)
     exit(1)
 
-# Initialize MQTT client (keeping for compatibility)
-try:
-    mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
-except Exception as e:
-    print(e)
-    exit(1)
-
-print("Waiting for handshake from Pi...")
-while not mqtt_client.handshake_complete:
-    time.sleep(1)
-
 # Initialize tracker service
 tracker_service = TrackerService(model_path="tracking/v8-291.pt")
 tracker_service.camera.init_camera()
