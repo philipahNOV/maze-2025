@@ -73,7 +73,6 @@ def main(tracker: TrackerService,
 
                 if blinker is not None:
                     blinker.stop()
-                    # Reset ball lost flag when ball is found again
                     if logger is not None:
                         logger.reset_ball_lost()
                     if blinker.triggered:
@@ -100,7 +99,6 @@ def main(tracker: TrackerService,
                     blinker.start()
                     ball_not_found_timer = time.time()
                     
-                    # Notify logger of ball loss when BlinkRed starts
                     if logger is not None:
                         logger.mark_ball_lost()
 

@@ -26,7 +26,7 @@ class BlinkRed(threading.Thread):
         white = (255, 255, 255)
         self.start_time = time.time()
         self.arduino_thread.send_color(*red)
-        time.sleep(1.0)
+        time.sleep(2.0)
         self.arduino_thread.send_color(*white)
         
         while not self._stop_event.is_set():
@@ -174,7 +174,6 @@ class EscapeElevatorThread(threading.Thread):
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
         time.sleep(0.3)
-        print(self.controller.elevator_state)
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
             for _ in range(5):
