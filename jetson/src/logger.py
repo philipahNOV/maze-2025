@@ -67,6 +67,9 @@ class LoggingThread(threading.Thread):
         self.steps_taken = 0
         self.max_episode_steps = 6000  # 5 minutes at 20Hz
         self.episode_start_time = time.time()
+        
+        # Initialize ball loss detection flag
+        self.ball_lost = False
 
     def run(self):
         LOOP_DT = 1.0 / self.target_hz
@@ -150,14 +153,28 @@ class LoggingThread(threading.Thread):
         self.prev_ball_position = ball_position
         self.prev_update_time = time.time()
 
+    def mark_ball_lost(self):
+        """Called from external systems when ball loss is detected (e.g., when BlinkRed starts)"""
+        if not self.ball_lost:
+            print(f"[Logger] Ball loss detected from external system! Terminating episode. Steps taken: {self.steps_taken}")
+            self.ball_lost = True
+    
+    def reset_ball_lost(self):
+        """Called when ball is found again"""
+        if self.ball_lost:
+            print(f"[Logger] Ball found again, resetting ball lost flag")
+            self.ball_lost = False
+
     def calculate_reward(self):
         reward = 0
         
-        # Terminate episode if ball is lost (fell in hole)
+        # Check for ball loss from external detection system
+        if self.ball_lost:
+            return -100, True
+        
+        # Fallback check for ball position (keep as secondary check)
         if self.ball_position is None:
-            print(f"[Logger] Ball lost! Terminating episode. Steps taken: {self.steps_taken}")
-            # Add an extra debug print for traceability
-            print(f"[Logger DEBUG] Returning done=True for None ball_position")
+            print(f"[Logger] Ball position None detected! Terminating episode. Steps taken: {self.steps_taken}")
             return -100, True
         
         # 1. Dense reward: Progress along the path

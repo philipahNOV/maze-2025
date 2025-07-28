@@ -136,7 +136,7 @@ class PlayVsAIScreen(tk.Frame):
             relief="flat",
             state=tk.DISABLED
         )
-        self.start_human_button.place(x=50, y=420)
+        self.start_human_button.place(x=90, y=350)
 
         self.back_button = tk.Button(
             self,
