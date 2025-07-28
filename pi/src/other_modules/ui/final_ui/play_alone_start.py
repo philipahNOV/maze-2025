@@ -31,7 +31,7 @@ class PlayAloneStartScreen(tk.Frame):
     def create_widgets(self):
         self.status_label = tk.Label(
             self,
-            text="Waiting for ball tracking to start...",
+            text="WAITING FOR TRACKING...",
             font=("Jockey One", 18),
             bg="#D9D9D9",
             fg="#1A1A1A"
@@ -161,14 +161,14 @@ class PlayAloneStartScreen(tk.Frame):
         if button_text in ["GOAL REACHED!", "TRY AGAIN"]:
             self.reset_game_state()
             self.clear_all_memory()
-            self.status_label.config(text="Waiting for ball tracking to start...", fg="#1A1A1A")
+            self.status_label.config(text="WAITING FOR TRACKING...", fg="#1A1A1A")
             self.mqtt_client.client.publish("jetson/command", "RestartPlayAlone")
             return
             
         if self.tracking_ready and self.ball_detected:
             self.game_started = True
             self.start_button.config(state="disabled", bg="#808080", text="GAME STARTED")
-            self.status_label.config(text="Game in progress! Use joystick to control the ball")
+            self.status_label.config(text="IN PROGRESS - USE JOYSTICK TO CONTROL THE BALL")
             self.mqtt_client.client.publish("jetson/command", "StartPlayAloneGame")
 
     def update_tracking_status(self, tracking_ready=False, ball_detected=False):
@@ -178,13 +178,13 @@ class PlayAloneStartScreen(tk.Frame):
         if not self.game_started:
             if tracking_ready and ball_detected:
                 self.start_button.config(state="normal", bg="#4CAF50", text="START GAME")
-                self.status_label.config(text="Ball detected! Press START GAME to begin")
+                self.status_label.config(text="BALL DETECTED - PRESS START GAME")
             elif tracking_ready:
                 self.start_button.config(state="disabled", bg="#FFA500", text="WAITING FOR BALL")
-                self.status_label.config(text="Tracking ready, waiting for ball...")
+                self.status_label.config(text="TRACKING READY, WAITING FOR BALL...")
             else:
                 self.start_button.config(state="disabled", bg="#808080", text="STARTING TRACKER...")
-                self.status_label.config(text="Starting ball tracking system...")
+                self.status_label.config(text="STARTING TRACKING...")
 
     def reset_game_state(self):
         self.tracking_ready = False
@@ -196,12 +196,11 @@ class PlayAloneStartScreen(tk.Frame):
             bg="#808080", 
             text="START GAME"
         )
-        self.status_label.config(text="Waiting for ball tracking to start...")
+        self.status_label.config(text="WAITING FOR TRACKING...")
 
     def clear_completion_screen(self):
         self.canvas.delete("all")
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
-        print("[PLAYALONE UI] Cleared completion screen, restored camera view")
 
     def clear_all_memory(self):
         try:
@@ -227,22 +226,21 @@ class PlayAloneStartScreen(tk.Frame):
         self.canvas.create_text(
             self.canvas_width // 2, 
             self.canvas_height // 2, 
-            text="Game Complete", 
+            text="MAZE COMPLETE", 
             fill="white", 
-            font=("Arial", 24)
+            font=("Jockey One", 24)
         )
         
         if result_type == "success" and duration:
             self.start_button.config(
                 state="normal",
                 bg="#4CAF50",
-                text="GOAL REACHED!"
+                text="GOAL REACHED"
             )
             self.status_label.config(
-                text=f"You win! Time: {duration} seconds",
+                text=f"YOU WIN - TIME: {duration} SECONDS",
                 fg="#2E7D32"
             )
-            print(f"[PLAYALONE UI] Player succeeded in {duration} seconds!")
             
         elif result_type == "failure":
             self.start_button.config(
@@ -251,7 +249,7 @@ class PlayAloneStartScreen(tk.Frame):
                 text="TRY AGAIN"
             )
             self.status_label.config(
-                text="Game over! Click button to try again",
+                text="FAILED - TRY AGAIN",
                 fg="#C62828"
             )
             print("[PLAYALONE UI] Player failed - ball lost!")

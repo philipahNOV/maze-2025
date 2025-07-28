@@ -28,15 +28,15 @@ class PlayAloneScreen(tk.Frame):
             font=("Jockey One", 40),
             bg="#D9D9D9",
             fg="#1A1A1A"
-        ).place(x=330, y=30)
+        ).place(x=330, y=10)
 
         tk.Label(
             self,
-            text="ENTER YOUR NAME:",
+            text="ENTER YOUR NAME",
             font=("Jockey One", 24),
             bg="#D9D9D9",
             fg="#1A1A1A"
-        ).place(x=320, y=110)
+        ).place(x=330, y=110)
 
         self.name_entry_display = tk.Label(
             self,

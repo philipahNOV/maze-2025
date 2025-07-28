@@ -40,7 +40,7 @@ class PlayVsAIScreen(tk.Frame):
 
         self.status_label = tk.Label(
             self,
-            text="Click on the maze to set a goal",
+            text="CLICK TO SET GOAL",
             font=("Jockey One", 18),
             bg="#D9D9D9",
             fg="#1A1A1A"
@@ -52,7 +52,7 @@ class PlayVsAIScreen(tk.Frame):
 
         self.pid_result_label = tk.Label(
             self.results_frame,
-            text="Robot: Waiting...",
+            text="ROBOT - WAITING...",
             font=("Jockey One", 16),
             bg="#D9D9D9",
             fg="#1A1A1A",
@@ -62,7 +62,7 @@ class PlayVsAIScreen(tk.Frame):
 
         self.human_result_label = tk.Label(
             self.results_frame,
-            text="Player: Waiting...",
+            text="PLAYER - WAITING...",
             font=("Jockey One", 16),
             bg="#D9D9D9",
             fg="#1A1A1A",
@@ -158,41 +158,41 @@ class PlayVsAIScreen(tk.Frame):
     def start_battle(self):
         self.current_turn = "pid"
         self.start_battle_button.config(state=tk.DISABLED)
-        self.status_label.config(text="Robot is attempting the maze...")
-        self.pid_result_label.config(text="Robot: Running...", fg="#D2691E")
+        self.status_label.config(text="ROBOT IS ATTEMPTING THE MAZE...")
+        self.pid_result_label.config(text="ROBOT - RUNNING...", fg="#D2691E")
         self.mqtt_client.client.publish("jetson/command", "StartBattle")
 
     def start_human_turn(self):
         if self.current_turn == "human":
             self.start_human_button.config(state=tk.DISABLED)
-            self.status_label.config(text="Player turn started! Control the ball to reach the goal.")
+            self.status_label.config(text="PLAYER TURN STARTED - CONTROL THE BALL")
             self.mqtt_client.client.publish("jetson/command", "StartHumanTurn")
 
     def handle_pid_started(self):
         self.current_turn = "pid"
-        self.status_label.config(text="Robot is attempting the maze...")
-        self.pid_result_label.config(text="Robot: Running...", fg="#D2691E")
+        self.status_label.config(text="ROBOT IS ATTEMPTING THE MAZE...")
+        self.pid_result_label.config(text="ROBOT - RUNNING...", fg="#D2691E")
 
     def handle_pid_result(self, success, duration=None, failure_reason=None):
         if success:
             self.pid_result_label.config(
-                text=f"Robot: SUCCESS ({duration:.2f}s)", 
+                text=f"ROBOT - SUCCESS ({duration:.2f}s)", 
                 fg="#2E8B57"
             )
             self.pid_result = duration
             self.current_turn = "human"
-            self.status_label.config(text="Robot finished. Your turn! Click 'Start Turn' when ready.")
+            self.status_label.config(text="ROBOT FINISHED - CLICK START TURN")
             self.start_human_button.config(state=tk.NORMAL)
-            self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
+            self.human_result_label.config(text="PLAYER - CLICK START TURN", fg="#60666C")
         else:
             if failure_reason == "no_path":
                 self.pid_result_label.config(
-                    text="Robot: NO PATH FOUND", 
+                    text="ROBOT - NO PATH FOUND", 
                     fg="#EE3229"
                 )
-                self.status_label.config(text="Pathfinding failed. Try setting a different goal or check ball position.")
+                self.status_label.config(text="PATHFINDING FAILED")
                 self.current_turn = "waiting"
-                self.start_battle_button.config(state=tk.NORMAL, text="Retry Battle")
+                self.start_battle_button.config(state=tk.NORMAL, text="RETRY MAZE")
             else:
                 self.pid_result_label.config(
                     text="Robot: FAILED", 
@@ -200,25 +200,25 @@ class PlayVsAIScreen(tk.Frame):
                 )
                 self.pid_result = None
                 self.current_turn = "human"
-                self.status_label.config(text="Robot failed. Your turn! Click 'Start Turn' when ready.")
+                self.status_label.config(text="ROBOT FAILED - CLICK START TURN")
                 self.start_human_button.config(state=tk.NORMAL)
-                self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
+                self.human_result_label.config(text="PLAYER TURN - CLICK START TURN", fg="#60666C")
 
     def handle_human_started(self):
         self.current_turn = "human"
-        self.status_label.config(text="Player turn in progress! Control the ball to reach the goal.")
-        self.human_result_label.config(text="Player: Playing...", fg="#D2691E")
+        self.status_label.config(text="PLAYER TURN - CONTROL USING JOYSTICK")
+        self.human_result_label.config(text="PLAYER - PLAYING...", fg="#D2691E")
 
     def handle_human_result(self, success, duration=None):
         if success:
             self.human_result_label.config(
-                text=f"Human Player: SUCCESS ({duration:.2f}s)", 
+                text=f"PLAYER: SUCCESS ({duration:.2f}s)", 
                 fg="#2E8B57"
             )
             self.human_result = duration
         else:
             self.human_result_label.config(
-                text="Human Player: FAILED", 
+                text="PLAYER: FAILED", 
                 fg="#EE3229"
             )
             self.human_result = None
@@ -231,30 +231,30 @@ class PlayVsAIScreen(tk.Frame):
         self.canvas.create_text(
             self.canvas_width // 2, 
             self.canvas_height // 2, 
-            text="Battle Complete", 
+            text="MAZE COMPLETE", 
             fill="white", 
-            font=("Arial", 24)
+            font=("Jockey One", 24)
         )
         
         if self.pid_result is not None and self.human_result is not None:
             if self.pid_result < self.human_result:
-                self.winner_label.config(text="Robot wins!", fg="#2E8B57")
-                self.status_label.config(text="Robot was faster!")
+                self.winner_label.config(text="ROBOT WINS", fg="#2E8B57")
+                self.status_label.config(text="ROBOT WAS FASTER")
             else:
-                self.winner_label.config(text="Player wins!", fg="#2E8B57")
-                self.status_label.config(text="Player was faster!")
+                self.winner_label.config(text="PLAYER WINS", fg="#2E8B57")
+                self.status_label.config(text="PLAYER WAS FASTER")
         elif self.pid_result is not None:
-            self.winner_label.config(text="Robot wins!", fg="#2E8B57")
-            self.status_label.config(text="Only robot completed the maze!")
+            self.winner_label.config(text="ROBOT WINS", fg="#2E8B57")
+            self.status_label.config(text="ROBOT COMPLETED MAZE")
         elif self.human_result is not None:
-            self.winner_label.config(text="Player wins!", fg="#2E8B57")
-            self.status_label.config(text="Only the player completed the maze!")
+            self.winner_label.config(text="PLAYER WINS", fg="#2E8B57")
+            self.status_label.config(text="PLAYER COMPLETED MAZE")
         else:
-            self.winner_label.config(text="No winner - both failed", fg="#EE3229")
-            self.status_label.config(text="Neither player completed the maze!")
+            self.winner_label.config(text="NO WINNER", fg="#EE3229")
+            self.status_label.config(text="MAZE NOT COMPLETED")
         
         self.start_battle_button.config(state=tk.NORMAL)
-        self.start_battle_button.config(text="Start New Battle")
+        self.start_battle_button.config(text="TRY AGAIN")
 
     def on_canvas_click(self, event):
         if self.current_turn == "waiting":
@@ -272,7 +272,7 @@ class PlayVsAIScreen(tk.Frame):
                 fill="red", outline="white", width=2, tags="goal_marker"
             )
             
-            self.status_label.config(text=f"Goal set at ({maze_x}, {maze_y}). Click 'Start battle' to begin!")
+            self.status_label.config(text=f"GOAL SET AT ({maze_x}, {maze_y}) - CLICK START BATTLE")
 
     def reset_game_state(self):
         self.current_turn = "waiting"
@@ -282,12 +282,12 @@ class PlayVsAIScreen(tk.Frame):
         self.ball_detected = False
         self.game_started = False
         
-        self.status_label.config(text="Click on the maze to set a goal, then click 'Start battle'!")
-        self.pid_result_label.config(text="Robot: Waiting...", fg="#1A1A1A")
-        self.human_result_label.config(text="Player: Waiting...", fg="#1A1A1A")
+        self.status_label.config(text="CLICK TO SET GOAL - THEN START BATTLE")
+        self.pid_result_label.config(text="ROBOT: WAITING...", fg="#1A1A1A")
+        self.human_result_label.config(text="PLAYER: WAITING...", fg="#1A1A1A")
         self.winner_label.config(text="")
         
-        self.start_battle_button.config(state=tk.NORMAL, text="Start battle")
+        self.start_battle_button.config(state=tk.NORMAL, text="START BATTLE")
         self.start_human_button.config(state=tk.DISABLED)
         
         self.canvas.delete("goal_marker")

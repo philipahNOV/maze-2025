@@ -33,7 +33,7 @@ class LeaderboardScreen(tk.Frame):
             font=("Jockey One", 40),
             bg="#D9D9D9",
             fg="#1A1A1A"
-        ).place(x=330, y=30)
+        ).place(x=330, y=10)
 
         columns = ("Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
@@ -50,7 +50,7 @@ class LeaderboardScreen(tk.Frame):
 
         self.maze_toggle_button = tk.Button(
             self,
-            text="Switch maze",
+            text="SWITCH MAZE",
             font=("Jockey One", 20),
             fg="white",
             bg="#60666C",
@@ -137,7 +137,7 @@ class LeaderboardScreen(tk.Frame):
     def show(self):
         self.focus_set()
         maze_id = self.controller.config.get("maze_id", 1)
-        self.maze_toggle_button.config(text=f"Switch maze")
+        self.maze_toggle_button.config(text=f"SWITCH MAZE")
         self.load_leaderboard(maze_id)
 
     def on_back(self):
