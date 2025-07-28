@@ -50,20 +50,20 @@ controller:
   integration_pos_threshold: 70        # px, reset integral if error exceeds this
   integration_vel_threshold: 40        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
-    kp_x: 0.00003
-    kp_y: 0.00003
-    kd_x: 0.00018
-    kd_y: 0.00018
-    ki_x: 0.0007
-    ki_y: 0.0007
-    position_tolerance: 32        # px
+    kp_x: 0.00007
+    kp_y: 0.00007
+    kd_x: 0.0001
+    kd_y: 0.0001
+    ki_x: 0
+    ki_y: 0
+    position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 5
+    feedforward_t: 6
   position_controller_lookahead:
     kp_x: 0.00002
     kp_y: 0.00002
-    kd_x: 0.0003
-    kd_y: 0.0003
+    kd_x: 0.0004
+    kd_y: 0.0004
     ki_x: 0.0
     ki_y: 0.0
     position_tolerance: 40        # px
