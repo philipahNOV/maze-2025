@@ -84,7 +84,7 @@ class HumanScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=734, y=10, width=150, height=50)
+        self.back_button.place(x=744, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,
@@ -154,6 +154,8 @@ class HumanScreen(tk.Frame):
 
     def play_vs_ai(self):
         print("[HumanScreen] Play vs AI selected")
+        self.mqtt_client.client.publish("jetson/command", "PlayVsAI")
+        self.controller.show_frame("PlayVsAIScreen")
 
     def play_alone(self):
         self.mqtt_client.client.publish("jetson/command", "PlayAlone")
@@ -166,3 +168,7 @@ class HumanScreen(tk.Frame):
     def show_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "Leaderboard")
         self.controller.show_frame("LeaderboardScreen")
+    
+    def show(self):
+        self.focus_set()
+        self.update_idletasks()

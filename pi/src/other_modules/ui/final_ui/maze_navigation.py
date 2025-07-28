@@ -13,10 +13,8 @@ class NavigationScreen(tk.Frame):
         self.mqtt_client = mqtt_client
         self.loop = tk.BooleanVar(value=False)
         self.custom = tk.BooleanVar(value=False)
-
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
-        # Layout the widgets including the logo
         self.create_widgets()
 
     def on_toggle_loop(self):
@@ -66,7 +64,7 @@ class NavigationScreen(tk.Frame):
             text="✖",
             font=("Jockey One", 30),
             fg="white",
-            bg="#EE3229",              # Red exit button
+            bg="#EE3229",
             activebackground="#B82F27",
             activeforeground="#DFDFDF",
             borderwidth=0,
@@ -116,11 +114,11 @@ class NavigationScreen(tk.Frame):
             self,
             text="GET BALL",
             font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
             command=self.on_button_click_elevator
         )
@@ -130,11 +128,11 @@ class NavigationScreen(tk.Frame):
             self,
             text="HORIZONTAL",
             font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
             command=self.on_button_click_horizontal
         )
@@ -144,11 +142,11 @@ class NavigationScreen(tk.Frame):
             self,
             text="SAFE CONTROL",
             font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
             command=self.on_button_click_safe
         )
@@ -158,11 +156,11 @@ class NavigationScreen(tk.Frame):
             self,
             text="SPEED CONTROL",
             font=("Jockey One", 30),
-            fg="white",                    # Text color
-            borderwidth=0,            # No border
-            highlightthickness=0,     # No highlight border
-            background="#60666C",     # Match image color or use transparent if supported
-            activebackground="#4B4C4C",  # Match on press
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
             command=self.on_button_click_speed
         )
@@ -178,12 +176,12 @@ class NavigationScreen(tk.Frame):
             bg="#D9D9D9",
             activebackground="#D9D9D9",
             fg="#1A1A1A",
-            selectcolor="#60666C",  # This changes the indicator fill color
+            selectcolor="#60666C",
             anchor='w',
             justify='left',
             command=self.on_toggle_loop
         )
-        self.loop_toggle.place(x=760, y=175, width=200, height=50)  # Adjust position as needed
+        self.loop_toggle.place(x=760, y=175, width=200, height=50)
 
         self.custom_toggle = tk.Checkbutton(
             self,
@@ -195,17 +193,14 @@ class NavigationScreen(tk.Frame):
             bg="#D9D9D9",
             activebackground="#D9D9D9",
             fg="#1A1A1A",
-            selectcolor="#60666C",  # This changes the indicator fill color
+            selectcolor="#60666C",
             anchor='w',
             justify='left',
             command=self.on_toggle_custom
         )
-        self.custom_toggle.place(x=760, y=115, width=200, height=50)  # Adjust position as needed
-
-
+        self.custom_toggle.place(x=760, y=115, width=200, height=50)
 
     def show(self):
-        """Make this frame visible"""
         self.after(0, self.force_redraw)
 
     def force_redraw(self):
@@ -214,5 +209,4 @@ class NavigationScreen(tk.Frame):
             child.update()
 
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()

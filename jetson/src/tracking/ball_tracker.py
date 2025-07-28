@@ -1,8 +1,8 @@
 import threading
 import time
 import numpy as np
-from camera.vision_utils import hsv_tracking, global_hsv_search
-from camera.model_loader import YOLOModel
+from tracking.vision_utils import hsv_tracking, global_hsv_search
+from tracking.model_loader import YOLOModel
 
 class BallTracker:
     def __init__(self, camera, tracking_config, model_path="v8-291.pt"):

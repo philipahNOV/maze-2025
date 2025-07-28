@@ -1,4 +1,4 @@
-import position_controller
+import control.position_controller as position_controller
 import numpy as np
 import time
 
@@ -27,8 +27,8 @@ class PathFollower:
     """
 
     def __init__(self, path_array, controller: position_controller.Controller, config):
-
         self.path = []
+        self.path_done = False
         self.length = 0
 
         self.config = config
@@ -79,6 +79,7 @@ class PathFollower:
                     self.prev_waypoint = self.length - 1
                 else:
                     print("Done following path (forward).")
+                    self.path_done = True
             else:
                 self.prev_waypoint = self.next_waypoint
                 self.next_waypoint += 1

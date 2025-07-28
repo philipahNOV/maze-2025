@@ -1,13 +1,13 @@
 import time
-from mqtt_client import MQTTClientJetson
-import position_controller
+from mqtt.mqtt_client import MQTTClientJetson
+import control.position_controller as position_controller
 import utils.low_pass_filter
-import path_following
-import path_following_lookahead
-import utility_threads
-from image_controller import ImageController
-from image_controller import ImageSenderThread
-from camera.tracker_service import TrackerService
+import control.paths.path_following as path_following
+import control.paths.path_following_lookahead as path_following_lookahead
+import utils.utility_threads as utility_threads
+from control.image_controller import ImageController
+from control.image_controller import ImageSenderThread
+from tracking.tracker_service import TrackerService
 from logger import LoggingThread
 
 def main(tracker: TrackerService,
@@ -45,14 +45,10 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
-    print(f"[DEBUG] path_array length: {len(path_array)}")
-    print(f"[DEBUG] First 3 waypoints: {path_array[:3]}")
-
-
-    logger = None
-    logger = LoggingThread(path_array)
-    logger.start()
-    controller.logger = logger
+    # logger = None
+    # logger = LoggingThread(path_array)
+    # logger.start()
+    # controller.logger = logger
 
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
@@ -69,21 +65,15 @@ def main(tracker: TrackerService,
 
             image_controller.frame = frame.copy()
             ball_pos = tracker.get_ball_position()
-            #print("orientation:", tracker.get_orientation())
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                if logger is not None and ball_pos is not None:
-                    logger.update_state(
-                        ball_position=ball_pos,
-                        orientation=tracker.get_orientation(),
-                        ball_velocity=controller.ball_velocity,
-                        motor_input=controller.get_last_command()
-                    )
-                    logger.set_waypoint(pathFollower.get_current_waypoint())
+                # logger.set_waypoint(pathFollower.get_current_waypoint())
 
                 if blinker is not None:
                     blinker.stop()
+                    # if logger is not None:
+                    #     logger.reset_ball_lost()
                     if blinker.triggered:
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
@@ -101,20 +91,15 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
             else:
                 ball_pos = smoother.update(ball_pos)
-                if logger is not None:
-                    logger.update_state(
-                        ball_position=None,
-                        orientation=None,
-                        ball_velocity=None,
-                        motor_input=None
-                    )
 
                 if blinker is None:
-                    # Ball not found, start blinking red LED
                     controller.arduinoThread.send_speed(0, 0)
                     blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
                     blinker.start()
                     ball_not_found_timer = time.time()
+                    
+                    # if logger is not None:
+                    #     logger.mark_ball_lost()
 
             if ball_not_found_timer is not None:
                 elapsed_time = time.time() - ball_not_found_timer
@@ -145,9 +130,9 @@ def main(tracker: TrackerService,
         if image_thread.is_alive():
             image_thread.stop()
             image_thread.join()
-        if logger is not None:
-            logger.stop()
-            logger = None
+        # if logger is not None:
+        #     logger.stop()
+        #     logger = None
 
 if __name__ == "__main__":
     main()

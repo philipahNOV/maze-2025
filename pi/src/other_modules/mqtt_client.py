@@ -27,11 +27,9 @@ class MQTTClientPi(threading.Thread):
         self.path_found = False
         self.finding_path = False
         self.path_failed = False
-        
         self.connected = False
-        self.retry_interval = 1  # Initial retry interval in seconds
+        self.retry_interval = 1
         
-        #self.connect_to_broker()
         threading.Thread(target=self.connect_to_broker, daemon=True).start()
 
     def connect_to_broker(self):
@@ -41,7 +39,7 @@ class MQTTClientPi(threading.Thread):
                 self.client.connect(self.broker_address, self.port, keepalive=60)
                 self.client.loop_start()
                 print("[MQTT] Connected. Waiting for on_connect callback...")
-                return  # Let on_connect() set it
+                return
             except Exception as e:
                 print(f"[MQTT] Connection failed: {e}. Retrying in {self.retry_interval} seconds...")
                 time.sleep(self.retry_interval)
@@ -62,6 +60,8 @@ class MQTTClientPi(threading.Thread):
             self.client.subscribe("pi/state")
             self.client.subscribe("jetson/path")
             self.client.subscribe("pi/info")
+            self.client.subscribe("pi/tracking_status")
+            self.client.subscribe("pi/leaderboard_data/+")
             self.initiate_handshake()
         else:
             print(f"Failed to connect with result code {rc}")
@@ -69,9 +69,61 @@ class MQTTClientPi(threading.Thread):
             #self.connect_to_broker()
 
     def on_message(self, client, userdata, msg):
-        #print(f"[MQTT] Received message on topic: {msg.topic}")  # Debugging line
         if msg.topic == "pi/command":
-            pass
+            payload = msg.payload.decode()
+            if payload.startswith("playalone_success:"):
+                duration = payload.split(":")[1]
+                if self.app and hasattr(self.app, 'frames'):
+                    play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                    if play_alone_frame:
+                        play_alone_frame.show_game_result("success", duration)
+            elif payload == "playalone_fail":
+                if self.app and hasattr(self.app, 'frames'):
+                    play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                    if play_alone_frame:
+                        play_alone_frame.show_game_result("failure", None)
+            elif payload == "show_playvsai_screen":
+                if self.app:
+                    self.app.show_frame("PlayVsAIScreen")
+            elif payload == "playvsai_pid_started":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_pid_started()
+            elif payload.startswith("playvsai_pid_success:"):
+                duration = float(payload.split(":")[1])
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_pid_result(True, duration)
+            elif payload.startswith("playvsai_pid_fail"):
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        # Extract failure reason (e.g., "no_path", "ball_lost")
+                        failure_reason = None
+                        if ":" in payload:
+                            failure_reason = payload.split(":")[1]
+                        playvsai_frame.handle_pid_result(False, failure_reason=failure_reason)
+            elif payload == "playvsai_human_started":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_started()
+            elif payload.startswith("playvsai_human_success:"):
+                duration = float(payload.split(":")[1])
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_result(True, duration)
+            elif payload == "playvsai_human_fail":
+                if self.app and hasattr(self.app, 'frames'):
+                    playvsai_frame = self.app.frames.get('PlayVsAIScreen')
+                    if playvsai_frame:
+                        playvsai_frame.handle_human_result(False)
+            elif payload == "clear_image_buffer":
+                print("[MQTT] Clearing image buffer")
+                self.img = None
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
@@ -87,6 +139,29 @@ class MQTTClientPi(threading.Thread):
                 print("[Pi] Path not found by Jetson.")
                 self.finding_path = False
                 self.path_failed = True
+        elif msg.topic == "pi/tracking_status":
+            if self.app and hasattr(self.app, 'frames'):
+                play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                if play_alone_frame:
+                    payload = msg.payload.decode()
+                    if payload == "tracking_started":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+                    elif payload == "ball_detected":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=True)
+                    elif payload == "ball_lost":
+                        play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+        elif msg.topic.startswith("pi/leaderboard_data/"):
+            try:
+                maze_id = int(msg.topic.split("/")[-1])
+                csv_data = msg.payload.decode()
+                
+                if self.app and hasattr(self.app, 'frames'):
+                    leaderboard_frame = self.app.frames.get('LeaderboardScreen')
+                    if leaderboard_frame:
+                        leaderboard_frame.update_leaderboard_data(maze_id, csv_data)
+                        print(f"[MQTT] Updated leaderboard data for maze {maze_id}")
+            except Exception as e:
+                print(f"[MQTT] Failed to handle leaderboard data: {e}")
         elif msg.topic == "handshake/response":
             if msg.payload.decode() == "ack":
                 self.handshake_complete = True

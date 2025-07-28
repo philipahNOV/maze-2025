@@ -28,12 +28,10 @@ class LocatingScreen(tk.Frame):
             for path in self.image_paths
         ]
         self.image_index = 0
-
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
 
-        # Layout the widgets including the logo
         self.create_widgets()
-        self.cycle_images()  # Start cycling images
+        self.cycle_images()
 
     def cycle_images(self):
         self.image_label.configure(image=self.images[self.image_index])
@@ -59,7 +57,7 @@ class LocatingScreen(tk.Frame):
             text="✖",
             font=("Jockey One", 30),
             fg="white",
-            bg="#EE3229",              # Red exit button
+            bg="#EE3229",
             activebackground="#B82F27",
             activeforeground="#DFDFDF",
             borderwidth=0,
@@ -110,18 +108,18 @@ class LocatingScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="LOCATING BALL",
-            font=("Jockey One", 30),   # or any font you prefer
-            fg="#1A1A1A",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
+            font=("Jockey One", 30),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
         )
         self.title.place(x=512, y=420, anchor="n")
 
         self.under_title = tk.Label(
             self,
             text="PLACE BALL IN ELEVATOR",
-            font=("Jockey One", 20),   # or any font you prefer
-            fg="#1A1A1A",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
+            font=("Jockey One", 20),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
         )
         self.under_title.place(x=512, y=470, anchor="n")
 
@@ -136,7 +134,7 @@ class LocatingScreen(tk.Frame):
                 self.mqtt_client.ball_found = False
                 self.controller.show_frame("AutoPathScreen")
         else:
-            self.after(200, self.check_for_ball)  # Check again after 0.207 seconds
+            self.after(200, self.check_for_ball)
 
     def check_for_ball(self):
         if self.mqtt_client.ball_found:
@@ -144,13 +142,11 @@ class LocatingScreen(tk.Frame):
             self.mqtt_client.ball_found = False
             self.controller.show_frame("CustomPathScreen")
         else:
-            self.after(977, self.check_for_ball)  # Check again after 0.977 seconds
+            self.after(977, self.check_for_ball)
 
     def show(self):
-        """Make this frame visible"""
         self.mqtt_client.ball_found = False
-        self.check_for_ball()  # Start checking for the ball
+        self.check_for_ball()
 
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()

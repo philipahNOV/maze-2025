@@ -1,11 +1,11 @@
 import time
 import threading
-from astar.astar import astar_downscaled
-from astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
-from astar.nearest_point import find_nearest_walkable
-from astar.waypoint_sampling import sample_waypoints
-from astar.waypoint_sampling_la import sample_waypoints_la
-from astar.path_memory import PathMemory
+from control.astar.astar import astar_downscaled
+from control.astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
+from control.astar.nearest_point import find_nearest_walkable
+from control.astar.waypoint_sampling import sample_waypoints
+from control.astar.waypoint_sampling_la import sample_waypoints_la
+from control.astar.path_memory import PathMemory
 import colorsys
 import cv2
 import random
@@ -16,7 +16,7 @@ class BlinkRed(threading.Thread):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self._stop_event = threading.Event()
-        self.trigger_delay = config["general"].get("get_ball_delay", 5)  # seconds before elevator triggers
+        self.trigger_delay = config["general"].get("get_ball_delay", 7)  # seconds before elevator triggers
         self.start_time = None
         self.triggered = False
         self.controller = controller
@@ -25,22 +25,21 @@ class BlinkRed(threading.Thread):
         red = (255, 0, 0)
         white = (255, 255, 255)
         self.start_time = time.time()
+        self.arduino_thread.send_color(*red)
+        time.sleep(2.0)
+        self.arduino_thread.send_color(*white)
+        
         while not self._stop_event.is_set():
-            self.arduino_thread.send_color(*red)
-            time.sleep(0.2)
-            self.arduino_thread.send_color(*white)
-
-            # Check if enough time has passed to trigger elevator
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 print("BlinkRed active too long — triggering elevator up.")
-                for attempt in range(5):
+                for _ in range(5):
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.1)
                 self.arduino_thread.send_color(*white)
-                self.triggered = True  # Avoid retriggering
+                self.triggered = True
                 #self.controller.elevator_state = "up"
 
-            time.sleep(4)
+            time.sleep(1.0)
 
     def stop(self):
         self._stop_event.set()
@@ -128,7 +127,7 @@ class PathFindingThread(threading.Thread):
                 self.path_cache.cache_path(start, self.goal, path)
             else:
                 print("[PathMemory] Pathfinding failed. Not caching empty path.")
-                self.on_path_found(None, None)  # exit early if pathfinding failed
+                self.on_path_found(None, None)
                 return
 
         if self._stop_event.is_set():
@@ -175,10 +174,9 @@ class EscapeElevatorThread(threading.Thread):
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
         time.sleep(0.3)
-        print(self.controller.elevator_state)
         if self.controller.elevator_state is not None:
             print("[EscapeElevatorThread] Sending elevator down command.")
-            for attempt in range(5):
+            for _ in range(5):
                     self.arduino_thread.send_elevator(-1)
                     time.sleep(0.1)
         

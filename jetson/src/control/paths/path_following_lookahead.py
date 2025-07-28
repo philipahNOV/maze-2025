@@ -1,4 +1,4 @@
-import position_controller
+import control.position_controller as position_controller
 import numpy as np
 import time
 

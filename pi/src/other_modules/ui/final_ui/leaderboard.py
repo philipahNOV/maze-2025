@@ -16,7 +16,7 @@ class LeaderboardScreen(tk.Frame):
         self.mqtt_client = mqtt_client
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.leaderboard_dir = os.path.abspath(
-            os.path.join(os.getcwd(), "..", "..", "jetson", "src", "leaderboard_data")
+            os.path.join(os.getcwd(), "..", "..", "jetson", "src", "data", "leaderboard_data")
         )
 
         self.create_widgets()
@@ -27,7 +27,6 @@ class LeaderboardScreen(tk.Frame):
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        # Title
         tk.Label(
             self,
             text="LEADERBOARD",
@@ -80,6 +79,7 @@ class LeaderboardScreen(tk.Frame):
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
         self.maze_toggle_button.config(text=f"Switch maze")
+        self.mqtt_client.client.publish("jetson/command", f"SendLeaderboard:{new_id}")
         self.load_leaderboard(new_id)
 
     def load_leaderboard(self, maze_id: int):
@@ -105,9 +105,39 @@ class LeaderboardScreen(tk.Frame):
         for row in entries:
             self.tree.insert("", "end", values=row)
 
+    def update_leaderboard_data(self, maze_id: int, csv_data: str):
+        try:
+            current_maze_id = self.controller.config.get("maze_id", 1)
+            if maze_id != current_maze_id:
+                return
+            
+            self.tree.delete(*self.tree.get_children())
+            
+            entries = []
+            if csv_data.strip():
+                lines = csv_data.strip().split('\n')
+                for line in lines:
+                    if line.strip():
+                        parts = line.split(',')
+                        if len(parts) == 4:
+                            name, time_str, date_str, maze_str = parts
+                            try:
+                                entries.append((name, float(time_str), date_str, maze_str))
+                            except ValueError:
+                                continue
+            
+            entries.sort(key=lambda x: x[1])
+            for row in entries:
+                self.tree.insert("", "end", values=row)
+                
+            print(f"[LEADERBOARD UI] Updated display with {len(entries)} entries for maze {maze_id}")
+        except Exception as e:
+            print(f"[LEADERBOARD UI] Failed to update leaderboard data: {e}")
+
     def show(self):
+        self.focus_set()
         maze_id = self.controller.config.get("maze_id", 1)
-        self.maze_toggle_button.config(text=f"Viewing Maze {maze_id}")
+        self.maze_toggle_button.config(text=f"Switch maze")
         self.load_leaderboard(maze_id)
 
     def on_back(self):

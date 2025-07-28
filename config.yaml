@@ -2,7 +2,7 @@
 
 general:
   idle_light_time: 15 # seconds, time to wait before going idle
-  get_ball_delay: 2.5   # seconds before elevator triggers
+  get_ball_delay: 4   # seconds before elevator triggers
 
 camera:
   resolution: "HD720" # don't change
@@ -25,7 +25,7 @@ camera:
   maze_relative_angle: 1 # deg
 
 tracking:
-  model_path: "camera/v8-291.pt" # onnx/engine?
+  model_path: "tracking/v8-291.pt" # onnx/engine?
   init_ball_region:
     x_min: 420
     y_min: 25
@@ -50,20 +50,20 @@ controller:
   integration_pos_threshold: 70        # px, reset integral if error exceeds this
   integration_vel_threshold: 40        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
-    kp_x: 0.00003
-    kp_y: 0.00003
-    kd_x: 0.00018
-    kd_y: 0.00018
-    ki_x: 0.0007
-    ki_y: 0.0007
-    position_tolerance: 32        # px
+    kp_x: 0.00007
+    kp_y: 0.00007
+    kd_x: 0.0001
+    kd_y: 0.0001
+    ki_x: 0
+    ki_y: 0
+    position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 5
+    feedforward_t: 6
   position_controller_lookahead:
     kp_x: 0.00002
     kp_y: 0.00002
-    kd_x: 0.0003
-    kd_y: 0.0003
+    kd_x: 0.0004
+    kd_y: 0.0004
     ki_x: 0.0
     ki_y: 0.0
     position_tolerance: 40        # px
@@ -95,7 +95,7 @@ path_finding:
   adaptive_threshold_target: 130
   path_cache_size: 30                 # max_paths in PathMemory
   path_cache_tolerance: 15           # tolerance for cache reuse
-  path_cache_file: "astar/path_cache.json" # default cache filename
+  path_cache_file: "control/astar/path_cache.json" # default cache filename
 
 path_following:
   lookahead:
@@ -117,3 +117,12 @@ animations:
     fps: 30
   path_finding:
     fps: 8
+
+game:
+  maze_id: 1              # maze configuration (1 or 2)
+  player_name: "Player"
+  goal_position:          # goal coordinates for current maze
+    x: 763
+    y: 49
+  goal_radius: 30         # goal detection radius in pixels
+  ball_lost_timeout: 5    # seconds before game fails when ball is lost

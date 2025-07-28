@@ -13,6 +13,7 @@ from other_modules.ui.final_ui.human_mode import HumanScreen
 from other_modules.ui.final_ui.practice import PracticeScreen
 from other_modules.ui.final_ui.play_alone import PlayAloneScreen
 from other_modules.ui.final_ui.play_alone_start import PlayAloneStartScreen
+from other_modules.ui.final_ui.play_vs_ai import PlayVsAIScreen
 from other_modules.ui.final_ui.leaderboard import LeaderboardScreen
 
 import signal
@@ -59,7 +60,7 @@ class MainApp(tk.Tk):
 
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,
-                  PlayAloneScreen, PlayAloneStartScreen, LeaderboardScreen):
+                  PlayAloneScreen, PlayAloneStartScreen, PlayVsAIScreen, LeaderboardScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             frame.grid(row=0, column=0, sticky="nsew")
             frame.lower()
@@ -73,7 +74,6 @@ class MainApp(tk.Tk):
         return self.current_screen 
 
     def show_frame(self, page_name):
-        """Show a frame for the given page name"""
         print("Attempting to show frame:", page_name)
         self.current_screen = page_name
         frame = self.frames[page_name]

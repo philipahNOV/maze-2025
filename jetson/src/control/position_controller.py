@@ -1,6 +1,6 @@
 import time
 import numpy as np
-from camera.tracker_service import TrackerService
+from tracking.tracker_service import TrackerService
 import arduino_connection
 from logger import LoggingThread
 
@@ -118,6 +118,8 @@ class Controller:
         self.pos = self.tracker.get_ball_position()
         if not self.pos:
             print("No ball detected")
+            if self.logger is not None:
+                self.logger.update_state(None, self.ori, None, (0, 0))
             return
 
         self.ref = ref
@@ -263,6 +265,8 @@ class Controller:
         tol = self.angle_tolerance
         self.ori = self.tracker.get_orientation()
         if not self.ori:
+            if self.logger is not None:
+                self.logger.update_state(self.pos, None, self.ball_velocity, (0, 0))
             return
 
         theta_x = self.ori[1] + self.x_offset

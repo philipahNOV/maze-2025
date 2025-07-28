@@ -13,8 +13,6 @@ class InfoScreen(tk.Frame):
         self.mqtt_client = mqtt_client
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
-
-        # Layout the widgets including the logo
         self.create_widgets()
 
     def on_button_click_back(self):
@@ -36,13 +34,13 @@ class InfoScreen(tk.Frame):
             text="✖",
             font=("Jockey One", 30),
             fg="white",
-            bg="#EE3229",              # Red exit button
+            bg="#EE3229",
             activebackground="#B82F27",
             activeforeground="#DFDFDF",
             borderwidth=0,
             highlightthickness=0,
             relief="flat",
-            command=self.on_button_click_exit  # or self.controller.destroy
+            command=self.on_button_click_exit
         )
         self.exit_button.place(x=964, y=10, width=50, height=50) 
 
@@ -85,15 +83,14 @@ class InfoScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="INFO",
-            font=("Jockey One", 55),   # or any font you prefer
-            fg="#1A1A1A",                # text color
-            bg="#D9D9D9"                 # background (or match your image if needed)
+            font=("Jockey One", 55),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
         )
         self.title.place(x=400, y=100)
 
     def show(self):
-        """Make this frame visible"""
-
+        pass
+    
     def hide(self):
-        """Hide this frame"""
         self.pack_forget()
