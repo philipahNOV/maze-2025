@@ -136,7 +136,7 @@ class PlayVsAIScreen(tk.Frame):
             relief="flat",
             state=tk.DISABLED
         )
-        self.start_human_button.place(x=220, y=350)
+        self.start_human_button.place(x=50, y=420)
 
         self.back_button = tk.Button(
             self,
@@ -173,24 +173,40 @@ class PlayVsAIScreen(tk.Frame):
         self.status_label.config(text="Robot is attempting the maze...")
         self.pid_result_label.config(text="Robot: Running...", fg="#D2691E")
 
-    def handle_pid_result(self, success, duration=None):
+    def handle_pid_result(self, success, duration=None, failure_reason=None):
         if success:
             self.pid_result_label.config(
                 text=f"Robot: SUCCESS ({duration:.2f}s)", 
                 fg="#2E8B57"
             )
             self.pid_result = duration
+            # Only proceed to human turn if PID was successful
+            self.current_turn = "human"
+            self.status_label.config(text="Robot finished. Your turn! Click 'Start Turn' when ready.")
+            self.start_human_button.config(state=tk.NORMAL)
+            self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
         else:
-            self.pid_result_label.config(
-                text="Robot: FAILED", 
-                fg="#EE3229"
-            )
-            self.pid_result = None
-        
-        self.current_turn = "human"
-        self.status_label.config(text="Robot finished. Your turn! Click 'Start Turn' when ready.")
-        self.start_human_button.config(state=tk.NORMAL)
-        self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
+            # Handle different failure reasons
+            if failure_reason == "no_path":
+                self.pid_result_label.config(
+                    text="Robot: NO PATH FOUND", 
+                    fg="#EE3229"
+                )
+                self.status_label.config(text="Pathfinding failed. Try setting a different goal or check ball position.")
+                # Return to waiting state, don't proceed to human turn
+                self.current_turn = "waiting"
+                self.start_battle_button.config(state=tk.NORMAL, text="Retry Battle")
+            else:
+                # Other failures (ball lost, etc.) - proceed to human turn
+                self.pid_result_label.config(
+                    text="Robot: FAILED", 
+                    fg="#EE3229"
+                )
+                self.pid_result = None
+                self.current_turn = "human"
+                self.status_label.config(text="Robot failed. Your turn! Click 'Start Turn' when ready.")
+                self.start_human_button.config(state=tk.NORMAL)
+                self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
 
     def handle_human_started(self):
         self.current_turn = "human"

@@ -255,9 +255,8 @@ class HMIController:
         if not path_found:
             print("[PLAYVSAI] PID failed: No path found")
             self.mqtt_client.client.publish("pi/command", "playvsai_pid_fail:no_path")
-            self.tracking_service.stop_tracker()
-            self.state = SystemState.PLAYVSAI_HUMAN
-            threading.Thread(target=self.run_playvsai_human_turn, daemon=True).start()
+            # Return to PLAYVSAI state to allow user to try again or set different goal
+            self.state = SystemState.PLAYVSAI
             return
         
         if self.image_thread is not None:
@@ -628,9 +627,33 @@ class HMIController:
         # --- PLAYVSAI STATES ---
         elif self.state == SystemState.PLAYVSAI:
             if cmd == "Back":
+                print("[FSM] Exiting PLAYVSAI mode...")
+                self.tracking_service.stop_tracker()
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+                
+                self.mqtt_client.clear_image_buffer()
                 self.playvsai_goal = None
+                self.path = None
+                self.path_lookahead = None
+                self.image_controller.set_new_path(None)
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                
+                self.arduino_thread.send_speed(0, 0)
                 self.state = SystemState.HUMAN_CONTROLLER
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
             
             elif cmd.startswith("Goal_set:"):
                 coords = cmd.split(":")[1]
