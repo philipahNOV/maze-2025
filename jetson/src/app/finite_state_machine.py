@@ -235,7 +235,7 @@ class HMIController:
         print("[PLAYVSAI] Starting PID turn...")
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
-        self.tracking_service.start_tracker()
+        # Tracking already started in PlayVsAI mode entry
         self.mqtt_client.client.publish("pi/command", "playvsai_pid_started")
         
         if hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None:
@@ -313,7 +313,7 @@ class HMIController:
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
-        self.tracking_service.start_tracker()
+        # Tracking already started in PlayVsAI mode entry
         self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
         self._start_joystick_control()
         
@@ -482,6 +482,24 @@ class HMIController:
 
             elif cmd == "PlayVsAI":
                 print("[FSM] Entering PLAYVSAI mode")
+                self.mqtt_client.clear_image_buffer()
+                
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                self.path = None
+                self.path_lookahead = None
+                self.playvsai_goal = None
+                self.image_controller.set_new_path(None)
+                
+                self.tracking_service.stop_tracker()
+                time.sleep(0.2)
+                self.tracking_service.start_tracker()
+                
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()                
                 self.state = SystemState.PLAYVSAI
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
@@ -574,9 +592,7 @@ class HMIController:
                 self.start_playalone_timer()
             
             elif cmd == "RestartPlayAlone":
-                print("[PLAYALONE] Restart requested - completely resetting image system")
                 self.mqtt_client.clear_image_buffer()
-                
                 self.tracking_service.stop_tracker()
                 
                 if self.image_thread is not None:
