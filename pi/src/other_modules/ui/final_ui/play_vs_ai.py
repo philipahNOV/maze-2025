@@ -273,6 +273,7 @@ class PlayVsAIScreen(tk.Frame):
 
     def go_back(self):
         self.reset_game_state()
+        self.controller.show_frame("HumanScreen")
         self.mqtt_client.client.publish("jetson/command", "Back")
 
     def update_image(self):

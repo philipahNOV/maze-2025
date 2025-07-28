@@ -373,7 +373,6 @@ class HMIController:
             self.state = SystemState.HUMAN_CONTROLLER
 
     def start_playvsai_human_timer(self):
-        """Called when the human player clicks the start button"""
         self.playvsai_human_timer_start_requested = True
         print("[PLAYVSAI] Human timer start requested!")
 
