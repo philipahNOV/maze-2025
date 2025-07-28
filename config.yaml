@@ -2,7 +2,7 @@
 
 general:
   idle_light_time: 15 # seconds, time to wait before going idle
-  get_ball_delay: 2.5   # seconds before elevator triggers
+  get_ball_delay: 4   # seconds before elevator triggers
 
 camera:
   resolution: "HD720" # don't change
