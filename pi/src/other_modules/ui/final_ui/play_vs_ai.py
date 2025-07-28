@@ -31,8 +31,8 @@ class PlayVsAIScreen(tk.Frame):
     def create_widgets(self):
         self.title_label = tk.Label(
             self,
-            text="Player vs Robot Challenge",
-            font=("Jockey One", 28, "bold"),
+            text="PLAYER VS ROBOT",
+            font=("Jockey One", 28),
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
@@ -40,7 +40,7 @@ class PlayVsAIScreen(tk.Frame):
 
         self.status_label = tk.Label(
             self,
-            text="Click on the maze to set a goal, then click 'Start battle'!",
+            text="Click on the maze to set a goal",
             font=("Jockey One", 18),
             bg="#D9D9D9",
             fg="#1A1A1A"
@@ -73,7 +73,7 @@ class PlayVsAIScreen(tk.Frame):
         self.winner_label = tk.Label(
             self.results_frame,
             text="",
-            font=("Jockey One", 20, "bold"),
+            font=("Jockey One", 20),
             bg="#D9D9D9",
             fg="#2E8B57",
             anchor="center"
@@ -105,8 +105,8 @@ class PlayVsAIScreen(tk.Frame):
 
         self.start_battle_button = tk.Button(
             self,
-            text="Start battle",
-            font=("Jockey One", 20, "bold"),
+            text="START BATTLE",
+            font=("Jockey One", 20),
             bg="#60666C",
             fg="white",
             activebackground="#4B4C4C",
@@ -122,13 +122,13 @@ class PlayVsAIScreen(tk.Frame):
 
         self.start_human_button = tk.Button(
             self,
-            text="Start turn",
-            font=("Jockey One", 18, "bold"),
+            text="START TURN",
+            font=("Jockey One", 20),
             bg="#60666C",
             fg="white",
             activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
-            width=10,
+            width=12,
             height=2,
             command=self.start_human_turn,
             borderwidth=0,
@@ -180,24 +180,20 @@ class PlayVsAIScreen(tk.Frame):
                 fg="#2E8B57"
             )
             self.pid_result = duration
-            # Only proceed to human turn if PID was successful
             self.current_turn = "human"
             self.status_label.config(text="Robot finished. Your turn! Click 'Start Turn' when ready.")
             self.start_human_button.config(state=tk.NORMAL)
             self.human_result_label.config(text="Player: Click 'Start Turn' to begin", fg="#60666C")
         else:
-            # Handle different failure reasons
             if failure_reason == "no_path":
                 self.pid_result_label.config(
                     text="Robot: NO PATH FOUND", 
                     fg="#EE3229"
                 )
                 self.status_label.config(text="Pathfinding failed. Try setting a different goal or check ball position.")
-                # Return to waiting state, don't proceed to human turn
                 self.current_turn = "waiting"
                 self.start_battle_button.config(state=tk.NORMAL, text="Retry Battle")
             else:
-                # Other failures (ball lost, etc.) - proceed to human turn
                 self.pid_result_label.config(
                     text="Robot: FAILED", 
                     fg="#EE3229"

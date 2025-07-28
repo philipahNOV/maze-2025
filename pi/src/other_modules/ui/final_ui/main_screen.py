@@ -104,7 +104,7 @@ class MainScreen(tk.Frame):
         self.navigation_button = tk.Button(
             self,
             text="ROBOT MODE",
-            font=("Jockey One", 25),
+            font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
