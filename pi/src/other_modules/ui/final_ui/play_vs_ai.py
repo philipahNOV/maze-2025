@@ -190,12 +190,12 @@ class PlayVsAIScreen(tk.Frame):
                     text="ROBOT - NO PATH FOUND", 
                     fg="#EE3229"
                 )
-                self.status_label.config(text="PATHFINDING FAILED")
+                self.status_label.config(text="PATHFINDING FAILED - SET NEW GOAL")
                 self.current_turn = "waiting"
                 self.start_battle_button.config(state=tk.NORMAL, text="RETRY MAZE")
             else:
                 self.pid_result_label.config(
-                    text="Robot: FAILED", 
+                    text="ROBOT - FAILED", 
                     fg="#EE3229"
                 )
                 self.pid_result = None
