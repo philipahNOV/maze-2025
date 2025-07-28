@@ -34,9 +34,6 @@ tracking:
   hsv_range:
     lower: [35, 55, 55]       # Light green HSV lower bound
     upper: [85, 255, 255]     # Light green HSV upper bound
-  lab_range:
-    lower: [0, 0, 0]
-    upper: [255, 255, 146]
   hsv_window_size: 80
   hsv_min_contour_area: 150  # px^2
   smoothing_alpha: 0.5       # smoothing factor for exponential filter
