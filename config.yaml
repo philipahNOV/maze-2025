@@ -41,24 +41,27 @@ tracking:
   yolo_cooldown_period: 20   # frames before allowing YOLO recheck
 
 controller:
-  stuck_wiggle_amplitude: 1     # deg, amplitude of wiggle when stuck
-  stuck_wiggle_frequency: 20      # Hz, frequency of wiggle when stuck
-  stuck_velocity_threshold: 10    # px/s, velocity threshold to consider stuck
-  stuck_upper_position_threshold: 70 # px, upper position threshold to consider stuck
-  stuck_time_threshold: 0.8  # seconds, time to consider stuck
-  stuck_unstuck_hold_time: 0.2 # seconds, time to hold before unsticking
-  integration_pos_threshold: 70        # px, reset integral if error exceeds this
-  integration_vel_threshold: 40        # px/s, reset integral if velocity exceeds this
+  stuck_wiggle_amplitude: 2          # more forceful unsticking
+  stuck_wiggle_frequency: 8          # lower freq = higher energy
+  stuck_velocity_threshold: 10       # px/s
+  stuck_upper_position_threshold: 70
+  stuck_time_threshold: 0.6          # faster stuck detection
+  stuck_unstuck_hold_time: 0.2
+
+  integration_pos_threshold: 70
+  integration_vel_threshold: 60      # allow faster recovery before reset
+
   position_controller_normal:
-    kp_x: 0.00003
-    kp_y: 0.00003
+    kp_x: 0.00007
+    kp_y: 0.00007
     kd_x: 0.00018
     kd_y: 0.00018
-    ki_x: 0.0007
-    ki_y: 0.0007
-    position_tolerance: 32        # px
-    velocity_tolerance: 20        # px/s
-    feedforward_t: 5
+    ki_x: 0.0003                     # less risk of integral wind-up
+    ki_y: 0.0003
+    position_tolerance: 32
+    velocity_tolerance: 20
+    feedforward_t: 4                # slightly more aggressive control
+
   position_controller_lookahead:
     kp_x: 0.00002
     kp_y: 0.00002
