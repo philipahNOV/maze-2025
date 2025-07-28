@@ -45,10 +45,10 @@ def main(tracker: TrackerService,
     time.sleep(escape_thread.duration)
     controller.horizontal()
 
-    logger = None
-    logger = LoggingThread(path_array)
-    logger.start()
-    controller.logger = logger
+    # logger = None
+    # logger = LoggingThread(path_array)
+    # logger.start()
+    # controller.logger = logger
 
     TARGET_HZ = 60
     LOOP_DT = 1.0 / TARGET_HZ
@@ -65,16 +65,15 @@ def main(tracker: TrackerService,
 
             image_controller.frame = frame.copy()
             ball_pos = tracker.get_ball_position()
-            #print("orientation:", tracker.get_orientation())
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)
                 pathFollower.follow_path(ball_pos)
-                logger.set_waypoint(pathFollower.get_current_waypoint())
+                # logger.set_waypoint(pathFollower.get_current_waypoint())
 
                 if blinker is not None:
                     blinker.stop()
-                    if logger is not None:
-                        logger.reset_ball_lost()
+                    # if logger is not None:
+                    #     logger.reset_ball_lost()
                     if blinker.triggered:
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
@@ -99,8 +98,8 @@ def main(tracker: TrackerService,
                     blinker.start()
                     ball_not_found_timer = time.time()
                     
-                    if logger is not None:
-                        logger.mark_ball_lost()
+                    # if logger is not None:
+                    #     logger.mark_ball_lost()
 
             if ball_not_found_timer is not None:
                 elapsed_time = time.time() - ball_not_found_timer
@@ -131,9 +130,9 @@ def main(tracker: TrackerService,
         if image_thread.is_alive():
             image_thread.stop()
             image_thread.join()
-        if logger is not None:
-            logger.stop()
-            logger = None
+        # if logger is not None:
+        #     logger.stop()
+        #     logger = None
 
 if __name__ == "__main__":
     main()
