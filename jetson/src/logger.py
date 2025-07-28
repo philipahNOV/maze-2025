@@ -115,7 +115,9 @@ class LoggingThread(threading.Thread):
                 if done:
                     episode_duration = time.time() - self.episode_start_time
                     print(f"[LoggingThread] Episode complete. Total reward: {self.episode_reward:.1f}, Duration: {episode_duration:.1f}s, Steps: {self.steps_taken}")
-                    self.stop()
+                    
+                    # Reset for new episode instead of stopping
+                    self.reset_for_new_episode()
 
             self.prev_state = state
             self.prev_action = action
@@ -128,6 +130,34 @@ class LoggingThread(threading.Thread):
 
     def stop(self):
         self._stop_event.set()
+
+    def reset_for_new_episode(self):
+        """Reset episode-specific variables to start a new episode"""
+        print(f"[Logger] Resetting for new episode. Previous episode: {self.logger.episode_counter}")
+        
+        # Reset episode-specific tracking
+        self.steps_taken = 0
+        self.episode_reward = 0
+        self.episode_start_time = time.time()
+        self.current_waypoint = 0
+        self.prev_waypoint = 0
+        self.visited_waypoints = []
+        
+        # Reset state tracking
+        self.prev_state = None
+        self.prev_action = None
+        self.prev_reward = 0
+        
+        # Reset ball loss flag
+        self.ball_lost = False
+        
+        # Reset distance tracking for rewards
+        if hasattr(self, 'prev_distance_to_path'):
+            delattr(self, 'prev_distance_to_path')
+        if hasattr(self, 'prev_motor_input'):
+            delattr(self, 'prev_motor_input')
+            
+        print(f"[Logger] Ready for episode {self.logger.episode_counter + 1}")
 
     def update_state(self, ball_position, orientation, ball_velocity, motor_input):
         # Debug when ball_position changes to/from None
