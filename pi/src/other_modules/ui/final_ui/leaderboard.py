@@ -78,7 +78,7 @@ class LeaderboardScreen(tk.Frame):
         current_id = self.controller.config.get("maze_id", 1)
         new_id = 2 if current_id == 1 else 1
         self.controller.config["maze_id"] = new_id
-        self.maze_toggle_button.config(text=f"Switch maze")
+        self.maze_toggle_button.config(text=f"SWITCH MAZE")
         self.mqtt_client.client.publish("jetson/command", f"SendLeaderboard:{new_id}")
         self.load_leaderboard(new_id)
 

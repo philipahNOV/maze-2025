@@ -45,7 +45,7 @@ class PlayVsAIScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
-        self.status_label.place(x=200, y=80)
+        self.status_label.place(x=400, y=80)
 
         self.results_frame = tk.Frame(self, bg="#D9D9D9")
         self.results_frame.place(x=50, y=120, width=300, height=200)
