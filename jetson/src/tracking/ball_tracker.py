@@ -22,6 +22,17 @@ def iou(boxA, boxB):
     return inter_area / float(boxA_area + boxB_area - inter_area + 1e-5)
 
 
+def distance(point1, point2):
+    """Calculate Euclidean distance between two points"""
+    return np.sqrt((point1[0] - point2[0])**2 + (point1[1] - point2[1])**2)
+
+
+def box_center(box):
+    """Get center point of a bounding box"""
+    x1, y1, x2, y2 = box
+    return ((x1 + x2) // 2, (y1 + y2) // 2)
+
+
 class BallTracker:
     def __init__(self, camera, tracking_config, model_path="v8-291.pt"):
         self.camera = camera
@@ -32,18 +43,37 @@ class BallTracker:
             (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"])
         )
         self.iou_threshold = tracking_config.get("box_iou_threshold", 0.4)
-
+        self.max_distance_threshold = 200  # Maximum pixel distance for tracking continuity
+        self.position_weight = 0.7  # Weight for position-based tracking vs IoU
+        
         self.ball_position = None
         self.locked_box = None
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
+        self.lost_frames_counter = 0
+        self.max_lost_frames = 10  # Allow some frames without detection
+        
+        # Elevator area detection (to avoid false positives in elevator hole)
+        # Get camera config from global config structure
+        full_config = tracking_config.get("full_config", {})
+        camera_config = full_config.get("camera", {})
+        self.elevator_center = (camera_config.get("elevator_center_x", 998), 
+                               camera_config.get("elevator_center_y", 588))
+        self.elevator_radius = camera_config.get("elevator_radius", 60)
+        
+        print(f"[BallTracker] Elevator area: center={self.elevator_center}, radius={self.elevator_radius}")
 
         self.running = False
         self.lock = threading.Lock()
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+
+    def is_in_elevator_area(self, point):
+        """Check if a point is within the elevator area"""
+        dist = distance(point, self.elevator_center)
+        return dist <= self.elevator_radius
 
     def producer_loop(self):
         while self.running:
@@ -67,10 +97,9 @@ class BallTracker:
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
             results = self.model.predict(rgb)
 
-            best_com = None
-            best_box = None
-            best_conf = 0
-
+            # Collect all valid ball detections
+            valid_detections = []
+            
             for box in results.boxes:
                 label = self.model.get_label(box.cls[0])
                 conf = float(box.conf[0])
@@ -78,12 +107,7 @@ class BallTracker:
                     continue
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
-
-                # If already locked, compare with locked box
-                if self.locked_box and self.initialized:
-                    if iou((x1, y1, x2, y2), self.locked_box) < self.iou_threshold:
-                        continue  # skip unrelated detection
-
+                
                 # Get center of mass inside YOLO box
                 roi = gray[y1:y2, x1:x2]
                 _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
@@ -92,19 +116,95 @@ class BallTracker:
                 if local_com:
                     cx, cy = local_com
                     global_com = (x1 + cx, y1 + cy)
-                    if conf > best_conf:
-                        best_com = global_com
-                        best_box = (x1, y1, x2, y2)
-                        best_conf = conf
+                    box_center_point = box_center((x1, y1, x2, y2))
+                    
+                    valid_detections.append({
+                        'position': global_com,
+                        'box': (x1, y1, x2, y2),
+                        'box_center': box_center_point,
+                        'confidence': conf,
+                        'in_elevator': self.is_in_elevator_area(global_com)
+                    })
 
-            if best_com:
-                self.ball_position = best_com
-                self.locked_box = best_box
-
-                if not self.initialized:
+            # Choose best detection based on tracking state
+            best_detection = None
+            
+            if not self.initialized:
+                # During initialization, prefer detections in the init region
+                for det in valid_detections:
+                    x, y = det['position']
+                    if (self.INIT_BALL_REGION[0][0] <= x <= self.INIT_BALL_REGION[1][0] and 
+                        self.INIT_BALL_REGION[0][1] <= y <= self.INIT_BALL_REGION[1][1]):
+                        if best_detection is None or det['confidence'] > best_detection['confidence']:
+                            best_detection = det
+                            
+                # If we have a valid detection in init region
+                if best_detection:
+                    self.ball_position = best_detection['position']
+                    self.locked_box = best_detection['box']
                     self.ball_confirm_counter += 1
                     if self.ball_confirm_counter >= self.ball_confirm_threshold:
                         self.initialized = True
+                        print(f"[BallTracker] Initialized at position {self.ball_position}")
+                        
+            else:
+                # Already initialized - use smart tracking logic
+                if self.ball_position and valid_detections:
+                    # Score each detection based on multiple factors
+                    scored_detections = []
+                    
+                    for det in valid_detections:
+                        score = 0
+                        
+                        # 1. Distance from last known position (closer is better)
+                        pos_distance = distance(det['position'], self.ball_position)
+                        if pos_distance <= self.max_distance_threshold:
+                            score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.4
+                        
+                        # 2. Confidence score
+                        score += det['confidence'] * 0.3
+                        
+                        # 3. IoU with locked box (if available)
+                        if self.locked_box:
+                            iou_score = iou(det['box'], self.locked_box)
+                            score += iou_score * 0.2
+                        
+                        # 4. Penalty for being in elevator area (unless that's where we last saw it)
+                        if det['in_elevator'] and not self.is_in_elevator_area(self.ball_position):
+                            score -= 0.3  # Penalize elevator detections when ball was outside
+                            # print(f"[BallTracker] Penalizing elevator detection at {det['position']}")
+                        
+                        # 5. Bonus for being outside elevator when we expect movement
+                        if not det['in_elevator'] and self.is_in_elevator_area(self.ball_position):
+                            score += 0.2  # Bonus for ball moving out of elevator
+                            # print(f"[BallTracker] Bonus for ball moving out of elevator to {det['position']}")
+                            
+                        scored_detections.append((score, det))
+                    
+                    # Choose detection with highest score
+                    if scored_detections:
+                        scored_detections.sort(key=lambda x: x[0], reverse=True)
+                        best_score, best_detection = scored_detections[0]
+                        
+                        # Only accept if score is reasonable
+                        if best_score > 0.3:
+                            self.ball_position = best_detection['position']
+                            self.locked_box = best_detection['box']
+                            self.lost_frames_counter = 0
+                        else:
+                            self.lost_frames_counter += 1
+                    else:
+                        self.lost_frames_counter += 1
+                else:
+                    self.lost_frames_counter += 1
+
+                # Reset tracking if lost for too long
+                if self.lost_frames_counter > self.max_lost_frames:
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
+                    self.ball_position = None
+                    self.locked_box = None
+                    self.lost_frames_counter = 0
+                    # Don't reset initialized flag - keep trying to reacquire
 
             time.sleep(0.005)
 
@@ -123,7 +223,9 @@ class BallTracker:
         self.initialized = False
         self.ball_confirm_counter = 0
         self.locked_box = None
-        print("[BallTracker] Retracking initiated.")
+        self.ball_position = None
+        self.lost_frames_counter = 0
+        print("[BallTracker] Retracking initiated - resetting all tracking state.")
 
     def get_frame(self):
         with self.lock:

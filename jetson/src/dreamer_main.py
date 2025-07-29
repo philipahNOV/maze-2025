@@ -52,7 +52,10 @@ except Exception as e:
 
 # Initialize tracker service
 print("Initializing camera and tracking...")
-tracker_service = TrackerService(model_path="tracking/v8-291.pt")
+tracking_config = config["tracking"]
+tracker_service = TrackerService(model_path=tracking_config["model_path"], 
+                                tracking_config=tracking_config,
+                                full_config=config)
 tracker_service.camera.init_camera()
 
 # Wait for tracker initialization like in PID controller
