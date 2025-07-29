@@ -183,14 +183,77 @@ class BallTracker:
                         'in_elevator': self.is_in_elevator_area(global_com)
                     })
 
-                # [Initialization + scoring logic unchanged — keep using your previous scoring system here]
-                # After scoring, pick best_detection and set self.ball_position, etc.
+                # Process YOLO detections - complete the missing logic
+                best_detection = None
+                
+                if not self.initialized:
+                    # During initialization, prefer detections in the init region
+                    for det in valid_detections:
+                        x, y = det['position']
+                        if (self.INIT_BALL_REGION[0][0] <= x <= self.INIT_BALL_REGION[1][0] and 
+                            self.INIT_BALL_REGION[0][1] <= y <= self.INIT_BALL_REGION[1][1]):
+                            if best_detection is None or det['confidence'] > best_detection['confidence']:
+                                best_detection = det
+                                
+                    if best_detection:
+                        current_position = best_detection['position']
+                        self.locked_box = best_detection['box']
+                        self.ball_confirm_counter += 1
+                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                            self.initialized = True
+                            # Initialize fast tracker
+                            self.init_fast_tracker(gray, current_position)
+                            print(f"[BallTracker] Initialized at position {current_position}")
+                            
+                else:
+                    # Already initialized - use smart tracking logic
+                    if valid_detections:
+                        scored_detections = []
+                        
+                        for det in valid_detections:
+                            score = 0
+                            
+                            # Distance from last known position
+                            if self.ball_position:
+                                pos_distance = distance(det['position'], self.ball_position)
+                                if pos_distance <= self.max_distance_threshold:
+                                    score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.4
+                            
+                            # Confidence score
+                            score += det['confidence'] * 0.3
+                            
+                            # IoU with locked box
+                            if self.locked_box:
+                                iou_score = iou(det['box'], self.locked_box)
+                                score += iou_score * 0.2
+                            
+                            # Elevator area logic
+                            if self.ball_position:
+                                if det['in_elevator'] and not self.is_in_elevator_area(self.ball_position):
+                                    score -= 0.3
+                                elif not det['in_elevator'] and self.is_in_elevator_area(self.ball_position):
+                                    score += 0.2
+                                    
+                            scored_detections.append((score, det))
+                        
+                        if scored_detections:
+                            scored_detections.sort(key=lambda x: x[0], reverse=True)
+                            best_score, best_detection = scored_detections[0]
+                            
+                            if best_score > 0.3:
+                                current_position = best_detection['position']
+                                self.locked_box = best_detection['box']
+                                
+                                # Reinitialize fast tracker with new YOLO position
+                                self.init_fast_tracker(gray, current_position)
 
             if current_position:
                 self.ball_position = current_position
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
+                if self.lost_frames_counter % 5 == 0:  # Print every 5 lost frames
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames (initialized: {self.initialized}, valid_detections: {len(valid_detections) if 'valid_detections' in locals() else 0})")
 
             if self.lost_frames_counter > self.max_lost_frames:
                 print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
