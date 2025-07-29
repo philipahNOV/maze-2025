@@ -21,7 +21,7 @@ class YOLOModel:
         self.names = self.model.names
         print("[YOLOModel] Model loaded and ready.")
 
-    def predict(self, image, conf=0.4):
+    def predict(self, image, conf=0.25):
         return self.model.predict(source=image, conf=conf, verbose=False)[0]
 
     def get_label(self, cls_id):

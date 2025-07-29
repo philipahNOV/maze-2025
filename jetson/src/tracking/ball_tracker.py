@@ -211,7 +211,7 @@ class BallTracker:
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.4:
+                    if label != "ball" or conf < 0.2:
                         continue
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
