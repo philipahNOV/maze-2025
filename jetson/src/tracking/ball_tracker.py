@@ -3,6 +3,7 @@ import time
 import numpy as np
 import cv2
 from tracking.model_loader import YOLOModel
+from tracking.vision_utils import get_center_of_mass
 
 
 class BallTracker:
@@ -15,14 +16,15 @@ class BallTracker:
             (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"])
         )
         self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
+        self.yolo_interval = tracking_config.get("yolo_frame_interval", 5)
 
         self.ball_position = None
-        self.prev_position = None
-        self.prev_gray_frame = None
-
+        self.locked_box = None  # Stores (x1, y1, x2, y2) of tracked ball
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
+
+        self.frame_counter = 0
 
         self.running = False
         self.lock = threading.Lock()
@@ -50,43 +52,54 @@ class BallTracker:
                 continue
 
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+            self.frame_counter += 1
 
-            if not self.initialized:
+            run_yolo = self.frame_counter % self.yolo_interval == 0 or not self.initialized
+
+            if run_yolo:
                 results = self.model.predict(rgb)
+                best_box = None
                 best_conf = 0
-                new_pos = None
+                best_com = None
+
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     conf = float(box.conf[0])
-                    if label == "ball" and conf > best_conf and conf > 0.6:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
-                           self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
-                            new_pos = (cx, cy)
-                            best_conf = conf
+                    if label != "ball" or conf < 0.6:
+                        continue
 
-                if new_pos:
-                    self.ball_position = new_pos
-                    self.prev_position = np.array([[new_pos]], dtype=np.float32)
-                    self.prev_gray_frame = gray
-                    self.ball_confirm_counter += 1
-                    if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                        self.initialized = True
-            else:
-                if self.prev_gray_frame is not None and self.prev_position is not None:
-                    next_pts, status, _ = cv2.calcOpticalFlowPyrLK(
-                        self.prev_gray_frame, gray,
-                        self.prev_position, None,
-                        winSize=(15, 15),
-                        maxLevel=2,
-                        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
-                    )
-                    if status[0][0] == 1:
-                        self.ball_position = tuple(map(int, next_pts[0]))
-                        self.prev_position = next_pts
-                        self.prev_gray_frame = gray
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
 
+                    # If we're locking, check similarity to last box
+                    if self.locked_box and self.initialized:
+                        lx1, ly1, lx2, ly2 = self.locked_box
+                        dist = np.hypot((x1 + x2) / 2 - (lx1 + lx2) / 2, (y1 + y2) / 2 - (ly1 + ly2) / 2)
+                        size_diff = abs((x2 - x1) * (y2 - y1) - (lx2 - lx1) * (ly2 - ly1))
+
+                        if dist > 40 or size_diff > 500:  # adjust thresholds
+                            continue  # not same object
+
+                    # Get COM in cropped grayscale box
+                    roi = gray[y1:y2, x1:x2]
+                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
+                    local_com = get_center_of_mass(thresh)
+
+                    if local_com:
+                        com_x, com_y = local_com
+                        global_com = (x1 + com_x, y1 + com_y)
+                        best_com = global_com
+                        best_box = (x1, y1, x2, y2)
+                        best_conf = conf
+
+                if best_com:
+                    self.ball_position = best_com
+                    self.locked_box = best_box
+                    if not self.initialized:
+                        self.ball_confirm_counter += 1
+                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                            self.initialized = True
+            # Else: hold last known ball_position (no change)
             time.sleep(0.005)
 
     def start(self):
@@ -103,8 +116,7 @@ class BallTracker:
     def retrack(self):
         self.initialized = False
         self.ball_confirm_counter = 0
-        self.prev_position = None
-        self.prev_gray_frame = None
+        self.locked_box = None
         print("[BallTracker] Retracking initiated.")
 
     def get_frame(self):
