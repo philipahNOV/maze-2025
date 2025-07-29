@@ -67,6 +67,10 @@ class BallTracker:
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
 
+        self.last_good_detection = None
+        self.last_good_detection_age = 0
+
+
     def is_in_elevator_area(self, point):
         return distance(point, self.elevator_center) <= self.elevator_radius
 
@@ -158,7 +162,7 @@ class BallTracker:
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.6:
+                    if label != "ball" or conf < 0.3:
                         continue
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -168,14 +172,31 @@ class BallTracker:
                         y1 = int(y1 * scale_y)
                         y2 = int(y2 * scale_y)
 
+                    # Safety check
+                    if not (0 <= x1 < x2 <= gray.shape[1] and 0 <= y1 < y2 <= gray.shape[0]):
+                        continue
+
                     roi = gray[y1:y2, x1:x2]
                     if roi.size == 0:
                         continue
                     mean_intensity = cv2.mean(roi)[0]
-                    if mean_intensity < 50:
+                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
+
+                    # Shape filter: circularity
+                    contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                    found_circle = False
+                    for cnt in contours:
+                        area = cv2.contourArea(cnt)
+                        perimeter = cv2.arcLength(cnt, True)
+                        if perimeter == 0:
+                            continue
+                        circularity = 4 * np.pi * area / (perimeter ** 2)
+                        if 0.6 < circularity < 1.3:
+                            found_circle = True
+                            break
+                    if not found_circle:
                         continue
 
-                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
                     local_com = get_center_of_mass(thresh)
                     if not local_com:
                         continue
@@ -218,27 +239,15 @@ class BallTracker:
                         
                         for det in valid_detections:
                             score = 0
-                            
-                            # Distance from last known position
                             if self.ball_position:
                                 pos_distance = distance(det['position'], self.ball_position)
                                 if pos_distance <= self.max_distance_threshold:
-                                    score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.4
-                            
-                            # Confidence score
-                            score += det['confidence'] * 0.3
-                            
-                            # IoU with locked box
+                                    score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.5
+                            score += det['confidence'] * 0.2
                             if self.locked_box:
-                                iou_score = iou(det['box'], self.locked_box)
-                                score += iou_score * 0.2
-                            
-                            # Elevator area logic
-                            if self.ball_position:
-                                if det['in_elevator'] and not self.is_in_elevator_area(self.ball_position):
-                                    score -= 0.3
-                                elif not det['in_elevator'] and self.is_in_elevator_area(self.ball_position):
-                                    score += 0.2
+                                score += iou(det['box'], self.locked_box) * 0.2
+                            if det['in_elevator'] == self.is_in_elevator_area(self.ball_position):
+                                score += 0.1
                                     
                             scored_detections.append((score, det))
                         
@@ -255,14 +264,21 @@ class BallTracker:
 
             if current_position:
                 self.ball_position = current_position
+                self.last_good_detection = current_position
+                self.last_good_detection_age = 0
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-                if self.lost_frames_counter % 5 == 0:  # Print every 5 lost frames
-                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames (initialized: {self.initialized}, valid_detections: {len(valid_detections) if 'valid_detections' in locals() else 0})")
+                if self.last_good_detection and self.last_good_detection_age < 5:
+                    current_position = self.last_good_detection
+                    self.last_good_detection_age += 1
+                    self.ball_position = current_position
+                    print("[BallTracker] Using memory position")
+                if self.lost_frames_counter % 5 == 0:
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames")
 
             if self.lost_frames_counter > self.max_lost_frames:
-                print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
+                print("[BallTracker] Resetting tracker")
                 self.retrack()
 
             time.sleep(1 / 60.0)
