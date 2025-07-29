@@ -44,11 +44,11 @@ class BallTracker:
         self.max_lost_frames = 10
 
         self.use_fast_tracking = True
-        self.yolo_every_n_frames = 5
+        self.yolo_every_n_frames = 60  # Reduce YOLO frequency - only every 60 frames (2 seconds at 30fps)
         self.frame_counter = 0
         self.fast_tracker = None
         self.last_yolo_position = None
-        self.tracking_window_size = 100
+        self.tracking_window_size = 60  # Further reduced window size for fastest tracking
 
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
         self.background_learning_rate = 0.01
@@ -105,6 +105,68 @@ class BallTracker:
         self.fast_tracker = None
         return None
 
+    def find_ball_cv_fast(self, gray_frame, last_position, search_radius=60):
+        """Ultra-fast ball detection using pure computer vision around last known position"""
+        if last_position is None:
+            return None
+            
+        x, y = last_position
+        h, w = gray_frame.shape
+        
+        # Define search region around last position
+        x1 = max(0, x - search_radius)
+        y1 = max(0, y - search_radius)
+        x2 = min(w, x + search_radius)
+        y2 = min(h, y + search_radius)
+        
+        roi = gray_frame[y1:y2, x1:x2]
+        if roi.size == 0:
+            return None
+        
+        # Fast ball detection using thresholding and contours
+        # Gray ball detection - look for darker circular objects
+        blurred = cv2.GaussianBlur(roi, (5, 5), 0)
+        
+        # Adaptive threshold to handle varying lighting
+        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
+                                     cv2.THRESH_BINARY, 11, 2)
+        
+        # Invert so ball becomes white
+        thresh = cv2.bitwise_not(thresh)
+        
+        # Find contours
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        if contours:
+            best_contour = None
+            best_score = 0
+            
+            for contour in contours:
+                area = cv2.contourArea(contour)
+                
+                # Filter by reasonable ball size
+                if 15 < area < 800:  # Adjust based on your ball size
+                    # Check circularity
+                    perimeter = cv2.arcLength(contour, True)
+                    if perimeter > 0:
+                        circularity = 4 * np.pi * area / (perimeter * perimeter)
+                        
+                        # Score based on area and circularity
+                        score = area * circularity
+                        if score > best_score and circularity > 0.4:  # Reasonably circular
+                            best_score = score
+                            best_contour = contour
+            
+            if best_contour is not None:
+                # Get centroid
+                M = cv2.moments(best_contour)
+                if M["m00"] != 0:
+                    cx = int(M["m10"] / M["m00"]) + x1
+                    cy = int(M["m01"] / M["m00"]) + y1
+                    return (cx, cy)
+        
+        return None
+
     def producer_loop(self):
         while self.running:
             rgb, bgr = self.camera.grab_frame()
@@ -132,11 +194,17 @@ class BallTracker:
             use_yolo = not self.initialized or self.frame_counter % self.yolo_every_n_frames == 0
 
             if not use_yolo and self.fast_tracker and self.ball_position:
-                fast_pos = self.update_fast_tracker(gray)
-                if fast_pos:
-                    current_position = fast_pos
+                # Try ultra-fast CV tracking first (fastest method)
+                cv_pos = self.find_ball_cv_fast(gray, self.ball_position)
+                if cv_pos and not self.is_in_elevator_area(cv_pos):
+                    current_position = cv_pos
                 else:
-                    use_yolo = True
+                    # Fallback to OpenCV tracker
+                    fast_pos = self.update_fast_tracker(gray)
+                    if fast_pos:
+                        current_position = fast_pos
+                    else:
+                        use_yolo = True
 
             if use_yolo:
                 if self.resized_input:
