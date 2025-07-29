@@ -41,7 +41,7 @@ class BallTracker:
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
         self.lost_frames_counter = 0
-        self.max_lost_frames = 10
+        self.max_lost_frames = 30
 
         self.use_fast_tracking = True
         self.yolo_every_n_frames = 5
@@ -60,7 +60,7 @@ class BallTracker:
         self.elevator_radius = camera_config.get("elevator_radius", 60)
 
         self.resized_input = True
-        self.yolo_input_size = (640, 360)
+        self.yolo_input_size = (640, 640)
 
         self.running = False
         self.lock = threading.Lock()
@@ -158,7 +158,7 @@ class BallTracker:
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.6:
+                    if label != "ball" or conf < 0.4:
                         continue
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -167,6 +167,9 @@ class BallTracker:
                         x2 = int(x2 * scale_x)
                         y1 = int(y1 * scale_y)
                         y2 = int(y2 * scale_y)
+
+                    if x1 >= x2 or y1 >= y2 or x1 < 0 or y1 < 0 or x2 > gray.shape[1] or y2 > gray.shape[0]:
+                        continue
 
                     roi = gray[y1:y2, x1:x2]
                     if roi.size == 0:
@@ -258,7 +261,13 @@ class BallTracker:
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-                if self.lost_frames_counter % 5 == 0:  # Print every 5 lost frames
+
+                # 🔹 Insert fallback logic here
+                if self.ball_position and self.lost_frames_counter <= 3:
+                    current_position = self.ball_position
+                    print("[BallTracker] Using fallback ball position")
+
+                if self.lost_frames_counter % 5 == 0:
                     print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames (initialized: {self.initialized}, valid_detections: {len(valid_detections) if 'valid_detections' in locals() else 0})")
 
             if self.lost_frames_counter > self.max_lost_frames:
