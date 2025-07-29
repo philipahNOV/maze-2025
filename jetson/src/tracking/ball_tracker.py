@@ -34,7 +34,7 @@ def box_center(box):
 
 
 class BallTracker:
-    def __init__(self, camera, tracking_config, model_path="v8-291.pt"):
+    def __init__(self, camera, tracking_config, model_path="v8-291.onnx"):
         self.camera = camera
         self.model = YOLOModel(model_path)
 
@@ -56,15 +56,15 @@ class BallTracker:
         
         # Fast tracking parameters
         self.use_fast_tracking = True
-        self.yolo_every_n_frames = 30  # Run YOLO much less frequently - every 30 frames (0.5 seconds at 60fps)
+        self.yolo_every_n_frames = 5  # Run YOLO every 5 frames, use fast tracking in between
         self.frame_counter = 0
         self.fast_tracker = None  # OpenCV tracker for fast tracking
         self.last_yolo_position = None
-        self.tracking_window_size = 80  # Smaller window for faster processing
+        self.tracking_window_size = 100  # Size of region around ball for fast tracking
         
-        # Remove background subtraction - too slow
-        # self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
-        # self.background_learning_rate = 0.01
+        # Background subtraction for motion detection
+        self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
+        self.background_learning_rate = 0.01
         
         # Elevator area detection (to avoid false positives in elevator hole)
         # Get camera config from global config structure
@@ -90,10 +90,10 @@ class BallTracker:
     def init_fast_tracker(self, frame, position):
         """Initialize OpenCV tracker for fast tracking"""
         try:
-            # Use KCF tracker - much faster than CSRT
-            self.fast_tracker = cv2.TrackerKCF_create()
+            # Use CSRT tracker - good balance of speed and accuracy
+            self.fast_tracker = cv2.TrackerCSRT_create()
             
-            # Create smaller bounding box around the ball
+            # Create bounding box around the ball
             x, y = position
             half_size = self.tracking_window_size // 2
             bbox = (x - half_size, y - half_size, self.tracking_window_size, self.tracking_window_size)
@@ -110,7 +110,7 @@ class BallTracker:
             success = self.fast_tracker.init(frame, bbox)
             if success:
                 self.last_yolo_position = position
-                print(f"[BallTracker] Fast KCF tracker initialized at {position}")
+                print(f"[BallTracker] Fast tracker initialized at {position}")
             return success
         except Exception as e:
             print(f"[BallTracker] Failed to init fast tracker: {e}")
