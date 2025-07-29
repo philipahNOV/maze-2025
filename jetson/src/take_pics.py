@@ -94,7 +94,7 @@ def grab_zed_frame(zed):
 def main():
     # Initialize ZED camera first
     zed = init_zed_camera()
-    save_dir = "captures2"
+    save_dir = "captures3"
     os.makedirs(save_dir, exist_ok=True)
     img_count = 26
     
