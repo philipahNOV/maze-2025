@@ -44,7 +44,7 @@ class BallTracker:
         self.max_lost_frames = 30
 
         self.use_fast_tracking = True
-        self.yolo_every_n_frames = 5
+        self.yolo_every_n_frames = 40
         self.frame_counter = 0
         self.fast_tracker = None
         self.last_yolo_position = None
