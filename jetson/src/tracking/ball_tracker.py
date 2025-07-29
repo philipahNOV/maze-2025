@@ -5,6 +5,56 @@ import cv2
 from tracking.model_loader import YOLOModel
 from tracking.vision_utils import get_center_of_mass
 
+class KalmanFilter:
+    def __init__(self, xinit=0, yinit=0, fps=60, std_a=0.001, std_x=0.004, std_y=0.01, cov=1000):
+        self.S = np.array([xinit, 0, 0, yinit, 0, 0])
+        self.dt = 1 / fps
+
+        self.F = np.array([[1, self.dt, 0.5 * self.dt ** 2, 0, 0, 0],
+                           [0, 1, self.dt, 0, 0, 0],
+                           [0, 0, 1, 0, 0, 0],
+                           [0, 0, 0, 1, self.dt, 0.5 * self.dt ** 2],
+                           [0, 0, 0, 0, 1, self.dt],
+                           [0, 0, 0, 0, 0, 1]])
+
+        self.Q = np.array([[0.25 * self.dt ** 4, 0.5 * self.dt ** 3, 0.5 * self.dt ** 2, 0, 0, 0],
+                           [0.5 * self.dt ** 3, self.dt ** 2, self.dt, 0, 0, 0],
+                           [0.5 * self.dt ** 2, self.dt, 1, 0, 0, 0],
+                           [0, 0, 0, 0.25 * self.dt ** 4, 0.5 * self.dt ** 3, 0.5 * self.dt ** 2],
+                           [0, 0, 0, 0.5 * self.dt ** 3, self.dt ** 2, self.dt],
+                           [0, 0, 0, 0.5 * self.dt ** 2, self.dt, 1]]) * std_a ** 2
+
+        self.R = np.array([[std_x ** 2, 0], [0, std_y ** 2]])
+
+        self.P = np.eye(6) * cov
+        self.H = np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
+        self.I = np.eye(6)
+
+        self.S_pred = None
+        self.P_pred = None
+        self.K = None
+
+    def pred_new_state(self):
+        self.S_pred = self.F.dot(self.S)
+
+    def pred_next_uncertainity(self):
+        self.P_pred = self.F.dot(self.P).dot(self.F.T) + self.Q
+
+    def get_Kalman_gain(self):
+        self.K = self.P_pred.dot(self.H.T).dot(
+            np.linalg.inv(self.H.dot(self.P_pred).dot(self.H.T) + self.R))
+
+    def state_correction(self, z):
+        if z == [None, None]:
+            self.S = self.S_pred
+        else:
+            self.S = self.S_pred + self.K.dot(z - self.H.dot(self.S_pred))
+
+    def uncertainity_correction(self, z):
+        if z != [None, None]:
+            self.P = (self.I - self.K.dot(self.H)).dot(self.P_pred)
+
+
 def iou(boxA, boxB):
     ax1, ay1, ax2, ay2 = boxA
     bx1, by1, bx2, by2 = boxB
@@ -66,6 +116,9 @@ class BallTracker:
         self.lock = threading.Lock()
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+
+        self.kalman = KalmanFilter(fps=60, xinit=0, yinit=0, std_x=0.004, std_y=0.01, std_a=0.001, cov=1000)
+        self.kalman_initialized = False
 
     def is_in_elevator_area(self, point):
         return distance(point, self.elevator_center) <= self.elevator_radius
@@ -257,18 +310,27 @@ class BallTracker:
                                 self.init_fast_tracker(gray, current_position)
 
             if current_position:
+                x, y = current_position
+                self.kalman.pred_new_state()
+                self.kalman.pred_next_uncertainity()
+                self.kalman.get_Kalman_gain()
+                self.kalman.state_correction([x, y])
+                self.kalman.uncertainity_correction([x, y])
+                self.kalman_initialized = True
                 self.ball_position = current_position
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-
-                # 🔹 Insert fallback logic here
-                if self.ball_position and self.lost_frames_counter <= 3:
-                    current_position = self.ball_position
-                    print("[BallTracker] Using fallback ball position")
-
-                if self.lost_frames_counter % 5 == 0:
-                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames (initialized: {self.initialized}, valid_detections: {len(valid_detections) if 'valid_detections' in locals() else 0})")
+                if self.kalman_initialized:
+                    self.kalman.pred_new_state()
+                    self.kalman.pred_next_uncertainity()
+                    self.kalman.get_Kalman_gain()
+                    self.kalman.state_correction([None, None])
+                    self.kalman.uncertainity_correction([None, None])
+                    predicted = self.kalman.S_pred
+                    predicted_position = (int(predicted[0]), int(predicted[3]))
+                    self.ball_position = predicted_position
+                    print("[BallTracker] Using Kalman predicted position:", predicted_position)
 
             if self.lost_frames_counter > self.max_lost_frames:
                 print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
