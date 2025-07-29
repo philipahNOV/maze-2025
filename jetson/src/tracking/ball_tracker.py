@@ -41,14 +41,14 @@ class BallTracker:
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
         self.lost_frames_counter = 0
-        self.max_lost_frames = 10
+        self.max_lost_frames = 30  # Allow more lost frames before reset (1 second tolerance)
 
         self.use_fast_tracking = True
-        self.yolo_every_n_frames = 15  # More frequent YOLO for reliability - every 15 frames (0.5 seconds at 30fps)
+        self.yolo_every_n_frames = 10  # YOLO every 10 frames (0.33 seconds at 30fps) for stability
         self.frame_counter = 0
         self.fast_tracker = None
         self.last_yolo_position = None
-        self.tracking_window_size = 60  # Further reduced window size for fastest tracking
+        self.tracking_window_size = 80  # Larger window for more robust tracking
 
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
         self.background_learning_rate = 0.01
@@ -195,8 +195,20 @@ class BallTracker:
             if not use_yolo and self.fast_tracker and self.ball_position:
                 # Use OpenCV tracker (more reliable)
                 fast_pos = self.update_fast_tracker(gray)
-                if fast_pos and not self.is_in_elevator_area(fast_pos):
-                    current_position = fast_pos
+                if fast_pos:
+                    # Validate tracking result - should be reasonable movement
+                    distance_moved = distance(fast_pos, self.ball_position)
+                    
+                    # Accept if reasonable movement and not in elevator area
+                    if distance_moved < 150 and not self.is_in_elevator_area(fast_pos):
+                        current_position = fast_pos
+                    elif distance_moved >= 150:
+                        # Large movement, reset tracker and use YOLO
+                        self.fast_tracker = None
+                        use_yolo = True
+                    else:
+                        # In elevator area, keep last known position temporarily
+                        current_position = self.ball_position
                 else:
                     use_yolo = True
 
@@ -214,7 +226,7 @@ class BallTracker:
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
                     conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.6:
+                    if label != "ball" or conf < 0.4:  # Lower confidence threshold for more detections
                         continue
 
                     x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -313,8 +325,13 @@ class BallTracker:
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-                # Reduce debug output - only print every 15 lost frames
-                if self.lost_frames_counter % 15 == 0:
+                # Use last known position for short periods to handle brief tracking losses
+                if self.lost_frames_counter <= 15 and self.ball_position:
+                    # Keep using last known position for stability
+                    pass  # Don't update ball_position, keep the last known one
+                
+                # Reduce debug output - only print every 30 lost frames
+                if self.lost_frames_counter % 30 == 0:
                     print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames")
 
             if self.lost_frames_counter > self.max_lost_frames:
