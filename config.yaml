@@ -41,6 +41,7 @@ tracking:
   yolo_cooldown_period: 20   # frames before allowing YOLO recheck
   yolo_frame_interval: 5
   box_iou_threshold: 0.4
+  
 controller:
   stuck_wiggle_amplitude: 1     # deg, amplitude of wiggle when stuck
   stuck_wiggle_frequency: 20      # Hz, frequency of wiggle when stuck

@@ -1,162 +1,37 @@
 import threading
 import time
 import numpy as np
-import cv2
+from tracking.vision_utils import hsv_tracking, global_hsv_search
 from tracking.model_loader import YOLOModel
-from tracking.vision_utils import get_center_of_mass
-
-class KalmanFilter:
-    def __init__(self, xinit=0, yinit=0, fps=60, std_a=0.001, std_x=0.004, std_y=0.01, cov=1000):
-        self.S = np.array([xinit, 0, 0, yinit, 0, 0])
-        self.dt = 1 / fps
-
-        self.F = np.array([[1, self.dt, 0.5 * self.dt ** 2, 0, 0, 0],
-                           [0, 1, self.dt, 0, 0, 0],
-                           [0, 0, 1, 0, 0, 0],
-                           [0, 0, 0, 1, self.dt, 0.5 * self.dt ** 2],
-                           [0, 0, 0, 0, 1, self.dt],
-                           [0, 0, 0, 0, 0, 1]])
-
-        self.Q = np.array([[0.25 * self.dt ** 4, 0.5 * self.dt ** 3, 0.5 * self.dt ** 2, 0, 0, 0],
-                           [0.5 * self.dt ** 3, self.dt ** 2, self.dt, 0, 0, 0],
-                           [0.5 * self.dt ** 2, self.dt, 1, 0, 0, 0],
-                           [0, 0, 0, 0.25 * self.dt ** 4, 0.5 * self.dt ** 3, 0.5 * self.dt ** 2],
-                           [0, 0, 0, 0.5 * self.dt ** 3, self.dt ** 2, self.dt],
-                           [0, 0, 0, 0.5 * self.dt ** 2, self.dt, 1]]) * std_a ** 2
-
-        self.R = np.array([[std_x ** 2, 0], [0, std_y ** 2]])
-
-        self.P = np.eye(6) * cov
-        self.H = np.array([[1, 0, 0, 0, 0, 0], [0, 0, 0, 1, 0, 0]])
-        self.I = np.eye(6)
-
-        self.S_pred = None
-        self.P_pred = None
-        self.K = None
-
-    def pred_new_state(self):
-        self.S_pred = self.F.dot(self.S)
-
-    def pred_next_uncertainity(self):
-        self.P_pred = self.F.dot(self.P).dot(self.F.T) + self.Q
-
-    def get_Kalman_gain(self):
-        self.K = self.P_pred.dot(self.H.T).dot(
-            np.linalg.inv(self.H.dot(self.P_pred).dot(self.H.T) + self.R))
-
-    def state_correction(self, z):
-        if z == [None, None]:
-            self.S = self.S_pred
-        else:
-            self.S = self.S_pred + self.K.dot(z - self.H.dot(self.S_pred))
-
-    def uncertainity_correction(self, z):
-        if z != [None, None]:
-            self.P = (self.I - self.K.dot(self.H)).dot(self.P_pred)
-
-
-def iou(boxA, boxB):
-    ax1, ay1, ax2, ay2 = boxA
-    bx1, by1, bx2, by2 = boxB
-    inter_x1 = max(ax1, bx1)
-    inter_y1 = max(ay1, by1)
-    inter_x2 = min(ax2, bx2)
-    inter_y2 = min(ay2, by2)
-    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
-    boxA_area = (ax2 - ax1) * (ay2 - ay1)
-    boxB_area = (bx2 - bx1) * (by2 - by1)
-    return inter_area / float(boxA_area + boxB_area - inter_area + 1e-5)
-
-def distance(p1, p2):
-    return np.linalg.norm(np.array(p1) - np.array(p2))
-
-def box_center(box):
-    x1, y1, x2, y2 = box
-    return ((x1 + x2) // 2, (y1 + y2) // 2)
 
 class BallTracker:
     def __init__(self, camera, tracking_config, model_path="v8-291.onnx"):
         self.camera = camera
         self.model = YOLOModel(model_path)
 
-        self.INIT_BALL_REGION = (
-            (tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]),
-            (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"])
+        self.hsv_fail_threshold = tracking_config["hsv_fail_threshold"]
+        self.yolo_cooldown_period = tracking_config["yolo_cooldown_period"]
+        self.WINDOW_SIZE = tracking_config["hsv_window_size"]
+        self.HSV_RANGE = (
+            np.array(tracking_config["hsv_range"]["lower"]),
+            np.array(tracking_config["hsv_range"]["upper"]),
         )
-        self.iou_threshold = tracking_config.get("box_iou_threshold", 0.4)
-        self.max_distance_threshold = 200
+        self.INIT_BALL_REGION = ((tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]), (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"]))
+        self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
+
         self.ball_position = None
-        self.locked_box = None
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
-        self.lost_frames_counter = 0
-        self.max_lost_frames = 30
 
-        self.use_fast_tracking = True
-        self.yolo_every_n_frames = 40
-        self.frame_counter = 0
-        self.fast_tracker = None
-        self.last_yolo_position = None
-        self.tracking_window_size = 100
-
-        self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
-        self.background_learning_rate = 0.01
-
-        full_config = tracking_config.get("full_config", {})
-        camera_config = full_config.get("camera", {})
-        self.elevator_center = (camera_config.get("elevator_center_x", 998),
-                                camera_config.get("elevator_center_y", 588))
-        self.elevator_radius = camera_config.get("elevator_radius", 60)
-
-        self.resized_input = True
-        self.yolo_input_size = (640, 640)
-
+        self.hsv_fail_counter = 0
+        self.yolo_cooldown = 0
         self.running = False
         self.lock = threading.Lock()
+
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
-
-        self.kalman = KalmanFilter(fps=60, xinit=0, yinit=0, std_x=0.004, std_y=0.01, std_a=0.001, cov=1000)
-        self.kalman_initialized = False
-
-    def is_in_elevator_area(self, point):
-        return distance(point, self.elevator_center) <= self.elevator_radius
-
-    def init_fast_tracker(self, frame, position):
-        try:
-            self.fast_tracker = cv2.TrackerKCF_create()
-            x, y = position
-            half = self.tracking_window_size // 2
-            bbox = (x - half, y - half, self.tracking_window_size, self.tracking_window_size)
-            h, w = frame.shape[:2]
-            x, y, w_box, h_box = bbox
-            x = max(0, min(x, w - w_box))
-            y = max(0, min(y, h - h_box))
-            w_box = min(w_box, w - x)
-            h_box = min(h_box, h - y)
-            bbox = (x, y, w_box, h_box)
-            if self.fast_tracker.init(frame, bbox):
-                self.last_yolo_position = position
-                print(f"[BallTracker] Fast tracker initialized at {position}")
-                return True
-        except Exception as e:
-            print(f"[BallTracker] Failed to init fast tracker: {e}")
-        self.fast_tracker = None
-        return False
-
-    def update_fast_tracker(self, frame):
-        if self.fast_tracker is None:
-            return None
-        try:
-            success, bbox = self.fast_tracker.update(frame)
-            if success:
-                x, y, w, h = bbox
-                return (int(x + w / 2), int(y + h / 2))
-        except Exception as e:
-            print(f"[BallTracker] Fast tracker update failed: {e}")
-        self.fast_tracker = None
-        return None
+        self.yolo_result = None
 
     def producer_loop(self):
         while self.running:
@@ -165,178 +40,65 @@ class BallTracker:
                 with self.lock:
                     self.latest_rgb_frame = rgb
                     self.latest_bgr_frame = bgr
-            time.sleep(1/60.0)
+            time.sleep(0.001)
 
     def consumer_loop(self):
         while self.running:
-            rgb = None
-            bgr = None
             with self.lock:
-                if self.latest_rgb_frame is not None and self.latest_bgr_frame is not None:
-                    rgb = self.latest_rgb_frame
-                    bgr = self.latest_bgr_frame
-                    self.latest_rgb_frame = None
-                    self.latest_bgr_frame = None
-
+                rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
             if rgb is None or bgr is None:
-                time.sleep(1/60.0)
+                time.sleep(0.01)
                 continue
 
-            gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-            self.frame_counter += 1
-            self.background_subtractor.apply(gray, learningRate=self.background_learning_rate)
-
-            current_position = None
-            use_yolo = not self.initialized or self.frame_counter % self.yolo_every_n_frames == 0
-
-            if not use_yolo and self.fast_tracker and self.ball_position:
-                fast_pos = self.update_fast_tracker(gray)
-                if fast_pos:
-                    current_position = fast_pos
-                else:
-                    use_yolo = True
-
-            if use_yolo:
-                if self.resized_input:
-                    original_size = (rgb.shape[1], rgb.shape[0])
-                    resized_rgb = cv2.resize(rgb, self.yolo_input_size)
-                    scale_x = original_size[0] / self.yolo_input_size[0]
-                    scale_y = original_size[1] / self.yolo_input_size[1]
-                    results = self.model.predict(resized_rgb)
-                else:
-                    results = self.model.predict(rgb)
-
-                valid_detections = []
+            if not self.initialized:
+                results = self.model.predict(rgb)
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
-                    conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.2:
-                        continue
-
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    if self.resized_input:
-                        x1 = int(x1 * scale_x)
-                        x2 = int(x2 * scale_x)
-                        y1 = int(y1 * scale_y)
-                        y2 = int(y2 * scale_y)
-
-                    if x1 >= x2 or y1 >= y2 or x1 < 0 or y1 < 0 or x2 > gray.shape[1] or y2 > gray.shape[0]:
-                        continue
-
-                    roi = gray[y1:y2, x1:x2]
-                    if roi.size == 0:
-                        continue
-                    mean_intensity = cv2.mean(roi)[0]
-                    if mean_intensity < 50:
-                        continue
-
-                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
-                    local_com = get_center_of_mass(thresh)
-                    if not local_com:
-                        continue
-
-                    cx, cy = local_com
-                    global_com = (x1 + cx, y1 + cy)
-                    valid_detections.append({
-                        'position': global_com,
-                        'box': (x1, y1, x2, y2),
-                        'confidence': conf,
-                        'in_elevator': self.is_in_elevator_area(global_com)
-                    })
-
-                # Process YOLO detections - complete the missing logic
-                best_detection = None
-                
-                if not self.initialized:
-                    # During initialization, prefer detections in the init region
-                    for det in valid_detections:
-                        x, y = det['position']
-                        if (self.INIT_BALL_REGION[0][0] <= x <= self.INIT_BALL_REGION[1][0] and 
-                            self.INIT_BALL_REGION[0][1] <= y <= self.INIT_BALL_REGION[1][1]):
-                            if best_detection is None or det['confidence'] > best_detection['confidence']:
-                                best_detection = det
-                                
-                    if best_detection:
-                        current_position = best_detection['position']
-                        self.locked_box = best_detection['box']
-                        self.ball_confirm_counter += 1
-                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                            self.initialized = True
-                            # Initialize fast tracker
-                            self.init_fast_tracker(gray, current_position)
-                            print(f"[BallTracker] Initialized at position {current_position}")
-                            
-                else:
-                    # Already initialized - use smart tracking logic
-                    if valid_detections:
-                        scored_detections = []
-                        
-                        for det in valid_detections:
-                            score = 0
-                            
-                            # Distance from last known position
-                            if self.ball_position:
-                                pos_distance = distance(det['position'], self.ball_position)
-                                if pos_distance <= self.max_distance_threshold:
-                                    score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.4
-                            
-                            # Confidence score
-                            score += det['confidence'] * 0.3
-                            
-                            # IoU with locked box
-                            if self.locked_box:
-                                iou_score = iou(det['box'], self.locked_box)
-                                score += iou_score * 0.2
-                            
-                            # Elevator area logic
-                            if self.ball_position:
-                                if det['in_elevator'] and not self.is_in_elevator_area(self.ball_position):
-                                    score -= 0.3
-                                elif not det['in_elevator'] and self.is_in_elevator_area(self.ball_position):
-                                    score += 0.2
-                                    
-                            scored_detections.append((score, det))
-                        
-                        if scored_detections:
-                            scored_detections.sort(key=lambda x: x[0], reverse=True)
-                            best_score, best_detection = scored_detections[0]
-                            
-                            if best_score > 0.3:
-                                current_position = best_detection['position']
-                                self.locked_box = best_detection['box']
-                                
-                                # Reinitialize fast tracker with new YOLO position
-                                self.init_fast_tracker(gray, current_position)
-
-            if current_position:
-                x, y = current_position
-                self.kalman.pred_new_state()
-                self.kalman.pred_next_uncertainity()
-                self.kalman.get_Kalman_gain()
-                self.kalman.state_correction([x, y])
-                self.kalman.uncertainity_correction([x, y])
-                self.kalman_initialized = True
-                self.ball_position = current_position
-                self.lost_frames_counter = 0
+                    if label == "ball":
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                        if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
+                           self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
+                            self.ball_confirm_counter += 1
+                            self.ball_position = (cx, cy)
+                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                                self.initialized = True
             else:
-                self.lost_frames_counter += 1
-                if self.kalman_initialized:
-                    self.kalman.pred_new_state()
-                    self.kalman.pred_next_uncertainity()
-                    self.kalman.get_Kalman_gain()
-                    self.kalman.state_correction([None, None])
-                    self.kalman.uncertainity_correction([None, None])
-                    predicted = self.kalman.S_pred
-                    predicted_position = (int(predicted[0]), int(predicted[3]))
-                    self.ball_position = predicted_position
-                    print("[BallTracker] Using Kalman predicted position:", predicted_position)
+                new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
 
-            if self.lost_frames_counter > self.max_lost_frames:
-                print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
-                self.retrack()
+                if new_pos:
+                    if self.ball_position:
+                        alpha = 0.5  # smoothing factor (lower = smoother, slower response)
+                        x = int(alpha * new_pos[0] + (1 - alpha) * self.ball_position[0])
+                        y = int(alpha * new_pos[1] + (1 - alpha) * self.ball_position[1])
+                        self.ball_position = (x, y)
+                    else:
+                        self.ball_position = new_pos
+                    self.hsv_fail_counter = 0
+                else:
+                    self.ball_position = None
+                    self.hsv_fail_counter += 1
 
-            time.sleep(1 / 60.0)
+                    if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
+                        global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
+                        if global_pos:
+                            results = self.model.predict(rgb)
+                            for box in results.boxes:
+                                label = self.model.get_label(box.cls[0])
+                                if label == "ball":
+                                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                                    self.ball_position = (cx, cy)
+                                    self.hsv_fail_counter = 0
+                                    self.yolo_cooldown = self.yolo_cooldown_period
+                                    break
+
+            if self.yolo_cooldown > 0:
+                self.yolo_cooldown -= 1
+
+            time.sleep(0.005)
 
     def start(self):
         self.running = True
@@ -352,13 +114,7 @@ class BallTracker:
     def retrack(self):
         self.initialized = False
         self.ball_confirm_counter = 0
-        self.locked_box = None
-        self.ball_position = None
-        self.lost_frames_counter = 0
-        self.fast_tracker = None
-        self.last_yolo_position = None
-        self.frame_counter = 0
-        print("[BallTracker] Retracking initiated - resetting all tracking state including fast tracker.")
+        print("[BallTracker] Retracking initiated.")
 
     def get_frame(self):
         with self.lock:
