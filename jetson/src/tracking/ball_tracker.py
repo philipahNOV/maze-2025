@@ -72,7 +72,7 @@ class BallTracker:
 
     def init_fast_tracker(self, frame, position):
         try:
-            self.fast_tracker = cv2.TrackerCSRT_create()
+            self.fast_tracker = cv2.TrackerMOSSE_create()
             x, y = position
             half = self.tracking_window_size // 2
             bbox = (x - half, y - half, self.tracking_window_size, self.tracking_window_size)
@@ -112,16 +112,22 @@ class BallTracker:
                 with self.lock:
                     self.latest_rgb_frame = rgb
                     self.latest_bgr_frame = bgr
-            time.sleep(0.001)
+            time.sleep(1/60.0)
 
     def consumer_loop(self):
         while self.running:
+            rgb = None
+            bgr = None
             with self.lock:
-                rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
-                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
+                if self.latest_rgb_frame is not None and self.latest_bgr_frame is not None:
+                    rgb = self.latest_rgb_frame
+                    bgr = self.latest_bgr_frame
+                    self.latest_rgb_frame = None
+                    self.latest_bgr_frame = None
+
 
             if rgb is None or bgr is None:
-                time.sleep(0.001)
+                time.sleep(1/60.0)
                 continue
 
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
@@ -259,7 +265,7 @@ class BallTracker:
                 print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
                 self.retrack()
 
-            time.sleep(0.001)
+            time.sleep(1 / 60.0)
 
     def start(self):
         self.running = True
