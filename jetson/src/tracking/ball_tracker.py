@@ -45,7 +45,7 @@ class BallTracker:
         self.last_yolo_time = 0
         self.yolo_result_lock = threading.Lock()
 
-        self.max_lost_frames = 30  # Allow 30 frames (0.5 seconds at 60fps) before reset
+        self.max_lost_frames = 60  # Allow 60 frames (1 second at 60fps) before reset
         self.frame_counter = 0
         
         # Fast tracking fallback
@@ -142,6 +142,7 @@ class BallTracker:
                 scale_x, scale_y = 1.0, 1.0
 
             best_detection = None
+            best_score = 0
             gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
 
             for box in results.boxes:
@@ -166,8 +167,20 @@ class BallTracker:
                     continue
                 cx, cy = x1 + com[0], y1 + com[1]
 
-                best_detection = (cx, cy)
-                break
+                # Skip detections in elevator area (ball is in the hole)
+                if self.is_in_elevator_area((cx, cy)):
+                    continue
+
+                # Score based on confidence and distance from last known position
+                score = conf
+                if self.ball_position:
+                    dist = distance((cx, cy), self.ball_position)
+                    if dist < 200:  # Prefer detections near last known position
+                        score += (200 - dist) / 200
+                
+                if score > best_score:
+                    best_score = score
+                    best_detection = (cx, cy)
 
             with self.yolo_result_lock:
                 if best_detection:
@@ -175,8 +188,9 @@ class BallTracker:
                     self.last_yolo_time = time.time()
                     # Initialize/reinitialize fast tracker with new YOLO detection
                     self.init_fast_tracker(gray, best_detection)
+                    print(f"[BallTracker] YOLO detected ball at {best_detection}")
 
-            time.sleep(0.5)  # Run every 500ms
+            time.sleep(0.3)  # Run every 300ms for more frequent detection
 
     def consumer_loop(self):
         while self.running:
@@ -195,13 +209,12 @@ class BallTracker:
             # First, try to use latest fresh YOLO result
             with self.yolo_result_lock:
                 if self.last_yolo_result and (time.time() - self.last_yolo_time < 1.0):
-                    if not self.is_in_elevator_area(self.last_yolo_result):
-                        current_position = self.last_yolo_result
+                    current_position = self.last_yolo_result
 
             # If no fresh YOLO result, use fast tracker as fallback
             if current_position is None and self.fast_tracker and self.ball_position:
                 tracker_pos = self.update_fast_tracker(gray)
-                if tracker_pos and not self.is_in_elevator_area(tracker_pos):
+                if tracker_pos:
                     current_position = tracker_pos
 
             # Update ball position and lost frames counter
