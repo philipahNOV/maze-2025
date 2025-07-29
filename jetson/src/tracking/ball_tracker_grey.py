@@ -120,6 +120,7 @@ class BallTracker:
         self.lock = threading.Lock()
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
+        self.latest_gray_frame = None  # Add this missing attribute
 
     def is_in_elevator_area(self, point):
         """Check if point is in elevator area"""
