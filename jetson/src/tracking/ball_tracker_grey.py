@@ -135,6 +135,9 @@ class BallTracker:
     
     def update_tracks(self, detections, frame_number):
         """Update tracks with new detections using volleyball.py approach"""
+        # Prioritize init region detections during startup
+        detections = self._prioritize_init_detections(detections)
+        
         # Remove old tracks that haven't been updated
         tracks_to_remove = []
         for track_id, track in self.tracks.items():
@@ -155,10 +158,18 @@ class BallTracker:
         active_tracks = list(self.tracks.items())
         if not active_tracks:
             # No existing tracks, create new ones
+            # During initialization, only create tracks for balls in init region
             for det in detections:
                 position, confidence = self.box_to_position(det)
                 if not self.is_in_elevator_area(position):
-                    self._create_track(position, frame_number, confidence)
+                    if not self.initialized:
+                        # Only create track if in init region during startup
+                        if self._is_in_init_region(position):
+                            self._create_track(position, frame_number, confidence)
+                            break  # Only create one track during init
+                    else:
+                        # After initialization, create tracks anywhere
+                        self._create_track(position, frame_number, confidence)
             return
             
         # Calculate distances
@@ -220,6 +231,31 @@ class BallTracker:
             self.main_ball_id = track.track_id
             self.ball_position = position
             self.initialized = True
+    
+    def _is_in_init_region(self, position):
+        """Check if position is in the initialization region"""
+        x, y = position
+        return (self.INIT_BALL_REGION[0][0] <= x <= self.INIT_BALL_REGION[1][0] and 
+                self.INIT_BALL_REGION[0][1] <= y <= self.INIT_BALL_REGION[1][1])
+    
+    def _prioritize_init_detections(self, detections):
+        """Prioritize detections in init region during startup"""
+        if self.initialized:
+            return detections
+            
+        # During initialization, prioritize detections in init region
+        init_detections = []
+        other_detections = []
+        
+        for det in detections:
+            position, _ = self.box_to_position(det)
+            if self._is_in_init_region(position):
+                init_detections.append(det)
+            else:
+                other_detections.append(det)
+        
+        # Return init region detections first, then others
+        return init_detections + other_detections
     
     def _select_main_ball(self):
         """Select the best track as main ball using stability scoring"""
@@ -362,7 +398,9 @@ class BallTracker:
             for box in results.boxes:
                 label = self.model.get_label(box.cls[0])
                 conf = float(box.conf[0])
-                if label != "ball" or conf < 0.5:
+                # Lower confidence threshold during initialization
+                min_conf = 0.3 if not self.initialized else 0.5
+                if label != "ball" or conf < min_conf:
                     continue
 
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
@@ -378,7 +416,9 @@ class BallTracker:
                     continue
                     
                 mean_intensity = cv2.mean(roi)[0]
-                if mean_intensity < 50:
+                # Lower intensity threshold during initialization
+                min_intensity = 30 if not self.initialized else 50
+                if mean_intensity < min_intensity:
                     continue
 
                 _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
