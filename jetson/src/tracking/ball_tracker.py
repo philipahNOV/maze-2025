@@ -40,15 +40,12 @@ class BallTracker:
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
-        self.lost_frames_counter = 0
-        self.max_lost_frames = 30  # Allow more lost frames before reset (1 second tolerance)
+        self.last_yolo_result = None
+        self.last_yolo_time = 0
+        self.yolo_result_lock = threading.Lock()
 
-        self.use_fast_tracking = True
-        self.yolo_every_n_frames = 10  # YOLO every 10 frames (0.33 seconds at 30fps) for stability
+        self.max_lost_frames = 30
         self.frame_counter = 0
-        self.fast_tracker = None
-        self.last_yolo_position = None
-        self.tracking_window_size = 80  # Larger window for more robust tracking
 
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
         self.background_learning_rate = 0.01
@@ -70,102 +67,6 @@ class BallTracker:
     def is_in_elevator_area(self, point):
         return distance(point, self.elevator_center) <= self.elevator_radius
 
-    def init_fast_tracker(self, frame, position):
-        try:
-            self.fast_tracker = cv2.TrackerCSRT_create()
-            x, y = position
-            half = self.tracking_window_size // 2
-            bbox = (x - half, y - half, self.tracking_window_size, self.tracking_window_size)
-            h, w = frame.shape[:2]
-            x, y, w_box, h_box = bbox
-            x = max(0, min(x, w - w_box))
-            y = max(0, min(y, h - h_box))
-            w_box = min(w_box, w - x)
-            h_box = min(h_box, h - y)
-            bbox = (x, y, w_box, h_box)
-            if self.fast_tracker.init(frame, bbox):
-                self.last_yolo_position = position
-                return True
-        except Exception as e:
-            print(f"[BallTracker] Failed to init fast tracker: {e}")
-        self.fast_tracker = None
-        return False
-
-    def update_fast_tracker(self, frame):
-        if self.fast_tracker is None:
-            return None
-        try:
-            success, bbox = self.fast_tracker.update(frame)
-            if success:
-                x, y, w, h = bbox
-                return (int(x + w / 2), int(y + h / 2))
-        except Exception as e:
-            print(f"[BallTracker] Fast tracker update failed: {e}")
-        self.fast_tracker = None
-        return None
-
-    def find_ball_cv_fast(self, gray_frame, last_position, search_radius=60):
-        """Ultra-fast ball detection using pure computer vision around last known position"""
-        if last_position is None:
-            return None
-            
-        x, y = last_position
-        h, w = gray_frame.shape
-        
-        # Define search region around last position
-        x1 = max(0, x - search_radius)
-        y1 = max(0, y - search_radius)
-        x2 = min(w, x + search_radius)
-        y2 = min(h, y + search_radius)
-        
-        roi = gray_frame[y1:y2, x1:x2]
-        if roi.size == 0:
-            return None
-        
-        # Fast ball detection using thresholding and contours
-        # Gray ball detection - look for darker circular objects
-        blurred = cv2.GaussianBlur(roi, (5, 5), 0)
-        
-        # Adaptive threshold to handle varying lighting
-        thresh = cv2.adaptiveThreshold(blurred, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C, 
-                                     cv2.THRESH_BINARY, 11, 2)
-        
-        # Invert so ball becomes white
-        thresh = cv2.bitwise_not(thresh)
-        
-        # Find contours
-        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        
-        if contours:
-            best_contour = None
-            best_score = 0
-            
-            for contour in contours:
-                area = cv2.contourArea(contour)
-                
-                # Filter by reasonable ball size
-                if 15 < area < 800:  # Adjust based on your ball size
-                    # Check circularity
-                    perimeter = cv2.arcLength(contour, True)
-                    if perimeter > 0:
-                        circularity = 4 * np.pi * area / (perimeter * perimeter)
-                        
-                        # Score based on area and circularity
-                        score = area * circularity
-                        if score > best_score and circularity > 0.4:  # Reasonably circular
-                            best_score = score
-                            best_contour = contour
-            
-            if best_contour is not None:
-                # Get centroid
-                M = cv2.moments(best_contour)
-                if M["m00"] != 0:
-                    cx = int(M["m10"] / M["m00"]) + x1
-                    cy = int(M["m01"] / M["m00"]) + y1
-                    return (cx, cy)
-        
-        return None
-
     def producer_loop(self):
         while self.running:
             rgb, bgr = self.camera.grab_frame()
@@ -175,174 +76,93 @@ class BallTracker:
                     self.latest_bgr_frame = bgr
             time.sleep(0.001)
 
-    def consumer_loop(self):
+    def yolo_loop(self):
         while self.running:
             with self.lock:
                 rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
-                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
+            if rgb is None:
+                time.sleep(0.01)
+                continue
 
-            if rgb is None or bgr is None:
+            if self.resized_input:
+                original_size = (rgb.shape[1], rgb.shape[0])
+                resized_rgb = cv2.resize(rgb, self.yolo_input_size)
+                scale_x = original_size[0] / self.yolo_input_size[0]
+                scale_y = original_size[1] / self.yolo_input_size[1]
+                results = self.model.predict(resized_rgb)
+            else:
+                results = self.model.predict(rgb)
+                scale_x, scale_y = 1.0, 1.0
+
+            best_detection = None
+            gray = cv2.cvtColor(rgb, cv2.COLOR_BGR2GRAY)
+
+            for box in results.boxes:
+                label = self.model.get_label(box.cls[0])
+                conf = float(box.conf[0])
+                if label != "ball" or conf < 0.4:
+                    continue
+
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
+                x1 = int(x1 * scale_x)
+                x2 = int(x2 * scale_x)
+                y1 = int(y1 * scale_y)
+                y2 = int(y2 * scale_y)
+
+                roi = gray[y1:y2, x1:x2]
+                if roi.size == 0 or cv2.mean(roi)[0] < 50:
+                    continue
+
+                _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
+                com = get_center_of_mass(thresh)
+                if not com:
+                    continue
+                cx, cy = x1 + com[0], y1 + com[1]
+
+                best_detection = (cx, cy)
+                break
+
+            with self.yolo_result_lock:
+                if best_detection:
+                    self.last_yolo_result = best_detection
+                    self.last_yolo_time = time.time()
+
+            time.sleep(0.5)  # Run every 500ms
+
+    def consumer_loop(self):
+        while self.running:
+            start_time = time.perf_counter()
+            with self.lock:
+                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
+            if bgr is None:
                 time.sleep(0.001)
                 continue
 
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-            self.frame_counter += 1
             self.background_subtractor.apply(gray, learningRate=self.background_learning_rate)
 
             current_position = None
-            use_yolo = not self.initialized or self.frame_counter % self.yolo_every_n_frames == 0
-
-            if not use_yolo and self.fast_tracker and self.ball_position:
-                # Use OpenCV tracker (more reliable)
-                fast_pos = self.update_fast_tracker(gray)
-                if fast_pos:
-                    # Validate tracking result - should be reasonable movement
-                    distance_moved = distance(fast_pos, self.ball_position)
-                    
-                    # Accept if reasonable movement and not in elevator area
-                    if distance_moved < 150 and not self.is_in_elevator_area(fast_pos):
-                        current_position = fast_pos
-                    elif distance_moved >= 150:
-                        # Large movement, reset tracker and use YOLO
-                        self.fast_tracker = None
-                        use_yolo = True
-                    else:
-                        # In elevator area, keep last known position temporarily
-                        current_position = self.ball_position
-                else:
-                    use_yolo = True
-
-            if use_yolo:
-                if self.resized_input:
-                    original_size = (rgb.shape[1], rgb.shape[0])
-                    resized_rgb = cv2.resize(rgb, self.yolo_input_size)
-                    scale_x = original_size[0] / self.yolo_input_size[0]
-                    scale_y = original_size[1] / self.yolo_input_size[1]
-                    results = self.model.predict(resized_rgb)
-                else:
-                    results = self.model.predict(rgb)
-
-                valid_detections = []
-                for box in results.boxes:
-                    label = self.model.get_label(box.cls[0])
-                    conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.4:  # Lower confidence threshold for more detections
-                        continue
-
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    if self.resized_input:
-                        x1 = int(x1 * scale_x)
-                        x2 = int(x2 * scale_x)
-                        y1 = int(y1 * scale_y)
-                        y2 = int(y2 * scale_y)
-
-                    roi = gray[y1:y2, x1:x2]
-                    if roi.size == 0:
-                        continue
-                    mean_intensity = cv2.mean(roi)[0]
-                    if mean_intensity < 50:
-                        continue
-
-                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
-                    local_com = get_center_of_mass(thresh)
-                    if not local_com:
-                        continue
-
-                    cx, cy = local_com
-                    global_com = (x1 + cx, y1 + cy)
-                    valid_detections.append({
-                        'position': global_com,
-                        'box': (x1, y1, x2, y2),
-                        'confidence': conf,
-                        'in_elevator': self.is_in_elevator_area(global_com)
-                    })
-
-                # Process YOLO detections - complete the missing logic
-                best_detection = None
-                
-                if not self.initialized:
-                    # During initialization, prefer detections in the init region
-                    for det in valid_detections:
-                        x, y = det['position']
-                        if (self.INIT_BALL_REGION[0][0] <= x <= self.INIT_BALL_REGION[1][0] and 
-                            self.INIT_BALL_REGION[0][1] <= y <= self.INIT_BALL_REGION[1][1]):
-                            if best_detection is None or det['confidence'] > best_detection['confidence']:
-                                best_detection = det
-                                
-                    if best_detection:
-                        current_position = best_detection['position']
-                        self.locked_box = best_detection['box']
-                        self.ball_confirm_counter += 1
-                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                            self.initialized = True
-                            # Initialize fast tracker
-                            self.init_fast_tracker(gray, current_position)
-                            
-                else:
-                    # Already initialized - use smart tracking logic
-                    if valid_detections:
-                        scored_detections = []
-                        
-                        for det in valid_detections:
-                            score = 0
-                            
-                            # Distance from last known position
-                            if self.ball_position:
-                                pos_distance = distance(det['position'], self.ball_position)
-                                if pos_distance <= self.max_distance_threshold:
-                                    score += (self.max_distance_threshold - pos_distance) / self.max_distance_threshold * 0.4
-                            
-                            # Confidence score
-                            score += det['confidence'] * 0.3
-                            
-                            # IoU with locked box
-                            if self.locked_box:
-                                iou_score = iou(det['box'], self.locked_box)
-                                score += iou_score * 0.2
-                            
-                            # Elevator area logic
-                            if self.ball_position:
-                                if det['in_elevator'] and not self.is_in_elevator_area(self.ball_position):
-                                    score -= 0.3
-                                elif not det['in_elevator'] and self.is_in_elevator_area(self.ball_position):
-                                    score += 0.2
-                                    
-                            scored_detections.append((score, det))
-                        
-                        if scored_detections:
-                            scored_detections.sort(key=lambda x: x[0], reverse=True)
-                            best_score, best_detection = scored_detections[0]
-                            
-                            if best_score > 0.3:
-                                current_position = best_detection['position']
-                                self.locked_box = best_detection['box']
-                                
-                                # Reinitialize fast tracker with new YOLO position
-                                self.init_fast_tracker(gray, current_position)
+            # Try to use latest YOLO result
+            with self.yolo_result_lock:
+                if self.last_yolo_result and (time.time() - self.last_yolo_time < 1.0):
+                    current_position = self.last_yolo_result
 
             if current_position:
                 self.ball_position = current_position
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-                # Use last known position for short periods to handle brief tracking losses
-                if self.lost_frames_counter <= 15 and self.ball_position:
-                    # Keep using last known position for stability
-                    pass  # Don't update ball_position, keep the last known one
-                
-                # Reduce debug output - only print every 30 lost frames
-                if self.lost_frames_counter % 30 == 0:
-                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames")
+                if self.lost_frames_counter > self.max_lost_frames:
+                    self.retrack()
 
-            if self.lost_frames_counter > self.max_lost_frames:
-                print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
-                self.retrack()
-
-            time.sleep(0.001)
+            elapsed = time.perf_counter() - start_time
+            sleep_time = max(0, (1 / 60.0) - elapsed)
+            time.sleep(sleep_time)
 
     def start(self):
         self.running = True
         threading.Thread(target=self.producer_loop, daemon=True).start()
+        threading.Thread(target=self.yolo_loop, daemon=True).start()
         threading.Thread(target=self.consumer_loop, daemon=True).start()
 
     def stop(self):
@@ -357,10 +177,9 @@ class BallTracker:
         self.locked_box = None
         self.ball_position = None
         self.lost_frames_counter = 0
-        self.fast_tracker = None
-        self.last_yolo_position = None
+        self.last_yolo_result = None
         self.frame_counter = 0
-        print("[BallTracker] Retracking initiated - resetting all tracking state including fast tracker.")
+        print("[BallTracker] Retracking initiated.")
 
     def get_frame(self):
         with self.lock:
