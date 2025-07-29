@@ -46,7 +46,6 @@ print("Config loaded successfully.")
 tracker_service = TrackerService(
     model_path=tracking_config["model_path"],
     tracking_config=tracking_config,
-    full_config=config
 )
 
 tracker_service.camera.init_camera()
