@@ -44,7 +44,7 @@ class BallTracker:
         self.max_lost_frames = 10
 
         self.use_fast_tracking = True
-        self.yolo_every_n_frames = 60  # Reduce YOLO frequency - only every 60 frames (2 seconds at 30fps)
+        self.yolo_every_n_frames = 15  # More frequent YOLO for reliability - every 15 frames (0.5 seconds at 30fps)
         self.frame_counter = 0
         self.fast_tracker = None
         self.last_yolo_position = None
@@ -85,7 +85,6 @@ class BallTracker:
             bbox = (x, y, w_box, h_box)
             if self.fast_tracker.init(frame, bbox):
                 self.last_yolo_position = position
-                print(f"[BallTracker] Fast tracker initialized at {position}")
                 return True
         except Exception as e:
             print(f"[BallTracker] Failed to init fast tracker: {e}")
@@ -194,17 +193,12 @@ class BallTracker:
             use_yolo = not self.initialized or self.frame_counter % self.yolo_every_n_frames == 0
 
             if not use_yolo and self.fast_tracker and self.ball_position:
-                # Try ultra-fast CV tracking first (fastest method)
-                cv_pos = self.find_ball_cv_fast(gray, self.ball_position)
-                if cv_pos and not self.is_in_elevator_area(cv_pos):
-                    current_position = cv_pos
+                # Use OpenCV tracker (more reliable)
+                fast_pos = self.update_fast_tracker(gray)
+                if fast_pos and not self.is_in_elevator_area(fast_pos):
+                    current_position = fast_pos
                 else:
-                    # Fallback to OpenCV tracker
-                    fast_pos = self.update_fast_tracker(gray)
-                    if fast_pos:
-                        current_position = fast_pos
-                    else:
-                        use_yolo = True
+                    use_yolo = True
 
             if use_yolo:
                 if self.resized_input:
@@ -271,7 +265,6 @@ class BallTracker:
                             self.initialized = True
                             # Initialize fast tracker
                             self.init_fast_tracker(gray, current_position)
-                            print(f"[BallTracker] Initialized at position {current_position}")
                             
                 else:
                     # Already initialized - use smart tracking logic
@@ -320,8 +313,9 @@ class BallTracker:
                 self.lost_frames_counter = 0
             else:
                 self.lost_frames_counter += 1
-                if self.lost_frames_counter % 5 == 0:  # Print every 5 lost frames
-                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames (initialized: {self.initialized}, valid_detections: {len(valid_detections) if 'valid_detections' in locals() else 0})")
+                # Reduce debug output - only print every 15 lost frames
+                if self.lost_frames_counter % 15 == 0:
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames")
 
             if self.lost_frames_counter > self.max_lost_frames:
                 print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
