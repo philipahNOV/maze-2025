@@ -6,6 +6,22 @@ from tracking.model_loader import YOLOModel
 from tracking.vision_utils import get_center_of_mass
 
 
+def iou(boxA, boxB):
+    ax1, ay1, ax2, ay2 = boxA
+    bx1, by1, bx2, by2 = boxB
+
+    inter_x1 = max(ax1, bx1)
+    inter_y1 = max(ay1, by1)
+    inter_x2 = min(ax2, bx2)
+    inter_y2 = min(ay2, by2)
+
+    inter_area = max(0, inter_x2 - inter_x1) * max(0, inter_y2 - inter_y1)
+    boxA_area = (ax2 - ax1) * (ay2 - ay1)
+    boxB_area = (bx2 - bx1) * (by2 - by1)
+
+    return inter_area / float(boxA_area + boxB_area - inter_area + 1e-5)
+
+
 class BallTracker:
     def __init__(self, camera, tracking_config, model_path="v8-291.pt"):
         self.camera = camera
@@ -15,16 +31,13 @@ class BallTracker:
             (tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]),
             (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"])
         )
-        self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
-        self.yolo_interval = tracking_config.get("yolo_frame_interval", 5)
+        self.iou_threshold = tracking_config.get("box_iou_threshold", 0.4)
 
         self.ball_position = None
-        self.locked_box = None  # Stores (x1, y1, x2, y2) of tracked ball
+        self.locked_box = None
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
-
-        self.frame_counter = 0
 
         self.running = False
         self.lock = threading.Lock()
@@ -52,54 +65,47 @@ class BallTracker:
                 continue
 
             gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
-            self.frame_counter += 1
+            results = self.model.predict(rgb)
 
-            run_yolo = self.frame_counter % self.yolo_interval == 0 or not self.initialized
+            best_com = None
+            best_box = None
+            best_conf = 0
 
-            if run_yolo:
-                results = self.model.predict(rgb)
-                best_box = None
-                best_conf = 0
-                best_com = None
+            for box in results.boxes:
+                label = self.model.get_label(box.cls[0])
+                conf = float(box.conf[0])
+                if label != "ball" or conf < 0.6:
+                    continue
 
-                for box in results.boxes:
-                    label = self.model.get_label(box.cls[0])
-                    conf = float(box.conf[0])
-                    if label != "ball" or conf < 0.6:
-                        continue
+                x1, y1, x2, y2 = map(int, box.xyxy[0])
 
-                    x1, y1, x2, y2 = map(int, box.xyxy[0])
-                    cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                # If already locked, compare with locked box
+                if self.locked_box and self.initialized:
+                    if iou((x1, y1, x2, y2), self.locked_box) < self.iou_threshold:
+                        continue  # skip unrelated detection
 
-                    # If we're locking, check similarity to last box
-                    if self.locked_box and self.initialized:
-                        lx1, ly1, lx2, ly2 = self.locked_box
-                        dist = np.hypot((x1 + x2) / 2 - (lx1 + lx2) / 2, (y1 + y2) / 2 - (ly1 + ly2) / 2)
-                        size_diff = abs((x2 - x1) * (y2 - y1) - (lx2 - lx1) * (ly2 - ly1))
+                # Get center of mass inside YOLO box
+                roi = gray[y1:y2, x1:x2]
+                _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
+                local_com = get_center_of_mass(thresh)
 
-                        if dist > 40 or size_diff > 500:  # adjust thresholds
-                            continue  # not same object
-
-                    # Get COM in cropped grayscale box
-                    roi = gray[y1:y2, x1:x2]
-                    _, thresh = cv2.threshold(roi, 30, 255, cv2.THRESH_BINARY)
-                    local_com = get_center_of_mass(thresh)
-
-                    if local_com:
-                        com_x, com_y = local_com
-                        global_com = (x1 + com_x, y1 + com_y)
+                if local_com:
+                    cx, cy = local_com
+                    global_com = (x1 + cx, y1 + cy)
+                    if conf > best_conf:
                         best_com = global_com
                         best_box = (x1, y1, x2, y2)
                         best_conf = conf
 
-                if best_com:
-                    self.ball_position = best_com
-                    self.locked_box = best_box
-                    if not self.initialized:
-                        self.ball_confirm_counter += 1
-                        if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                            self.initialized = True
-            # Else: hold last known ball_position (no change)
+            if best_com:
+                self.ball_position = best_com
+                self.locked_box = best_box
+
+                if not self.initialized:
+                    self.ball_confirm_counter += 1
+                    if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                        self.initialized = True
+
             time.sleep(0.005)
 
     def start(self):
