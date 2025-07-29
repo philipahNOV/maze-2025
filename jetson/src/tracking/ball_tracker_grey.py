@@ -101,6 +101,8 @@ class BallTracker:
         self.main_ball_id: Optional[int] = None
         self.ball_position: Optional[Tuple[float, float]] = None
         self.initialized = False
+        self.ball_confirm_counter = 0
+        self.ball_confirm_threshold = 1
         
         # YOLO settings
         self.yolo_every_n_frames = 5
@@ -345,6 +347,27 @@ class BallTracker:
                 time.sleep(0.001)
                 continue
 
+            # First detection logic - like original ball_tracker.py
+            if not self.initialized:
+                results = self.model.predict(rgb)
+                for box in results.boxes:
+                    label = self.model.get_label(box.cls[0])
+                    if label == "ball":
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
+                        if (self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and 
+                            self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]):
+                            self.ball_confirm_counter += 1
+                            self.ball_position = (cx, cy)
+                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                                self.initialized = True
+                                # Create first track
+                                self._create_track((cx, cy), self.frame_counter, 1.0)
+                                print(f"[BallTracker] Initialized with first detection at {(cx, cy)}")
+                                break
+                time.sleep(0.001)
+                continue
+
             self.frame_counter += 1
             use_yolo = self.frame_counter % self.yolo_every_n_frames == 0
             current_position = None
@@ -459,6 +482,7 @@ class BallTracker:
         self.main_ball_id = None
         self.ball_position = None
         self.initialized = False
+        self.ball_confirm_counter = 0
         self.fast_tracker = None
         self.frame_counter = 0
 
