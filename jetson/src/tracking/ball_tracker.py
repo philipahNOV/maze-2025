@@ -40,12 +40,17 @@ class BallTracker:
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
+        self.lost_frames_counter = 0
         self.last_yolo_result = None
         self.last_yolo_time = 0
         self.yolo_result_lock = threading.Lock()
 
-        self.max_lost_frames = 30
+        self.max_lost_frames = 30  # Allow 30 frames (0.5 seconds at 60fps) before reset
         self.frame_counter = 0
+        
+        # Fast tracking fallback
+        self.fast_tracker = None
+        self.tracking_window_size = 80
 
         self.background_subtractor = cv2.createBackgroundSubtractorMOG2(detectShadows=False)
         self.background_learning_rate = 0.01
@@ -66,6 +71,48 @@ class BallTracker:
 
     def is_in_elevator_area(self, point):
         return distance(point, self.elevator_center) <= self.elevator_radius
+
+    def init_fast_tracker(self, frame, position):
+        """Initialize fast tracker for fallback tracking"""
+        try:
+            self.fast_tracker = cv2.TrackerCSRT_create()
+            x, y = position
+            half = self.tracking_window_size // 2
+            bbox = (x - half, y - half, self.tracking_window_size, self.tracking_window_size)
+            h, w = frame.shape[:2]
+            x, y, w_box, h_box = bbox
+            x = max(0, min(x, w - w_box))
+            y = max(0, min(y, h - h_box))
+            w_box = min(w_box, w - x)
+            h_box = min(h_box, h - y)
+            bbox = (x, y, w_box, h_box)
+            if self.fast_tracker.init(frame, bbox):
+                return True
+        except Exception as e:
+            print(f"[BallTracker] Failed to init fast tracker: {e}")
+        self.fast_tracker = None
+        return False
+
+    def update_fast_tracker(self, frame):
+        """Update fast tracker for fallback tracking"""
+        if self.fast_tracker is None:
+            return None
+        try:
+            success, bbox = self.fast_tracker.update(frame)
+            if success:
+                x, y, w, h = bbox
+                center = (int(x + w / 2), int(y + h / 2))
+                # Validate tracking result
+                if self.ball_position:
+                    distance_moved = distance(center, self.ball_position)
+                    if distance_moved < 150:  # Reasonable movement
+                        return center
+                else:
+                    return center
+        except Exception as e:
+            print(f"[BallTracker] Fast tracker update failed: {e}")
+        self.fast_tracker = None
+        return None
 
     def producer_loop(self):
         while self.running:
@@ -126,6 +173,8 @@ class BallTracker:
                 if best_detection:
                     self.last_yolo_result = best_detection
                     self.last_yolo_time = time.time()
+                    # Initialize/reinitialize fast tracker with new YOLO detection
+                    self.init_fast_tracker(gray, best_detection)
 
             time.sleep(0.5)  # Run every 500ms
 
@@ -142,17 +191,39 @@ class BallTracker:
             self.background_subtractor.apply(gray, learningRate=self.background_learning_rate)
 
             current_position = None
-            # Try to use latest YOLO result
+            
+            # First, try to use latest fresh YOLO result
             with self.yolo_result_lock:
                 if self.last_yolo_result and (time.time() - self.last_yolo_time < 1.0):
-                    current_position = self.last_yolo_result
+                    if not self.is_in_elevator_area(self.last_yolo_result):
+                        current_position = self.last_yolo_result
 
+            # If no fresh YOLO result, use fast tracker as fallback
+            if current_position is None and self.fast_tracker and self.ball_position:
+                tracker_pos = self.update_fast_tracker(gray)
+                if tracker_pos and not self.is_in_elevator_area(tracker_pos):
+                    current_position = tracker_pos
+
+            # Update ball position and lost frames counter
             if current_position:
                 self.ball_position = current_position
                 self.lost_frames_counter = 0
+                self.initialized = True
             else:
                 self.lost_frames_counter += 1
+                
+                # Keep last known position for brief periods
+                if self.lost_frames_counter <= 15 and self.ball_position:
+                    # Don't update ball_position, keep using last known position
+                    pass
+                
+                # Print debug info occasionally
+                if self.lost_frames_counter % 30 == 0:
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames")
+                
+                # Reset if lost for too long
                 if self.lost_frames_counter > self.max_lost_frames:
+                    print(f"[BallTracker] Lost ball for {self.lost_frames_counter} frames, resetting...")
                     self.retrack()
 
             elapsed = time.perf_counter() - start_time
@@ -179,7 +250,8 @@ class BallTracker:
         self.lost_frames_counter = 0
         self.last_yolo_result = None
         self.frame_counter = 0
-        print("[BallTracker] Retracking initiated.")
+        self.fast_tracker = None  # Reset fast tracker
+        print("[BallTracker] Retracking initiated - resetting all tracking state.")
 
     def get_frame(self):
         with self.lock:
