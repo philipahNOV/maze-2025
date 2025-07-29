@@ -72,7 +72,7 @@ class BallTracker:
 
     def init_fast_tracker(self, frame, position):
         try:
-            self.fast_tracker = cv2.TrackerMOSSE_create()
+            self.fast_tracker = cv2.TrackerKCF_create()
             x, y = position
             half = self.tracking_window_size // 2
             bbox = (x - half, y - half, self.tracking_window_size, self.tracking_window_size)
