@@ -17,6 +17,9 @@ class BallTracker:
         self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
 
         self.ball_position = None
+        self.prev_position = None
+        self.prev_gray_frame = None
+
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
@@ -26,16 +29,6 @@ class BallTracker:
 
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
-
-        self.kalman = cv2.KalmanFilter(4, 2)
-        self.kalman.measurementMatrix = np.array([[1, 0, 0, 0],
-                                                  [0, 1, 0, 0]], dtype=np.float32)
-        self.kalman.transitionMatrix = np.array([[1, 0, 1, 0],
-                                                 [0, 1, 0, 1],
-                                                 [0, 0, 1, 0],
-                                                 [0, 0, 0, 1]], dtype=np.float32)
-        self.kalman.processNoiseCov = np.eye(4, dtype=np.float32) * 0.03
-        self.kalman_initialized = False
 
     def producer_loop(self):
         while self.running:
@@ -50,48 +43,49 @@ class BallTracker:
         while self.running:
             with self.lock:
                 rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
-            if rgb is None:
+            if rgb is None or bgr is None:
                 time.sleep(0.01)
                 continue
 
+            gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+
             if not self.initialized:
                 results = self.model.predict(rgb)
+                best_conf = 0
+                new_pos = None
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
-                    if label == "ball":
+                    conf = float(box.conf[0])
+                    if label == "ball" and conf > best_conf and conf > 0.6:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
                         if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and \
                            self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
-                            self.ball_confirm_counter += 1
-                            self.ball_position = (cx, cy)
-                            if self.ball_confirm_counter >= self.ball_confirm_threshold:
-                                self.initialized = True
-            else:
-                results = self.model.predict(rgb)
-                new_pos = None
-                for box in results.boxes:
-                    label = self.model.get_label(box.cls[0])
-                    if label == "ball":
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                        new_pos = (cx, cy)
-                        break
+                            new_pos = (cx, cy)
+                            best_conf = conf
 
                 if new_pos:
-                    measurement = np.array([[np.float32(new_pos[0])], [np.float32(new_pos[1])]])
-                    if not self.kalman_initialized:
-                        self.kalman.statePre[:2] = measurement
-                        self.kalman.statePre[2:] = 0
-                        self.kalman_initialized = True
-
-                    prediction = self.kalman.predict()
-                    corrected = self.kalman.correct(measurement)
-                    self.ball_position = (int(corrected[0]), int(corrected[1]))
-                else:
-                    prediction = self.kalman.predict()
-                    self.ball_position = (int(prediction[0]), int(prediction[1]))
+                    self.ball_position = new_pos
+                    self.prev_position = np.array([[new_pos]], dtype=np.float32)
+                    self.prev_gray_frame = gray
+                    self.ball_confirm_counter += 1
+                    if self.ball_confirm_counter >= self.ball_confirm_threshold:
+                        self.initialized = True
+            else:
+                if self.prev_gray_frame is not None and self.prev_position is not None:
+                    next_pts, status, _ = cv2.calcOpticalFlowPyrLK(
+                        self.prev_gray_frame, gray,
+                        self.prev_position, None,
+                        winSize=(15, 15),
+                        maxLevel=2,
+                        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
+                    )
+                    if status[0][0] == 1:
+                        self.ball_position = tuple(map(int, next_pts[0]))
+                        self.prev_position = next_pts
+                        self.prev_gray_frame = gray
 
             time.sleep(0.005)
 
@@ -109,7 +103,8 @@ class BallTracker:
     def retrack(self):
         self.initialized = False
         self.ball_confirm_counter = 0
-        self.kalman_initialized = False
+        self.prev_position = None
+        self.prev_gray_frame = None
         print("[BallTracker] Retracking initiated.")
 
     def get_frame(self):

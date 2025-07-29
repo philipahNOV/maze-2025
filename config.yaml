@@ -39,6 +39,7 @@ tracking:
   smoothing_alpha: 0.5       # smoothing factor for exponential filter
   hsv_fail_threshold: 60     # frames to wait before fallback to YOLO
   yolo_cooldown_period: 20   # frames before allowing YOLO recheck
+  "yolo_frame_interval": 5
 
 controller:
   stuck_wiggle_amplitude: 1     # deg, amplitude of wiggle when stuck
