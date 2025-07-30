@@ -66,7 +66,7 @@ import pycuda.autoinit
 cuda.init()
 
 class TRTInference:
-    def __init__(self, engine_path, input_shape=(1, 3, 640, 640)):
+    def __init__(self, engine_path, input_shape=(1, 3, 1280, 1280)):
         self.logger = trt.Logger(trt.Logger.INFO)
         self.runtime = trt.Runtime(self.logger)
 
@@ -281,7 +281,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='v8-291.trt', help='TensorRT engine path')
     parser.add_argument('--svo', type=str, default=None, help='optional svo file, if not passed, use the plugged camera instead')
-    parser.add_argument('--img_size', type=int, default=640, help='inference size (pixels)')
+    parser.add_argument('--img_size', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--conf_thres', type=float, default=0.3, help='object confidence threshold')
     opt = parser.parse_args()
 
