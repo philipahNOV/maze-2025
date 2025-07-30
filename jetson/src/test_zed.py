@@ -123,31 +123,40 @@ class Ball3DTracker:
             center_2d = np.mean(pixel_coords, axis=0).astype(int)
             return center_3d, tuple(center_2d)
         
-        # Detect motion by comparing with previous frame
-        if len(self.prev_point_cloud) < self.min_points:
-            self.prev_point_cloud = current_points.copy()
-            center_3d = np.mean(current_points, axis=0)
-            center_2d = np.mean(pixel_coords, axis=0).astype(int)
-            return center_3d, tuple(center_2d)
+        # Instead of motion detection, find the cluster closest to the expected ball position
+        # This is more reliable than motion detection
         
-        # Find points that have moved significantly
-        distances = cdist(current_points, self.prev_point_cloud)
-        min_distances = np.min(distances, axis=1)
-        moving_mask = min_distances > self.motion_threshold
-        
-        moving_points = current_points[moving_mask]
-        moving_pixels = pixel_coords[moving_mask]
-        
-        if len(moving_points) >= self.min_points:
-            # Use moving points
-            center_3d = np.mean(moving_points, axis=0)
-            center_2d = np.mean(moving_pixels, axis=0).astype(int)
+        # If we have velocity history, predict where the ball should be
+        if len(self.position_history) >= 2:
+            predicted_pos = self.get_predicted_position()
         else:
-            # Fallback to all points in ROI
-            center_3d = np.mean(current_points, axis=0)
-            center_2d = np.mean(pixel_coords, axis=0).astype(int)
+            predicted_pos = self.last_3d_position
         
-        # Update previous point cloud
+        # Find the densest cluster of points near the predicted position
+        # Use a smaller search radius for clustering
+        cluster_radius = 50  # 50mm radius for clustering
+        
+        # Calculate distances from all points to predicted position
+        distances = np.linalg.norm(current_points - predicted_pos, axis=1)
+        
+        # Find points within cluster radius
+        cluster_mask = distances < cluster_radius
+        cluster_points = current_points[cluster_mask]
+        cluster_pixels = pixel_coords[cluster_mask]
+        
+        if len(cluster_points) >= max(3, self.min_points // 3):  # Need at least 3 points
+            # Use the cluster
+            center_3d = np.mean(cluster_points, axis=0)
+            center_2d = np.mean(cluster_pixels, axis=0).astype(int)
+            print(f"[3DTracker] Using cluster: {len(cluster_points)} points, dist from pred: {np.linalg.norm(center_3d - predicted_pos):.1f}mm")
+        else:
+            # Fallback: use the closest point to prediction
+            closest_idx = np.argmin(distances)
+            center_3d = current_points[closest_idx]
+            center_2d = pixel_coords[closest_idx]
+            print(f"[3DTracker] Using closest point, dist: {distances[closest_idx]:.1f}mm")
+        
+        # Update previous point cloud for next frame
         self.prev_point_cloud = current_points.copy()
         
         return center_3d, tuple(center_2d)
@@ -161,10 +170,10 @@ class Ball3DTracker:
         roi_points, pixel_coords = self.extract_roi_points(point_cloud)
         
         if roi_points is None or len(roi_points) < self.min_points:
-            # More gradual confidence decay
-            self.confidence = max(0.0, self.confidence - 0.02)
-            print(f"[3DTracker] Insufficient ROI points: {len(roi_points) if roi_points is not None else 0}/{self.min_points}")
-            if self.confidence < 0.2:  # Lower threshold before giving up
+            # Much more aggressive confidence decay when no points found
+            self.confidence = max(0.0, self.confidence - 0.1)
+            print(f"[3DTracker] Insufficient ROI points: {len(roi_points) if roi_points is not None else 0}/{self.min_points}, conf: {self.confidence:.2f}")
+            if self.confidence < 0.3:  # Reset faster
                 self.tracking = False
                 print("[3DTracker] Lost tracking - insufficient points in ROI")
             return self.last_2d_position, self.last_3d_position
@@ -173,31 +182,39 @@ class Ball3DTracker:
         new_3d_pos, new_2d_pos = self.detect_motion_blobs(roi_points, pixel_coords)
         
         if new_3d_pos is None:
-            self.confidence *= 0.9
+            self.confidence = max(0.0, self.confidence - 0.1)
+            print(f"[3DTracker] No motion detected, conf: {self.confidence:.2f}")
             return self.last_2d_position, self.last_3d_position
         
-        # More lenient velocity-based outlier rejection
+        # Check if the new position makes sense
         if len(self.position_history) > 0:
-            velocity = np.linalg.norm(new_3d_pos - self.last_3d_position)
-            # Increase max velocity threshold
-            max_vel = self.max_velocity * 1.5  # 50% more lenient
-            if velocity > max_vel:
-                print(f"[3DTracker] Rejecting outlier - velocity: {velocity:.1f}mm/frame (max: {max_vel:.1f})")
-                self.confidence *= 0.85  # Less harsh penalty
+            movement = np.linalg.norm(new_3d_pos - self.last_3d_position)
+            
+            # If movement is too large, reject
+            if movement > self.max_velocity:
+                print(f"[3DTracker] Rejecting large movement: {movement:.1f}mm/frame (max: {self.max_velocity})")
+                self.confidence = max(0.0, self.confidence - 0.15)
+                if self.confidence < 0.3:
+                    self.tracking = False
+                    print("[3DTracker] Lost tracking - too much movement")
                 return self.last_2d_position, self.last_3d_position
-            self.velocity_history.append(velocity)
+            
+            # Track velocity for prediction
+            self.velocity_history.append(movement)
             if len(self.velocity_history) > 10:
                 self.velocity_history.pop(0)
         
-        # Update position
+        # Update position - this is the key fix!
         self.last_3d_position = new_3d_pos
         self.last_2d_position = new_2d_pos
         self.position_history.append(new_3d_pos.copy())
         if len(self.position_history) > 20:
             self.position_history.pop(0)
         
-        # More aggressive confidence boost when tracking well
-        self.confidence = min(1.0, self.confidence + 0.05)
+        # Strong confidence boost for successful tracking
+        self.confidence = min(1.0, self.confidence + 0.2)
+        
+        print(f"[3DTracker] Updated position: {new_3d_pos[0]:.1f},{new_3d_pos[1]:.1f},{new_3d_pos[2]:.1f}mm, conf: {self.confidence:.2f}")
         
         return new_2d_pos, new_3d_pos
     
@@ -376,12 +393,12 @@ def main():
     model = YOLOModel("tracking/v8-291.onnx")
     print("Model loaded successfully")
     
-    # Initialize 3D ball tracker with more forgiving parameters
+    # Initialize 3D ball tracker with better parameters
     ball_tracker = Ball3DTracker(
-        roi_size=300,          # Larger 200mm ROI cube
-        depth_threshold=40,    # More lenient 40mm depth clustering
-        min_points=8,          # Reduced to 8+ points for detection
-        max_velocity=300       # Higher max 300mm/frame velocity
+        roi_size=120,          # Smaller, more focused ROI
+        depth_threshold=30,    # Tighter depth clustering
+        min_points=5,          # Even fewer points needed
+        max_velocity=150       # More reasonable max velocity
     )
     print("3D ball tracker initialized")
 
