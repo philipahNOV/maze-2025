@@ -96,16 +96,17 @@ class TRTInference:
         img = np.expand_dims(img, axis=0)
         return img
 
-    def infer(self, image):
-        input_tensor = self.preprocess(image).astype(np.float32).ravel()
-        cuda.memcpy_htod_async(self.d_input, input_tensor, self.stream)
-        self.context.execute_async_v2(self.bindings, self.stream.handle, None)
-        output_data = np.empty(self.output_shape, dtype=np.float32)
-        cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
-        self.stream.synchronize()
-        return output_data.reshape(self.output_shape)
+def infer(self, image):
+    input_tensor = self.preprocess(image).astype(np.float32).ravel()
+    self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
+    cuda.memcpy_htod_async(self.d_input, input_tensor, self.stream)
+    self.context.execute_async_v2(self.bindings, self.stream.handle, None)
 
+    output_data = np.empty(self.output_shape, dtype=np.float32)
+    cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
+    self.stream.synchronize()
 
+    return output_data.reshape(self.output_shape)
 
 def trt_thread(engine_path, conf_thres=0.3):
     global image_net, exit_signal, run_signal, detections
