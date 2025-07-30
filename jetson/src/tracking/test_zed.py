@@ -7,8 +7,8 @@ import time
 import pygame
 import numpy as np
 
-from control.joystick_controller import JoystickController
-from arduino_connection import ArduinoConnection
+from ..control.joystick_controller import JoystickController
+from ..arduino_connection import ArduinoConnection
 from model_loader import YOLOModel
 
 class BallTrackingJoystickController(JoystickController):
