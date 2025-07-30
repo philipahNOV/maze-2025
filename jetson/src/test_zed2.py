@@ -114,7 +114,7 @@ def main():
 
     # IMPORTANT: Use the correct model and input size for ball detection
     MODEL_INPUT_SHAPE = (1280, 1280)  # Much faster than 1280x1280
-    MODEL_PATH = "tracking/v8-291.trt"  # Back to the ball-trained model
+    MODEL_PATH = "zed_test/v8-291.trt"  # Back to the ball-trained model
 
     yolo = YOLOv8TRT(MODEL_PATH, input_shape=MODEL_INPUT_SHAPE)
 
