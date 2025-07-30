@@ -1,38 +1,54 @@
 import cv2
 import numpy as np
 import pyzed.sl as sl
-import onnxruntime as ort
+import tensorrt as trt
+import pycuda.driver as cuda
+import pycuda.autoinit  # This automatically initializes CUDA driver
+import ctypes
 
-# ----------------------------
-# YOLOv8 ONNX Loader (1-Class)
-# ----------------------------
-class YOLOv8ONNX:
-    def __init__(self, model_path, input_shape=(640, 640)):
-        self.session = ort.InferenceSession(model_path)
-        self.input_name = self.session.get_inputs()[0].name
-        self.input_shape = input_shape  # (width, height)
+class YOLOv8TRT:
+    def __init__(self, engine_path, input_shape=(640, 640)):
+        self.input_shape = input_shape
+        self.logger = trt.Logger(trt.Logger.INFO)
+        self.runtime = trt.Runtime(self.logger)
+
+        # Load engine
+        with open(engine_path, "rb") as f:
+            engine_data = f.read()
+        self.engine = self.runtime.deserialize_cuda_engine(engine_data)
+        self.context = self.engine.create_execution_context()
+
+        self.input_binding_idx = self.engine.get_binding_index("images")  # Change if your input name is different
+        self.output_binding_idx = self.engine.get_binding_index(self.engine[1])  # Assuming one output
+        self.allocate_buffers()
+
+    def allocate_buffers(self):
+        input_shape = (1, 3, *self.input_shape)
+        output_shape = (1, 84, 8400)  # Change this based on your model output
+
+        self.input_host = cuda.pagelocked_empty(np.prod(input_shape), dtype=np.float32)
+        self.output_host = cuda.pagelocked_empty(np.prod(output_shape), dtype=np.float32)
+
+        self.input_device = cuda.mem_alloc(self.input_host.nbytes)
+        self.output_device = cuda.mem_alloc(self.output_host.nbytes)
+
+        self.bindings = [int(self.input_device), int(self.output_device)]
+        self.stream = cuda.Stream()
 
     def preprocess(self, image):
-        # Resize to model input shape
         img_resized = cv2.resize(image, self.input_shape)
-
-        # Save scale for post-processing
         self.scale_w = image.shape[1] / self.input_shape[0]
         self.scale_h = image.shape[0] / self.input_shape[1]
 
-        # Normalize and format
         img = img_resized.astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dim
+        img = np.transpose(img, (2, 0, 1))
+        img = np.expand_dims(img, axis=0)
         return img
 
     def postprocess(self, outputs, conf_thres=0.4):
+        outputs = outputs.reshape(-1, outputs.shape[-1])
         detections = []
-        preds = outputs[0]
-        if len(preds.shape) == 3:
-            preds = preds[0]
-
-        for pred in preds:
+        for pred in outputs:
             if len(pred) >= 5:
                 conf = pred[4]
                 if conf > conf_thres:
@@ -42,26 +58,27 @@ class YOLOv8ONNX:
                     x2 = int((x + w / 2) * self.scale_w)
                     y2 = int((y + h / 2) * self.scale_h)
 
-                    x1 = max(0, x1)
-                    y1 = max(0, y1)
-                    x2 = min(int(self.input_shape[0] * self.scale_w), x2)
-                    y2 = min(int(self.input_shape[1] * self.scale_h), y2)
-
                     detections.append({
-                        "bbox": [x1, y1, x2, y2],
+                        "bbox": [max(0, x1), max(0, y1), min(int(self.input_shape[0] * self.scale_w), x2), min(int(self.input_shape[1] * self.scale_h), y2)],
                         "confidence": float(conf),
                         "class_id": 0
                     })
         return detections
 
     def predict(self, image):
-        # Convert RGBA to RGB if needed
         if image.shape[2] == 4:
             image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
 
         input_tensor = self.preprocess(image)
-        outputs = self.session.run(None, {self.input_name: input_tensor})
-        return self.postprocess(outputs)
+        np.copyto(self.input_host, input_tensor.ravel())
+
+        cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
+        self.context.execute_async_v2(self.bindings, self.stream.handle, None)
+        cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
+        self.stream.synchronize()
+
+        return self.postprocess(self.output_host)
+
 
 # ----------------------------
 # Initialize ZED in CustomBox Mode
@@ -97,9 +114,10 @@ def main():
 
     # IMPORTANT: Use the correct model and input size for ball detection
     MODEL_INPUT_SHAPE = (1280, 1280)  # Much faster than 1280x1280
-    MODEL_PATH = "tracking/v8-291.onnx"  # Back to the ball-trained model
+    MODEL_PATH = "tracking/v8-291.trt"  # Back to the ball-trained model
 
-    yolo = YOLOv8ONNX(MODEL_PATH, input_shape=MODEL_INPUT_SHAPE)
+    yolo = YOLOv8TRT(MODEL_PATH, input_shape=MODEL_INPUT_SHAPE)
+
     cv2.namedWindow("ZED Ball Tracker", cv2.WINDOW_NORMAL)
 
     while True:

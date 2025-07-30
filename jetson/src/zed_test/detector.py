@@ -79,8 +79,10 @@ class TRTInference:
         self.input_binding_idx = self.engine.get_binding_index(self.engine[0])
         self.output_binding_idx = self.engine.get_binding_index(self.engine[1])
 
+        self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
+        self.output_shape = tuple(self.context.get_binding_shape(self.output_binding_idx))
+
         self.input_size = trt.volume(self.input_shape) * np.dtype(np.float32).itemsize
-        self.output_shape = self.engine.get_binding_shape(1)
         self.output_size = trt.volume(self.output_shape) * np.dtype(np.float32).itemsize
 
         self.d_input = cuda.mem_alloc(self.input_size)
@@ -90,23 +92,24 @@ class TRTInference:
 
     def preprocess(self, image):
         img = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB)
-        img = img.astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, axis=0)
-        return img
+        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB).astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))  # HWC to CHW
+        img = np.expand_dims(img, axis=0)  # Add batch dimension
+        return img.astype(np.float32)
 
-def infer(self, image):
-    input_tensor = self.preprocess(image).astype(np.float32).ravel()
-    self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
-    cuda.memcpy_htod_async(self.d_input, input_tensor, self.stream)
-    self.context.execute_async_v2(self.bindings, self.stream.handle, None)
+    def infer(self, image):
+        input_tensor = self.preprocess(image).ravel()
 
-    output_data = np.empty(self.output_shape, dtype=np.float32)
-    cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
-    self.stream.synchronize()
+        self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
+        cuda.memcpy_htod_async(self.d_input, input_tensor, self.stream)
+        self.context.execute_async_v2(self.bindings, self.stream.handle, None)
 
-    return output_data.reshape(self.output_shape)
+        output_data = np.empty(self.output_shape, dtype=np.float32)
+        cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
+        self.stream.synchronize()
+
+        return output_data
+
 
 def trt_thread(engine_path, conf_thres=0.3):
     global image_net, exit_signal, run_signal, detections
