@@ -34,6 +34,7 @@ class BallTracker:
         self.camera = camera
         self.tracking_config = tracking_config or {}
         self.running = False
+        self.initialized = False  # Add initialized property for TrackerService
         self.lock = threading.Lock()
         self.latest_rgb_frame = None
         self.latest_bgr_frame = None
@@ -121,11 +122,13 @@ class BallTracker:
         self.camera.init_camera()
         # Initialize ZED object detection after camera is ready
         self.init_zed_object_detection()
+        self.initialized = True  # Set initialized flag for TrackerService
         threading.Thread(target=self.producer_loop, daemon=True).start()
         threading.Thread(target=self.consumer_loop, daemon=True).start()
 
     def stop(self):
         self.running = False
+        self.initialized = False  # Reset initialized flag
         if self.zed_od_initialized and hasattr(self.camera, 'zed'):
             self.camera.zed.disable_object_detection()
             self.camera.zed.disable_positional_tracking()

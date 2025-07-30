@@ -16,9 +16,9 @@ class CameraManager:
         init_params = sl.InitParameters()
         init_params.camera_resolution = sl.RESOLUTION.HD720
         init_params.camera_fps = 60
-        init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE  # Enable depth for object detection
+        init_params.depth_mode = sl.DEPTH_MODE.NEURAL  # Enable depth for object detection
         init_params.coordinate_units = sl.UNIT.MILLIMETER
-        init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
+        # Remove coordinate_system change to preserve IMU behavior
 
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             raise RuntimeError("ZED camera failed to open.")
