@@ -118,12 +118,12 @@ def main():
         for det in detections:
             x1, y1, x2, y2 = [max(0, min(v, w if i % 2 == 0 else h)) for i, v in enumerate(det["bbox"])]
             obj = sl.CustomBoxObjectData()
-            obj.bounding_box_2d = [
+            obj.bounding_box_2d = np.array([
                     [x1, y1],
                     [x2, y1],
                     [x2, y2],
                     [x1, y2]
-                ]
+                ], dtype=np.float32)
 
             obj.label = 0
             obj.raw_label = 0
