@@ -66,7 +66,6 @@ def init_zed():
     obj_params = sl.ObjectDetectionParameters()
     obj_params.detection_model = sl.OBJECT_DETECTION_MODEL.CUSTOM_BOX_OBJECTS
     obj_params.enable_tracking = True
-    obj_params.enable_mask_output = False
     zed.enable_object_detection(obj_params)
 
     return zed
