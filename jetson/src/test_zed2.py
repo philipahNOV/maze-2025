@@ -126,7 +126,6 @@ def main():
                 ], dtype=np.float32)
 
             obj.label = 0
-            obj.raw_label = 0
             obj.probability = det["confidence"]
             obj.unique_object_id = sl.generate_unique_id()
             obj.is_grounded = True
