@@ -12,16 +12,12 @@ class CameraManager:
         if self.initialized:
             print("Camera already initialized.")
             return
-        
-        input_type = sl.InputType()
 
-        init_params = sl.InitParameters(input_t=input_type)
-        init_params.camera_resolution = sl.RESOLUTION.HD720  # Optional but recommended
+        init_params = sl.InitParameters()
+        init_params.camera_resolution = sl.RESOLUTION.HD720
         init_params.camera_fps = 60
-        init_params.coordinate_units = sl.UNIT.METER
-        init_params.depth_mode = sl.DEPTH_MODE.NEURAL
-        init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
-        init_params.depth_maximum_distance = 50
+        init_params.depth_mode = sl.DEPTH_MODE.NONE
+        init_params.coordinate_units = sl.UNIT.MILLIMETER
 
         if self.zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
             raise RuntimeError("ZED camera failed to open.")
