@@ -119,8 +119,6 @@ class BallTracker:
 
     def start(self):
         self.running = True
-        self.camera.init_camera()
-        # Initialize ZED object detection after camera is ready
         self.init_zed_object_detection()
         self.initialized = True  # Set initialized flag for TrackerService
         threading.Thread(target=self.producer_loop, daemon=True).start()
