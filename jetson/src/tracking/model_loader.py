@@ -24,7 +24,7 @@ class YOLOModel:
             # Fallback to ONNX if TensorRT fails
             fallback_path = model_path.replace('.trt', '.onnx')
             self.model = YOLO(fallback_path)
-            self.device = 'cpu'  # Use CPU for ONNX fallback to avoid CUDA issues
+            self.device = 'cuda:0'  # Use CPU for ONNX fallback to avoid CUDA issues
 
         if not hasattr(self.model, "predict"):
             raise RuntimeError(f"[YOLOModel] Failed to load model from: {model_path}")
