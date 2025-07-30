@@ -63,6 +63,7 @@ def detections_to_custom_box(detections, im0):
 import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
+cuda.init()
 
 class TRTInference:
     def __init__(self, engine_path, input_shape=(1, 3, 640, 640)):
@@ -109,7 +110,10 @@ class TRTInference:
 def trt_thread(engine_path, conf_thres=0.3):
     global image_net, exit_signal, run_signal, detections
 
-    print("Loading TensorRT engine...")
+    print("Loading TensorRT engine in thread...")
+    device = cuda.Device(0)
+    ctx = device.make_context()  # 👈 Initialize GPU context
+
     trt_model = TRTInference(engine_path)
 
     while not exit_signal:
@@ -119,7 +123,7 @@ def trt_thread(engine_path, conf_thres=0.3):
             lock.release()
             run_signal = False
 
-            # Postprocess raw detections
+            # Postprocess...
             dets = []
             for pred in trt_output:
                 if len(pred) < 6:
@@ -129,8 +133,6 @@ def trt_thread(engine_path, conf_thres=0.3):
                     continue
                 x, y, w, h = pred[:4]
                 cls_id = int(pred[5]) if len(pred) > 5 else 0
-
-                # Mock box format for compatibility with detections_to_custom_box
                 class Box:
                     def __init__(self, xywh, conf, cls):
                         self.xywh = [xywh]
@@ -143,6 +145,9 @@ def trt_thread(engine_path, conf_thres=0.3):
             lock.release()
 
         sleep(0.01)
+
+    ctx.pop()  # 👈 Clean up CUDA context
+
 
 
 def main():
