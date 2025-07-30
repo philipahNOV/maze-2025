@@ -60,104 +60,42 @@ def detections_to_custom_box(detections, im0):
         output.append(obj)
     return output
 
-import tensorrt as trt
-import pycuda.driver as cuda
-import pycuda.autoinit
-cuda.init()
 
-class TRTInference:
-    def __init__(self, engine_path, input_shape=(1, 3, 1280, 1280)):
-        self.logger = trt.Logger(trt.Logger.INFO)
-        self.runtime = trt.Runtime(self.logger)
-
-        with open(engine_path, "rb") as f:
-            self.engine = self.runtime.deserialize_cuda_engine(f.read())
-
-        self.context = self.engine.create_execution_context()
-        self.input_shape = input_shape
-
-        self.input_binding_idx = self.engine.get_binding_index(self.engine[0])
-        self.output_binding_idx = self.engine.get_binding_index(self.engine[1])
-
-        self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
-        self.output_shape = tuple(self.context.get_binding_shape(self.output_binding_idx))
-
-        self.input_size = trt.volume(self.input_shape) * np.dtype(np.float32).itemsize
-        self.output_size = trt.volume(self.output_shape) * np.dtype(np.float32).itemsize
-
-        self.d_input = cuda.mem_alloc(self.input_size)
-        self.d_output = cuda.mem_alloc(self.output_size)
-        self.bindings = [int(self.d_input), int(self.d_output)]
-        self.stream = cuda.Stream()
-
-    def preprocess(self, image):
-        img = cv2.resize(image, (self.input_shape[3], self.input_shape[2]))
-        img = cv2.cvtColor(img, cv2.COLOR_RGBA2RGB).astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dimension
-        return img.astype(np.float32)
-
-    def infer(self, image):
-        input_tensor = self.preprocess(image).ravel()
-
-        self.context.set_binding_shape(self.input_binding_idx, self.input_shape)
-        cuda.memcpy_htod_async(self.d_input, input_tensor, self.stream)
-        self.context.execute_async_v2(self.bindings, self.stream.handle, None)
-
-        output_data = np.empty(self.output_shape, dtype=np.float32)
-        cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
-        self.stream.synchronize()
-
-        return output_data
-
-
-def trt_thread(engine_path, conf_thres=0.3):
+def torch_thread(weights, img_size, conf_thres=0.2, iou_thres=0.45):
     global image_net, exit_signal, run_signal, detections
 
-    print("Loading TensorRT engine in thread...")
-    device = cuda.Device(0)
-    ctx = device.make_context()  # 👈 Initialize GPU context
+    print("Intializing Network...")
 
-    trt_model = TRTInference(engine_path)
+    model = YOLO(weights)
+    use_cuda = torch.cuda.is_available()
+    print("CUDA available:", use_cuda)
 
     while not exit_signal:
         if run_signal:
             lock.acquire()
-            trt_output = trt_model.infer(image_net)
+
+            img = cv2.cvtColor(image_net, cv2.COLOR_RGBA2RGB)
+            # https://docs.ultralytics.com/modes/predict/#video-suffixes
+            det = model.predict(
+                img,
+                save=False,
+                imgsz=img_size,
+                conf=conf_thres,
+                iou=iou_thres,
+                device=0 if use_cuda else "cpu"  # 👈 Force CUDA:0 or fallback
+            )[0].cpu().numpy().boxes
+
+            # ZED CustomBox format (with inverse letterboxing tf applied)
+            detections = detections_to_custom_box(det, image_net)
             lock.release()
             run_signal = False
-
-            # Postprocess...
-            dets = []
-            for pred in trt_output:
-                if len(pred) < 6:
-                    continue
-                conf = pred[4]
-                if conf < conf_thres:
-                    continue
-                x, y, w, h = pred[:4]
-                cls_id = int(pred[5]) if len(pred) > 5 else 0
-                class Box:
-                    def __init__(self, xywh, conf, cls):
-                        self.xywh = [xywh]
-                        self.conf = conf
-                        self.cls = cls
-                dets.append(Box([x, y, w, h], conf, cls_id))
-
-            lock.acquire()
-            detections = detections_to_custom_box(dets, image_net)
-            lock.release()
-
         sleep(0.01)
-
-    ctx.pop()  # 👈 Clean up CUDA context
-
 
 
 def main():
     global image_net, exit_signal, run_signal, detections
 
-    capture_thread = Thread(target=trt_thread, kwargs={'engine_path': opt.weights, "conf_thres": opt.conf_thres})
+    capture_thread = Thread(target=torch_thread, kwargs={'weights': opt.weights, 'img_size': opt.img_size, "conf_thres": opt.conf_thres})
     capture_thread.start()
 
     print("Initializing Camera...")
@@ -279,9 +217,9 @@ def main():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='v8-291.trt', help='TensorRT engine path')
+    parser.add_argument('--weights', type=str, default='v8-291.onnx', help='model.pt path(s)')
     parser.add_argument('--svo', type=str, default=None, help='optional svo file, if not passed, use the plugged camera instead')
-    parser.add_argument('--img_size', type=int, default=1280, help='inference size (pixels)')
+    parser.add_argument('--img_size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf_thres', type=float, default=0.3, help='object confidence threshold')
     opt = parser.parse_args()
 
