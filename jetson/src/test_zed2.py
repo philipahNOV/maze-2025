@@ -11,6 +11,19 @@ class YOLOv8ONNX:
         self.session = ort.InferenceSession(model_path)
         self.input_name = self.session.get_inputs()[0].name
         self.input_shape = input_shape  # (width, height)
+        
+        # Debug: Print model input/output info
+        print(f"Model input name: {self.input_name}")
+        input_info = self.session.get_inputs()[0]
+        print(f"Model input shape: {input_info.shape}")
+        print(f"Model input type: {input_info.type}")
+        
+        output_info = self.session.get_outputs()[0]
+        print(f"Model output shape: {output_info.shape}")
+        print(f"Model output type: {output_info.type}")
+        
+        # Check if input expects batch dimension
+        self.expects_batch = len(input_info.shape) == 4
 
     def preprocess(self, image):
         img_resized = cv2.resize(image, self.input_shape)
@@ -18,7 +31,12 @@ class YOLOv8ONNX:
         self.scale_h = image.shape[0] / self.input_shape[1]
         img = img_resized.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dim
+        
+        # Add batch dimension only if the model expects it
+        if self.expects_batch:
+            img = np.expand_dims(img, axis=0)  # Add batch dim: (1, C, H, W)
+        
+        print(f"Preprocessed tensor shape: {img.shape}")
         return img
 
     def postprocess(self, outputs, conf_thres=0.4):
