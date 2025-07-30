@@ -11,19 +11,6 @@ class YOLOv8ONNX:
         self.session = ort.InferenceSession(model_path)
         self.input_name = self.session.get_inputs()[0].name
         self.input_shape = input_shape  # (width, height)
-        
-        # Debug: Print model input/output info
-        print(f"Model input name: {self.input_name}")
-        input_info = self.session.get_inputs()[0]
-        print(f"Model input shape: {input_info.shape}")
-        print(f"Model input type: {input_info.type}")
-        
-        output_info = self.session.get_outputs()[0]
-        print(f"Model output shape: {output_info.shape}")
-        print(f"Model output type: {output_info.type}")
-        
-        # Check if input expects batch dimension
-        self.expects_batch = len(input_info.shape) == 4
 
     def preprocess(self, image):
         img_resized = cv2.resize(image, self.input_shape)
@@ -31,12 +18,7 @@ class YOLOv8ONNX:
         self.scale_h = image.shape[0] / self.input_shape[1]
         img = img_resized.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
-        
-        # Add batch dimension only if the model expects it
-        if self.expects_batch:
-            img = np.expand_dims(img, axis=0)  # Add batch dim: (1, C, H, W)
-        
-        print(f"Preprocessed tensor shape: {img.shape}")
+        img = np.expand_dims(img, axis=0)  # Add batch dim
         return img
 
     def postprocess(self, outputs, conf_thres=0.4):
@@ -75,17 +57,8 @@ class YOLOv8ONNX:
 
     def predict(self, image):
         input_tensor = self.preprocess(image)
-        try:
-            outputs = self.session.run(None, {self.input_name: input_tensor})
-            print(f"ONNX output shapes: {[out.shape for out in outputs]}")
-            return self.postprocess(outputs)
-        except Exception as e:
-            print(f"ONNX inference error: {e}")
-            print(f"Input tensor shape: {input_tensor.shape}")
-            print(f"Expected input name: {self.input_name}")
-            print(f"Model inputs: {[inp.name for inp in self.session.get_inputs()]}")
-            print(f"Model outputs: {[out.name for out in self.session.get_outputs()]}")
-            return []
+        outputs = self.session.run(None, {self.input_name: input_tensor})
+        return self.postprocess(outputs)
 
 # ----------------------------
 # Initialize ZED in CustomBox Mode
@@ -117,7 +90,7 @@ def main():
     zed = init_zed()
     runtime_params = sl.ObjectDetectionRuntimeParameters()
     objects = sl.Objects()
-    yolo = YOLOv8ONNX("tracking/v8-291.onnx", input_shape=(640, 640))
+    yolo = YOLOv8ONNX("tracking/simple.onnx", input_shape=(640, 640))
 
     cv2.namedWindow("ZED Ball Tracker", cv2.WINDOW_NORMAL)
 
