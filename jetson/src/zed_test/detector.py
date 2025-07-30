@@ -148,7 +148,7 @@ def trt_thread(engine_path, conf_thres=0.3):
 def main():
     global image_net, exit_signal, run_signal, detections
 
-    capture_thread = Thread(target=trt_thread, kwargs={'engine_path': opt.engine_path, "conf_thres": opt.conf_thres})
+    capture_thread = Thread(target=trt_thread, kwargs={'weights': opt.weights, "conf_thres": opt.conf_thres})
     capture_thread.start()
 
     print("Initializing Camera...")
