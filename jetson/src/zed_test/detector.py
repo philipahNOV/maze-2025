@@ -172,9 +172,9 @@ def main():
             # Wait for detections
             lock.acquire()
             # -- Ingest detections
-            zed.ingest_custom_box_objects(detections)
+            zed.ingest_box_objects(detections)
             lock.release()
-            zed.retrieve_custom_objects(objects, obj_runtime_param)
+            zed.retrieve_objects(objects, obj_runtime_param)
 
             # -- Display
             # Retrieve display data
