@@ -35,12 +35,14 @@ class SimpleBall3DTracker:
             self.last_3d_position = np.array(pos_3d)
             self.last_2d_position = (x, y)
             self.tracking = True
-            print(f"[SimpleBallTracker] Initialized at 3D position: {pos_3d}")
+            print(f"[SimpleBallTracker] Initialized at 3D position: {pos_3d[0]:.1f},{pos_3d[1]:.1f},{pos_3d[2]:.1f}mm")
             return True
+        else:
+            print(f"[SimpleBallTracker] Failed to get 3D position at pixel ({x}, {y})")
         return False
     
     def update(self, point_cloud):
-        """Update tracker - just find closest ball-sized cluster"""
+        """Update tracker - just find closest valid point to last position"""
         if not self.tracking:
             return None, None
         
@@ -52,74 +54,59 @@ class SimpleBall3DTracker:
         height, width = point_cloud_np.shape[:2]
         points = point_cloud_np.reshape(-1, 4)
         
-        # Filter valid points
+        # Filter valid points - be more lenient
         valid_mask = (
             ~np.isnan(points[:, 0]) & 
             ~np.isnan(points[:, 1]) & 
             ~np.isnan(points[:, 2]) &
-            (points[:, 2] > 100) &  
-            (points[:, 2] < 3000)   
+            (points[:, 2] > 50) &   # More lenient depth range
+            (points[:, 2] < 4000)   
         )
         
         valid_points = points[valid_mask]
-        if len(valid_points) < 10:
+        if len(valid_points) < 5:
+            print(f"[SimpleBallTracker] Only {len(valid_points)} valid points found")
             return self.last_2d_position, self.last_3d_position
         
-        # Define search area around last position
+        # Find points within search radius of last position
         search_center = self.last_3d_position
-        search_radius = self.roi_size
-        
-        # Find points near last position
         distances_to_last = np.linalg.norm(valid_points[:, :3] - search_center, axis=1)
-        nearby_mask = distances_to_last < search_radius
-        nearby_points = valid_points[nearby_mask]
         
-        if len(nearby_points) < 5:
-            # Expand search if nothing found nearby
-            search_radius *= 2
+        # Start with smaller radius and expand if needed
+        search_radius = self.roi_size
+        for attempt in range(3):  # Try 3 different radii
             nearby_mask = distances_to_last < search_radius
             nearby_points = valid_points[nearby_mask]
             
-        if len(nearby_points) < 5:
+            if len(nearby_points) >= 3:
+                break
+            search_radius *= 1.5  # Expand search
+            print(f"[SimpleBallTracker] Expanding search radius to {search_radius:.1f}mm")
+        
+        if len(nearby_points) < 3:
+            print(f"[SimpleBallTracker] No points found within {search_radius:.1f}mm of last position")
             return self.last_2d_position, self.last_3d_position
         
-        # Find the densest cluster (likely the ball)
-        # Use the ball radius to define clusters
-        cluster_points = nearby_points[:, :3]
+        # Simple approach: just use the closest point to the last position
+        closest_idx = np.argmin(distances_to_last[distances_to_last < search_radius])
+        nearby_indices = np.where(distances_to_last < search_radius)[0]
+        best_point_idx = nearby_indices[closest_idx]
         
-        # Simple approach: find the point with most neighbors within ball_radius
-        best_center = None
-        max_neighbors = 0
-        
-        for i in range(0, len(cluster_points), 5):  # Sample every 5th point for speed
-            test_point = cluster_points[i]
-            neighbor_distances = np.linalg.norm(cluster_points - test_point, axis=1)
-            neighbor_count = np.sum(neighbor_distances < self.ball_radius * 2)
-            
-            if neighbor_count > max_neighbors:
-                max_neighbors = neighbor_count
-                best_center = test_point
-        
-        if best_center is None or max_neighbors < 3:
-            return self.last_2d_position, self.last_3d_position
+        new_3d_position = valid_points[best_point_idx, :3]
         
         # Update position
-        self.last_3d_position = best_center
+        self.last_3d_position = new_3d_position
         
         # Convert back to 2D pixel coordinates
-        # Find which point in the original point cloud this corresponds to
-        all_3d_points = valid_points[:, :3]
-        distances_to_best = np.linalg.norm(all_3d_points - best_center, axis=1)
-        closest_idx = np.argmin(distances_to_best)
-        
-        # Get the original index in the full point cloud
         valid_indices = np.where(valid_mask)[0]
-        original_idx = valid_indices[closest_idx]
+        original_idx = valid_indices[best_point_idx]
         
-        # Convert to 2D coordinates
-        pixel_x = original_idx % width
-        pixel_y = original_idx // width
+        pixel_x = int(original_idx % width)
+        pixel_y = int(original_idx // width)
         self.last_2d_position = (pixel_x, pixel_y)
+        
+        movement = np.linalg.norm(new_3d_position - search_center)
+        print(f"[SimpleBallTracker] Updated: {new_3d_position[0]:.1f},{new_3d_position[1]:.1f},{new_3d_position[2]:.1f}mm (moved {movement:.1f}mm)")
         
         return self.last_2d_position, self.last_3d_position
     
@@ -237,21 +224,35 @@ def simple_detect_and_track_ball_3d(rgb, point_cloud, model, tracker):
     # If not tracking, try YOLO detection for initialization
     if not tracker.tracking:
         results = model.predict(rgb)
+        ball_detections = []
+        
         for box in results.boxes:
             label = model.get_label(box.cls[0])
             if label == "ball":
                 x1, y1, x2, y2 = map(int, box.xyxy[0])
                 cx, cy = (x1 + x2) // 2, (y1 + y2) // 2
-                
-                # Try to initialize 3D tracking
-                if tracker.initialize_tracking(point_cloud, cx, cy):
-                    return {
-                        'bbox': (x1, y1, x2, y2),
-                        'center_2d': (cx, cy),
-                        'position_3d': tracker.last_3d_position,
-                        'confidence': 1.0,
-                        'tracking_mode': 'YOLO_INIT'
-                    }
+                confidence = float(box.conf[0])
+                ball_detections.append((cx, cy, confidence, (x1, y1, x2, y2)))
+        
+        if ball_detections:
+            # Use the highest confidence detection
+            ball_detections.sort(key=lambda x: x[2], reverse=True)
+            cx, cy, yolo_conf, bbox = ball_detections[0]
+            print(f"[YOLO] Found ball at ({cx}, {cy}) with confidence {yolo_conf:.3f}")
+            
+            # Try to initialize 3D tracking
+            if tracker.initialize_tracking(point_cloud, cx, cy):
+                return {
+                    'bbox': bbox,
+                    'center_2d': (cx, cy),
+                    'position_3d': tracker.last_3d_position,
+                    'confidence': 1.0,
+                    'tracking_mode': 'YOLO_INIT'
+                }
+            else:
+                print(f"[YOLO] Failed to initialize 3D tracking at pixel ({cx}, {cy})")
+        else:
+            print("[YOLO] No ball detected")
         return None
     
     # Use simple 3D tracking - always succeeds if initialized
@@ -259,6 +260,7 @@ def simple_detect_and_track_ball_3d(rgb, point_cloud, model, tracker):
     
     if pos_2d is None or pos_3d is None:
         # This should rarely happen with the simple tracker
+        print("[3DTracker] Update failed - no position returned")
         return None
     
     # Estimate bounding box from 2D position
