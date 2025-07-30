@@ -6,8 +6,8 @@ from tracking.model_loader import YOLOModel
 import pyzed.sl as sl
 
 class BallTracker:
-    def __init__(self, model_path="v8-291.onnx", conf_thres=0.3, input_size=640):
-        self.model = YOLOModel(model_path, conf_thres=conf_thres, input_size=input_size)
+    def __init__(self, model_path="v8-291.onnx"):
+        self.model = YOLOModel(model_path)
         self.running = False
         self.lock = threading.Lock()
         self.latest_frame = None
