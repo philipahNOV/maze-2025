@@ -3,38 +3,44 @@ import time
 import numpy as np
 import cv2
 from tracking.model_loader import YOLOModel
-from tracking.camera_manager import CameraManager
 import pyzed.sl as sl
 
 class BallTracker:
     def __init__(self, camera=None, tracking_config=None, model_path="v8-291.onnx"):
         self.model = YOLOModel(model_path)
-        self.camera = camera or CameraManager()
+        self.camera = camera
         self.tracking_config = tracking_config or {}
         self.running = False
         self.lock = threading.Lock()
-        self.latest_frame = None
+        self.latest_rgb_frame = None
+        self.latest_bgr_frame = None
         self.latest_detections = []
         self.ball_position = None
 
         self.objects = sl.Objects()
         self.object_runtime_params = sl.ObjectDetectionRuntimeParameters()
 
-    def camera_loop(self):
+    def producer_loop(self):
         while self.running:
             rgb, bgr = self.camera.grab_frame()
-            if rgb is not None:
+            if rgb is not None and bgr is not None:
                 with self.lock:
-                    self.latest_frame = rgb.copy()
-            time.sleep(0.005)
+                    self.latest_rgb_frame = rgb
+                    self.latest_bgr_frame = bgr
+            time.sleep(0.001)
 
-    def detection_loop(self):
+    def consumer_loop(self):
         while self.running:
             with self.lock:
-                frame = self.latest_frame.copy() if self.latest_frame is not None else None
+                rgb = self.latest_rgb_frame.copy() if self.latest_rgb_frame is not None else None
+                bgr = self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
 
-            if frame is not None:
-                results = self.model.predict(frame)
+            if rgb is None or bgr is None:
+                time.sleep(0.01)
+                continue
+
+            if rgb is not None:
+                results = self.model.predict(rgb)
                 custom_boxes = []
                 for box in results.boxes:
                     label = self.model.get_label(box.cls[0])
@@ -62,8 +68,8 @@ class BallTracker:
     def start(self):
         self.running = True
         self.camera.init_camera()
-        threading.Thread(target=self.camera_loop, daemon=True).start()
-        threading.Thread(target=self.detection_loop, daemon=True).start()
+        threading.Thread(target=self.producer_loop, daemon=True).start()
+        threading.Thread(target=self.consumer_loop, daemon=True).start()
 
     def stop(self):
         self.running = False
