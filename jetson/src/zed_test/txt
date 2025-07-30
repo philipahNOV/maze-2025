@@ -1,5 +1,4 @@
-Traceback (most recent call last):
-  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+raceback (most recent/  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
     self.run()
   File "/usr/lib/python3.10/threading.py", line 953, in run
     self._target(*self._args, **self._kwargs)
@@ -8,4 +7,24 @@ Traceback (most recent call last):
   File "/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py", line 85, in __init__
     self.d_input = cuda.mem_alloc(self.input_size)
 pycuda._driver.LogicError: explicit_context_dependent failed: invalid device context - no currently active context?
+ File "/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py", line 104, in infer
+    cuda.memcpy_dtoh_async(output_data, self.d_output, self.stream)
+pycuda._driver.LogicError: cuMemcpyDtoHAsync failed: an illegal memory access was encountered
 
+de 1: Cuda Driver (an illegal memory access was encountered)
+[07/30/2025-12:19:09] [TRT] [E] 1: [cudaDriverHelpers.cpp::operator()::94] Error Code 1: Cuda Driver (an illegal memory access was encountered)
+[07/30/2025-12:19:09] [TRT] [E] 1: [cudaDriverHelpers.cpp::operator()::94] Error Code 1: Cuda Driver (an illegal memory access was encountered)
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuMemFree failed: an illegal memory access was encountered
+PyCUDA WARNING: a clean-up operation failed (dead context maybe?)
+cuStreamDestroy failed: an illegal memory access was encountered
+-------------------------------------------------------------------
+PyCUDA ERROR: The context stack was not empty upon module cleanup.
+-------------------------------------------------------------------
+A context was still active when the context stack was being
+cleaned up. At this point in our execution, CUDA may already
+have been deinitialized, so there is no way we can finish
+cleanly. The program will be aborted now.
+Use Context.pop() to avoid this problem.
