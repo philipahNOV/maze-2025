@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.10/threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py", line 113, in trt_thread
+    trt_model = TRTInference(engine_path)
+  File "/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py", line 85, in __init__
+    self.d_input = cuda.mem_alloc(self.input_size)
+pycuda._driver.LogicError: explicit_context_dependent failed: invalid device context - no currently active context?
+
