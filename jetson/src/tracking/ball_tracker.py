@@ -5,7 +5,7 @@ import cv2
 from tracking.model_loader import YOLOModel
 
 class BallTracker:
-    def __init__(self, camera, tracking_config, model_path="v8-291.onnx"):
+    def __init__(self, camera, tracking_config, model_path="v8-291.pt"):
         self.camera = camera
         self.model = YOLOModel(model_path)
 

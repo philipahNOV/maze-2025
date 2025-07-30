@@ -2,7 +2,7 @@ import numpy as np
 from ultralytics import YOLO
 
 class YOLOModel:
-    def __init__(self, model_path="v8-291.onnx"):
+    def __init__(self, model_path="v8-291.pt"):
         print(f"[YOLOModel] Loading model from: {model_path}")
         self.model = YOLO(model_path)
 

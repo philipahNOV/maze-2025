@@ -29,7 +29,7 @@ def xywh2abcd(xywh, im_shape):
     return output
 
 class BallTracker:
-    def __init__(self, camera=None, tracking_config=None, model_path="tracking/v8-291.onnx"):
+    def __init__(self, camera=None, tracking_config=None, model_path="tracking/v8-291.pt"):
         self.model = YOLOModel(model_path)
         self.camera = camera
         self.tracking_config = tracking_config or {}
@@ -131,7 +131,7 @@ class BallTracker:
             self.camera.zed.disable_object_detection()
             self.camera.zed.disable_positional_tracking()
             self.zed_od_initialized = False
-            
+
     def get_position(self):
         return self.ball_position
 
