@@ -119,11 +119,12 @@ def main():
             x1, y1, x2, y2 = [max(0, min(v, w if i % 2 == 0 else h)) for i, v in enumerate(det["bbox"])]
             obj = sl.CustomBoxObjectData()
             obj.bounding_box_2d = [
-                sl.PySL_Pixel(x1, y1),
-                sl.PySL_Pixel(x2, y1),
-                sl.PySL_Pixel(x2, y2),
-                sl.PySL_Pixel(x1, y2)
-            ]
+                    [x1, y1],
+                    [x2, y1],
+                    [x2, y2],
+                    [x1, y2]
+                ]
+
             obj.label = 0
             obj.raw_label = 0
             obj.probability = det["confidence"]
