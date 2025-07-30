@@ -60,22 +60,32 @@ class Ball3DTracker:
             
         # Get point cloud as numpy array
         point_cloud_np = point_cloud.get_data()
+        if point_cloud_np is None:
+            return None, None
+            
         height, width = point_cloud_np.shape[:2]
         
         # Reshape to (H*W, 4) and filter valid points
         points = point_cloud_np.reshape(-1, 4)
         
-        # Filter out invalid points (NaN or zero depth)
-        valid_mask = ~(np.isnan(points[:, 0]) | np.isnan(points[:, 1]) | np.isnan(points[:, 2]))
-        valid_mask &= (points[:, 2] > 0)  # Valid depth
+        # More robust filtering for valid points
+        valid_mask = (
+            ~np.isnan(points[:, 0]) & 
+            ~np.isnan(points[:, 1]) & 
+            ~np.isnan(points[:, 2]) &
+            (points[:, 2] > 100) &  # Minimum 100mm depth
+            (points[:, 2] < 5000)   # Maximum 5m depth
+        )
+        
         valid_points = points[valid_mask]
         
-        if len(valid_points) == 0:
+        if len(valid_points) < self.min_points:
             return None, None
             
-        # Define ROI boundaries
-        roi_min = self.last_3d_position - self.roi_size/2
-        roi_max = self.last_3d_position + self.roi_size/2
+        # Define ROI boundaries - make it larger to be more forgiving
+        roi_size = self.roi_size * 1.5  # 50% larger ROI
+        roi_min = self.last_3d_position - roi_size/2
+        roi_max = self.last_3d_position + roi_size/2
         
         # Filter points within ROI
         roi_mask = (
@@ -85,6 +95,10 @@ class Ball3DTracker:
         )
         
         roi_points = valid_points[roi_mask]
+        
+        if len(roi_points) < self.min_points:
+            print(f"[3DTracker] Only {len(roi_points)} points in ROI, need {self.min_points}")
+            return None, None
         
         # Get corresponding 2D pixel coordinates
         valid_indices = np.where(valid_mask)[0]
@@ -146,9 +160,11 @@ class Ball3DTracker:
         # Extract ROI points
         roi_points, pixel_coords = self.extract_roi_points(point_cloud)
         
-        if roi_points is None:
-            self.confidence *= 0.8  # Decay confidence
-            if self.confidence < 0.3:
+        if roi_points is None or len(roi_points) < self.min_points:
+            # More gradual confidence decay
+            self.confidence *= 0.95  # Slower decay
+            print(f"[3DTracker] Insufficient ROI points: {len(roi_points) if roi_points is not None else 0}/{self.min_points}")
+            if self.confidence < 0.2:  # Lower threshold before giving up
                 self.tracking = False
                 print("[3DTracker] Lost tracking - insufficient points in ROI")
             return self.last_2d_position, self.last_3d_position
@@ -160,12 +176,14 @@ class Ball3DTracker:
             self.confidence *= 0.9
             return self.last_2d_position, self.last_3d_position
         
-        # Velocity-based outlier rejection
+        # More lenient velocity-based outlier rejection
         if len(self.position_history) > 0:
             velocity = np.linalg.norm(new_3d_pos - self.last_3d_position)
-            if velocity > self.max_velocity:
-                print(f"[3DTracker] Rejecting outlier - velocity: {velocity:.1f}mm/frame")
-                self.confidence *= 0.7
+            # Increase max velocity threshold
+            max_vel = self.max_velocity * 1.5  # 50% more lenient
+            if velocity > max_vel:
+                print(f"[3DTracker] Rejecting outlier - velocity: {velocity:.1f}mm/frame (max: {max_vel:.1f})")
+                self.confidence *= 0.85  # Less harsh penalty
                 return self.last_2d_position, self.last_3d_position
             self.velocity_history.append(velocity)
             if len(self.velocity_history) > 10:
@@ -178,8 +196,8 @@ class Ball3DTracker:
         if len(self.position_history) > 20:
             self.position_history.pop(0)
         
-        # Update confidence
-        self.confidence = min(1.0, self.confidence + 0.1)
+        # More aggressive confidence boost when tracking well
+        self.confidence = min(1.0, self.confidence + 0.15)
         
         return new_2d_pos, new_3d_pos
     
@@ -274,15 +292,21 @@ def grab_zed_frame(zed):
     if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None, None, None
     
-    # Grab 3-channel BGR image
+    # Grab 3-channel BGR image with proper format
     zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
     bgr = mat.get_data()
+    
+    # Fix potential format issues - ensure proper BGR format
+    if bgr is not None:
+        bgr = np.ascontiguousarray(bgr)  # Ensure contiguous memory layout
+        if len(bgr.shape) == 3 and bgr.shape[2] == 4:  # If BGRA, convert to BGR
+            bgr = bgr[:, :, :3]
     
     # Grab point cloud for 3D coordinates
     zed.retrieve_measure(point_cloud, sl.MEASURE.XYZ, sl.MEM.CPU, sl.MAT_TYPE.F32_C4)
     
     # Make an RGB copy
-    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
+    rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB) if bgr is not None else None
     return rgb, bgr, point_cloud
 
 def get_3d_position(point_cloud, x, y):
@@ -352,12 +376,12 @@ def main():
     model = YOLOModel("tracking/v8-291.onnx")
     print("Model loaded successfully")
     
-    # Initialize 3D ball tracker
+    # Initialize 3D ball tracker with more forgiving parameters
     ball_tracker = Ball3DTracker(
-        roi_size=150,          # 150mm ROI cube
-        depth_threshold=30,    # 30mm depth clustering
-        min_points=15,         # Need 15+ points for detection
-        max_velocity=200       # Max 200mm/frame velocity
+        roi_size=200,          # Larger 200mm ROI cube
+        depth_threshold=40,    # More lenient 40mm depth clustering
+        min_points=8,          # Reduced to 8+ points for detection
+        max_velocity=300       # Higher max 300mm/frame velocity
     )
     print("3D ball tracker initialized")
 
