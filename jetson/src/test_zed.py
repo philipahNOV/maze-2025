@@ -12,32 +12,21 @@ from control.joystick_controller import JoystickController
 from arduino_connection import ArduinoConnection
 from tracking.model_loader import YOLOModel
 
-class Ball3DTracker:
-    def __init__(self, roi_size=100, depth_threshold=50, min_points=10, max_velocity=500):
+class SimpleBall3DTracker:
+    def __init__(self, roi_size=100, ball_radius=15):
         """
-        3D point cloud ball tracker
+        Simple 3D ball tracker - just tracks the closest ball-sized cluster
         
         Args:
-            roi_size: Size of 3D ROI cube around last position (mm)
-            depth_threshold: Max depth difference for clustering (mm) 
-            min_points: Minimum points needed for valid detection
-            max_velocity: Maximum expected velocity (mm/frame) for outlier rejection
+            roi_size: Size of search area around last position (mm)
+            ball_radius: Expected ball radius for clustering (mm)
         """
         self.roi_size = roi_size
-        self.depth_threshold = depth_threshold
-        self.min_points = min_points
-        self.max_velocity = max_velocity
+        self.ball_radius = ball_radius
         
         self.last_3d_position = None
         self.last_2d_position = None
-        self.position_history = []
-        self.velocity_history = []
-        self.confidence = 0.0
         self.tracking = False
-        
-        # For motion detection
-        self.prev_point_cloud = None
-        self.motion_threshold = 20  # mm movement to be considered motion
         
     def initialize_tracking(self, point_cloud, x, y):
         """Initialize tracking from YOLO detection at 2D pixel position"""
@@ -45,198 +34,100 @@ class Ball3DTracker:
         if pos_3d is not None:
             self.last_3d_position = np.array(pos_3d)
             self.last_2d_position = (x, y)
-            self.position_history = [self.last_3d_position.copy()]
-            self.velocity_history = []
-            self.confidence = 1.0
             self.tracking = True
-            print(f"[3DTracker] Initialized at 3D position: {pos_3d}")
+            print(f"[SimpleBallTracker] Initialized at 3D position: {pos_3d}")
             return True
         return False
     
-    def extract_roi_points(self, point_cloud):
-        """Extract 3D points within ROI around last known position"""
-        if self.last_3d_position is None:
+    def update(self, point_cloud):
+        """Update tracker - just find closest ball-sized cluster"""
+        if not self.tracking:
             return None, None
-            
-        # Get point cloud as numpy array
+        
+        # Get point cloud data
         point_cloud_np = point_cloud.get_data()
         if point_cloud_np is None:
-            return None, None
+            return self.last_2d_position, self.last_3d_position
             
         height, width = point_cloud_np.shape[:2]
-        
-        # Reshape to (H*W, 4) and filter valid points
         points = point_cloud_np.reshape(-1, 4)
         
-        # More robust filtering for valid points
+        # Filter valid points
         valid_mask = (
             ~np.isnan(points[:, 0]) & 
             ~np.isnan(points[:, 1]) & 
             ~np.isnan(points[:, 2]) &
-            (points[:, 2] > 100) &  # Minimum 100mm depth
-            (points[:, 2] < 5000)   # Maximum 5m depth
+            (points[:, 2] > 100) &  
+            (points[:, 2] < 3000)   
         )
         
         valid_points = points[valid_mask]
+        if len(valid_points) < 10:
+            return self.last_2d_position, self.last_3d_position
         
-        if len(valid_points) < self.min_points:
-            return None, None
+        # Define search area around last position
+        search_center = self.last_3d_position
+        search_radius = self.roi_size
+        
+        # Find points near last position
+        distances_to_last = np.linalg.norm(valid_points[:, :3] - search_center, axis=1)
+        nearby_mask = distances_to_last < search_radius
+        nearby_points = valid_points[nearby_mask]
+        
+        if len(nearby_points) < 5:
+            # Expand search if nothing found nearby
+            search_radius *= 2
+            nearby_mask = distances_to_last < search_radius
+            nearby_points = valid_points[nearby_mask]
             
-        # Define ROI boundaries - make it larger to be more forgiving
-        roi_size = self.roi_size * 1.5  # 50% larger ROI
-        roi_min = self.last_3d_position - roi_size/2
-        roi_max = self.last_3d_position + roi_size/2
+        if len(nearby_points) < 5:
+            return self.last_2d_position, self.last_3d_position
         
-        # Filter points within ROI
-        roi_mask = (
-            (valid_points[:, 0] >= roi_min[0]) & (valid_points[:, 0] <= roi_max[0]) &
-            (valid_points[:, 1] >= roi_min[1]) & (valid_points[:, 1] <= roi_max[1]) &
-            (valid_points[:, 2] >= roi_min[2]) & (valid_points[:, 2] <= roi_max[2])
-        )
+        # Find the densest cluster (likely the ball)
+        # Use the ball radius to define clusters
+        cluster_points = nearby_points[:, :3]
         
-        roi_points = valid_points[roi_mask]
+        # Simple approach: find the point with most neighbors within ball_radius
+        best_center = None
+        max_neighbors = 0
         
-        if len(roi_points) < self.min_points:
-            print(f"[3DTracker] Only {len(roi_points)} points in ROI, need {self.min_points}")
-            return None, None
+        for i in range(0, len(cluster_points), 5):  # Sample every 5th point for speed
+            test_point = cluster_points[i]
+            neighbor_distances = np.linalg.norm(cluster_points - test_point, axis=1)
+            neighbor_count = np.sum(neighbor_distances < self.ball_radius * 2)
+            
+            if neighbor_count > max_neighbors:
+                max_neighbors = neighbor_count
+                best_center = test_point
         
-        # Get corresponding 2D pixel coordinates
+        if best_center is None or max_neighbors < 3:
+            return self.last_2d_position, self.last_3d_position
+        
+        # Update position
+        self.last_3d_position = best_center
+        
+        # Convert back to 2D pixel coordinates
+        # Find which point in the original point cloud this corresponds to
+        all_3d_points = valid_points[:, :3]
+        distances_to_best = np.linalg.norm(all_3d_points - best_center, axis=1)
+        closest_idx = np.argmin(distances_to_best)
+        
+        # Get the original index in the full point cloud
         valid_indices = np.where(valid_mask)[0]
-        roi_indices = valid_indices[roi_mask]
+        original_idx = valid_indices[closest_idx]
         
-        pixel_coords = np.column_stack([
-            roi_indices % width,  # x coordinates
-            roi_indices // width   # y coordinates  
-        ])
+        # Convert to 2D coordinates
+        pixel_x = original_idx % width
+        pixel_y = original_idx // width
+        self.last_2d_position = (pixel_x, pixel_y)
         
-        return roi_points[:, :3], pixel_coords  # Return XYZ only
-    
-    def detect_motion_blobs(self, current_points, pixel_coords):
-        """Detect moving blobs in the current point cloud ROI"""
-        if current_points is None or len(current_points) < self.min_points:
-            return None, None
-            
-        # For first frame, just return center of mass
-        if self.prev_point_cloud is None:
-            self.prev_point_cloud = current_points.copy()
-            center_3d = np.mean(current_points, axis=0)
-            center_2d = np.mean(pixel_coords, axis=0).astype(int)
-            return center_3d, tuple(center_2d)
-        
-        # Instead of motion detection, find the cluster closest to the expected ball position
-        # This is more reliable than motion detection
-        
-        # If we have velocity history, predict where the ball should be
-        if len(self.position_history) >= 2:
-            predicted_pos = self.get_predicted_position()
-        else:
-            predicted_pos = self.last_3d_position
-        
-        # Find the densest cluster of points near the predicted position
-        # Use a smaller search radius for clustering
-        cluster_radius = 50  # 50mm radius for clustering
-        
-        # Calculate distances from all points to predicted position
-        distances = np.linalg.norm(current_points - predicted_pos, axis=1)
-        
-        # Find points within cluster radius
-        cluster_mask = distances < cluster_radius
-        cluster_points = current_points[cluster_mask]
-        cluster_pixels = pixel_coords[cluster_mask]
-        
-        if len(cluster_points) >= max(3, self.min_points // 3):  # Need at least 3 points
-            # Use the cluster
-            center_3d = np.mean(cluster_points, axis=0)
-            center_2d = np.mean(cluster_pixels, axis=0).astype(int)
-            print(f"[3DTracker] Using cluster: {len(cluster_points)} points, dist from pred: {np.linalg.norm(center_3d - predicted_pos):.1f}mm")
-        else:
-            # Fallback: use the closest point to prediction
-            closest_idx = np.argmin(distances)
-            center_3d = current_points[closest_idx]
-            center_2d = pixel_coords[closest_idx]
-            print(f"[3DTracker] Using closest point, dist: {distances[closest_idx]:.1f}mm")
-        
-        # Update previous point cloud for next frame
-        self.prev_point_cloud = current_points.copy()
-        
-        return center_3d, tuple(center_2d)
-    
-    def update(self, point_cloud):
-        """Update tracker with new point cloud"""
-        if not self.tracking:
-            return None, None
-            
-        # Extract ROI points
-        roi_points, pixel_coords = self.extract_roi_points(point_cloud)
-        
-        if roi_points is None or len(roi_points) < self.min_points:
-            # Much more aggressive confidence decay when no points found
-            self.confidence = max(0.0, self.confidence - 0.1)
-            print(f"[3DTracker] Insufficient ROI points: {len(roi_points) if roi_points is not None else 0}/{self.min_points}, conf: {self.confidence:.2f}")
-            if self.confidence < 0.3:  # Reset faster
-                self.tracking = False
-                print("[3DTracker] Lost tracking - insufficient points in ROI")
-            return self.last_2d_position, self.last_3d_position
-        
-        # Detect motion blobs
-        new_3d_pos, new_2d_pos = self.detect_motion_blobs(roi_points, pixel_coords)
-        
-        if new_3d_pos is None:
-            self.confidence = max(0.0, self.confidence - 0.1)
-            print(f"[3DTracker] No motion detected, conf: {self.confidence:.2f}")
-            return self.last_2d_position, self.last_3d_position
-        
-        # Check if the new position makes sense
-        if len(self.position_history) > 0:
-            movement = np.linalg.norm(new_3d_pos - self.last_3d_position)
-            
-            # If movement is too large, reject
-            if movement > self.max_velocity:
-                print(f"[3DTracker] Rejecting large movement: {movement:.1f}mm/frame (max: {self.max_velocity})")
-                self.confidence = max(0.0, self.confidence - 0.15)
-                if self.confidence < 0.3:
-                    self.tracking = False
-                    print("[3DTracker] Lost tracking - too much movement")
-                return self.last_2d_position, self.last_3d_position
-            
-            # Track velocity for prediction
-            self.velocity_history.append(movement)
-            if len(self.velocity_history) > 10:
-                self.velocity_history.pop(0)
-        
-        # Update position - this is the key fix!
-        self.last_3d_position = new_3d_pos
-        self.last_2d_position = new_2d_pos
-        self.position_history.append(new_3d_pos.copy())
-        if len(self.position_history) > 20:
-            self.position_history.pop(0)
-        
-        # Strong confidence boost for successful tracking
-        self.confidence = min(1.0, self.confidence + 0.2)
-        
-        print(f"[3DTracker] Updated position: {new_3d_pos[0]:.1f},{new_3d_pos[1]:.1f},{new_3d_pos[2]:.1f}mm, conf: {self.confidence:.2f}")
-        
-        return new_2d_pos, new_3d_pos
-    
-    def get_predicted_position(self):
-        """Get predicted next position based on velocity"""
-        if len(self.position_history) < 2:
-            return self.last_3d_position
-            
-        # Simple linear prediction
-        velocity = self.position_history[-1] - self.position_history[-2]
-        predicted = self.last_3d_position + velocity
-        return predicted
+        return self.last_2d_position, self.last_3d_position
     
     def reset(self):
         """Reset tracker"""
         self.tracking = False
         self.last_3d_position = None
         self.last_2d_position = None
-        self.position_history = []
-        self.velocity_history = []
-        self.confidence = 0.0
-        self.prev_point_cloud = None
 
 class BallTrackingJoystickController(JoystickController):
     def __init__(self, arduino):
@@ -339,9 +230,9 @@ def get_3d_position(point_cloud, x, y):
         pass
     return None
 
-def detect_and_track_ball_3d_hybrid(rgb, point_cloud, model, tracker):
+def simple_detect_and_track_ball_3d(rgb, point_cloud, model, tracker):
     """
-    Hybrid detection: YOLO for initialization, 3D point cloud for tracking
+    Simplified detection: YOLO for initialization, simple 3D tracking
     """
     # If not tracking, try YOLO detection for initialization
     if not tracker.tracking:
@@ -358,19 +249,20 @@ def detect_and_track_ball_3d_hybrid(rgb, point_cloud, model, tracker):
                         'bbox': (x1, y1, x2, y2),
                         'center_2d': (cx, cy),
                         'position_3d': tracker.last_3d_position,
-                        'confidence': float(box.conf[0]),
+                        'confidence': 1.0,
                         'tracking_mode': 'YOLO_INIT'
                     }
         return None
     
-    # Use 3D tracking
+    # Use simple 3D tracking - always succeeds if initialized
     pos_2d, pos_3d = tracker.update(point_cloud)
     
     if pos_2d is None or pos_3d is None:
+        # This should rarely happen with the simple tracker
         return None
     
-    # Estimate bounding box from 2D position (rough approximation)
-    bbox_size = 30  # pixels
+    # Estimate bounding box from 2D position
+    bbox_size = 30
     x1 = max(0, pos_2d[0] - bbox_size//2)
     y1 = max(0, pos_2d[1] - bbox_size//2)
     x2 = min(rgb.shape[1], pos_2d[0] + bbox_size//2)
@@ -380,7 +272,7 @@ def detect_and_track_ball_3d_hybrid(rgb, point_cloud, model, tracker):
         'bbox': (x1, y1, x2, y2),
         'center_2d': pos_2d,
         'position_3d': pos_3d,
-        'confidence': tracker.confidence,
+        'confidence': 1.0,  # Always confident - there's only one ball!
         'tracking_mode': '3D_TRACKING'
     }
 
@@ -393,14 +285,12 @@ def main():
     model = YOLOModel("tracking/v8-291.onnx")
     print("Model loaded successfully")
     
-    # Initialize 3D ball tracker with better parameters
-    ball_tracker = Ball3DTracker(
-        roi_size=120,          # Smaller, more focused ROI
-        depth_threshold=30,    # Tighter depth clustering
-        min_points=5,          # Even fewer points needed
-        max_velocity=150       # More reasonable max velocity
+    # Initialize simple 3D ball tracker
+    ball_tracker = SimpleBall3DTracker(
+        roi_size=150,          # 150mm search radius
+        ball_radius=15         # 15mm ball radius
     )
-    print("3D ball tracker initialized")
+    print("Simple 3D ball tracker initialized")
 
     # Initialize Arduino connection
     print("Initializing Arduino connection...")
@@ -447,8 +337,8 @@ def main():
             if rgb is None:
                 continue
                 
-            # Use hybrid detection/tracking
-            ball_detection = detect_and_track_ball_3d_hybrid(rgb, point_cloud, model, ball_tracker)
+            # Use simple detection/tracking
+            ball_detection = simple_detect_and_track_ball_3d(rgb, point_cloud, model, ball_tracker)
             
             # Draw detection on the image
             display_frame = bgr.copy()
@@ -475,13 +365,12 @@ def main():
                 cv2.putText(display_frame, text, (x1, y1-25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                 cv2.putText(display_frame, mode_text, (x1, y1-5), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
                 
-                # Print to console
-                avg_velocity = np.mean(ball_tracker.velocity_history) if ball_tracker.velocity_history else 0
-                print(f"Ball: {pos_3d[0]:.1f},{pos_3d[1]:.1f},{pos_3d[2]:.1f}mm | {mode} | Conf:{confidence:.2f} | Vel:{avg_velocity:.1f}mm/f")
+                # Print to console - simplified
+                print(f"Ball: {pos_3d[0]:.1f},{pos_3d[1]:.1f},{pos_3d[2]:.1f}mm | {mode}")
             
             # Display tracker status
             status_color = (0, 255, 0) if ball_tracker.tracking else (0, 0, 255)
-            status_text = f"3D Tracker: {'ACTIVE' if ball_tracker.tracking else 'SEARCHING'} | Conf: {ball_tracker.confidence:.2f}"
+            status_text = f"Simple Tracker: {'ACTIVE' if ball_tracker.tracking else 'SEARCHING'}"
             cv2.putText(display_frame, status_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, status_color, 2)
             
             # Display joystick status
