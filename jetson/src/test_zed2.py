@@ -23,29 +23,51 @@ class YOLOv8ONNX:
 
     def postprocess(self, outputs, conf_thres=0.4):
         detections = []
-        preds = outputs[0]  # shape: (num_detections, 85)
+        preds = outputs[0]  # shape: (batch, num_detections, 85) or (num_detections, 85)
+        
+        # Handle different output shapes
+        if len(preds.shape) == 3:
+            preds = preds[0]  # Remove batch dimension
+        
+        # YOLOv8 format: [x_center, y_center, width, height, confidence, class_scores...]
         for pred in preds:
-            conf = pred[4]
-            if conf > conf_thres:
-                class_id = int(np.argmax(pred[5:]))
-                if class_id != 0:  # Only class 0 (ball)
-                    continue
-                x, y, w, h = pred[0:4]
-                x1 = int((x - w / 2) * self.scale_w)
-                y1 = int((y - h / 2) * self.scale_h)
-                x2 = int((x + w / 2) * self.scale_w)
-                y2 = int((y + h / 2) * self.scale_h)
-                detections.append({
-                    "bbox": [x1, y1, x2, y2],
-                    "confidence": float(conf),
-                    "class_id": class_id
-                })
+            # For single class model, confidence might be at index 4
+            if len(pred) >= 5:
+                conf = pred[4]  # Object confidence
+                if conf > conf_thres:
+                    # For single class, we can assume class 0 (ball)
+                    x, y, w, h = pred[0:4]
+                    x1 = int((x - w / 2) * self.scale_w)
+                    y1 = int((y - h / 2) * self.scale_h)
+                    x2 = int((x + w / 2) * self.scale_w)
+                    y2 = int((y + h / 2) * self.scale_h)
+                    
+                    # Ensure coordinates are within image bounds
+                    x1 = max(0, x1)
+                    y1 = max(0, y1)
+                    x2 = min(int(self.input_shape[0] * self.scale_w), x2)
+                    y2 = min(int(self.input_shape[1] * self.scale_h), y2)
+                    
+                    detections.append({
+                        "bbox": [x1, y1, x2, y2],
+                        "confidence": float(conf),
+                        "class_id": 0  # Assume ball class
+                    })
         return detections
 
     def predict(self, image):
         input_tensor = self.preprocess(image)
-        outputs = self.session.run(None, {self.input_name: input_tensor})
-        return self.postprocess(outputs)
+        try:
+            outputs = self.session.run(None, {self.input_name: input_tensor})
+            print(f"ONNX output shapes: {[out.shape for out in outputs]}")
+            return self.postprocess(outputs)
+        except Exception as e:
+            print(f"ONNX inference error: {e}")
+            print(f"Input tensor shape: {input_tensor.shape}")
+            print(f"Expected input name: {self.input_name}")
+            print(f"Model inputs: {[inp.name for inp in self.session.get_inputs()]}")
+            print(f"Model outputs: {[out.name for out in self.session.get_outputs()]}")
+            return []
 
 # ----------------------------
 # Initialize ZED in CustomBox Mode
