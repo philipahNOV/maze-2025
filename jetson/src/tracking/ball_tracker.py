@@ -1,7 +1,7 @@
 import threading
 import time
 import numpy as np
-from tracking.vision_utils import hsv_tracking, global_hsv_search
+import cv2
 from tracking.model_loader import YOLOModel
 
 class BallTracker:
@@ -11,15 +11,14 @@ class BallTracker:
 
         self.hsv_fail_threshold = tracking_config["hsv_fail_threshold"]
         self.yolo_cooldown_period = tracking_config["yolo_cooldown_period"]
-        self.WINDOW_SIZE = tracking_config["hsv_window_size"]
-        self.HSV_RANGE = (
-            np.array(tracking_config["hsv_range"]["lower"]),
-            np.array(tracking_config["hsv_range"]["upper"]),
+        self.INIT_BALL_REGION = (
+            (tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]),
+            (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"])
         )
-        self.INIT_BALL_REGION = ((tracking_config["init_ball_region"]["x_min"], tracking_config["init_ball_region"]["y_min"]), (tracking_config["init_ball_region"]["x_max"], tracking_config["init_ball_region"]["y_max"]))
         self.smoothing_alpha = tracking_config.get("smoothing_alpha", 0.5)
 
         self.ball_position = None
+        self.prev_gray = None
         self.initialized = False
         self.ball_confirm_counter = 0
         self.ball_confirm_threshold = 1
@@ -52,6 +51,8 @@ class BallTracker:
                 time.sleep(0.01)
                 continue
 
+            gray = cv2.cvtColor(bgr, cv2.COLOR_BGR2GRAY)
+
             if not self.initialized:
                 results = self.model.predict(rgb)
                 for box in results.boxes:
@@ -63,27 +64,25 @@ class BallTracker:
                            self.INIT_BALL_REGION[0][1] <= cy <= self.INIT_BALL_REGION[1][1]:
                             self.ball_confirm_counter += 1
                             self.ball_position = (cx, cy)
+                            self.prev_gray = gray
                             if self.ball_confirm_counter >= self.ball_confirm_threshold:
                                 self.initialized = True
             else:
-                new_pos = hsv_tracking(bgr, self.ball_position, *self.HSV_RANGE, self.WINDOW_SIZE)
+                if self.prev_gray is not None and self.ball_position is not None:
+                    prev_pt = np.array([[self.ball_position]], dtype=np.float32)
+                    next_pt, status, _ = cv2.calcOpticalFlowPyrLK(self.prev_gray, gray, prev_pt, None)
 
-                if new_pos:
-                    if self.ball_position:
-                        alpha = 0.5  # smoothing factor (lower = smoother, slower response)
-                        x = int(alpha * new_pos[0] + (1 - alpha) * self.ball_position[0])
-                        y = int(alpha * new_pos[1] + (1 - alpha) * self.ball_position[1])
-                        self.ball_position = (x, y)
+                    if status[0][0] == 1:
+                        x, y = next_pt[0][0]
+                        smoothed_x = int(self.smoothing_alpha * x + (1 - self.smoothing_alpha) * self.ball_position[0])
+                        smoothed_y = int(self.smoothing_alpha * y + (1 - self.smoothing_alpha) * self.ball_position[1])
+                        self.ball_position = (smoothed_x, smoothed_y)
+                        self.hsv_fail_counter = 0
                     else:
-                        self.ball_position = new_pos
-                    self.hsv_fail_counter = 0
-                else:
-                    self.ball_position = None
-                    self.hsv_fail_counter += 1
+                        self.ball_position = None
+                        self.hsv_fail_counter += 1
 
-                    if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
-                        global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
-                        if global_pos:
+                        if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
                             results = self.model.predict(rgb)
                             for box in results.boxes:
                                 label = self.model.get_label(box.cls[0])
@@ -94,6 +93,8 @@ class BallTracker:
                                     self.hsv_fail_counter = 0
                                     self.yolo_cooldown = self.yolo_cooldown_period
                                     break
+
+                self.prev_gray = gray
 
             if self.yolo_cooldown > 0:
                 self.yolo_cooldown -= 1
