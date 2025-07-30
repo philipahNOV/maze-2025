@@ -77,7 +77,7 @@ def main():
     zed = init_zed()
     runtime_params = sl.ObjectDetectionRuntimeParameters()
     objects = sl.Objects()
-    yolo = YOLOv8ONNX("ball_detector.onnx", input_shape=(640, 640))
+    yolo = YOLOv8ONNX("tracking/v8-291.onnx", input_shape=(640, 640))
 
     cv2.namedWindow("ZED Ball Tracker", cv2.WINDOW_NORMAL)
 
