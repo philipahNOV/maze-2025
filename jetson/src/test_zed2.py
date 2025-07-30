@@ -49,7 +49,16 @@ while True:
                 
                 label = f"{obj.label} ({int(obj.confidence)}%)"
 
-                cv2.putText(img_cv, label, (int(top_left[0]), int(top_left[1]-10)))
+                cv2.putText(
+                        img_cv,
+                        label,
+                        (int(top_left[0]), int(top_left[1] - 10)),
+                        cv2.FONT_HERSHEY_SIMPLEX,  # <-- fontFace (required)
+                        0.6,                       # fontScale
+                        (255, 255, 255),           # color (white)
+                        2                          # thickness
+                    )
+
 
     cv2.imshow("Object Detection", img_cv)
 
