@@ -127,7 +127,7 @@ def main():
     zed.enable_object_detection(obj_param)
 
     objects = sl.Objects()
-    obj_runtime_param = sl.ObjectDetectionRuntimeParameters()
+    obj_runtime_param = sl.CustomObjectDetectionRuntimeParameters()
 
     # Display
     camera_infos = zed.get_camera_information()
@@ -154,7 +154,7 @@ def main():
     cam_w_pose = sl.Pose()
 
     while viewer.is_available() and not exit_signal:
-        if zed.grab(runtime_params) == sl.ERROR_CODE.SUCCESS:
+        if zed.grab(runtime_params) <= sl.ERROR_CODE.SUCCESS:
 
             print(zed.get_current_fps())
 
@@ -172,9 +172,9 @@ def main():
             # Wait for detections
             lock.acquire()
             # -- Ingest detections
-            zed.ingest_box_objects(detections)
+            zed.ingest_custom_box_objects(detections)
             lock.release()
-            zed.retrieve_objects(objects, obj_runtime_param)
+            zed.retrieve_custom_objects(objects, obj_runtime_param)
 
             # -- Display
             # Retrieve display data
@@ -209,7 +209,7 @@ if __name__ == '__main__':
     parser.add_argument('--weights', type=str, default='v8-291.pt', help='model.pt path(s)')
     parser.add_argument('--svo', type=str, default=None, help='optional svo file, if not passed, use the plugged camera instead')
     parser.add_argument('--img_size', type=int, default=1280, help='inference size (pixels)')
-    parser.add_argument('--conf_thres', type=float, default=0.5, help='object confidence threshold')
+    parser.add_argument('--conf_thres', type=float, default=0.4, help='object confidence threshold')
     opt = parser.parse_args()
 
     with torch.no_grad():
