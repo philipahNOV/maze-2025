@@ -28,3 +28,35 @@ cleaned up. At this point in our execution, CUDA may already
 have been deinitialized, so there is no way we can finish
 cleanly. The program will be aborted now.
 Use Context.pop() to avoid this problem.
+
+
+
+
+Initialized Camera
+[07/30/2025-12:23:39] [TRT] [I] Loaded engine size: 15 MiB
+[07/30/2025-12:23:39] [TRT] [I] [MemUsageChange] TensorRT-managed allocation in engine deserialization: CPU +0, GPU +12, now: CPU 0, GPU 77 (MiB)
+[07/30/2025-12:23:39] [TRT] [I] [MemUsageChange] TensorRT-managed allocation in IExecutionContext creation: CPU +1, GPU +69, now: CPU 1, GPU 146 (MiB)
+/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py:79: DeprecationWarning: Use get_tensor_name instead.
+  self.input_binding_idx = self.engine.get_binding_index(self.engine[0])
+/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py:80: DeprecationWarning: Use get_tensor_name instead.
+  self.output_binding_idx = self.engine.get_binding_index(self.engine[1])
+/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py:83: DeprecationWarning: Use get_tensor_shape instead.
+  self.output_shape = self.engine.get_binding_shape(1)
+0.0
+Exception in thread Thread-1 (trt_thread):
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/threading.py", line 1016, in _bootstrap_inner
+    self.run()
+  File "/usr/lib/python3.10/threading.py", line 953, in run
+    self._target(*self._args, **self._kwargs)
+  File "/home/student/Documents/maze-2025/jetson/src/zed_test/detector.py", line 123, in trt_thread
+    trt_output = trt_model.infer(image_net)
+AttributeError: 'TRTInference' object has no attribute 'infer'
+-------------------------------------------------------------------
+PyCUDA ERROR: The context stack was not empty upon module cleanup.
+-------------------------------------------------------------------
+A context was still active when the context stack was being
+cleaned up. At this point in our execution, CUDA may already
+have been deinitialized, so there is no way we can finish
+cleanly. The program will be aborted now.
+Use Context.pop() to avoid this problem.
