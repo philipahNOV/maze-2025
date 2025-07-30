@@ -3,7 +3,7 @@ import torch
 from ultralytics import YOLO
 
 class YOLOModel:
-    def __init__(self, model_path="v8-291.trt"):
+    def __init__(self, model_path="v8-291.engine"):
         print(f"[YOLOModel] Loading model from: {model_path}")
 
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
@@ -11,13 +11,12 @@ class YOLOModel:
 
         self.model = None
         self.names = []
-        self.is_trt = model_path.endswith('.trt')
+        self.is_trt = model_path.endswith('.engine')
 
         try:
             self.model = YOLO(model_path)
             print("[YOLOModel] TensorRT model loaded")
 
-            # Warmup (required for TRT engine to allocate buffers properly)
             dummy = np.zeros((640, 640, 3), dtype=np.uint8)
             with torch.no_grad():
                 self.model.predict(source=dummy, device=0, verbose=False)  # TensorRT requires device=0
@@ -27,7 +26,7 @@ class YOLOModel:
             print(f"[YOLOModel] Failed to load or warm up TensorRT model: {e}")
             print("[YOLOModel] Falling back to PyTorch (.pt) model...")
 
-            pt_path = model_path.replace(".trt", ".pt")
+            pt_path = model_path.replace(".engine", ".pt")
             try:
                 self.model = YOLO(pt_path)
                 self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'

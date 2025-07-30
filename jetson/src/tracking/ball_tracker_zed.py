@@ -29,7 +29,7 @@ def xywh2abcd(xywh, im_shape):
     return output
 
 class BallTracker:
-    def __init__(self, camera=None, tracking_config=None, model_path="v8-291.trt"):
+    def __init__(self, camera=None, tracking_config=None, model_path="v8-291.engine"):
         self.model = YOLOModel(model_path)
         self.camera = camera
         self.tracking_config = tracking_config or {}
