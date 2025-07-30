@@ -122,13 +122,12 @@ def main():
             
             obj = sl.CustomBoxObjectData()
             # Fix bounding box format - ZED expects list of sl.uint2 points
-            obj.bounding_box_2d = [
-                sl.uint2(x1, y1),
-                sl.uint2(x2, y1), 
-                sl.uint2(x2, y2),
-                sl.uint2(x1, y2)
-            ]
-
+            obj.bounding_box_2d = np.array([
+                    [x1, y1],
+                    [x2, y1],
+                    [x2, y2],
+                    [x1, y2]
+                ], dtype=np.float32)
             obj.label = 0
             obj.probability = det["confidence"]
             obj.unique_object_id = sl.generate_unique_id()
