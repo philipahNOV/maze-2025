@@ -14,7 +14,7 @@ err = zed.open(init_params)
 obj_param = sl.ObjectDetectionParameters()
 obj_param.enable_tracking = True
 obj_param.enable_segmentation = True
-obj_param.detection_model = sl.OBJECT_DETECTION_MODEL.MULTI_CLASS_BOX
+obj_param.detection_model = sl.OBJECT_DETECTION_MODEL.MULTI_CLASS_BOX_MEDIUM
 
 if obj_param.enable_tracking:
     positional_tracking_param = sl.PositionalTrackingParameters()
