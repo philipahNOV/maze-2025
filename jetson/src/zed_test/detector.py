@@ -99,6 +99,8 @@ def main():
 
     # Create a InitParameters object and set configuration parameters
     init_params = sl.InitParameters(input_t=input_type, svo_real_time_mode=True)
+    init_params.camera_resolution = sl.RESOLUTION.HD720  # Optional but recommended
+    init_params.camera_fps = 60
     init_params.coordinate_units = sl.UNIT.METER
     init_params.depth_mode = sl.DEPTH_MODE.NEURAL
     init_params.coordinate_system = sl.COORDINATE_SYSTEM.RIGHT_HANDED_Y_UP
@@ -208,7 +210,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='v8-291.pt', help='model.pt path(s)')
     parser.add_argument('--svo', type=str, default=None, help='optional svo file, if not passed, use the plugged camera instead')
-    parser.add_argument('--img_size', type=int, default=1280, help='inference size (pixels)')
+    parser.add_argument('--img_size', type=int, default=640, help='inference size (pixels)')
     parser.add_argument('--conf_thres', type=float, default=0.4, help='object confidence threshold')
     opt = parser.parse_args()
 
