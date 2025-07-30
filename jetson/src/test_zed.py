@@ -136,7 +136,7 @@ def main():
     
     # Initialize YOLO model
     print("Loading YOLO model...")
-    model = YOLOModel("v8-291.onnx")
+    model = YOLOModel("tracking/v8-291.onnx")
     print("Model loaded successfully")
 
     # Initialize Arduino connection
