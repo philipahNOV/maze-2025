@@ -130,8 +130,8 @@ class BallTracker:
         if self.zed_od_initialized and hasattr(self.camera, 'zed'):
             self.camera.zed.disable_object_detection()
             self.camera.zed.disable_positional_tracking()
-        self.camera.close()
-
+            self.zed_od_initialized = False
+            
     def get_position(self):
         return self.ball_position
 
