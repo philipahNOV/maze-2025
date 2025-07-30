@@ -127,7 +127,7 @@ def main():
     zed.enable_object_detection(obj_param)
 
     objects = sl.Objects()
-    obj_runtime_param = sl.CustomObjectDetectionRuntimeParameters()
+    obj_runtime_param = sl.ObjectDetectionRuntimeParameters()
 
     # Display
     camera_infos = zed.get_camera_information()
