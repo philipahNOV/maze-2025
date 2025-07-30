@@ -13,9 +13,14 @@ class YOLOv8ONNX:
         self.input_shape = input_shape  # (width, height)
 
     def preprocess(self, image):
+        # Resize to model input shape
         img_resized = cv2.resize(image, self.input_shape)
+
+        # Save scale for post-processing
         self.scale_w = image.shape[1] / self.input_shape[0]
         self.scale_h = image.shape[0] / self.input_shape[1]
+
+        # Normalize and format
         img = img_resized.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
         img = np.expand_dims(img, axis=0)  # Add batch dim
@@ -23,39 +28,37 @@ class YOLOv8ONNX:
 
     def postprocess(self, outputs, conf_thres=0.4):
         detections = []
-        preds = outputs[0]  # shape: (batch, num_detections, 85) or (num_detections, 85)
-        
-        # Handle different output shapes
+        preds = outputs[0]
         if len(preds.shape) == 3:
-            preds = preds[0]  # Remove batch dimension
-        
-        # YOLOv8 format: [x_center, y_center, width, height, confidence, class_scores...]
+            preds = preds[0]
+
         for pred in preds:
-            # For single class model, confidence might be at index 4
             if len(pred) >= 5:
-                conf = pred[4]  # Object confidence
+                conf = pred[4]
                 if conf > conf_thres:
-                    # For single class, we can assume class 0 (ball)
                     x, y, w, h = pred[0:4]
                     x1 = int((x - w / 2) * self.scale_w)
                     y1 = int((y - h / 2) * self.scale_h)
                     x2 = int((x + w / 2) * self.scale_w)
                     y2 = int((y + h / 2) * self.scale_h)
-                    
-                    # Ensure coordinates are within image bounds
+
                     x1 = max(0, x1)
                     y1 = max(0, y1)
                     x2 = min(int(self.input_shape[0] * self.scale_w), x2)
                     y2 = min(int(self.input_shape[1] * self.scale_h), y2)
-                    
+
                     detections.append({
                         "bbox": [x1, y1, x2, y2],
                         "confidence": float(conf),
-                        "class_id": 0  # Assume ball class
+                        "class_id": 0
                     })
         return detections
 
     def predict(self, image):
+        # Convert RGBA to RGB if needed
+        if image.shape[2] == 4:
+            image = cv2.cvtColor(image, cv2.COLOR_BGRA2BGR)
+
         input_tensor = self.preprocess(image)
         outputs = self.session.run(None, {self.input_name: input_tensor})
         return self.postprocess(outputs)
@@ -69,6 +72,7 @@ def init_zed():
     init_params.camera_resolution = sl.RESOLUTION.HD720
     init_params.depth_mode = sl.DEPTH_MODE.ULTRA
     init_params.coordinate_units = sl.UNIT.METER
+
     if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
         print("Failed to open ZED")
         exit(1)
@@ -90,25 +94,26 @@ def main():
     zed = init_zed()
     runtime_params = sl.ObjectDetectionRuntimeParameters()
     objects = sl.Objects()
-    yolo = YOLOv8ONNX("tracking/simple.onnx", input_shape=(640, 640))
 
+    # IMPORTANT: Set this to match your ONNX input size!
+    MODEL_INPUT_SHAPE = (1280, 1280)  # or (1280, 1280) if that's your model's export size
+    MODEL_PATH = "tracking/simple.onnx"
+
+    yolo = YOLOv8ONNX(MODEL_PATH, input_shape=MODEL_INPUT_SHAPE)
     cv2.namedWindow("ZED Ball Tracker", cv2.WINDOW_NORMAL)
 
     while True:
         if zed.grab() != sl.ERROR_CODE.SUCCESS:
             continue
 
-        # Get ZED image
         zed_image = sl.Mat()
         zed.retrieve_image(zed_image, sl.VIEW.LEFT)
         image = zed_image.get_data()
         display = image.copy()
         h, w = image.shape[:2]
 
-        # Run YOLOv8
         detections = yolo.predict(image)
 
-        # Ingest custom objects
         objects_in = []
         for det in detections:
             x1, y1, x2, y2 = [max(0, min(v, w if i % 2 == 0 else h)) for i, v in enumerate(det["bbox"])]
@@ -128,14 +133,12 @@ def main():
 
         zed.ingest_custom_box_objects(objects_in)
 
-        # Retrieve tracked 3D object positions
         zed.retrieve_objects(objects, runtime_params)
         for obj in objects.object_list:
             if obj.tracking_state == sl.OBJECT_TRACKING_STATE.OK:
                 pos = obj.position
                 x, y, z = pos.get()
                 label = f"ID:{obj.id} X:{x:.2f} Y:{y:.2f} Z:{z:.2f}m"
-                print(label)
 
                 tl = obj.bounding_box_2d[0]
                 br = obj.bounding_box_2d[2]
