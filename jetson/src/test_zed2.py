@@ -95,9 +95,9 @@ def main():
     runtime_params = sl.ObjectDetectionRuntimeParameters()
     objects = sl.Objects()
 
-    # IMPORTANT: Set this to match your ONNX input size!
-    MODEL_INPUT_SHAPE = (1280, 1280)  # or (1280, 1280) if that's your model's export size
-    MODEL_PATH = "tracking/simple.onnx"
+    # IMPORTANT: Use the correct model and input size for ball detection
+    MODEL_INPUT_SHAPE = (640, 640)  # Much faster than 1280x1280
+    MODEL_PATH = "tracking/v8-291.onnx"  # Back to the ball-trained model
 
     yolo = YOLOv8ONNX(MODEL_PATH, input_shape=MODEL_INPUT_SHAPE)
     cv2.namedWindow("ZED Ball Tracker", cv2.WINDOW_NORMAL)
@@ -113,17 +113,21 @@ def main():
         h, w = image.shape[:2]
 
         detections = yolo.predict(image)
+        print(f"YOLO detected {len(detections)} objects")
 
         objects_in = []
-        for det in detections:
+        for i, det in enumerate(detections):
             x1, y1, x2, y2 = [max(0, min(v, w if i % 2 == 0 else h)) for i, v in enumerate(det["bbox"])]
+            print(f"Detection {i}: bbox=({x1},{y1},{x2},{y2}), conf={det['confidence']:.3f}")
+            
             obj = sl.CustomBoxObjectData()
-            obj.bounding_box_2d = np.array([
-                    [x1, y1],
-                    [x2, y1],
-                    [x2, y2],
-                    [x1, y2]
-                ], dtype=np.float32)
+            # Fix bounding box format - ZED expects list of sl.uint2 points
+            obj.bounding_box_2d = [
+                sl.uint2(x1, y1),
+                sl.uint2(x2, y1), 
+                sl.uint2(x2, y2),
+                sl.uint2(x1, y2)
+            ]
 
             obj.label = 0
             obj.probability = det["confidence"]
@@ -133,18 +137,26 @@ def main():
 
         zed.ingest_custom_box_objects(objects_in)
 
+        # Draw YOLO detections in red before ZED tracking
+        for det in detections:
+            x1, y1, x2, y2 = det["bbox"]
+            cv2.rectangle(display, (x1, y1), (x2, y2), (0, 0, 255), 2)  # Red for YOLO
+            cv2.putText(display, f"YOLO: {det['confidence']:.2f}", (x1, y1-10),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+
         zed.retrieve_objects(objects, runtime_params)
         for obj in objects.object_list:
             if obj.tracking_state == sl.OBJECT_TRACKING_STATE.OK:
                 pos = obj.position
-                x, y, z = pos
+                x, y, z = pos[0], pos[1], pos[2]  # Access position components correctly
                 label = f"ID:{obj.id} X:{x:.2f} Y:{y:.2f} Z:{z:.2f}m"
+                print(f"ZED Tracking: {label}")
 
                 tl = obj.bounding_box_2d[0]
                 br = obj.bounding_box_2d[2]
-                cv2.rectangle(display, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 255, 0), 2)
-                cv2.putText(display, label, (int(tl[0]), int(tl[1]) - 10),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+                cv2.rectangle(display, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 255, 0), 3)  # Green for ZED tracking
+                cv2.putText(display, label, (int(tl[0]), int(tl[1]) - 30),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
         cv2.imshow("ZED Ball Tracker", display)
         if cv2.waitKey(1) & 0xFF == ord('q'):
