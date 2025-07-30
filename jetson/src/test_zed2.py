@@ -137,7 +137,7 @@ def main():
         for obj in objects.object_list:
             if obj.tracking_state == sl.OBJECT_TRACKING_STATE.OK:
                 pos = obj.position
-                x, y, z = pos.get()
+                x, y, z = pos
                 label = f"ID:{obj.id} X:{x:.2f} Y:{y:.2f} Z:{z:.2f}m"
 
                 tl = obj.bounding_box_2d[0]
