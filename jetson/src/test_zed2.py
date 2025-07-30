@@ -1,70 +1,150 @@
 import cv2
 import numpy as np
 import pyzed.sl as sl
+import onnxruntime as ort
 
-zed = sl.Camera()
+# ----------------------------
+# YOLOv8 ONNX: 1-class model
+# ----------------------------
+class YOLOv8ONNX:
+    def __init__(self, model_path, input_shape=(640, 640)):
+        self.session = ort.InferenceSession(model_path)
+        self.input_name = self.session.get_inputs()[0].name
+        self.input_shape = input_shape
 
-init_params = sl.InitParameters()
-init_params.camera_resolution = sl.RESOLUTION.HD720
-init_params.coordinate_units = sl.UNIT.METER
-init_params.depth_mode = sl.DEPTH_MODE.PERFORMANCE
+    def preprocess(self, image):
+        img = cv2.resize(image, self.input_shape)
+        self.scale_w = image.shape[1] / self.input_shape[0]
+        self.scale_h = image.shape[0] / self.input_shape[1]
+        img = img.astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))[np.newaxis, ...]  # CHW
+        return img
 
-err = zed.open(init_params)
+    def postprocess(self, outputs, conf_thres=0.4):
+        detections = []
+        for pred in outputs[0]:
+            conf = pred[4]
+            if conf > conf_thres:
+                class_id = int(np.argmax(pred[5:]))
+                if class_id != 0:
+                    continue  # ONLY CLASS 0 (ball)
+                x, y, w, h = pred[0:4]
+                x1 = int((x - w / 2) * self.scale_w)
+                y1 = int((y - h / 2) * self.scale_h)
+                x2 = int((x + w / 2) * self.scale_w)
+                y2 = int((y + h / 2) * self.scale_h)
+                detections.append({
+                    "bbox": [x1, y1, x2, y2],
+                    "confidence": float(conf),
+                    "class_id": class_id
+                })
+        return detections
 
-obj_param = sl.ObjectDetectionParameters()
-obj_param.enable_tracking = True
-obj_param.enable_segmentation = True
-obj_param.detection_model = sl.OBJECT_DETECTION_MODEL.MULTI_CLASS_BOX_MEDIUM
+    def predict(self, image):
+        img_input = self.preprocess(image)
+        outputs = self.session.run(None, {self.input_name: img_input})
+        return self.postprocess(outputs)
 
-if obj_param.enable_tracking:
-    positional_tracking_param = sl.PositionalTrackingParameters()
-    zed.enable_positional_tracking(positional_tracking_param)
+# ----------------------------
+# Initialize ZED
+# ----------------------------
+def init_zed():
+    zed = sl.Camera()
+    init_params = sl.InitParameters()
+    init_params.camera_resolution = sl.RESOLUTION.HD720
+    init_params.depth_mode = sl.DEPTH_MODE.ULTRA
+    init_params.coordinate_units = sl.UNIT.METER
+    if zed.open(init_params) != sl.ERROR_CODE.SUCCESS:
+        print("ZED failed to open.")
+        exit(1)
 
-err = zed.enable_object_detection(obj_param)
+    # Enable tracking
+    tracking_params = sl.PositionalTrackingParameters()
+    zed.enable_positional_tracking(tracking_params)
 
-objects = sl.Objects()
-obj_runtime_param = sl.ObjectDetectionRuntimeParameters()
-obj_runtime_param.detection_confidence_threshold = 30
+    # Enable custom detection
+    obj_params = sl.ObjectDetectionParameters()
+    obj_params.detection_model = sl.OBJECT_DETECTION_MODEL.CUSTOM_BOX_OBJECTS
+    obj_params.enable_tracking = True
+    obj_params.enable_mask_output = False
+    zed.enable_object_detection(obj_params)
 
-cv2.namedWindow("ZED", cv2.WINDOW_NORMAL)
+    return zed
 
-while True:
-    if zed.grab() == sl.ERROR_CODE.SUCCESS:
-        zed.retrieve_objects(objects, obj_runtime_param)
+# ----------------------------
+# Main Loop
+# ----------------------------
+def main():
+    zed = init_zed()
+    runtime_params = sl.ObjectDetectionRuntimeParameters()
+    objects = sl.Objects()
 
-        img = sl.Mat()
-        zed.retrieve_image(img, sl.VIEW.LEFT)
-        img_cv = img.get_data()
+    # Load YOLOv8 ONNX
+    yolo = YOLOv8ONNX("tracking/v8-291.onnx", input_shape=(640, 640))
 
-        if objects.is_new:
-            obj_arr = objects.object_list
-            print(str(len(obj_arr)))
+    cv2.namedWindow("ZED Ball Tracking", cv2.WINDOW_NORMAL)
 
-            for obj in obj_arr:
-                top_left = obj.bounding_box_2d[0]
-                bottom_right = obj.bounding_box_2d[2]
+    while True:
+        if zed.grab() != sl.ERROR_CODE.SUCCESS:
+            continue
 
-                cv2.rectangle(img_cv, (int(top_left[0]), int(top_left[1])),
-                                       (int(bottom_right[0]), int(bottom_right[1])), (0, 255, 0), 2)
-                
-                label = f"{obj.label} ({int(obj.confidence)}%)"
+        # Get image from ZED
+        image_zed = sl.Mat()
+        zed.retrieve_image(image_zed, sl.VIEW.LEFT)
+        image_np = image_zed.get_data()
+        image_disp = image_np.copy()
 
-                cv2.putText(
-                        img_cv,
-                        label,
-                        (int(top_left[0]), int(top_left[1] - 10)),
-                        cv2.FONT_HERSHEY_SIMPLEX,  # <-- fontFace (required)
-                        0.6,                       # fontScale
-                        (255, 255, 255),           # color (white)
-                        2                          # thickness
-                    )
+        # Run YOLOv8
+        detections = yolo.predict(image_np)
 
+        # Ingest custom boxes to ZED
+        custom_objects = []
+        for det in detections:
+            x1, y1, x2, y2 = det["bbox"]
+            h, w = image_np.shape[:2]
+            x1, y1 = max(0, x1), max(0, y1)
+            x2, y2 = min(w - 1, x2), min(h - 1, y2)
 
-    cv2.imshow("Object Detection", img_cv)
+            obj = sl.CustomBoxObjectData()
+            obj.bounding_box_2d = [
+                sl.PySL_Pixel(x1, y1),
+                sl.PySL_Pixel(x2, y1),
+                sl.PySL_Pixel(x2, y2),
+                sl.PySL_Pixel(x1, y2)
+            ]
+            obj.label = 0
+            obj.raw_label = 0
+            obj.probability = det["confidence"]
+            obj.unique_object_id = sl.generate_unique_id()
+            obj.is_grounded = True
+            custom_objects.append(obj)
 
-    if cv2.waitKey(1) & 0xFF == ord('q'):
-        break
+        zed.ingest_custom_box_objects(custom_objects)
 
-zed.disable_object_detection()
-zed.close()
-cv2.destroyAllWindows()
+        # Retrieve tracked objects
+        zed.retrieve_objects(objects, runtime_params)
+        for obj in objects.object_list:
+            if obj.tracking_state == sl.OBJECT_TRACKING_STATE.OK:
+                pos = obj.position
+                x, y, z = pos.get()
+                label = f"ID:{obj.id} X:{x:.2f} Y:{y:.2f} Z:{z:.2f}m"
+                print(label)
+
+                # Draw box
+                tl = obj.bounding_box_2d[0]
+                br = obj.bounding_box_2d[2]
+                cv2.rectangle(image_disp, (int(tl[0]), int(tl[1])), (int(br[0]), int(br[1])), (0, 255, 0), 2)
+                cv2.putText(image_disp, label, (int(tl[0]), int(tl[1] - 10)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 255), 2)
+
+        cv2.imshow("ZED Ball Tracking", image_disp)
+        key = cv2.waitKey(1)
+        if key == ord('q'):
+            break
+
+    zed.disable_object_detection()
+    zed.close()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    main()
