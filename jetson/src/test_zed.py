@@ -162,7 +162,7 @@ class Ball3DTracker:
         
         if roi_points is None or len(roi_points) < self.min_points:
             # More gradual confidence decay
-            self.confidence *= 0.95  # Slower decay
+            self.confidence = max(0.0, self.confidence - 0.02)
             print(f"[3DTracker] Insufficient ROI points: {len(roi_points) if roi_points is not None else 0}/{self.min_points}")
             if self.confidence < 0.2:  # Lower threshold before giving up
                 self.tracking = False
@@ -197,7 +197,7 @@ class Ball3DTracker:
             self.position_history.pop(0)
         
         # More aggressive confidence boost when tracking well
-        self.confidence = min(1.0, self.confidence + 0.15)
+        self.confidence = min(1.0, self.confidence + 0.05)
         
         return new_2d_pos, new_3d_pos
     
@@ -298,7 +298,7 @@ def grab_zed_frame(zed):
     
     # Fix potential format issues - ensure proper BGR format
     if bgr is not None:
-        bgr = np.ascontiguousarray(bgr)  # Ensure contiguous memory layout
+        bgr = np.ascontiguousarray(bgr.copy())  # Ensure contiguous memory layout
         if len(bgr.shape) == 3 and bgr.shape[2] == 4:  # If BGRA, convert to BGR
             bgr = bgr[:, :, :3]
     
@@ -378,7 +378,7 @@ def main():
     
     # Initialize 3D ball tracker with more forgiving parameters
     ball_tracker = Ball3DTracker(
-        roi_size=200,          # Larger 200mm ROI cube
+        roi_size=300,          # Larger 200mm ROI cube
         depth_threshold=40,    # More lenient 40mm depth clustering
         min_points=8,          # Reduced to 8+ points for detection
         max_velocity=300       # Higher max 300mm/frame velocity
