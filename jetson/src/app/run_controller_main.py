@@ -58,12 +58,12 @@ def main(tracker: TrackerService,
         while not stop_event.is_set():
             loop_start = time.time()
 
-            frame = tracker.get_stable_frame()
-            if frame is None:
+            # Check if tracker has frames available - if not, short sleep and continue
+            if tracker.get_stable_frame() is None:
                 time.sleep(0.005)  # Reduced from 0.015 to avoid blocking YOLO
                 continue
 
-            image_controller.frame = frame#.copy()
+            # Frame is now handled by ImageSenderThread - no need to assign here
             ball_pos = tracker.get_ball_position()
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)

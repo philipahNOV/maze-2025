@@ -13,12 +13,15 @@ class BallTracker:
         self.tracking_config = tracking_config or {}
         self.running = False
         self.initialized = False
-        self.frame_queue = deque(maxlen=1)
+        self.frame_queue = deque(maxlen=3)
         self.latest_bgr_frame = None
         self.ball_position = None
         self.objects = sl.Objects()
         self.object_runtime_params = sl.CustomObjectDetectionRuntimeParameters()
         self.zed_od_initialized = False
+        self.timing_print_counter = 0  # Add counter to reduce print frequency
+        self._normalization_array = None  # Pre-allocated for efficiency
+        self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)  # Pre-allocated bounding box buffer
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -38,13 +41,14 @@ class BallTracker:
             rgb, bgr = self.camera.grab_frame()
             if rgb is not None and bgr is not None:
                 self.frame_queue.append((rgb, bgr))
-            elapsed = time.time() - start
-            if elapsed < 1 / 60:
-                time.sleep(1 / 60 - elapsed)
+            TARGET_FPS = 60
+            loop_duration = time.time() - start
+            sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
+            time.sleep(sleep_time)
 
     def consumer_loop(self):
         while self.running:
-            loop_start = time.time()
+            start = time.time()
             if not self.frame_queue:
                 time.sleep(0.001)
                 continue
@@ -63,7 +67,16 @@ class BallTracker:
                     continue
 
                 h, w = rgb.shape[:2]
-                xywh = box.xywh[0].cpu().numpy() / np.array([w, h, w, h])
+                # Pre-allocate normalization array for efficiency
+                if self._normalization_array is None or self._normalization_array.shape != (4,):
+                    self._normalization_array = np.array([w, h, w, h], dtype=np.float32)
+                else:
+                    self._normalization_array[0] = w
+                    self._normalization_array[1] = h
+                    self._normalization_array[2] = w
+                    self._normalization_array[3] = h
+                
+                xywh = box.xywh[0].cpu().numpy() / self._normalization_array
                 x_center, y_center, width, height = xywh
                 cx, cy = int(x_center * w), int(y_center * h)
                 self.ball_position = (cx, cy)
@@ -72,34 +85,45 @@ class BallTracker:
                 x_max = x_center + width / 2
                 y_min = y_center - height / 2
                 y_max = y_center + height / 2
-                bounding_box_2d = np.array([
-                    [x_min, y_min],
-                    [x_max, y_min],
-                    [x_max, y_max],
-                    [x_min, y_max]
-                ], dtype=np.float32)
+                
+                # Use pre-allocated buffer to avoid repeated numpy array creation
+                self._bbox_buffer[0, 0] = x_min
+                self._bbox_buffer[0, 1] = y_min
+                self._bbox_buffer[1, 0] = x_max
+                self._bbox_buffer[1, 1] = y_min
+                self._bbox_buffer[2, 0] = x_max
+                self._bbox_buffer[2, 1] = y_max
+                self._bbox_buffer[3, 0] = x_min
+                self._bbox_buffer[3, 1] = y_max
 
                 obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = bounding_box_2d
+                obj.bounding_box_2d = self._bbox_buffer.copy()  # ZED needs its own copy
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
                 custom_boxes.append(obj)
 
             post_time = (time.time() - post_start) * 1000
-
             ingest_start = time.time()
-            if custom_boxes and self.zed_od_initialized:
+            self.frame_counter = 0
+            if custom_boxes and self.zed_od_initialized and self.frame_counter % 3 == 0:
                 self.camera.zed.ingest_custom_box_objects(custom_boxes)
                 self.camera.zed.retrieve_custom_objects(self.objects, self.object_runtime_params)
+            self.frame_counter += 1
             ingest_time = (time.time() - ingest_start) * 1000
 
-            total_loop_time = (time.time() - loop_start) * 1000
-            print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
+            total_loop_time = (time.time() - start) * 1000
+            
+            # Only print timing every 60 frames (1 second at 60fps) to reduce I/O overhead
+            self.timing_print_counter += 1
+            if self.timing_print_counter >= 60:
+                print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
+                self.timing_print_counter = 0
 
-            elapsed = time.time() - loop_start
-            if elapsed < 1 / 60:
-                time.sleep(1 / 60 - elapsed)
+            TARGET_FPS = 60
+            loop_duration = time.time() - start
+            sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
+            time.sleep(sleep_time)
 
     def start(self):
         self.running = True
