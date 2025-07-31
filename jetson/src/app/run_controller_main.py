@@ -60,10 +60,10 @@ def main(tracker: TrackerService,
 
             frame = tracker.get_stable_frame()
             if frame is None:
-                time.sleep(0.015)
+                time.sleep(0.005)  # Reduced from 0.015 to avoid blocking YOLO
                 continue
 
-            image_controller.frame = frame.copy()
+            image_controller.frame = frame#.copy()
             ball_pos = tracker.get_ball_position()
             if ball_pos is not None:
                 ball_pos = smoother.update(ball_pos)

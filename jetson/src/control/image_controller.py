@@ -35,6 +35,7 @@ class ImageController:
 
         self.frame = None
         self.cropped_frame = None
+        self.pending_frame = None  # For async MQTT processing
         self.last_sent_frame_time = time.time()
         self.frame_send_hz = 5  # Number of frames to send per second
         self.current_path = None  # Holds the active path
@@ -110,16 +111,23 @@ class ImageController:
             return
 
         if time.time() > self.last_sent_frame_time + 1 / self.frame_send_hz:
+            # Just store the frame for async processing
+            self.pending_frame = self.cropped_frame.copy()
+            self.last_sent_frame_time = time.time()
+
+    def _async_encode_and_send(self, mqtt_client: MQTTClientJetson):
+        """Async method to encode and send frames - should run in separate thread"""
+        if hasattr(self, 'pending_frame') and self.pending_frame is not None:
             scale = 0.5
-            height, width = self.cropped_frame.shape[:2]
+            height, width = self.pending_frame.shape[:2]
             new_size = (int(width * scale), int(height * scale))
 
-            resized = cv2.resize(self.cropped_frame, new_size, interpolation=cv2.INTER_AREA)
+            resized = cv2.resize(self.pending_frame, new_size, interpolation=cv2.INTER_AREA)
             _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
             jpg_as_text = base64.b64encode(buffer).decode('utf-8')
 
             mqtt_client.client.publish("pi/camera", jpg_as_text)
-            self.last_sent_frame_time = time.time()
+            self.pending_frame = None
 
     def update(self, ballPos, pathFollower: PathFollower = None, mqtt_client: MQTTClientJetson = None, path=None):
         if pathFollower is not None:
@@ -156,13 +164,15 @@ class ImageSenderThread(threading.Thread):
         while self.running and (self.stop_event is None or not self.stop_event.is_set()):
             frame = self.tracker_service.get_stable_frame()
             if frame is not None:
-                self.image_controller.frame = frame.copy()
+                self.image_controller.frame = frame#.copy()
                 self.image_controller.update(
                     ballPos=self.tracker_service.get_ball_position() if self.path_follower is not None else None,
                     pathFollower=self.path_follower,
                     mqtt_client=self.mqtt_client,
                     path=self.path
                 )
+                # Do async encoding and sending to avoid blocking
+                self.image_controller._async_encode_and_send(self.mqtt_client)
             time.sleep(self.sleep_interval)
 
     def stop(self):
