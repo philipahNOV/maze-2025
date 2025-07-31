@@ -2,21 +2,9 @@ import threading
 import time
 import numpy as np
 import cv2
-from queue import Queue
+from collections import deque
 from tracking.model_loader import YOLOModel
 import pyzed.sl as sl
-
-def xywh2abcd(xywh, im_shape):
-    output = np.zeros((4, 2))
-    x_min = (xywh[0] - 0.5 * xywh[2])
-    x_max = (xywh[0] + 0.5 * xywh[2])
-    y_min = (xywh[1] - 0.5 * xywh[3])
-    y_max = (xywh[1] + 0.5 * xywh[3])
-    output[0] = [x_min, y_min]
-    output[1] = [x_max, y_min]
-    output[2] = [x_max, y_max]
-    output[3] = [x_min, y_max]
-    return output
 
 class BallTracker:
     def __init__(self, camera=None, tracking_config=None, model_path="v8-291.engine"):
@@ -25,7 +13,7 @@ class BallTracker:
         self.tracking_config = tracking_config or {}
         self.running = False
         self.initialized = False
-        self.frame_queue = Queue(maxsize=1)
+        self.frame_queue = deque(maxlen=1)
         self.latest_bgr_frame = None
         self.ball_position = None
         self.objects = sl.Objects()
@@ -49,20 +37,19 @@ class BallTracker:
             start = time.time()
             rgb, bgr = self.camera.grab_frame()
             if rgb is not None and bgr is not None:
-                if not self.frame_queue.full():
-                    self.frame_queue.put_nowait((rgb, bgr))
+                self.frame_queue.append((rgb, bgr))
             elapsed = time.time() - start
-            sleep_time = max(0, (1/60) - elapsed)
-            time.sleep(sleep_time)
+            if elapsed < 1 / 60:
+                time.sleep(1 / 60 - elapsed)
 
     def consumer_loop(self):
         while self.running:
             loop_start = time.time()
-            if self.frame_queue.empty():
+            if not self.frame_queue:
                 time.sleep(0.001)
                 continue
 
-            rgb, bgr = self.frame_queue.get()
+            rgb, bgr = self.frame_queue.popleft()
             self.latest_bgr_frame = bgr
 
             inference_start = time.time()
@@ -75,17 +62,25 @@ class BallTracker:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
 
-                xywh = box.xywh[0].cpu().numpy()
                 h, w = rgb.shape[:2]
-                x_center = xywh[0] / w
-                y_center = xywh[1] / h
-                width = xywh[2] / w
-                height = xywh[3] / h
-                cx, cy = int(xywh[0]), int(xywh[1])
+                xywh = box.xywh[0].cpu().numpy() / np.array([w, h, w, h])
+                x_center, y_center, width, height = xywh
+                cx, cy = int(x_center * w), int(y_center * h)
                 self.ball_position = (cx, cy)
 
+                x_min = x_center - width / 2
+                x_max = x_center + width / 2
+                y_min = y_center - height / 2
+                y_max = y_center + height / 2
+                bounding_box_2d = np.array([
+                    [x_min, y_min],
+                    [x_max, y_min],
+                    [x_max, y_max],
+                    [x_min, y_max]
+                ], dtype=np.float32)
+
                 obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = xywh2abcd([x_center, y_center, width, height], rgb.shape)
+                obj.bounding_box_2d = bounding_box_2d
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
@@ -102,8 +97,9 @@ class BallTracker:
             total_loop_time = (time.time() - loop_start) * 1000
             print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
 
-            sleep_time = max(0, (1/60) - (time.time() - loop_start))
-            time.sleep(sleep_time)
+            elapsed = time.time() - loop_start
+            if elapsed < 1 / 60:
+                time.sleep(1 / 60 - elapsed)
 
     def start(self):
         self.running = True
@@ -124,7 +120,7 @@ class BallTracker:
         return self.ball_position
 
     def get_frame(self):
-        return self.latest_bgr_frame.copy() if self.latest_bgr_frame is not None else None
+        return self.latest_bgr_frame if self.latest_bgr_frame is not None else None
 
     def get_tracked_objects(self):
         return self.objects.object_list
