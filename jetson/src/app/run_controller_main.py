@@ -35,9 +35,9 @@ def main(tracker: TrackerService,
         print("[INFO] Using standard path following.")
         pathFollower = path_following.PathFollower(path_array, controller, config)
 
-    # image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
-    # image_controller.set_new_path(path_array)
-    # image_thread.start()
+    image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
+    image_controller.set_new_path(path_array)
+    image_thread.start()
 
     controller.horizontal()
     escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
@@ -82,11 +82,11 @@ def main(tracker: TrackerService,
                         if controller.lookahead:
                             print("[INFO] Using lookahead path following.")
                             pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
-                            # image_thread.path_follower = pathFollower
+                            image_thread.path_follower = pathFollower
                         else:
                             print("[INFO] Using standard path following.")
                             pathFollower = path_following.PathFollower(path_array, controller, config)
-                            # image_thread.path_follower = pathFollower
+                            image_thread.path_follower = pathFollower
                     blinker = None
                     ball_not_found_timer = None
             else:
@@ -127,9 +127,9 @@ def main(tracker: TrackerService,
             blinker.stop()
             blinker = None
         controller.arduinoThread.send_speed(0, 0)
-        # if image_thread.is_alive():
-        #     image_thread.stop()
-        #     image_thread.join()
+        if image_thread.is_alive():
+            image_thread.stop()
+            image_thread.join()
         # if logger is not None:
         #     logger.stop()
         #     logger = None

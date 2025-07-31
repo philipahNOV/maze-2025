@@ -19,7 +19,6 @@ class BallTracker:
         self.objects = sl.Objects()
         self.object_runtime_params = sl.CustomObjectDetectionRuntimeParameters()
         self.zed_od_initialized = False
-        self.timing_print_counter = 0  # Add counter to reduce print frequency
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -96,12 +95,7 @@ class BallTracker:
             ingest_time = (time.time() - ingest_start) * 1000
 
             total_loop_time = (time.time() - loop_start) * 1000
-            
-            # Only print timing every 60 frames (1 second at 60fps) to reduce I/O overhead
-            self.timing_print_counter += 1
-            if self.timing_print_counter >= 60:
-                print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
-                self.timing_print_counter = 0
+            print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
 
             elapsed = time.time() - loop_start
             if elapsed < 1 / 60:
