@@ -50,7 +50,7 @@ class BallTracker:
         for box in results.boxes:
             if self.model.get_label(box.cls[0]) != "ball":
                 continue
-            self.hole_boxes.append(box.xyxy[0])  # store raw (x1, y1, x2, y2)
+            self.hole_boxes.append(box.xyxy.flatten())  # store raw (x1, y1, x2, y2)
 
         self.hole_mask_initialized = True
         print(f"[BallTracker] Initialized hole mask with {len(self.hole_boxes)} regions")
@@ -79,7 +79,7 @@ class BallTracker:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
 
-                if self._is_in_hole(box.xyxy[0]):
+                if self._is_in_hole(box.xyxy):
                     continue  # filtered out
 
                 h, w = rgb.shape[:2]
@@ -122,6 +122,7 @@ class BallTracker:
             time.sleep(max(0, (1 / 60) - (time.time() - start)))
 
     def _is_in_hole(self, box_xyxy):
+        box_xyxy = box_xyxy.flatten() if hasattr(box_xyxy, "flatten") else np.array(box_xyxy)
         bx1, by1, bx2, by2 = box_xyxy
         for hx1, hy1, hx2, hy2 in self.hole_boxes:
             iou = self._compute_iou((bx1, by1, bx2, by2), (hx1, hy1, hx2, hy2))
