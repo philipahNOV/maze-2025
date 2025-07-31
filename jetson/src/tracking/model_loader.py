@@ -131,51 +131,65 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.35):
-        # Expecting [1, num_preds, 6] -> (x1, y1, x2, y2, conf, cls)
-        if output.ndim == 3:
-            output = output[0]  # Remove batch dimension
+        """Process (1, 5, 8400) format into detections with xyxy, conf, cls"""
+        output = output.squeeze()  # (5, 8400)
 
-        if output.shape[-1] == 6:
-            # Already in [x1, y1, x2, y2, conf, cls] format
-            predictions = output[output[:, 4] >= conf_thres]
-        elif output.shape[-1] == 5:
-            print("[YOLOModel] ERROR: Output has no class index. Postprocess requires [x1,y1,x2,y2,conf,class]")
-            return self._empty_result()
-        else:
-            print(f"[YOLOModel] Unsupported output shape: {output.shape}")
+        if output.shape[0] != 5:
+            print(f"[YOLOModel] Unexpected number of channels in output: {output.shape[0]}")
             return self._empty_result()
 
-        if predictions.shape[0] == 0:
+        # Each row: [x_center, y_center, width, height, conf]
+        x_center, y_center, width, height, conf = output
+
+        # Filter by confidence threshold
+        mask = conf >= conf_thres
+        if not np.any(mask):
             return self._empty_result()
 
-        
-        # Convert from center-scaled 640x640 back to original shape 720x1280
+        x_center = x_center[mask]
+        y_center = y_center[mask]
+        width = width[mask]
+        height = height[mask]
+        conf = conf[mask]
+
+        # Compute bounding box corners
+        x1 = x_center - width / 2
+        y1 = y_center - height / 2
+        x2 = x_center + width / 2
+        y2 = y_center + height / 2
+
+        # Rescale from model input size (640x640) to original size (1280x720)
         scale_x = self.original_w / self.input_shape[0]  # 1280 / 640 = 2.0
         scale_y = self.original_h / self.input_shape[1]  # 720 / 640 = 1.125
 
-        predictions[:, 0] *= scale_x  # x1
-        predictions[:, 1] *= scale_y  # y1
-        predictions[:, 2] *= scale_x  # x2
-        predictions[:, 3] *= scale_y  # y2
+        x1 *= scale_x
+        x2 *= scale_x
+        y1 *= scale_y
+        y2 *= scale_y
 
+        # Since model is single-class, use class id = 0
+        cls = np.zeros_like(conf)
+
+        # Structure output into Box and Result classes
         class Box:
-            def __init__(self, box_array):
-                self.xyxy = box_array[:4]
-                self.conf = box_array[4:5]
-                self.cls = box_array[5:6]
-                self.xywh = np.array([  # Convert to center format
-                    (self.xyxy[0] + self.xyxy[2]) / 2,
-                    (self.xyxy[1] + self.xyxy[3]) / 2,
-                    self.xyxy[2] - self.xyxy[0],
-                    self.xyxy[3] - self.xyxy[1]
+            def __init__(self, x1, y1, x2, y2, conf, cls):
+                self.xyxy = np.array([x1, y1, x2, y2])
+                self.conf = np.array([conf])
+                self.cls = np.array([cls])
+                self.xywh = np.array([  # center-based format
+                    (x1 + x2) / 2,
+                    (y1 + y2) / 2,
+                    x2 - x1,
+                    y2 - y1
                 ]).reshape(1, 4)
 
         class Result:
             def __init__(self, boxes):
                 self.boxes = boxes
 
-        boxes = [Box(pred) for pred in predictions]
+        boxes = [Box(x1[i], y1[i], x2[i], y2[i], conf[i], cls[i]) for i in range(len(conf))]
         return Result(boxes)
+
 
     def get_label(self, cls_id):
         if self.engine_type == "tensorrt":
