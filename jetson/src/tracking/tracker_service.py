@@ -2,7 +2,7 @@ from tracking.camera_manager import CameraManager
 from tracking.ball_tracker_zed import BallTracker
 
 class TrackerService:
-    def __init__(self, model_path="v8-291.engine", tracking_config=None):
+    def __init__(self, model_path="new-v8-fp16.engine", tracking_config=None):
         self.camera = CameraManager()
         self.camera.init_camera()
         self.tracker = None

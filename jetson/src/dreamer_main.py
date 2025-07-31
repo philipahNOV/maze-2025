@@ -45,7 +45,7 @@ print(f"Target goal position: {goal_pos}")
 # Initialize Arduino connection
 try:
     arduino_connection = initialize_component(ArduinoConnection, "ArduinoConnection")
-    time.sleep(5)
+    time.sleep(2)  # Reduced from 5 seconds
 except Exception as e:
     print(f"Arduino initialization failed: {e}")
     exit(1)

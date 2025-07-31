@@ -33,7 +33,8 @@ def load_config():
 
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
-    time.sleep(5)
+    # Reduced sleep - Arduino should be ready faster, and other components can init in parallel
+    time.sleep(2)
 except Exception as e:
     print(e)
     exit(1)
@@ -48,7 +49,7 @@ tracker_service = TrackerService(
     tracking_config=tracking_config,
 )
 
-tracker_service.camera.init_camera()
+# Camera is already initialized in TrackerService constructor
 controller = position_controller.Controller(
     arduinoThread=arduino_thread,
     tracker=tracker_service,
@@ -69,6 +70,6 @@ mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
-    time.sleep(1)
+    time.sleep(0.1)  # Reduced from 1 second to 100ms for faster response
 
 print("Connected!")
