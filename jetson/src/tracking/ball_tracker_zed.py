@@ -67,24 +67,28 @@ class BallTracker:
                     continue
 
                 h, w = rgb.shape[:2]
-                # Pre-allocate normalization array for efficiency
-                if self._normalization_array is None or self._normalization_array.shape != (4,):
-                    self._normalization_array = np.array([w, h, w, h], dtype=np.float32)
-                else:
-                    self._normalization_array[0] = w
-                    self._normalization_array[1] = h
-                    self._normalization_array[2] = w
-                    self._normalization_array[3] = h
                 
-                xywh = box.xywh[0] / self._normalization_array
-                x_center, y_center, width, height = xywh
-                cx, cy = int(x_center * w), int(y_center * h)
+                # box.xywh[0] already contains pixel coordinates from our model
+                x_center, y_center, width, height = box.xywh[0]
+                cx, cy = int(x_center), int(y_center)
                 self.ball_position = (cx, cy)
+                
+                # Debug: Print coordinates to understand coordinate system
+                print(f"[DEBUG] Ball TensorRT coords: ({cx}, {cy})")
+                print(f"[DEBUG] Expected ranges - Full image: 1280x720")
+                print(f"[DEBUG] Expected ranges - Maze region: x[430-1085], y[27-682]")
+                print(f"[DEBUG] Expected ranges - Elevator center: (998, 588)")
 
-                x_min = x_center - width / 2
-                x_max = x_center + width / 2
-                y_min = y_center - height / 2
-                y_max = y_center + height / 2
+                # Convert to normalized coordinates for ZED object detection
+                x_center_norm = x_center / w
+                y_center_norm = y_center / h
+                width_norm = width / w
+                height_norm = height / h
+
+                x_min = x_center_norm - width_norm / 2
+                x_max = x_center_norm + width_norm / 2
+                y_min = y_center_norm - height_norm / 2
+                y_max = y_center_norm + height_norm / 2
                 
                 # Use pre-allocated buffer to avoid repeated numpy array creation
                 self._bbox_buffer[0, 0] = x_min
