@@ -5,7 +5,7 @@ from mqtt.mqtt_client import MQTTClientJetson
 from arduino_connection import ArduinoConnection
 from tracking.tracker_service import TrackerService
 import utils.utility_threads as utility_threads
-from control.image_controller import ImageController
+#from control.image_controller import ImageController
 from control.image_controller import ImageSenderThread
 from control.joystick_controller import JoystickController
 import control.position_controller as position_controller
@@ -47,7 +47,7 @@ class HMIController:
         self.ball_finder = None
         self.path = None
         self.path_lookahead = None
-        self.image_controller = ImageController(config)
+        #self.image_controller = ImageController(config)
         self.image_thread = None
         self.controller = position_controller.Controller(arduino_thread, tracking_service, config=config)
         self.controller_thread = None
