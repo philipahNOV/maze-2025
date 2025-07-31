@@ -14,8 +14,8 @@ camera:
   maze_offset_x: 430     # px
   maze_offset_y: 27      # px
   maze_image_scale: 0.87
-  elevator_center_x: 998
-  elevator_center_y: 588
+  elevator_center_x: 30
+  elevator_center_y: 20
   elevator_radius: 60    # px
   bottom_right: [1085, 682]
   bottom_left: [430, 682]
