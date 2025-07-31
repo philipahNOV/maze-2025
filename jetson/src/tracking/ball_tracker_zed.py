@@ -68,7 +68,6 @@ class BallTracker:
 
                 h, w = rgb.shape[:2]
                 
-                # box.xywh[0] already contains pixel coordinates from our model
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
                 self.ball_position = (cx, cy)

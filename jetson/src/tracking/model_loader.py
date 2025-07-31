@@ -55,10 +55,8 @@ class YOLOModel:
         self.stream = cuda.Stream()
 
     def _init_pytorch_fallback(self, model_path):
-        """Fallback to PyTorch YOLO if TensorRT fails"""
         from ultralytics import YOLO
         
-        # Try to load PyTorch version
         pt_path = model_path.replace(".engine", ".pt")
         try:
             self.model = YOLO(pt_path)
@@ -69,21 +67,21 @@ class YOLOModel:
             raise RuntimeError(f"[YOLOModel] Both TensorRT and PyTorch models failed: {e}")
 
     def __del__(self):
-        """Cleanup CUDA context"""
         if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
             self.cuda_ctx.pop()
             self.cuda_ctx = None
 
     def preprocess(self, image):
-        """Preprocess image for TensorRT inference"""
         if self.engine_type != "tensorrt":
-            return  # PyTorch handles preprocessing internally
-            
-        img = cv2.resize(image, self.input_shape)
+            return
+
+        input_w, input_h = self.input_shape  # self.input_shape = (640, 640)
+        img = cv2.resize(image, (input_w, input_h))  # OpenCV expects (width, height)
         img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
-        img = np.expand_dims(img, axis=0)  # Add batch dimension
+        img = np.expand_dims(img, axis=0)
         np.copyto(self.input_host, img.ravel())
+
 
     def predict(self, image, conf=0.35):
         if self.engine_type == "tensorrt":
@@ -141,24 +139,28 @@ class YOLOModel:
         detections = []
         preds = output[0] if len(output.shape) == 3 else output
 
-        img_h, img_w = self.original_h, self.original_w   # From original image
-        input_w, input_h = self.input_shape               # e.g. (640, 640)
+        orig_h, orig_w = self.original_h, self.original_w  # e.g., 720, 1280
+        input_w, input_h = self.input_shape  # e.g., (640, 640)
 
-        scale_x = img_w / input_w   # e.g. 1280 / 640 = 2.0
-        scale_y = img_h / input_h   # e.g. 720 / 640 = 1.125
+        # Compute proper scale factors to map back to original size
+        scale_x = orig_w / input_w  # 1280 / 640 = 2.0
+        scale_y = orig_h / input_h  # 720 / 640 = 1.125
+
+        print(f"[DEBUG] Scaling: scale_x = {scale_x}, scale_y = {scale_y}")
 
         for pred in preds:
             if len(pred) >= 5:
                 conf = pred[4]
                 if conf > conf_thres:
-                    x_c, y_c, w, h = pred[:4]
+                    x_c_raw, y_c_raw, w_raw, h_raw = pred[:4]
 
-                    # Rescale to original image size
-                    x_c *= scale_x
-                    y_c *= scale_y
-                    w *= scale_x
-                    h *= scale_y
+                    # Scale coordinates back to original image size
+                    x_c = x_c_raw * scale_x
+                    y_c = y_c_raw * scale_y
+                    w = w_raw * scale_x
+                    h = h_raw * scale_y
 
+                    # Maze bounds check (optional)
                     if not (430 <= x_c <= 1085 and 27 <= y_c <= 682):
                         print(f"[DEBUG] ✗ Outside maze bounds: x={x_c:.1f}, y={y_c:.1f}")
                     else:
@@ -168,6 +170,7 @@ class YOLOModel:
                     maze_y = y_c - 27
                     print(f"[DEBUG] Maze-relative coords: x={maze_x:.1f}, y={maze_y:.1f}")
 
+                    # Convert center → corners
                     x1 = x_c - w / 2
                     y1 = y_c - h / 2
                     x2 = x_c + w / 2
@@ -180,6 +183,7 @@ class YOLOModel:
                         "class_id": 0
                     })
 
+        # Wrap into Result class to mimic PyTorch API
         class Result:
             def __init__(self, detections):
                 self.boxes = []
@@ -192,6 +196,7 @@ class YOLOModel:
                     self.boxes.append(box)
 
         return Result(detections)
+
 
 
     def get_label(self, cls_id):
