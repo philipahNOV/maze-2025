@@ -6,7 +6,6 @@ import time
 import base64
 from mqtt.mqtt_client import MQTTClientJetson
 import threading
-from concurrent.futures import ThreadPoolExecutor
 from control.astar.draw_path import draw_path
 
 class ImageController:
@@ -42,7 +41,6 @@ class ImageController:
         self.current_path = None  # Holds the active path
         self.new_path_available = False  # Flag to track if we need to update the drawing
         self.maze_angle = config['camera'].get('maze_relative_angle', 1.0)  # Angle of the maze relative to the camera frame
-        self.executor = ThreadPoolExecutor(max_workers=2)
 
     def draw_waypoints(self, pathFollower: PathFollower):
         """Draw path waypoints on the current frame with color coding."""
@@ -118,19 +116,18 @@ class ImageController:
             self.last_sent_frame_time = time.time()
 
     def _async_encode_and_send(self, mqtt_client: MQTTClientJetson):
-        if self.pending_frame is not None:
-            frame_copy = self.pending_frame.copy()
-            self.pending_frame = None
-            self.executor.submit(self._encode_and_publish, frame_copy, mqtt_client)
+        """Async method to encode and send frames - should run in separate thread"""
+        if hasattr(self, 'pending_frame') and self.pending_frame is not None:
+            scale = 0.5
+            height, width = self.pending_frame.shape[:2]
+            new_size = (int(width * scale), int(height * scale))
 
-    def _encode_and_publish(self, frame, mqtt_client: MQTTClientJetson):
-        scale = 0.5
-        height, width = frame.shape[:2]
-        new_size = (int(width * scale), int(height * scale))
-        resized = cv2.resize(frame, new_size, interpolation=cv2.INTER_AREA)
-        _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
-        jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-        mqtt_client.client.publish("pi/camera", jpg_as_text)
+            resized = cv2.resize(self.pending_frame, new_size, interpolation=cv2.INTER_AREA)
+            _, buffer = cv2.imencode('.jpg', resized, [int(cv2.IMWRITE_JPEG_QUALITY), 60])
+            jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+
+            mqtt_client.client.publish("pi/camera", jpg_as_text)
+            self.pending_frame = None
 
     def update(self, ballPos, pathFollower: PathFollower = None, mqtt_client: MQTTClientJetson = None, path=None):
         if pathFollower is not None:
