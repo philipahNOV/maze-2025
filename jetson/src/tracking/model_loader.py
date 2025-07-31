@@ -98,6 +98,7 @@ class YOLOModel:
             
             # Store original image dimensions for coordinate scaling
             self.original_h, self.original_w = image.shape[:2]
+            print(f"[DEBUG] TensorRT input image dimensions: {self.original_w}x{self.original_h}")
             
             self.preprocess(image)
             cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
@@ -147,19 +148,39 @@ class YOLOModel:
         
         # Use original image dimensions for coordinate conversion (not input_shape)
         img_h, img_w = self.original_h, self.original_w
+        input_h, input_w = self.input_shape[1], self.input_shape[0]  # Model input size (640x640)
+        
+        print(f"[DEBUG] Original image: {img_w}x{img_h}, Model input: {input_w}x{input_h}, Output shape: {output.shape}")
 
         for pred in preds:
             if len(pred) >= 5:
                 conf = pred[4]
                 if conf > conf_thres:
-                    # TensorRT output is normalized, convert to pixel coordinates relative to original image
-                    x_center_norm, y_center_norm, w_norm, h_norm = pred[0:4]
+                    # TensorRT output coordinates
+                    x_center_raw, y_center_raw, w_raw, h_raw = pred[0:4]
                     
-                    # Convert to pixel coordinates relative to ORIGINAL image (not 640x640)
-                    x_center = x_center_norm * img_w
-                    y_center = y_center_norm * img_h
-                    width = w_norm * img_w
-                    height = h_norm * img_h
+                    print(f"[DEBUG] Raw TensorRT output: x={x_center_raw:.3f}, y={y_center_raw:.3f}, w={w_raw:.3f}, h={h_raw:.3f}")
+                    
+                    # Most TensorRT models output normalized coordinates (0-1)
+                    # Convert from normalized to pixel coordinates relative to original image
+                    if x_center_raw <= 1.0 and y_center_raw <= 1.0:
+                        # Normalized coordinates (0-1) - scale to original image size
+                        x_center = x_center_raw * img_w
+                        y_center = y_center_raw * img_h
+                        width = w_raw * img_w
+                        height = h_raw * img_h
+                        print(f"[DEBUG] Scaled from normalized to original image size")
+                    else:
+                        # Coordinates are in model input size (640x640) - scale to original image
+                        scale_x = img_w / input_w
+                        scale_y = img_h / input_h
+                        x_center = x_center_raw * scale_x
+                        y_center = y_center_raw * scale_y
+                        width = w_raw * scale_x
+                        height = h_raw * scale_y
+                        print(f"[DEBUG] Scaled from model input size to original image size")
+                    
+                    print(f"[DEBUG] Final coordinates: x={x_center:.1f}, y={y_center:.1f}, w={width:.1f}, h={height:.1f}")
                     
                     x1 = x_center - width / 2
                     y1 = y_center - height / 2
