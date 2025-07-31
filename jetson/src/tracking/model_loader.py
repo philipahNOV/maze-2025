@@ -24,6 +24,7 @@ class YOLOModel:
         """Initialize TensorRT engine with proper error handling"""
         self.input_shape = input_shape
         self.names = ['ball']
+        self.original_h, self.original_w = 640, 640  # Default values
         
         # Initialize CUDA context properly
         cuda.init()
@@ -95,6 +96,9 @@ class YOLOModel:
             # Ensure proper CUDA context
             self.cuda_ctx.push()
             
+            # Store original image dimensions for coordinate scaling
+            self.original_h, self.original_w = image.shape[:2]
+            
             self.preprocess(image)
             cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
             self.context.execute_async_v2(
@@ -140,19 +144,31 @@ class YOLOModel:
     def postprocess(self, output, conf_thres=0.35):
         detections = []
         preds = output[0] if len(output.shape) == 3 else output
+        
+        # Use original image dimensions for coordinate conversion (not input_shape)
+        img_h, img_w = self.original_h, self.original_w
 
         for pred in preds:
             if len(pred) >= 5:
                 conf = pred[4]
                 if conf > conf_thres:
-                    x, y, w, h = pred[0:4]
-                    x1 = x - w / 2
-                    y1 = y - h / 2
-                    x2 = x + w / 2
-                    y2 = y + h / 2
+                    # TensorRT output is normalized, convert to pixel coordinates relative to original image
+                    x_center_norm, y_center_norm, w_norm, h_norm = pred[0:4]
+                    
+                    # Convert to pixel coordinates relative to ORIGINAL image (not 640x640)
+                    x_center = x_center_norm * img_w
+                    y_center = y_center_norm * img_h
+                    width = w_norm * img_w
+                    height = h_norm * img_h
+                    
+                    x1 = x_center - width / 2
+                    y1 = y_center - height / 2
+                    x2 = x_center + width / 2
+                    y2 = y_center + height / 2
 
                     detections.append({
-                        "bbox": [x1, y1, x2, y2],
+                        "bbox_xyxy": [x1, y1, x2, y2],
+                        "bbox_xywh": [x_center, y_center, width, height],
                         "confidence": float(conf),
                         "class_id": 0
                     })
@@ -162,7 +178,9 @@ class YOLOModel:
                 self.boxes = []
                 for det in detections:
                     box = type('Box', (), {})()
-                    box.xyxy = np.array([[*det["bbox"]]])
+                    # Add both formats for compatibility
+                    box.xyxy = np.array([[*det["bbox_xyxy"]]])
+                    box.xywh = np.array([[*det["bbox_xywh"]]])  # Now in pixel coordinates relative to original image
                     box.conf = np.array([det["confidence"]])
                     box.cls = np.array([det["class_id"]])
                     self.boxes.append(box)
