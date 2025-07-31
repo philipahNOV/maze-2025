@@ -101,7 +101,7 @@ class YOLOModel:
             cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
             self.stream.synchronize()
             raw_output = self.output_host.reshape(self.output_shape)
-
+            print(f"[YOLOModel] Raw TensorRT output shape: {raw_output.shape}")
             return self.postprocess(raw_output, conf)
         except Exception as e:
             print(f"[YOLOModel] TensorRT inference failed: {e}")
@@ -131,12 +131,23 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.35):
-        predictions = output[0] if isinstance(output, (list, tuple)) else output  # [N, 6] shape (x1, y1, x2, y2, conf, class)
-        
-        # Filter by confidence threshold
-        predictions = predictions[predictions[:, 4] >= conf_thres]
+        # Expecting [1, num_preds, 6] -> (x1, y1, x2, y2, conf, cls)
+        if output.ndim == 3:
+            output = output[0]  # Remove batch dimension
+
+        if output.shape[-1] == 6:
+            # Already in [x1, y1, x2, y2, conf, cls] format
+            predictions = output[output[:, 4] >= conf_thres]
+        elif output.shape[-1] == 5:
+            print("[YOLOModel] ERROR: Output has no class index. Postprocess requires [x1,y1,x2,y2,conf,class]")
+            return self._empty_result()
+        else:
+            print(f"[YOLOModel] Unsupported output shape: {output.shape}")
+            return self._empty_result()
+
         if predictions.shape[0] == 0:
             return self._empty_result()
+
         
         # Convert from center-scaled 640x640 back to original shape 720x1280
         scale_x = self.original_w / self.input_shape[0]  # 1280 / 640 = 2.0
