@@ -24,13 +24,11 @@ class YOLOModel:
         """Initialize TensorRT engine with proper error handling"""
         self.input_shape = input_shape
         self.names = ['ball']
-        self.original_h, self.original_w = 640, 640  # Default values
+        self.original_h, self.original_w = 640, 640
         
-        # Initialize CUDA context properly
         cuda.init()
         self.cuda_ctx = cuda.Device(0).make_context()
         
-        # TensorRT initialization
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
 
@@ -39,15 +37,11 @@ class YOLOModel:
         self.engine = self.runtime.deserialize_cuda_engine(engine_data)
         self.context = self.engine.create_execution_context()
 
-        # Bindings
         self.input_binding_idx = self.engine.get_binding_index("images")
         self.output_binding_idx = self.engine.get_binding_index(self.engine[1])
         self.output_shape = self.engine.get_binding_shape(self.output_binding_idx)
-
         self.input_dtype = trt.nptype(self.engine.get_binding_dtype(self.input_binding_idx))
         self.output_dtype = trt.nptype(self.engine.get_binding_dtype(self.output_binding_idx))
-
-        # Allocate memory with proper context
         self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float32)
         self.output_host = cuda.pagelocked_empty(trt.volume(self.output_shape), dtype=self.output_dtype)
         self.input_device = cuda.mem_alloc(self.input_host.nbytes)
@@ -75,12 +69,9 @@ class YOLOModel:
         if self.engine_type != "tensorrt":
             return
 
-        print("[PREPROCESS] original image shape:", image.shape)  # Expect (720, 1280, 3)
+        # input shape is (720, 1280, 3)
         input_w, input_h = self.input_shape
-        print("[PREPROCESS] resizing to:", (input_w, input_h))    # Must be (640, 640)
-
-        img = cv2.resize(image, (input_w, input_h))  # Make sure this line exists
-
+        img = cv2.resize(image, (input_w, input_h))  # (640, 640)
         img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
         img = np.expand_dims(img, axis=0)
@@ -140,75 +131,40 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.35):
-        detections = []
-        preds = output[0] if len(output.shape) == 3 else output
+        predictions = output[0] if isinstance(output, (list, tuple)) else output  # [N, 6] shape (x1, y1, x2, y2, conf, class)
+        
+        # Filter by confidence threshold
+        predictions = predictions[predictions[:, 4] >= conf_thres]
+        if predictions.shape[0] == 0:
+            return self._empty_result()
+        
+        # Convert from center-scaled 640x640 back to original shape 720x1280
+        scale_x = self.original_w / self.input_shape[0]  # 1280 / 640 = 2.0
+        scale_y = self.original_h / self.input_shape[1]  # 720 / 640 = 1.125
 
-        orig_h, orig_w = self.original_h, self.original_w  # e.g., 720, 1280
-        input_w, input_h = self.input_shape  # e.g., (640, 640)
+        predictions[:, 0] *= scale_x  # x1
+        predictions[:, 1] *= scale_y  # y1
+        predictions[:, 2] *= scale_x  # x2
+        predictions[:, 3] *= scale_y  # y2
 
-        # Compute proper scale factors to map back to original size
-        scale_x = orig_w / input_w  # 1280 / 640 = 2.0
-        scale_y = orig_h / input_h  # 720 / 640 = 1.125
+        class Box:
+            def __init__(self, box_array):
+                self.xyxy = box_array[:4]
+                self.conf = box_array[4:5]
+                self.cls = box_array[5:6]
+                self.xywh = np.array([  # Convert to center format
+                    (self.xyxy[0] + self.xyxy[2]) / 2,
+                    (self.xyxy[1] + self.xyxy[3]) / 2,
+                    self.xyxy[2] - self.xyxy[0],
+                    self.xyxy[3] - self.xyxy[1]
+                ]).reshape(1, 4)
 
-        print(f"[POSTPROCESS] original_w = {self.original_w}, original_h = {self.original_h}")
-        print(f"[POSTPROCESS] input_shape = {self.input_shape}")
-        print(f"[POSTPROCESS] scale_x = {scale_x}, scale_y = {scale_y}")
-
-
-        for pred in preds:
-            if len(pred) >= 5:
-                conf = pred[4]
-                if conf > conf_thres:
-                    x_c_raw, y_c_raw, w_raw, h_raw = pred[:4]
-
-                    # Scale coordinates back to original image size
-                    x_c = x_c_raw * scale_x
-                    y_c = y_c_raw * scale_y
-                    w = w_raw * scale_x
-                    h = h_raw * scale_y
-
-                    # Maze bounds check (optional)
-                    if not (430 <= x_c <= 1085 and 27 <= y_c <= 682):
-                        print(f"[DEBUG] ✗ Outside maze bounds: x={x_c:.1f}, y={y_c:.1f}")
-                    else:
-                        print(f"[DEBUG] ✓ Inside maze bounds")
-
-                    maze_x = x_c - 430
-                    maze_y = y_c - 27
-                    print(f"[DEBUG] Maze-relative coords: x={maze_x:.1f}, y={maze_y:.1f}")
-
-                    # Convert center → corners
-                    x1 = x_c - w / 2
-                    y1 = y_c - h / 2
-                    x2 = x_c + w / 2
-                    y2 = y_c + h / 2
-
-                    print(f"[POSTPROCESS] Detection: model coords = ({pred[0]:.2f}, {pred[1]:.2f})")
-                    print(f"[POSTPROCESS] Scaled coords = ({x_c:.2f}, {y_c:.2f})")
-
-
-                    detections.append({
-                        "bbox_xyxy": [x1, y1, x2, y2],
-                        "bbox_xywh": [x_c, y_c, w, h],
-                        "confidence": float(conf),
-                        "class_id": 0
-                    })
-
-        # Wrap into Result class to mimic PyTorch API
         class Result:
-            def __init__(self, detections):
-                self.boxes = []
-                for det in detections:
-                    box = type('Box', (), {})()
-                    box.xyxy = np.array([[*det["bbox_xyxy"]]])
-                    box.xywh = np.array([[*det["bbox_xywh"]]])
-                    box.conf = np.array([det["confidence"]])
-                    box.cls = np.array([det["class_id"]])
-                    self.boxes.append(box)
+            def __init__(self, boxes):
+                self.boxes = boxes
 
-        return Result(detections)
-
-
+        boxes = [Box(pred) for pred in predictions]
+        return Result(boxes)
 
     def get_label(self, cls_id):
         if self.engine_type == "tensorrt":
