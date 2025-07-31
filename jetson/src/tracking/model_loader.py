@@ -43,7 +43,6 @@ class YOLOModel:
         try:
             with torch.no_grad():
                 if self.is_trt:
-                    # Explicit device for TensorRT
                     results = self.model.predict(
                         source=image,
                         conf=conf,
@@ -52,7 +51,6 @@ class YOLOModel:
                         verbose=False
                     )
                 else:
-                    # PyTorch fallback
                     results = self.model.predict(
                         source=image,
                         conf=conf,

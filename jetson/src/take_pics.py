@@ -84,8 +84,8 @@ def grab_zed_frame(zed):
     mat = sl.Mat()
     if zed.grab() != sl.ERROR_CODE.SUCCESS:
         return None, None
-    # 1) grab 3-channel BGR
-    zed.retrieve_image(mat, sl.VIEW.LEFT, sl.MEM.CPU, sl.MAT_TYPE.U8_C3)
+    # Updated ZED SDK syntax - remove MAT_TYPE parameter
+    zed.retrieve_image(mat, sl.VIEW.LEFT)
     bgr = mat.get_data()
     # 2) make an RGB copy if you need it elsewhere
     rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
