@@ -7,7 +7,7 @@ from tracking.model_loader import YOLOModel
 import pyzed.sl as sl
 
 class BallTracker:
-    def __init__(self, camera=None, tracking_config=None, model_path="new-v8.engine"):
+    def __init__(self, camera=None, tracking_config=None, model_path="new-v8-fp16.engine"):
         self.model = YOLOModel(model_path)
         self.camera = camera
         self.tracking_config = tracking_config or {}
