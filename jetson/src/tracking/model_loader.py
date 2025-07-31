@@ -140,67 +140,59 @@ class YOLOModel:
     def postprocess(self, output, conf_thres=0.35):
         detections = []
         preds = output[0] if len(output.shape) == 3 else output
-        
-        # Use original image dimensions for coordinate conversion (not input_shape)
-        img_h, img_w = self.original_h, self.original_w
-        input_h, input_w = self.input_shape[1], self.input_shape[0]  # Model input size (640x640)
-        
-        print(f"[DEBUG] TensorRT postprocess - Image: {img_w}x{img_h}, Model input: {input_w}x{input_h}")
+
+        img_h, img_w = self.original_h, self.original_w   # From original image
+        input_w, input_h = self.input_shape               # e.g. (640, 640)
+
+        scale_x = img_w / input_w   # e.g. 1280 / 640 = 2.0
+        scale_y = img_h / input_h   # e.g. 720 / 640 = 1.125
 
         for pred in preds:
             if len(pred) >= 5:
                 conf = pred[4]
                 if conf > conf_thres:
-                    # TensorRT output coordinates
-                    x_center_raw, y_center_raw, w_raw, h_raw = pred[0:4]
+                    x_c, y_c, w, h = pred[:4]
 
-                    # Step 1: From model output (640x640) → original image (1280x720)
-                    scale_x = img_w / self.input_shape[0]  # 1280 / 640 = 2.0
-                    scale_y = img_h / self.input_shape[1]  # 720 / 640 = 1.125
+                    # Rescale to original image size
+                    x_c *= scale_x
+                    y_c *= scale_y
+                    w *= scale_x
+                    h *= scale_y
 
-                    x_center_img = x_center_raw * scale_x
-                    y_center_img = y_center_raw * scale_y
-                    width_img = w_raw * scale_x
-                    height_img = h_raw * scale_y
-
-                    # Step 2: Maze boundary check
-                    if not (430 <= x_center_img <= 1085 and 27 <= y_center_img <= 682):
-                        print(f"[DEBUG] ✗ Outside maze bounds: x={x_center_img:.1f}, y={y_center_img:.1f}")
+                    if not (430 <= x_c <= 1085 and 27 <= y_c <= 682):
+                        print(f"[DEBUG] ✗ Outside maze bounds: x={x_c:.1f}, y={y_c:.1f}")
                     else:
                         print(f"[DEBUG] ✓ Inside maze bounds")
 
-                    # Step 3: Optional maze-relative position (for logic use, not bounding boxes)
-                    maze_x = x_center_img - 430
-                    maze_y = y_center_img - 27
+                    maze_x = x_c - 430
+                    maze_y = y_c - 27
                     print(f"[DEBUG] Maze-relative coords: x={maze_x:.1f}, y={maze_y:.1f}")
 
-                    # Step 4: Bounding box corners in image coordinates
-                    x1 = x_center_img - width_img / 2
-                    y1 = y_center_img - height_img / 2
-                    x2 = x_center_img + width_img / 2
-                    y2 = y_center_img + height_img / 2
+                    x1 = x_c - w / 2
+                    y1 = y_c - h / 2
+                    x2 = x_c + w / 2
+                    y2 = y_c + h / 2
 
                     detections.append({
                         "bbox_xyxy": [x1, y1, x2, y2],
-                        "bbox_xywh": [x_center_img, y_center_img, width_img, height_img],
+                        "bbox_xywh": [x_c, y_c, w, h],
                         "confidence": float(conf),
                         "class_id": 0
                     })
-
 
         class Result:
             def __init__(self, detections):
                 self.boxes = []
                 for det in detections:
                     box = type('Box', (), {})()
-                    # Add both formats for compatibility
                     box.xyxy = np.array([[*det["bbox_xyxy"]]])
-                    box.xywh = np.array([[*det["bbox_xywh"]]])  # Now in pixel coordinates relative to original image
+                    box.xywh = np.array([[*det["bbox_xywh"]]])
                     box.conf = np.array([det["confidence"]])
                     box.cls = np.array([det["class_id"]])
                     self.boxes.append(box)
 
         return Result(detections)
+
 
     def get_label(self, cls_id):
         if self.engine_type == "tensorrt":
