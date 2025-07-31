@@ -85,10 +85,10 @@ class ImageController:
             cv2.circle(self.frame, point, 5, (255, 0, 0), -1)
 
     def draw_ball(self, ball_pos):
-        """Draw the ball position on the frame."""
-        if self.frame is None or ball_pos is None:
-            return
-        cv2.circle(self.frame, ball_pos, 8, (255, 165, 0), -1)
+        # if self.frame is None or ball_pos is None:
+        #     return
+        # cv2.circle(self.frame, ball_pos, 8, (255, 165, 0), -1)
+        pass
 
     def crop_and_rotate_frame(self):
         if self.frame is None:

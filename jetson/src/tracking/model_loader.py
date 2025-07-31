@@ -7,21 +7,15 @@ import torch
 
 class YOLOModel:
     def __init__(self, model_path="new-v8-fp16.engine", input_shape=(640, 640)):
-        print(f"[YOLOModel] Loading TensorRT engine from: {model_path}")
-        
-        # Try TensorRT first, fallback to PyTorch if it fails
         try:
             self._init_tensorrt(model_path, input_shape)
             self.engine_type = "tensorrt"
-            print(f"[YOLOModel] TensorRT engine loaded successfully")
         except Exception as e:
-            print(f"[YOLOModel] TensorRT initialization failed: {e}")
-            print(f"[YOLOModel] Falling back to PyTorch YOLO...")
+            print(f"[YOLOModel] TensorRT initialization failed: {e}, falling back to PyTorch")
             self._init_pytorch_fallback(model_path)
             self.engine_type = "pytorch"
     
     def _init_tensorrt(self, model_path, input_shape):
-        """Initialize TensorRT engine with proper error handling"""
         self.input_shape = input_shape
         self.names = ['ball']
         self.original_h, self.original_w = 640, 640
@@ -73,7 +67,7 @@ class YOLOModel:
         input_w, input_h = self.input_shape
         img = cv2.resize(image, (input_w, input_h))  # (640, 640)
         img = img.astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))  # HWC to CHW
+        img = np.transpose(img, (2, 0, 1))
         img = np.expand_dims(img, axis=0)
         np.copyto(self.input_host, img.ravel())
 
@@ -86,7 +80,7 @@ class YOLOModel:
     
     def _predict_tensorrt(self, image, conf=0.35):
         if not self.cuda_ctx:
-            raise RuntimeError("CUDA context not initialized properly")
+            raise RuntimeError("CUDA not initialized properly")
         
         try:
             self.cuda_ctx.push()
@@ -101,7 +95,6 @@ class YOLOModel:
             cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
             self.stream.synchronize()
             raw_output = self.output_host.reshape(self.output_shape)
-            print(f"[YOLOModel] Raw TensorRT output shape: {raw_output.shape}")
             return self.postprocess(raw_output, conf)
         except Exception as e:
             print(f"[YOLOModel] TensorRT inference failed: {e}")
@@ -131,17 +124,13 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.35):
-        """Process (1, 5, 8400) format into detections with xyxy, conf, cls"""
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
-            print(f"[YOLOModel] Unexpected number of channels in output: {output.shape[0]}")
             return self._empty_result()
 
-        # Each row: [x_center, y_center, width, height, conf]
         x_center, y_center, width, height, conf = output
 
-        # Filter by confidence threshold
         mask = conf >= conf_thres
         if not np.any(mask):
             return self._empty_result()
@@ -152,31 +141,27 @@ class YOLOModel:
         height = height[mask]
         conf = conf[mask]
 
-        # Compute bounding box corners
         x1 = x_center - width / 2
         y1 = y_center - height / 2
         x2 = x_center + width / 2
         y2 = y_center + height / 2
 
-        # Rescale from model input size (640x640) to original size (1280x720)
-        scale_x = self.original_w / self.input_shape[0]  # 1280 / 640 = 2.0
-        scale_y = self.original_h / self.input_shape[1]  # 720 / 640 = 1.125
+        scale_x = self.original_w / self.input_shape[0]
+        scale_y = self.original_h / self.input_shape[1]
 
         x1 *= scale_x
         x2 *= scale_x
         y1 *= scale_y
         y2 *= scale_y
 
-        # Since model is single-class, use class id = 0
         cls = np.zeros_like(conf)
 
-        # Structure output into Box and Result classes
         class Box:
             def __init__(self, x1, y1, x2, y2, conf, cls):
                 self.xyxy = np.array([x1, y1, x2, y2])
                 self.conf = np.array([conf])
                 self.cls = np.array([cls])
-                self.xywh = np.array([  # center-based format
+                self.xywh = np.array([
                     (x1 + x2) / 2,
                     (y1 + y2) / 2,
                     x2 - x1,
