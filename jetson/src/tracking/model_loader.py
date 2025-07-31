@@ -4,6 +4,7 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 import torch
+from ultralytics import YOLO
 
 class YOLOModel:
     def __init__(self, model_path="new-v8-fp16.engine", input_shape=(640, 640)):
@@ -43,8 +44,6 @@ class YOLOModel:
         self.stream = cuda.Stream()
 
     def _init_pytorch_fallback(self, model_path):
-        from ultralytics import YOLO
-        
         pt_path = model_path.replace(".engine", ".pt")
         try:
             self.model = YOLO(pt_path)
@@ -85,7 +84,6 @@ class YOLOModel:
         try:
             self.cuda_ctx.push()
             self.original_h, self.original_w = image.shape[:2]
-
             self.preprocess(image)
             cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
             self.context.execute_async_v2(
