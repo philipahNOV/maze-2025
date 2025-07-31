@@ -76,7 +76,7 @@ class BallTracker:
                     self._normalization_array[2] = w
                     self._normalization_array[3] = h
                 
-                xywh = box.xywh[0].cpu().numpy() / self._normalization_array
+                xywh = box.xywh[0] / self._normalization_array
                 x_center, y_center, width, height = xywh
                 cx, cy = int(x_center * w), int(y_center * h)
                 self.ball_position = (cx, cy)
