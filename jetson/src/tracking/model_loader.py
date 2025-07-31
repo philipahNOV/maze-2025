@@ -92,13 +92,13 @@ class YOLOModel:
             return self._predict_pytorch(image, conf)
     
     def _predict_tensorrt(self, image, conf=0.35):
+        if not self.cuda_ctx:
+            raise RuntimeError("CUDA context not initialized properly")
+        
         try:
-            # Ensure proper CUDA context
             self.cuda_ctx.push()
-            
-            # Store original image dimensions for coordinate scaling
             self.original_h, self.original_w = image.shape[:2]
-            
+
             self.preprocess(image)
             cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
             self.context.execute_async_v2(
@@ -107,17 +107,14 @@ class YOLOModel:
             )
             cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
             self.stream.synchronize()
-
             raw_output = self.output_host.reshape(self.output_shape)
-            result = self.postprocess(raw_output, conf)
-            
-            self.cuda_ctx.pop()
-            return result
+
+            return self.postprocess(raw_output, conf)
         except Exception as e:
-            if hasattr(self, 'cuda_ctx'):
-                self.cuda_ctx.pop()
             print(f"[YOLOModel] TensorRT inference failed: {e}")
             return self._empty_result()
+        finally:
+            self.cuda_ctx.pop()
     
     def _predict_pytorch(self, image, conf=0.35):
         try:
@@ -158,48 +155,12 @@ class YOLOModel:
                     # TensorRT output coordinates
                     x_center_raw, y_center_raw, w_raw, h_raw = pred[0:4]
                     
-                    print(f"[DEBUG] Raw TensorRT output: x={x_center_raw:.3f}, y={y_center_raw:.3f}, w={w_raw:.3f}, h={h_raw:.3f}")
-                    
-                    # The coordinates are very small, suggesting they might be in a different coordinate system
-                    # Let's try different scaling approaches
-                    
-                    # Approach 1: Check if they're actually normalized coordinates but very small
-                    if x_center_raw < 50 and y_center_raw < 50:  # Very small values, likely need different scaling
-                        # These might be in a coordinate system relative to the maze region
-                        # The maze is 655x655 pixels, offset by (430, 27)
-                        maze_scale = 655 / 640  # Scale from 640x640 to 655x655 maze
-                        
-                        # Scale to maze coordinates first
-                        maze_x = x_center_raw * maze_scale * 16  # Empirical scaling factor
-                        maze_y = y_center_raw * maze_scale * 16  # Empirical scaling factor
-                        
-                        # Then translate to full image coordinates
-                        x_center = maze_x + 430  # Add maze offset
-                        y_center = maze_y + 27   # Add maze offset
-                        width = w_raw * maze_scale * 16
-                        height = h_raw * maze_scale * 16
-                        
-                        print(f"[DEBUG] Maze-scaled coords: maze_x={maze_x:.1f}, maze_y={maze_y:.1f}")
-                        print(f"[DEBUG] Final OpenCV coords: x={x_center:.1f}, y={y_center:.1f}")
-                        
-                    else:
-                        # Original scaling approach
-                        scale_x = img_w / input_w  # 1280/640 = 2.0
-                        scale_y = img_h / input_h  # 720/640 = 1.125
-                        
-                        x_center = x_center_raw * scale_x
-                        y_center = y_center_raw * scale_y
-                        width = w_raw * scale_x
-                        height = h_raw * scale_y
-                    
-                    print(f"[DEBUG] Scaled to OpenCV coords: x={x_center:.1f}, y={y_center:.1f}, w={width:.1f}, h={height:.1f}")
-                    print(f"[DEBUG] Expected ranges: x[430-1085], y[27-682], elevator at (998,588)")
-                    
-                    # Check if coordinates are in reasonable range for maze
-                    if 400 <= x_center <= 1100 and 20 <= y_center <= 700:
-                        print(f"[DEBUG] ✓ Coordinates are in expected maze range!")
-                    else:
-                        print(f"[DEBUG] ✗ Coordinates outside expected maze range")
+                    # Scaling directly from model input (640x640) to maze region (655x655) + offset
+                    x_center = (x_center_raw / 640.0) * 655 + 430
+                    y_center = (y_center_raw / 640.0) * 655 + 27
+                    width = (w_raw / 640.0) * 655
+                    height = (h_raw / 640.0) * 655
+
                     
                     x1 = x_center - width / 2
                     y1 = y_center - height / 2
