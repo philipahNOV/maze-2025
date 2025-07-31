@@ -3,7 +3,7 @@ import torch
 from ultralytics import YOLO
 
 class YOLOModel:
-    def __init__(self, model_path="v8-291.engine"):
+    def __init__(self, model_path="new-v8.engine"):
         print(f"[YOLOModel] Loading model from: {model_path}")
 
         self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'

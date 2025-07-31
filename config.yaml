@@ -25,7 +25,7 @@ camera:
   maze_relative_angle: 1 # deg
 
 tracking:
-  model_path: "tracking/v8-291.engine"
+  model_path: "tracking/new-v8.engine"
   init_ball_region:
     x_min: 420
     y_min: 25
