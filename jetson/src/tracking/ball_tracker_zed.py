@@ -72,12 +72,6 @@ class BallTracker:
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
                 self.ball_position = (cx, cy)
-                
-                # Debug: Print coordinates to understand coordinate system
-                print(f"[DEBUG] Ball TensorRT coords: ({cx}, {cy})")
-                print(f"[DEBUG] Expected ranges - Full image: 1280x720")
-                print(f"[DEBUG] Expected ranges - Maze region: x[430-1085], y[27-682]")
-                print(f"[DEBUG] Expected ranges - Elevator center: (998, 588)")
 
                 # Convert to normalized coordinates for ZED object detection
                 x_center_norm = x_center / w

@@ -148,6 +148,8 @@ class YOLOModel:
         # Use original image dimensions for coordinate conversion (not input_shape)
         img_h, img_w = self.original_h, self.original_w
         input_h, input_w = self.input_shape[1], self.input_shape[0]  # Model input size (640x640)
+        
+        print(f"[DEBUG] TensorRT postprocess - Image: {img_w}x{img_h}, Model input: {input_w}x{input_h}")
 
         for pred in preds:
             if len(pred) >= 5:
@@ -156,22 +158,22 @@ class YOLOModel:
                     # TensorRT output coordinates
                     x_center_raw, y_center_raw, w_raw, h_raw = pred[0:4]
                     
-                    # Most TensorRT models output normalized coordinates (0-1)
-                    # Convert from normalized to pixel coordinates relative to original image
-                    if x_center_raw <= 1.0 and y_center_raw <= 1.0:
-                        # Normalized coordinates (0-1) - scale to original image size
-                        x_center = x_center_raw * img_w
-                        y_center = y_center_raw * img_h
-                        width = w_raw * img_w
-                        height = h_raw * img_h
-                    else:
-                        # Coordinates are in model input size (640x640) - scale to original image
-                        scale_x = img_w / input_w
-                        scale_y = img_h / input_h
-                        x_center = x_center_raw * scale_x
-                        y_center = y_center_raw * scale_y
-                        width = w_raw * scale_x
-                        height = h_raw * scale_y
+                    print(f"[DEBUG] Raw TensorRT output: x={x_center_raw:.3f}, y={y_center_raw:.3f}, w={w_raw:.3f}, h={h_raw:.3f}")
+                    
+                    # The TensorRT model likely outputs coordinates in the 640x640 input space
+                    # We need to scale these to the full 1280x720 OpenCV coordinate system
+                    
+                    # Scale from model input space (640x640) to original image space (1280x720)
+                    scale_x = img_w / input_w  # 1280/640 = 2.0
+                    scale_y = img_h / input_h  # 720/640 = 1.125
+                    
+                    x_center = x_center_raw * scale_x
+                    y_center = y_center_raw * scale_y
+                    width = w_raw * scale_x
+                    height = h_raw * scale_y
+                    
+                    print(f"[DEBUG] Scaled to OpenCV coords: x={x_center:.1f}, y={y_center:.1f}, w={width:.1f}, h={height:.1f}")
+                    print(f"[DEBUG] Expected ranges: x[430-1085], y[27-682], elevator at (998,588)")
                     
                     x1 = x_center - width / 2
                     y1 = y_center - height / 2
