@@ -24,6 +24,8 @@ class BallTracker:
 
         self.hole_boxes = []
         self.hole_mask_initialized = False
+        self.elevator_center = (998, 588)
+        self.elevator_radius = 60
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -76,6 +78,9 @@ class BallTracker:
 
             custom_boxes = []
             for box in results.boxes:
+                x_center, y_center, width, height = box.xywh[0]
+                if self._is_in_elevator(x_center, y_center):
+                    continue  # skip elevator area
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
 
@@ -120,6 +125,11 @@ class BallTracker:
             self.frame_counter += 1
 
             time.sleep(max(0, (1 / 60) - (time.time() - start)))
+
+    def _is_in_elevator(self, x_center, y_center):
+        ex, ey = self.elevator_center
+        dist_sq = (x_center - ex) ** 2 + (y_center - ey) ** 2
+        return dist_sq <= self.elevator_radius ** 2
 
     def _is_in_hole(self, box_xyxy):
         box_xyxy = box_xyxy.flatten() if hasattr(box_xyxy, "flatten") else np.array(box_xyxy)
