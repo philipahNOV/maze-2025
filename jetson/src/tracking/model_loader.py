@@ -132,7 +132,6 @@ class YOLOModel:
             return self._empty_result()
     
     def _empty_result(self):
-        """Return empty result object"""
         class EmptyResult:
             def __init__(self):
                 self.boxes = []
@@ -154,25 +153,40 @@ class YOLOModel:
                 if conf > conf_thres:
                     # TensorRT output coordinates
                     x_center_raw, y_center_raw, w_raw, h_raw = pred[0:4]
-                    
-                    # Scaling directly from model input (640x640) to maze region (655x655) + offset
-                    x_center = (x_center_raw / 640.0) * 655 + 430
-                    y_center = (y_center_raw / 640.0) * 655 + 27
-                    width = (w_raw / 640.0) * 655
-                    height = (h_raw / 640.0) * 655
 
-                    
-                    x1 = x_center - width / 2
-                    y1 = y_center - height / 2
-                    x2 = x_center + width / 2
-                    y2 = y_center + height / 2
+                    # Step 1: From model output (640x640) → original image (1280x720)
+                    scale_x = img_w / self.input_shape[0]  # 1280 / 640 = 2.0
+                    scale_y = img_h / self.input_shape[1]  # 720 / 640 = 1.125
+
+                    x_center_img = x_center_raw * scale_x
+                    y_center_img = y_center_raw * scale_y
+                    width_img = w_raw * scale_x
+                    height_img = h_raw * scale_y
+
+                    # Step 2: Maze boundary check
+                    if not (430 <= x_center_img <= 1085 and 27 <= y_center_img <= 682):
+                        print(f"[DEBUG] ✗ Outside maze bounds: x={x_center_img:.1f}, y={y_center_img:.1f}")
+                    else:
+                        print(f"[DEBUG] ✓ Inside maze bounds")
+
+                    # Step 3: Optional maze-relative position (for logic use, not bounding boxes)
+                    maze_x = x_center_img - 430
+                    maze_y = y_center_img - 27
+                    print(f"[DEBUG] Maze-relative coords: x={maze_x:.1f}, y={maze_y:.1f}")
+
+                    # Step 4: Bounding box corners in image coordinates
+                    x1 = x_center_img - width_img / 2
+                    y1 = y_center_img - height_img / 2
+                    x2 = x_center_img + width_img / 2
+                    y2 = y_center_img + height_img / 2
 
                     detections.append({
                         "bbox_xyxy": [x1, y1, x2, y2],
-                        "bbox_xywh": [x_center, y_center, width, height],
+                        "bbox_xywh": [x_center_img, y_center_img, width_img, height_img],
                         "confidence": float(conf),
                         "class_id": 0
                     })
+
 
         class Result:
             def __init__(self, detections):
