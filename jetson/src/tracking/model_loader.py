@@ -75,8 +75,12 @@ class YOLOModel:
         if self.engine_type != "tensorrt":
             return
 
-        input_w, input_h = self.input_shape  # self.input_shape = (640, 640)
-        img = cv2.resize(image, (input_w, input_h))  # OpenCV expects (width, height)
+        print("[PREPROCESS] original image shape:", image.shape)  # Expect (720, 1280, 3)
+        input_w, input_h = self.input_shape
+        print("[PREPROCESS] resizing to:", (input_w, input_h))    # Must be (640, 640)
+
+        img = cv2.resize(image, (input_w, input_h))  # Make sure this line exists
+
         img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # HWC to CHW
         img = np.expand_dims(img, axis=0)
@@ -146,7 +150,10 @@ class YOLOModel:
         scale_x = orig_w / input_w  # 1280 / 640 = 2.0
         scale_y = orig_h / input_h  # 720 / 640 = 1.125
 
-        print(f"[DEBUG] Scaling: scale_x = {scale_x}, scale_y = {scale_y}")
+        print(f"[POSTPROCESS] original_w = {self.original_w}, original_h = {self.original_h}")
+        print(f"[POSTPROCESS] input_shape = {self.input_shape}")
+        print(f"[POSTPROCESS] scale_x = {scale_x}, scale_y = {scale_y}")
+
 
         for pred in preds:
             if len(pred) >= 5:
@@ -175,6 +182,10 @@ class YOLOModel:
                     y1 = y_c - h / 2
                     x2 = x_c + w / 2
                     y2 = y_c + h / 2
+
+                    print(f"[POSTPROCESS] Detection: model coords = ({pred[0]:.2f}, {pred[1]:.2f})")
+                    print(f"[POSTPROCESS] Scaled coords = ({x_c:.2f}, {y_c:.2f})")
+
 
                     detections.append({
                         "bbox_xyxy": [x1, y1, x2, y2],
