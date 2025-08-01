@@ -22,8 +22,6 @@ class BallTracker:
         self.timing_print_counter = 0
         self._normalization_array = None
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
-        self.min_depth_mm = 100  # Minimum valid ball depth
-        self.max_depth_mm = 500  # Maximum valid ball depth (beyond this is likely a hole)
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -59,50 +57,29 @@ class BallTracker:
             results = self.model.predict(rgb)
 
             custom_boxes = []
-            ball_valid = False
-
             for box in results.boxes:
                 if self.model.get_label(box.cls[0]) != "ball":
+                    continue
+
+                confidence = float(box.conf[0])
+                if confidence < 0.55:
+                    self.ball_position = None
                     continue
 
                 h, w = rgb.shape[:2]
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
-                z_depth_mm = -1
-                ball_lost = False
-
-                if hasattr(self.camera, 'zed'):
-                    depth_map = sl.Mat()
-                    err = self.camera.zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH)
-                    if err == sl.ERROR_CODE.SUCCESS:
-                        z_depth = depth_map.get_value(cx, cy)[1]  # (x, y, z); z = depth
-                        if z_depth and np.isfinite(z_depth) and z_depth > 0:
-                            z_depth_mm = z_depth
-                            # Ball should be within a reasonable depth range
-                            # Holes will have much larger depth values or invalid readings
-                            if z_depth_mm < self.min_depth_mm or z_depth_mm > self.max_depth_mm:
-                                ball_lost = True
-                                print(f"[Depth Check] Ball lost (z={z_depth_mm:.2f}mm) at ({cx}, {cy}) - outside valid range [{self.min_depth_mm}-{self.max_depth_mm}]mm")
-                        else:
-                            # Invalid depth reading (likely a hole or edge)
-                            ball_lost = True
-                            print(f"[Depth Check] Ball lost - invalid depth reading at ({cx}, {cy})")
-
-                if ball_lost:
-                    self.ball_position = None
-                    continue  # skip further processing
-                else:
-                    self.ball_position = (cx, cy)
-
-
+                self.ball_position = (cx, cy)
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
                 width_norm = width / w
                 height_norm = height / h
+
                 x_min = x_center_norm - width_norm / 2
                 x_max = x_center_norm + width_norm / 2
                 y_min = y_center_norm - height_norm / 2
                 y_max = y_center_norm + height_norm / 2
+                
                 self._bbox_buffer[0, 0] = x_min
                 self._bbox_buffer[0, 1] = y_min
                 self._bbox_buffer[1, 0] = x_max
@@ -113,7 +90,7 @@ class BallTracker:
                 self._bbox_buffer[3, 1] = y_max
 
                 obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = self._bbox_buffer.copy()
+                obj.bounding_box_2d = self._bbox_buffer.copy()  # copy for ZED
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
