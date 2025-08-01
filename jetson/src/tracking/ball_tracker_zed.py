@@ -2,11 +2,9 @@ import threading
 import time
 import numpy as np
 import cv2
-import yaml
 from collections import deque
 from tracking.model_loader import YOLOModel
 import pyzed.sl as sl
-from control.astar.board_masking import create_binary_mask
 
 class BallTracker:
     def __init__(self, camera=None, tracking_config=None, model_path="new-v8-fp16.engine"):
@@ -24,83 +22,6 @@ class BallTracker:
         self.timing_print_counter = 0
         self._normalization_array = None
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
-        self._board_mask = None
-        self._mask_frame_counter = 0
-        
-        # Load elevator configuration from config.yaml
-        self._load_elevator_config()
-
-    def _load_elevator_config(self):
-        """Load elevator configuration from config.yaml"""
-        try:
-            with open('config.yaml', 'r') as f:
-                config = yaml.safe_load(f)
-            
-            camera_config = config.get('camera', {})
-            self.elevator_center_x = camera_config.get('elevator_center_x', 998)
-            self.elevator_center_y = camera_config.get('elevator_center_y', 588)
-            self.elevator_radius = camera_config.get('elevator_radius', 60)
-        except (FileNotFoundError, yaml.YAMLError) as e:
-            # Fallback to default values if config file can't be loaded
-            print(f"Warning: Could not load config.yaml, using default elevator values: {e}")
-            self.elevator_center_x = 998
-            self.elevator_center_y = 588
-            self.elevator_radius = 60
-
-    def _is_ball_in_hole(self, image, cx, cy, ball_width, ball_height):
-        """
-        Check if the ball is fully in a black area of the board mask (indicating a hole).
-        Excludes the elevator area from hole detection.
-        
-        Args:
-            image: BGR image
-            cx, cy: Center coordinates of the ball
-            ball_width, ball_height: Dimensions of the detected ball
-            
-        Returns:
-            True if ball is fully in a hole (black area of mask), False otherwise
-        """
-        # Check if ball is in elevator area first - if so, it's always valid
-        distance_to_elevator = np.sqrt((cx - self.elevator_center_x)**2 + (cy - self.elevator_center_y)**2)
-        if distance_to_elevator <= self.elevator_radius:
-            return False  # Ball is in elevator area, not in a hole
-        
-        if self._board_mask is None or self._mask_frame_counter % 10 == 0:
-            gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-            self._board_mask = create_binary_mask(gray)
-            
-            # Create a white circle in the mask for the elevator area
-            cv2.circle(self._board_mask, 
-                      (self.elevator_center_x, self.elevator_center_y), 
-                      self.elevator_radius, 
-                      255, -1)  # Fill circle with white (valid area)
-        
-        self._mask_frame_counter += 1
-        
-        h, w = image.shape[:2]
-        
-        ball_radius = max(ball_width, ball_height) / 2
-        padding = ball_radius * 0.8  # Check 80% of ball area
-        
-        x_min = max(0, int(cx - padding))
-        x_max = min(w, int(cx + padding))
-        y_min = max(0, int(cy - padding))
-        y_max = min(h, int(cy + padding))
-        
-        # Extract the ball area from the mask
-        ball_mask_region = self._board_mask[y_min:y_max, x_min:x_max]
-        
-        if ball_mask_region.size == 0:
-            return False
-        
-        # Check if the ball area is mostly in black regions (holes)
-        # In the mask: white (255) = valid board area, black (0) = holes
-        black_pixels = np.sum(ball_mask_region == 0)
-        total_pixels = ball_mask_region.size
-        
-        # If more than 80% of the ball area is in black regions, it's in a hole
-        black_ratio = black_pixels / total_pixels
-        return black_ratio > 0.8
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -140,6 +61,7 @@ class BallTracker:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
 
+                # Check confidence threshold
                 confidence = float(box.conf[0])
                 if confidence < 0.55:
                     self.ball_position = None
@@ -148,12 +70,6 @@ class BallTracker:
                 h, w = rgb.shape[:2]
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
-                
-                # Check if ball is fully in a black area of the board mask (indicating a hole)
-                if self._is_ball_in_hole(bgr, cx, cy, width, height):
-                    self.ball_position = None
-                    continue
-                
                 self.ball_position = (cx, cy)
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
