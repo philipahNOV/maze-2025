@@ -4,8 +4,9 @@ FROM stereolabs/zed:5.0-runtime-jetson-jp6.0.0
 WORKDIR /maze_jetson
 
 COPY ./requirements.txt .
-COPY ./jetson .
-COPY ./pi .
+COPY ./config.yaml .
+COPY ./jetson jetson/
+COPY ./pi pi/
 
 RUN apt-get update && apt-get install -y \
     git \

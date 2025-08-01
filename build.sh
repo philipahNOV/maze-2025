@@ -3,11 +3,11 @@
 case "$1" in 
     --raspberry)
         echo "Bygger docker image for Raspberry pi"
-        docker build -t maze-raspberry-image .
+        docker build -f raspberrypi.dockerfile -t maze-raspberry-image --network host .
         ;;
     --jetson)
         echo "Bygger docker image for Jetson"
-        docker build -t maze-jetson-image .
+        docker build -f jetson.dockerfile -t maze-jetson-image --network host .
         ;;
     *)
         echo "Legg til enten --raspberry eller --jetson"

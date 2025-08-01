@@ -4,7 +4,8 @@ FROM ubuntu:24.04
 WORKDIR /maze_jetson
 
 COPY ./requirements_pi.txt .
-COPY ./pi .
+COPY ./config.yaml .
+COPY ./pi pi/
 
 RUN apt-get update && apt-get install -y \
     git \
