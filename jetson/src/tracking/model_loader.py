@@ -20,9 +20,6 @@ class YOLOModel:
         self.input_shape = input_shape
         self.names = ['ball']
         self.original_h, self.original_w = 640, 640
-        self.input_device = None
-        self.output_device = None
-        self.cuda_ctx = None
         
         try:
             cuda.init()
@@ -46,13 +43,16 @@ class YOLOModel:
             self.input_device = cuda.mem_alloc(self.input_host.nbytes)
             self.output_device = cuda.mem_alloc(self.output_host.nbytes)
             self.stream = cuda.Stream()
-            
-            # Keep context active - don't pop it here
-            print("[YOLOModel] TensorRT initialized successfully")
+            self.cuda_ctx.pop()
             
         except Exception as e:
-            # Cleanup on failure - but keep context active for proper cleanup
-            self._cleanup_cuda_resources()
+            if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+                try:
+                    self.cuda_ctx.pop()
+                    self.cuda_ctx.detach()
+                except:
+                    pass
+                self.cuda_ctx = None
             raise e
 
     def _init_pytorch_fallback(self, model_path):
@@ -69,49 +69,27 @@ class YOLOModel:
         self.cleanup()
 
     def cleanup(self):
-        """Explicitly cleanup CUDA resources"""
-        self._cleanup_cuda_resources()
-
-    def _cleanup_cuda_resources(self):
-        """Internal method to cleanup CUDA resources safely"""
         try:
-            # Free device memory first while context is still valid
-            if hasattr(self, 'input_device') and self.input_device:
-                self.input_device.free()
-                self.input_device = None
-                
-            if hasattr(self, 'output_device') and self.output_device:
-                self.output_device.free()
-                self.output_device = None
-            
-            # Cleanup TensorRT objects
-            if hasattr(self, 'context') and self.context:
-                del self.context
-                self.context = None
-                
-            if hasattr(self, 'engine') and self.engine:
-                del self.engine
-                self.engine = None
-                
-            if hasattr(self, 'runtime') and self.runtime:
-                del self.runtime
-                self.runtime = None
-            
-            # Finally cleanup CUDA context
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+                self.cuda_ctx.push()
+                
+                if hasattr(self, 'input_device') and self.input_device:
+                    self.input_device.free()
+                    self.input_device = None
+                    
+                if hasattr(self, 'output_device') and self.output_device:
+                    self.output_device.free()
+                    self.output_device = None
+                
+                self.cuda_ctx.pop()
                 self.cuda_ctx.detach()
                 self.cuda_ctx = None
                 
         except Exception as e:
             print(f"[YOLOModel] Warning: Error during CUDA cleanup: {e}")
-            # Force cleanup even if there's an error
             self.cuda_ctx = None
-            self.input_device = None
-            self.output_device = None
 
     def shutdown(self):
-        """Safe shutdown method that can be called by the finite state machine"""
-        print("[YOLOModel] Shutting down...")
         self.cleanup()
 
     def preprocess(self, image):
@@ -128,14 +106,9 @@ class YOLOModel:
 
 
     def predict(self, image, conf=0.55):
-        # Check if model has been cleaned up
-        if self.engine_type == "tensorrt":
-            if not hasattr(self, 'cuda_ctx') or not self.cuda_ctx:
-                print("[YOLOModel] Model has been cleaned up, cannot predict")
-                return self._empty_result()
-            if not hasattr(self, 'input_device') or not self.input_device:
-                print("[YOLOModel] CUDA device memory has been freed, cannot predict")
-                return self._empty_result()
+        if self.engine_type == "tensorrt" and (not hasattr(self, 'cuda_ctx') or not self.cuda_ctx):
+            print("[YOLOModel] Model has been cleaned up, cannot predict")
+            return self._empty_result()
             
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
@@ -147,11 +120,8 @@ class YOLOModel:
             print("[YOLOModel] CUDA context not available")
             return self._empty_result()
         
-        if not hasattr(self, 'input_device') or not self.input_device:
-            print("[YOLOModel] CUDA device memory not available")
-            return self._empty_result()
-        
         try:
+            self.cuda_ctx.push()
             self.original_h, self.original_w = image.shape[:2]
             self.preprocess(image)
             cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
@@ -170,6 +140,12 @@ class YOLOModel:
         except Exception as e:
             print(f"[YOLOModel] TensorRT inference failed: {e}")
             return self._empty_result()
+        finally:
+            try:
+                if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+                    self.cuda_ctx.pop()
+            except:
+                pass
     
     def _predict_pytorch(self, image, conf=0.55):
         try:
