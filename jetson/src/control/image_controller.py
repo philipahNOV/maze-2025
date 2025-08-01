@@ -9,24 +9,12 @@ import threading
 from control.astar.draw_path import draw_path
 
 class ImageController:
-    """
-    Handles drawing and formatting of video frames for display and transmission.
-
-    Responsibilities:
-    - Drawing ball and waypoint overlays
-    - Cropping and rotating frames
-    - Resizing and sending frames to Raspberry Pi over MQTT
-    """
-
     def __init__(self, config):
-        # Crop coordinates: [(top-left, top-right), (bottom-left, bottom-right)]
-        self.padding = config['camera'].get('padding', 10)  # Padding around the maze image
+        self.padding = config['camera'].get('padding', 10)
         self.top_left = config['camera'].get('top_left', (430, 27))
         self.top_right = config['camera'].get('top_right', (1085, 27))
         self.bottom_left = config['camera'].get('bottom_left', (430, 682))
         self.bottom_right = config['camera'].get('bottom_right', (1085, 682))
-
-        # Apply padding outward from each corner
         self.top_left = (self.top_left[0] - self.padding, self.top_left[1] - self.padding)
         self.top_right = (self.top_right[0] + self.padding, self.top_right[1] - self.padding)
         self.bottom_left = (self.bottom_left[0] - self.padding, self.bottom_left[1] + self.padding)
@@ -35,25 +23,24 @@ class ImageController:
 
         self.frame = None
         self.cropped_frame = None
-        self.pending_frame = None  # For async MQTT processing
+        self.pending_frame = None 
         self.last_sent_frame_time = time.time()
-        self.frame_send_hz = 5  # Number of frames to send per second
-        self.current_path = None  # Holds the active path
-        self.new_path_available = False  # Flag to track if we need to update the drawing
-        self.maze_angle = config['camera'].get('maze_relative_angle', 1.0)  # Angle of the maze relative to the camera frame
+        self.frame_send_hz = 5 
+        self.current_path = None
+        self.new_path_available = False
+        self.maze_angle = config['camera'].get('maze_relative_angle', 1.0)
 
     def draw_waypoints(self, pathFollower: PathFollower):
-        """Draw path waypoints on the current frame with color coding."""
         if self.frame is None or self.current_path is None:
             return
 
         for i in range(pathFollower.length):
             if i < pathFollower.next_waypoint:
-                color = (0, 200, 0)  # Green for past waypoints
+                color = (0, 200, 0)
             elif i == pathFollower.next_waypoint:
-                color = (0, 255, 255)  # Yellow for current target
+                color = (0, 255, 255)
             else:
-                color = (0, 0, 255)  # Red for future waypoints
+                color = (0, 0, 255)
             cv2.circle(self.frame, pathFollower.path[i], 5, color, -1)
 
     def set_new_path(self, path):
@@ -98,7 +85,7 @@ class ImageController:
         x2, y2 = self.frame_corners[3]
         cropped = self.frame[y1:y2, x1:x2]
         rotated = cv2.rotate(cropped, cv2.ROTATE_180)
-        angle = self.maze_angle  # degrees, negative = clockwise
+        angle = self.maze_angle
         (h, w) = rotated.shape[:2]
         center = (w // 2, h // 2)
 
@@ -111,12 +98,10 @@ class ImageController:
             return
 
         if time.time() > self.last_sent_frame_time + 1 / self.frame_send_hz:
-            # Just store the frame for async processing
             self.pending_frame = self.cropped_frame.copy()
             self.last_sent_frame_time = time.time()
 
     def _async_encode_and_send(self, mqtt_client: MQTTClientJetson):
-        """Async method to encode and send frames - should run in separate thread"""
         if hasattr(self, 'pending_frame') and self.pending_frame is not None:
             scale = 0.5
             height, width = self.pending_frame.shape[:2]
@@ -160,7 +145,6 @@ class ImageSenderThread(threading.Thread):
 
     def run(self):
         self.running = True
-        print("[ImageSenderThread] Started")
         while self.running and (self.stop_event is None or not self.stop_event.is_set()):
             frame = self.tracker_service.get_stable_frame()
             if frame is not None:
@@ -171,10 +155,8 @@ class ImageSenderThread(threading.Thread):
                     mqtt_client=self.mqtt_client,
                     path=self.path
                 )
-                # Do async encoding and sending to avoid blocking
                 self.image_controller._async_encode_and_send(self.mqtt_client)
             time.sleep(self.sleep_interval)
 
     def stop(self):
         self.running = False
-        print("[ImageSenderThread] Stopped")

@@ -12,32 +12,15 @@ class ArduinoState(Enum):
 
 class ArduinoConnection(threading.Thread):
     def __init__(self, baud_rate=115200):
-        """
-        Initializes an instance of the ArduinoConnection class.
-
-        Args:
-            baud_rate (int, optional): The baud rate for the serial connection. Defaults to 9600.
-        """
-        threading.Thread.__init__(self)  # Initialize the base Thread class first
+        threading.Thread.__init__(self)
         self.baud_rate = baud_rate
         self.serial_conn = None
         self.command_to_send = None
         self.running = False
         self.condition = threading.Condition()
-        self.connect()  # Attempt to connect to the Arduino
+        self.connect()
 
     def connect(self):
-        """
-        Connects to the Arduino board.
-
-        This method detects the Arduino port, establishes a serial connection,
-        and starts a thread for communication with the Arduino.
-
-        Raises:
-            ConnectionError: If the Arduino is not found or if there is a failure
-                in establishing the serial connection.
-
-        """
         port = self.detect_arduino_port()
         if not port:
             raise ConnectionError("Arduino not found")
@@ -53,12 +36,6 @@ class ArduinoConnection(threading.Thread):
             
 
     def detect_arduino_port(self):
-        """
-        Detects the port of the Arduino device connected to the system.
-
-        Returns:
-            str: The device port of the Arduino, or None if no Arduino device is found.
-        """
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             if 'Arduino' in port.description or 'ttyUSB' in port.device or 'ttyACM' in port.device:
@@ -66,7 +43,6 @@ class ArduinoConnection(threading.Thread):
         return None
     
     def _send_command(self, state: ArduinoState, *args):
-        """Internal method to format and queue a command."""
         with self.condition:
             # Lager en kommando-streng fra alle argumentene pluss state
             command_parts = list(map(str, args)) + [str(state.value)]
@@ -76,54 +52,28 @@ class ArduinoConnection(threading.Thread):
             self.condition.notify()
     
     def send_idle(self):
-        """
-        Sends "IDLE" state to the Arduino.
-        """
         self._send_command(ArduinoState.IDLE)
 
     def send_elevator(self, direction):
-        """
-        Sends "ELEVATOR" state to the Arduino.
-        """
         self._send_command(ArduinoState.ELEVATOR, int(direction))
 
     def send_speed(self, speed1: int, speed2: int):
-        """
-        Sends target speeds and "CONTROL" state to the Arduino.
-
-        Args:
-            speed1 (int): The speed for motor 1.
-            speed2 (int): The speed for motor 2.
-        """
-        # Store previous speeds to avoid sending duplicate commands
         if not hasattr(self, '_last_speed1'):
             self._last_speed1 = None
             self._last_speed2 = None
         
-        # Only send if speeds have changed significantly (reduce buffer spam)
         if (self._last_speed1 != speed1 or self._last_speed2 != speed2):
             self._send_command(ArduinoState.CONTROL, int(speed1), int(speed2))
             self._last_speed1 = speed1
             self._last_speed2 = speed2
 
     def send_color(self, r: int, g: int, b: int, index: int = -1):
-        """
-        Sends target rgb value and "SET_COLOR" state to the Arduino.
-        Includes optimization to reduce unnecessary commands.
-
-        Args:
-            r (int): The red component of the color.
-            g (int): The green component of the color.
-            b (int): The blue component of the color.
-        """
-        # Store previous color values to avoid sending duplicate commands
         if not hasattr(self, '_last_color_r'):
             self._last_color_r = None
             self._last_color_g = None
             self._last_color_b = None
             self._last_color_index = None
         
-        # Only send if color has changed
         if (self._last_color_r != r or self._last_color_g != g or 
             self._last_color_b != b or self._last_color_index != index):
             self._send_command(ArduinoState.SET_COLOR, int(r), int(g), int(b), int(index))
@@ -133,20 +83,6 @@ class ArduinoConnection(threading.Thread):
             self._last_color_index = index
 
     def run(self):
-        """
-        Runs the ArduinoConnection thread.
-
-        This method is responsible for sending commands to the Arduino when the `command_var` is set.
-        It waits for the `condition` to be notified, and then checks if there is a valid serial connection.
-        If there is a connection, it sends the command to the Arduino. If not, it attempts to reconnect.
-
-        Note:
-            This method should be called after starting the thread.
-
-        Raises:
-            serial.SerialException: If there is an error while sending the command to the Arduino.
-
-        """
         print("ArduinoConnection thread started")
         while self.running:
             with self.condition:
@@ -164,7 +100,6 @@ class ArduinoConnection(threading.Thread):
                             print(f"Failed to send command: {e}. Attempting to reconnect...")
                             self.reconnect()
                     else:
-                        print("No connection to Arduino. Attempting to reconnect...")
                         self.reconnect()
                     self.command_to_send = None
 
@@ -179,13 +114,11 @@ class ArduinoConnection(threading.Thread):
             self.join()
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
-            print("Connection to Arduino closed")
     
     def reconnect(self):
         if self.serial_conn and self.serial_conn.is_open:
             self.serial_conn.close()
         
-        print("Attempting to reconnect to Arduino...")
         time.sleep(2)
         try:
             self.connect()

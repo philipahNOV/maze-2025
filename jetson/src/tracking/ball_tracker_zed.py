@@ -85,7 +85,7 @@ class BallTracker:
                 self._bbox_buffer[3, 1] = y_max
 
                 obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = self._bbox_buffer.copy()  # lil copy for ZED
+                obj.bounding_box_2d = self._bbox_buffer.copy()  # copy for ZED
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False

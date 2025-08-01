@@ -6,10 +6,6 @@ from logger import LoggingThread
 
 
 class Controller:
-    """
-    Handles position and orientation control for a ball-on-plate system.
-    """
-
     def __init__(self, arduinoThread: arduino_connection.ArduinoConnection,
                  tracker: TrackerService,
                  path_following=True,
@@ -117,7 +113,6 @@ class Controller:
     def posControl(self, ref):
         self.pos = self.tracker.get_ball_position()
         if not self.pos:
-            print("No ball detected")
             if self.logger is not None:
                 self.logger.update_state(None, self.ori, None, (0, 0))
             return
@@ -131,7 +126,6 @@ class Controller:
         e_x = ref[0] - self.pos[0]
         e_y = ref[1] - self.pos[1]
 
-        #--- Velocity calculation ---
         edot_x = edot_y = 0
         alpha = 0.9
         if self.prevError and self.prevTime:
@@ -176,26 +170,20 @@ class Controller:
 
         #--- PID Control ---
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol:
-            # If within position and velocity tolerance, no control action
             theta_x = 0
         else:
-            # If outside position tolerance, apply PID control
             theta_x = self.kp_x * e_x + self.kd_x * edot_x + self.ki_x * self.e_x_int + ff_x
 
         if abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
-            # If within position and velocity tolerance, no control action
             theta_y = 0
         else:
-            # If outside position tolerance, apply PID control
             theta_y = self.kp_y * e_y + self.kd_y * edot_y + self.ki_y * self.e_y_int + ff_y
 
         if abs(e_x) < self.pos_tol and abs(edot_x) < self.vel_tol and abs(e_y) < self.pos_tol and abs(edot_y) < self.vel_tol:
-            # If within all tolerances, reset integral action
             self.e_x_int = 0
             self.e_y_int = 0
             self.prevTime = time.time()
 
-        # Update previous values for next iteration
         self.prevError = (e_x, e_y)
         self.prevVelError = (edot_x, edot_y)
         self.prevTime = time.time()
@@ -210,7 +198,6 @@ class Controller:
         dist_x = abs(e_x)
         dist_y = abs(e_y)
 
-        # Thresholds
         #stuck_x = abs(vel_x) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
         #stuck_y = abs(vel_y) < self.stuck_vel_threshold and dist > self.pos_tol and dist < self.stuck_upper_pos_threshold
         stuck_x = False
@@ -247,7 +234,6 @@ class Controller:
                 self.unstuck_timer_y = None
 
         #print(dist, self.stuck_x_active, self.stuck_y_active)
-        # Apply wiggling if needed
         if self.stuck_x_active or self.stuck_y_active:
             theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
             theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
@@ -287,7 +273,6 @@ class Controller:
         self.prev_vel_y = vel_y
 
     def horizontal(self):
-        print("Stabilizing horizontally...")
         kp = self.config["controller"]["horizontal_controller"].get("kp", 700)
         tol = self.config["controller"]["horizontal_controller"].get("tolerance", 0.0015)
         timeLimit = self.config["controller"]["horizontal_controller"].get("time_limit", 300)
@@ -303,7 +288,6 @@ class Controller:
             theta_y = orientation[0] + self.y_offset
 
             if abs(theta_x) < tol and abs(theta_y) < tol:
-                print("Orientation is within tolerance, stopping motors.")
                 self.arduinoThread.send_speed(0, 0)
                 return
 
@@ -313,8 +297,6 @@ class Controller:
             #print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
             self.arduinoThread.send_speed(vel_x, vel_y)
             time.sleep(self.command_delay)
-
-        print("Deadline reached, stopping motors.")
 
     def get_last_command(self):
         return (self.prev_vel_x, self.prev_vel_y)

@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 def heuristic(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1]) # manhattan, best in biz
+    return abs(a[0] - b[0]) + abs(a[1] - b[1]) # manhattan
     #return np.hypot(a[0] - b[0], a[1] - b[1]) # euclidean, reduces node expansions
 
 def compute_repulsion_cost(array, min_safe_dist = 14):
@@ -27,10 +27,8 @@ def astar(array, start, goal, repulsion_weight=15.0):
     came_from = {}
     g_score = np.full(array.shape, np.inf, dtype=np.float32)
     g_score[start] = 0
-
     in_open = set()
     in_open.add(start)
-
     closed = np.zeros(array.shape, dtype=bool)
 
     while open_heap:

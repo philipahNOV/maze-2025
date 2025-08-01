@@ -15,7 +15,7 @@ def add_score(name: str, time: float, maze_id: int, mqtt_client=None):
     
     if os.path.exists(filepath):
         with open(filepath, "rb") as f:
-            f.seek(-1, 2)  # Go to last byte
+            f.seek(-1, 2)
             last_char = f.read(1)
             needs_newline = last_char != b'\n'
     else:
@@ -23,31 +23,26 @@ def add_score(name: str, time: float, maze_id: int, mqtt_client=None):
     
     with open(filepath, mode="a", newline="") as f:
         if needs_newline:
-            f.write('\n')  # Add newline if file doesn't end with one
+            f.write('\n')
         writer = csv.writer(f)
         writer.writerow([name, f"{time:.2f}", date_str, maze_id])
     
-    # Send updated leaderboard data to Pi via MQTT
     if mqtt_client is not None:
         send_leaderboard_data(mqtt_client, maze_id)
 
 def send_leaderboard_data(mqtt_client, maze_id: int):
-    """Send leaderboard data to Pi via MQTT"""
     try:
         leaderboard_data = read_leaderboard(maze_id)
-        # Convert to CSV format for transmission
         csv_data = []
         for entry in leaderboard_data:
             csv_data.append(f"{entry['name']},{entry['time']:.2f},{entry['date']},{entry['maze_id']}")
         
-        # Join all entries with newlines
         csv_string = '\n'.join(csv_data)
         
-        # Send via MQTT
+        # send via MQTT
         mqtt_client.client.publish(f"pi/leaderboard_data/{maze_id}", csv_string)
-        print(f"[LEADERBOARD] Sent leaderboard data for maze {maze_id} to Pi")
     except Exception as e:
-        print(f"[LEADERBOARD] Failed to send leaderboard data: {e}")
+        pass
 
 def read_leaderboard(maze_id: int):
     filepath = get_leaderboard_file(maze_id)

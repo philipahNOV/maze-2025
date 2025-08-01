@@ -100,7 +100,6 @@ class MQTTClientPi(threading.Thread):
                 if self.app and hasattr(self.app, 'frames'):
                     playvsai_frame = self.app.frames.get('PlayVsAIScreen')
                     if playvsai_frame:
-                        # Extract failure reason (e.g., "no_path", "ball_lost")
                         failure_reason = None
                         if ":" in payload:
                             failure_reason = payload.split(":")[1]

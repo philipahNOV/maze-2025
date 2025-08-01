@@ -11,7 +11,6 @@ class PathFollower:
 
         self.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)  # pixels
         self.acceptance_radius = controller.pos_tol
-
         self.prev_time = None
         self.prev_ball_pos = None
         self.vel_threshold = 50
@@ -19,9 +18,9 @@ class PathFollower:
         self.stuck_retry_time = 3
         self.lookahead_point = None
         self.lookahead_index = 0
-        self.adaptive_lookahead = self.config["path_following"]["lookahead"].get("adaptive", False)  # Enable adaptive lookahead
-        self.curvature_gain = self.config["path_following"]["lookahead"].get("curvature_gain", 0.99)  # How much curvature affects lookahead
-        self.velocity_gain = self.config["path_following"]["lookahead"].get("velocity_gain", 100)  # Controls how steeply it ramps up
+        self.adaptive_lookahead = self.config["path_following"]["lookahead"].get("adaptive", False)
+        self.curvature_gain = self.config["path_following"]["lookahead"].get("curvature_gain", 0.99)
+        self.velocity_gain = self.config["path_following"]["lookahead"].get("velocity_gain", 100)
 
         self.looping = False
         self.forward = True
@@ -94,7 +93,6 @@ class PathFollower:
         self.prev_time = time.time()
         self.prev_ball_pos = ballPos
 
-        # Handle stuck detection
         if not self.prev_progress_time and vel:
             if vel < self.vel_threshold:
                 self.prev_progress_time = time.time()
@@ -102,16 +100,12 @@ class PathFollower:
             if vel and vel > self.vel_threshold:
                 self.prev_progress_time = None
             elif time.time() - self.prev_progress_time > self.stuck_retry_time:
-                print("[STUCK] Ball not progressing, stopping control temporarily.")
                 self.prev_progress_time = None
-                #self.controller.arduinoThread.send_speed(0, 0)
                 return
 
-        # Compute lookahead target
         lookahead_point, self.lookahead_index = self.get_lookahead_point(ballPos, self.lookahead_distance)
         self.lookahead_point = lookahead_point
 
-        # Feedforward direction
         dx = lookahead_point[0] - ballPos[0]
         dy = lookahead_point[1] - ballPos[1]
         norm = np.linalg.norm([dx, dy])
@@ -120,7 +114,6 @@ class PathFollower:
         else:
             self.controller.feedforward_vector = (0, 0)
 
-        # Send position command to controller
         self.controller.posControl(lookahead_point)
 
     def get_lookahead_point(self, ball_pos, lookahead_dist=100):
@@ -129,7 +122,6 @@ class PathFollower:
         closest_proj = None
         ball_pos_np = np.array(ball_pos)
 
-        # Allow limited backward and forward search around cached index
         start_index = max(0, self.last_closest_index - self.max_skip_behind)
         end_index = min(self.length - 1, self.last_closest_index + self.max_skip_ahead)
         search_range = range(start_index, end_index)
@@ -144,7 +136,7 @@ class PathFollower:
                 closest_index = i
                 closest_proj = proj
 
-        self.last_closest_index = closest_index  # Update cache
+        self.last_closest_index = closest_index
 
         total_dist = np.linalg.norm(ball_pos_np - closest_proj)
         a = closest_proj
@@ -167,18 +159,15 @@ class PathFollower:
                 return tuple(lookahead_point), j
 
             total_dist += seg_len
-            a = b  # Move to next segment
+            a = b
 
-        # Reached end/start of path — reverse if looping
         now = time.time()
         if self.looping and (self.last_reverse_time is None or now - self.last_reverse_time > self.reverse_cooldown):
             self.forward = not self.forward
             self.last_reverse_time = now
-            print(f"[LOOKAHEAD] Reversed direction: {'→' if self.forward else '←'}")
             self.last_closest_index = self.length - 2 if self.forward else 1
             return self.path[self.last_closest_index]
         else:
-            print("[LOOKAHEAD] No lookahead segment in range — using closest projection.")
             return tuple(closest_proj), closest_index
 
     def _project_point_onto_segment(self, p, a, b):
