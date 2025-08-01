@@ -71,13 +71,13 @@ class YOLOModel:
         np.copyto(self.input_host, img.ravel())
 
 
-    def predict(self, image, conf=0.35):
+    def predict(self, image, conf=0.55):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.35):
+    def _predict_tensorrt(self, image, conf=0.55):
         if not self.cuda_ctx:
             raise RuntimeError("CUDA not initialized properly")
         
@@ -100,7 +100,7 @@ class YOLOModel:
         finally:
             self.cuda_ctx.pop()
     
-    def _predict_pytorch(self, image, conf=0.35):
+    def _predict_pytorch(self, image, conf=0.55):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -121,7 +121,7 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.35):
+    def postprocess(self, output, conf_thres=0.55):
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
