@@ -112,7 +112,6 @@ class LeaderboardScreen(tk.Frame):
                 return
             
             self.tree.delete(*self.tree.get_children())
-            
             entries = []
             if csv_data.strip():
                 lines = csv_data.strip().split('\n')

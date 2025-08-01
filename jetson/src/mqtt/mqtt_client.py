@@ -64,7 +64,6 @@ class MQTTClientJetson(threading.Thread):
                 self.client.publish("pi/command", "booted", qos=1)
                 self.handshake_complete = True
         elif topic == "jetson/player_name":
-            # Store player name in FSM
             self.fsm.current_player_name = payload
             print(f"Player name set to: {payload}")
         elif topic == "pi/response":

@@ -31,7 +31,6 @@ class BlinkRed(threading.Thread):
         
         while not self._stop_event.is_set():
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
-                print("BlinkRed active too long — triggering elevator up.")
                 for _ in range(5):
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.1)
@@ -56,7 +55,6 @@ class LookForBall:
         thread.start()
 
     def _check_loop(self):
-        print("[LookForBall] Started checking...")
         while not self._stop_event.is_set():
             pos = self.tracking_service.get_ball_position()
             if pos is not None:
@@ -102,7 +100,6 @@ class PathFindingThread(threading.Thread):
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
-            print("[PathFindingThread] Ball position is None or stop requested. Aborting.")
             self.on_path_found(None, None)
             return
 
@@ -113,11 +110,9 @@ class PathFindingThread(threading.Thread):
             return
 
         cached = self.path_cache.get_cached_path(start, self.goal)
-        print(f"[PathFindingThread] Start point: {start}, Goal: {self.goal}")
 
         if cached:
             path = cached
-            print("[PathFindingThread] Using cached path.")
         else:
             path = astar_downscaled(safe_mask, start, self.goal,
                                     repulsion_weight=self.repulsion_weight, scale=self.scale)
@@ -126,7 +121,6 @@ class PathFindingThread(threading.Thread):
             if path:
                 self.path_cache.cache_path(start, self.goal, path)
             else:
-                print("[PathMemory] Pathfinding failed. Not caching empty path.")
                 self.on_path_found(None, None)
                 return
 
@@ -136,21 +130,16 @@ class PathFindingThread(threading.Thread):
         waypoints = sample_waypoints(path, safe_mask)
         #waypoints = astar.waypoint_sampling_2.sample_waypoints(path, safe_mask)
         waypoints_lookahead = sample_waypoints_la(path, safe_mask, waypoint_spacing=120, angle_threshold=135)
-        print(f"[PathFindingThread] Path length: {len(path)}")
 
         if self._stop_event.is_set():
             return
 
-        print(f"[PathFindingThread] Sampled {len(waypoints)} waypoints.")
         final_path = [(x, y) for y, x in waypoints]
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
-        print(f"[PathFindingThread] Path found with {len(final_path)} points.")
-
         self.on_path_found(final_path, final_path_lookahead)
 
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
-        print("[PathFindingThread] Stopping path finding thread.")
         self._stop_event.set()
 
 class EscapeElevatorThread(threading.Thread):
@@ -159,13 +148,12 @@ class EscapeElevatorThread(threading.Thread):
         self.arduino_thread = arduino_thread
         self.duration = 1.5
         self.y_duration = 0.1
-        self.speed = 200  # absolute motor speed
+        self.speed = 200
         self._stop_event = threading.Event()
         self.start_time = time.time()
         self.controller = controller
 
     def run(self):
-        print("[EscapeElevatorThread] Starting escape...")
         while time.time() - self.start_time < self.duration:
             elapsed = time.time() - self.start_time
             if elapsed >= self.y_duration:
@@ -175,7 +163,6 @@ class EscapeElevatorThread(threading.Thread):
             time.sleep(0.1)
         time.sleep(0.3)
         if self.controller.elevator_state is not None:
-            print("[EscapeElevatorThread] Sending elevator down command.")
             for _ in range(5):
                     self.arduino_thread.send_elevator(-1)
                     time.sleep(0.1)
@@ -189,10 +176,9 @@ class DiscoThread(threading.Thread):
         self._stop_event = threading.Event()
         self.mode = 0
         self.last_mode_zero_time = time.time()
-        self.idle_time = idle_time  # seconds, time to wait before going idle
+        self.idle_time = idle_time
 
     def run(self):
-        print("[DiscoThread] Starting disco...")
         hue = random.randrange(0, 100) / 100.0
 
         while not self._stop_event.is_set():
@@ -209,13 +195,11 @@ class DiscoThread(threading.Thread):
 
             else:
                 if time.time() - self.last_mode_zero_time >= self.idle_time:
-                    print(f"[DiscoThread] Auto-reactivating disco mode after {self.idle_time} seconds.")
                     self.mode = 1
                 time.sleep(0.2)
 
     def toggle_mode(self):
         self.mode = (self.mode + 1) % 2
-        print(f"[DiscoThread] Toggled disco mode to {self.mode}")
         if self.mode == 0:
             self.last_mode_zero_time = time.time()
             self.arduino_thread.send_color(255, 255, 255)
@@ -226,7 +210,6 @@ class DiscoThread(threading.Thread):
         self.arduino_thread.send_color(255, 255, 255)
 
     def stop(self):
-        print("[DiscoThread] Stopping disco thread.")
         self.mode = 0
         self.arduino_thread.send_color(255, 255, 255)
         self._stop_event.set()

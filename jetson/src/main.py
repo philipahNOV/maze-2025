@@ -7,7 +7,6 @@ from app.finite_state_machine import HMIController
 import yaml
 from pathlib import Path
 
-
 def initialize_component(component, name, retries=5, delay=2):
     for attempt in range(retries):
         try:
@@ -30,10 +29,8 @@ def load_config():
         config = yaml.safe_load(file)
     return config
 
-
 try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
-    # Reduced sleep - Arduino should be ready faster, and other components can init in parallel
     time.sleep(2)
 except Exception as e:
     print(e)
@@ -49,7 +46,6 @@ tracker_service = TrackerService(
     tracking_config=tracking_config,
 )
 
-# Camera is already initialized in TrackerService constructor
 controller = position_controller.Controller(
     arduinoThread=arduino_thread,
     tracker=tracker_service,
@@ -70,6 +66,6 @@ mqtt_client.fsm = fsm
 
 print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
-    time.sleep(0.1)  # Reduced from 1 second to 100ms for faster response
+    time.sleep(0.1)
 
 print("Connected!")

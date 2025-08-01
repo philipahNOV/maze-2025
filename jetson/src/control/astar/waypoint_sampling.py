@@ -24,7 +24,6 @@ def _douglas_peucker(pts, eps):
     return left[:-1] + right
 
 def sample_waypoints(path, mask):
-    # 1) build raw H/V hops
     raw = [path[0]]
     y, x = path[0]
     for ty, tx in path[1:]:
@@ -39,7 +38,6 @@ def sample_waypoints(path, mask):
                 raw.append((yy, x))
         y = ty
 
-    # 2) collapse straight runs to endpoints
     pts = [raw[0]]
     for i, (prev, curr, nxt) in enumerate(zip(raw, raw[1:], raw[2:])):
         if (curr[0] - prev[0], curr[1] - prev[1]) != (nxt[0] - curr[0], nxt[1] - curr[1]):
@@ -48,7 +46,6 @@ def sample_waypoints(path, mask):
     pts.append(raw[-1])
 
 
-    # 3) insert L-pivots at 90° corners
     full = [pts[0]]
     for a, b, c in zip(pts, pts[1:], pts[2:]):
         if (a[0]==b[0] and b[1]!=c[1]) or (a[1]==b[1] and b[0]!=c[0]):
@@ -60,7 +57,6 @@ def sample_waypoints(path, mask):
     if pts[-1] != full[-1]:
         full.append(pts[-1])
 
-    # 4) adaptive ε based on raw-path length
     seg_dists = [math.hypot(y2-y1, x2-x1) for (y1,x1),(y2,x2) in zip(full, full[1:])]
     mean_seg = sum(seg_dists)/len(seg_dists) if seg_dists else 0.0
     raw_len = len(raw)

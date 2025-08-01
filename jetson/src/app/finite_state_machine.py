@@ -235,7 +235,6 @@ class HMIController:
         print("[PLAYVSAI] Starting PID turn...")
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
-        # Tracking already started in PlayVsAI mode entry
         self.mqtt_client.client.publish("pi/command", "playvsai_pid_started")
         
         if hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None:
@@ -245,7 +244,7 @@ class HMIController:
         
         path_found = False
         timeout_counter = 0
-        while not path_found and timeout_counter < 100:  # 10 second timeout
+        while not path_found and timeout_counter < 100:
             if self.path is not None:
                 path_found = True
                 break
@@ -255,7 +254,6 @@ class HMIController:
         if not path_found:
             print("[PLAYVSAI] PID failed: No path found")
             self.mqtt_client.client.publish("pi/command", "playvsai_pid_fail:no_path")
-            # Return to PLAYVSAI state to allow user to try again or set different goal
             self.state = SystemState.PLAYVSAI
             return
         
@@ -312,7 +310,6 @@ class HMIController:
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
-        # Tracking already started in PlayVsAI mode entry
         self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
         self._start_joystick_control()
         
@@ -433,7 +430,6 @@ class HMIController:
                 if self.disco_thread is not None:
                     self.disco_thread.toggle_mode()
             elif cmd.startswith("Locate"):
-                # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)

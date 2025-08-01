@@ -150,12 +150,9 @@ class PlayAloneScreen(tk.Frame):
     def on_button_click_start_game(self):
         player_name = self.name.strip()
         if not player_name:
-            print("[PlayAloneScreen] Start clicked with no name.")
             return
 
         self.controller.player_name = player_name
-        print(f"[PlayAloneScreen] Starting game as '{player_name}'")
-
         self.mqtt_client.client.publish("jetson/player_name", player_name)
         self.mqtt_client.client.publish("jetson/command", "StartGame")
         self.controller.show_frame("PlayAloneStartScreen")

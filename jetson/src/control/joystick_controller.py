@@ -11,10 +11,8 @@ class JoystickController:
         self.deadzone = 5000
         self.max_raw = 32767
         self.update_rate_hz = 120
-
-        self.elevator_state = 1  # start DOWN or UP, whichever is your default
+        self.elevator_state = 1
         self.prev_button_state = 0
-
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -38,7 +36,6 @@ class JoystickController:
             joystick = pygame.joystick.Joystick(0)
             joystick.init()
         except pygame.error:
-            print("[XboxController] No joystick found.")
             return
 
         self.running = True
@@ -48,16 +45,12 @@ class JoystickController:
         try:
             while self.running:
                 loop_start = time.time()
-
                 pygame.event.pump()
                 axis_x = -joystick.get_axis(1)  # venstre horisontal
                 axis_y = -joystick.get_axis(0)  # vensre vertikal
-
                 vel_x = self.scaled_output(axis_x)
                 vel_y = self.scaled_output(axis_y)
-
                 self.arduino.send_speed(vel_x, vel_y)
-
                 button = joystick.get_button(0)
 
                 if button and not self.prev_button_state:
@@ -65,7 +58,6 @@ class JoystickController:
                     self.arduino.send_elevator(self.elevator_state)
 
                 self.prev_button_state = button
-
                 time.sleep(max(0, interval - (time.time() - loop_start)))
 
         except Exception as e:
@@ -74,8 +66,6 @@ class JoystickController:
         finally:
             self.arduino.send_speed(0, 0)
             pygame.quit()
-            print("[XboxController] Clean exit, resources released.")
 
     def stop(self):
         self.running = False
-        print("[XboxController] Stop requested.")
