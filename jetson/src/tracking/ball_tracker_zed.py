@@ -76,14 +76,13 @@ class BallTracker:
                 h_mean = np.mean(roi_hsv[:, :, 0])
                 s_mean = np.mean(roi_hsv[:, :, 1])
                 v_mean = np.mean(roi_hsv[:, :, 2])
-                self.hsv_history.append((h_mean, s_mean, v_mean))
 
-                # Check for abrupt HSV shift
-                if len(self.hsv_history) == self.hsv_history.maxlen:
-                    h_vals, s_vals, v_vals = zip(*self.hsv_history)
-                    if np.std(h_vals) > 10 or np.std(s_vals) > 20 or np.std(v_vals) > 20:
-                        print(f"[HSV Check] Rejected color shift at ({cx}, {cy})")
-                        continue
+                # Reject black/saturated areas (holes)
+                if v_mean < 60 and s_mean < 60:
+                    print(f"[HSV Check] Rejected dark/saturated area at ({cx}, {cy}) — likely a hole")
+                    self.ball_position = None
+                    continue
+
 
                 # Valid ball detection
                 self.ball_position = (cx, cy)
