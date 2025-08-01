@@ -2,6 +2,7 @@ import threading
 import time
 import numpy as np
 import cv2
+import yaml
 from collections import deque
 from tracking.model_loader import YOLOModel
 import pyzed.sl as sl
@@ -25,11 +26,54 @@ class BallTracker:
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
         self._board_mask = None
         self._mask_frame_counter = 0
+        
+        # Load elevator configuration from config.yaml
+        self._load_elevator_config()
+
+    def _load_elevator_config(self):
+        """Load elevator configuration from config.yaml"""
+        try:
+            with open('config.yaml', 'r') as f:
+                config = yaml.safe_load(f)
+            
+            camera_config = config.get('camera', {})
+            self.elevator_center_x = camera_config.get('elevator_center_x', 998)
+            self.elevator_center_y = camera_config.get('elevator_center_y', 588)
+            self.elevator_radius = camera_config.get('elevator_radius', 60)
+        except (FileNotFoundError, yaml.YAMLError) as e:
+            # Fallback to default values if config file can't be loaded
+            print(f"Warning: Could not load config.yaml, using default elevator values: {e}")
+            self.elevator_center_x = 998
+            self.elevator_center_y = 588
+            self.elevator_radius = 60
 
     def _is_ball_in_hole(self, image, cx, cy, ball_width, ball_height):
+        """
+        Check if the ball is fully in a black area of the board mask (indicating a hole).
+        Excludes the elevator area from hole detection.
+        
+        Args:
+            image: BGR image
+            cx, cy: Center coordinates of the ball
+            ball_width, ball_height: Dimensions of the detected ball
+            
+        Returns:
+            True if ball is fully in a hole (black area of mask), False otherwise
+        """
+        # Check if ball is in elevator area first - if so, it's always valid
+        distance_to_elevator = np.sqrt((cx - self.elevator_center_x)**2 + (cy - self.elevator_center_y)**2)
+        if distance_to_elevator <= self.elevator_radius:
+            return False  # Ball is in elevator area, not in a hole
+        
         if self._board_mask is None or self._mask_frame_counter % 10 == 0:
             gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
             self._board_mask = create_binary_mask(gray)
+            
+            # Create a white circle in the mask for the elevator area
+            cv2.circle(self._board_mask, 
+                      (self.elevator_center_x, self.elevator_center_y), 
+                      self.elevator_radius, 
+                      255, -1)  # Fill circle with white (valid area)
         
         self._mask_frame_counter += 1
         
