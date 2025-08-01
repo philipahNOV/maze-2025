@@ -71,66 +71,30 @@ class HMIController:
         #sys.exit(0)
         os.execv(python, [python, script])
 
-    def cleanup_yolo_model(self):
-        """Cleanup YOLO model CUDA resources without stopping the tracker"""
-        if (hasattr(self.tracking_service, 'tracker') and 
-            self.tracking_service.tracker is not None and 
-            hasattr(self.tracking_service.tracker, 'model')):
-            try:
-                self.tracking_service.tracker.model.shutdown()
-                print("[FSM] YOLO model CUDA resources cleaned up")
-            except Exception as e:
-                print(f"[FSM] Warning: Error during YOLO model cleanup: {e}")
-
-    def safe_stop_tracking(self):
-        """Safely stop tracking with proper CUDA cleanup order"""
-        try:
-            # First cleanup YOLO model while tracker is still active
-            self.cleanup_yolo_model()
-            # Then stop the tracker
-            self.tracking_service.stop_tracker()
-            print("[FSM] Tracking safely stopped with CUDA cleanup")
-        except Exception as e:
-            print(f"[FSM] Warning: Error during safe tracking stop: {e}")
-            # Force stop tracker even if cleanup failed
-            try:
-                self.tracking_service.stop_tracker()
-            except:
-                pass
-
     def stop_threads(self):
         try:
             self.mqtt_client.stop()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
-            
         if self.image_thread is not None:
             self.image_thread.stop()
             self.image_thread.join()
             self.image_thread = None
-
-        # Use safe tracking stop method
-        self.safe_stop_tracking()
-
         if self.controller_thread is not None and self.controller_thread.is_alive():
             self.stop_controller_event.set()
             self.controller_thread.join()
             self.controller_thread = None
-            
         if self.path_thread is not None and self.path_thread.is_alive():
             self.path_thread.stop()
             self.path_thread = None
-            
         if self.ball_finder is not None:
             self.ball_finder.stop()
             self.ball_finder = None
-            
         if self.disco_thread is not None:
             self.disco_thread.stop()
             self.disco_thread.join()
             self.disco_thread = None
-            
-        # Close camera last
+        self.tracking_service.stop_tracker()
         self.tracking_service.camera.close()
 
     def stop_program(self):
@@ -280,7 +244,7 @@ class HMIController:
         
         path_found = False
         timeout_counter = 0
-        while not path_found and timeout_counter < 100:
+        while not path_found and timeout_counter < 100:  # 10 second timeout
             if self.path is not None:
                 path_found = True
                 break
@@ -466,6 +430,7 @@ class HMIController:
                 if self.disco_thread is not None:
                     self.disco_thread.toggle_mode()
             elif cmd.startswith("Locate"):
+                # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
                     self.arduino_thread.send_elevator(1)
@@ -603,18 +568,17 @@ class HMIController:
                     self.joystick_thread.join()
                     del self.joystick_thread
                 
+                self.tracking_service.stop_tracker()
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
                     self.custom_goal = None
-
-                # Use safe tracking stop method
-                self.safe_stop_tracking()
-                
-                if self.path_thread is not None and self.path_thread.is_alive():
-                    self.path_thread.stop()
-                    self.path_thread = None
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
@@ -631,8 +595,6 @@ class HMIController:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-
-                self.cleanup_yolo_model()
                 
                 self.path = None
                 self.path_lookahead = None
@@ -669,8 +631,6 @@ class HMIController:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-                
-                self.cleanup_yolo_model()
                 
                 if self.path_thread is not None and self.path_thread.is_alive():
                     self.path_thread.stop()
@@ -712,7 +672,7 @@ class HMIController:
                 self.state = SystemState.HUMAN_CONTROLLER
                 self.playvsai_stop_requested = True
                 self.stop_controller()
-                self.cleanup_yolo_model()
+                self.tracking_service.stop_tracker()
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
 
         elif self.state == SystemState.PLAYVSAI_HUMAN:
@@ -726,7 +686,7 @@ class HMIController:
                 if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
                     self.joystick_thread.join()
                 
-                self.cleanup_yolo_model()
+                self.tracking_service.stop_tracker()
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
             
             elif cmd == "StartHumanTurn":
@@ -784,7 +744,7 @@ class HMIController:
                 self.image_thread.start()
 
             elif cmd == "Back":
-                self.cleanup_yolo_model()
+                self.tracking_service.stop_tracker()
                 if self.ball_finder:
                     self.ball_finder.stop()
                     self.ball_finder = None
@@ -803,14 +763,13 @@ class HMIController:
         # --- AUTO_PATH STATE ---
         elif self.state == SystemState.AUTO_PATH:
             if cmd == "Back":
+                self.stop_controller()
+                self.state = SystemState.NAVIGATION
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-
-                self.cleanup_yolo_model()
-                self.stop_controller()
-                self.state = SystemState.NAVIGATION
                 if self.path_thread is not None:
                     self.path_thread.stop()
                     self.path_thread = None
@@ -865,11 +824,11 @@ class HMIController:
                 self.state = SystemState.MAIN_SCREEN
                 self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
                 self.disco_thread.start()
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-                self.cleanup_yolo_model()
                 self.path = None
                 self.image_controller.set_new_path(self.path)
                 print("[FSM] Transitioned to MAIN_SCREEN")
@@ -877,24 +836,19 @@ class HMIController:
         # --- CUSTOM_PATH STATE ---
         elif self.state == SystemState.CUSTOM_PATH:
             if cmd == "Back":
+                self.stop_controller()
+                self.tracking_service.stop_tracker()
+                if self.path_thread is not None:
+                    self.path_thread.stop()
+                    self.path_thread = None
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-
-                self.cleanup_yolo_model()
-
-                self.stop_controller()
-                if self.path_thread is not None:
-                    self.path_thread.stop()
-                    self.path_thread = None
-                self.custom_goal = None
-
+                    self.custom_goal = None
+                
                 self.state = SystemState.MAIN_SCREEN
-                self.disco_thread = utility_threads.DiscoThread(
-                    self.arduino_thread,
-                    self.config['general'].get('idle_light_time', 15)
-                )
+                self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
                 self.disco_thread.start()
                 self.path = None
                 self.image_controller.set_new_path(self.path)
@@ -958,7 +912,7 @@ class HMIController:
         elif self.state == SystemState.CONTROLLING:
             if cmd == "Back":
                 self.stop_controller()
-                self.cleanup_yolo_model()
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
@@ -974,7 +928,7 @@ class HMIController:
                 print("[FSM] Timeout command received in CONTROLLING")
                 self.stop_controller()
                 self.state = SystemState.MAIN_SCREEN
-                self.cleanup_yolo_model()
+                self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
