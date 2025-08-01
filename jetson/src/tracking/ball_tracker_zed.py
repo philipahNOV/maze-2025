@@ -63,7 +63,7 @@ class BallTracker:
 
                 # Check confidence threshold
                 confidence = float(box.conf[0])
-                if confidence < 0.65:
+                if confidence < 0.55:
                     self.ball_position = None
                     continue
 
