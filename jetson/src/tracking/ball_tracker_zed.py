@@ -22,7 +22,7 @@ class BallTracker:
         self.timing_print_counter = 0
         self._normalization_array = None
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
-        self.depth_threshold_mm = 50
+        self.depth_threshold_mm = 240
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
