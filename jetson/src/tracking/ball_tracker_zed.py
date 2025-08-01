@@ -73,16 +73,14 @@ class BallTracker:
                     continue
 
                 roi_hsv = cv2.cvtColor(roi_bgr, cv2.COLOR_BGR2HSV)
-                h_mean = np.mean(roi_hsv[:, :, 0])
-                s_mean = np.mean(roi_hsv[:, :, 1])
-                v_mean = np.mean(roi_hsv[:, :, 2])
+                s_mean = np.mean(roi_hsv[:, :, 1])  # saturation
+                v_mean = np.mean(roi_hsv[:, :, 2])  # brightness
 
-                # Reject black/saturated areas (holes)
-                if v_mean < 60 and s_mean < 60:
-                    print(f"[HSV Check] Rejected dark/saturated area at ({cx}, {cy}) — likely a hole")
+                # If it's too black/dark, likely a hole
+                if s_mean < 30 and v_mean < 30:
+                    print(f"[HSV Check] Rejected black object at ({cx}, {cy}) — likely a hole")
                     self.ball_position = None
                     continue
-
 
                 # Valid ball detection
                 self.ball_position = (cx, cy)
