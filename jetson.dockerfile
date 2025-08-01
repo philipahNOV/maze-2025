@@ -1,8 +1,11 @@
 
 FROM stereolabs/zed:5.0-runtime-jetson-jp6.0.0
 
-COPY . .
 WORKDIR /maze_jetson
+
+COPY ./requirements.txt .
+COPY ./jetson/src .
+COPY ./pi/src .
 
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
