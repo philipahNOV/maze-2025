@@ -22,6 +22,7 @@ class BallTracker:
         self.timing_print_counter = 0
         self._normalization_array = None
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
+        self.depth_threshold_mm = 50
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -57,6 +58,8 @@ class BallTracker:
             results = self.model.predict(rgb)
 
             custom_boxes = []
+            ball_valid = False
+
             for box in results.boxes:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
@@ -64,17 +67,33 @@ class BallTracker:
                 h, w = rgb.shape[:2]
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
+
+                z_depth_mm = -1  # invalid default
+                if hasattr(self.camera, 'zed'):
+                    err, point_cloud = self.camera.zed.retrieve_measure(sl.MEASURE.MEASURED_DEPTH)
+                    if err == sl.ERROR_CODE.SUCCESS:
+                        z_depth = point_cloud.get_value(cx, cy)[1]  # (x, y, z); z = depth in mm
+                        if z_depth and np.isfinite(z_depth) and z_depth > 0:
+                            z_depth_mm = z_depth
+                            if z_depth_mm < self.depth_threshold_mm:
+                                ball_valid = True  # Valid detection
+                            else:
+                                print(f"[Depth Check] Ignoring ball at ({cx}, {cy}) with z={z_depth_mm:.2f}mm")
+
+                if not ball_valid:
+                    self.ball_position = None
+                    continue
+
                 self.ball_position = (cx, cy)
+
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
                 width_norm = width / w
                 height_norm = height / h
-
                 x_min = x_center_norm - width_norm / 2
                 x_max = x_center_norm + width_norm / 2
                 y_min = y_center_norm - height_norm / 2
                 y_max = y_center_norm + height_norm / 2
-                
                 self._bbox_buffer[0, 0] = x_min
                 self._bbox_buffer[0, 1] = y_min
                 self._bbox_buffer[1, 0] = x_max
@@ -85,7 +104,7 @@ class BallTracker:
                 self._bbox_buffer[3, 1] = y_max
 
                 obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = self._bbox_buffer.copy()  # copy for ZED
+                obj.bounding_box_2d = self._bbox_buffer.copy()
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
