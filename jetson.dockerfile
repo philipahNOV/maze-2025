@@ -9,16 +9,14 @@ RUN apt-get update && apt-get install -y \
     openssh-client
 
 # Kopierer ssh key til docker image
-RUN mkdir -p /root/.ssh && \
-    ssh-keyscan github.com >> /root/.ssh/known_hosts
+#RUN mkdir -p /root/.ssh && \
+#    ssh-keyscan github.com >> /root/.ssh/known_hosts
 
 # Bygger med cloning hvis --ssh er lagt til i docker run komandoen
-RUN --mount=type=ssh git clone git@github.com:philipahNOV/maze-2025.git /maze
+#RUN --mount=type=ssh git clone git@github.com:philipahNOV/maze-2025.git /maze
 
-RUN ln -s /maze/jetson/src /maze_jetson
+#RUN ln -s /maze/jetson/src /maze_jetson
 WORKDIR /maze_jetson
-
-VOLUME [ "/usr/local/zed/resources:/usr/local/zed/resources" ]
 
 RUN apt-get install -y \
     libgl1-mesa-glx \
@@ -29,5 +27,7 @@ RUN apt-get install -y \
 
 RUN pip3 install --upgrade pip
 RUN pip3 install --no-cache-dir -r requirements.txt
+
+COPY . .
 
 #CMD ["python3", "jetson/src/main.py"]
