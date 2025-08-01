@@ -67,25 +67,26 @@ class BallTracker:
                 h, w = rgb.shape[:2]
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
+                z_depth_mm = -1
+                ball_lost = False
 
-                z_depth_mm = -1  # invalid default
                 if hasattr(self.camera, 'zed'):
                     depth_map = sl.Mat()
                     err = self.camera.zed.retrieve_measure(depth_map, sl.MEASURE.DEPTH)
                     if err == sl.ERROR_CODE.SUCCESS:
-                        z_depth = depth_map.get_value(cx, cy)[1]  # index 1 is Z (depth)
+                        z_depth = depth_map.get_value(cx, cy)[1]  # (x, y, z); z = depth
                         if z_depth and np.isfinite(z_depth) and z_depth > 0:
                             z_depth_mm = z_depth
-                            if z_depth_mm < self.depth_threshold_mm:
-                                ball_valid = True  # Valid detection
-                            else:
-                                print(f"[Depth Check] Ignoring ball at ({cx}, {cy}) with z={z_depth_mm:.2f}mm")
+                            if z_depth_mm > self.depth_threshold_mm:
+                                ball_lost = True
+                                print(f"[Depth Check] Ball lost (z={z_depth_mm:.2f}mm) at ({cx}, {cy})")
 
-                if not ball_valid:
+                if ball_lost:
                     self.ball_position = None
-                    continue
+                    continue  # skip further processing
+                else:
+                    self.ball_position = (cx, cy)
 
-                self.ball_position = (cx, cy)
 
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
