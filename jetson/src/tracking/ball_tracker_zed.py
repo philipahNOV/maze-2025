@@ -70,7 +70,7 @@ class BallTracker:
 
                 z_depth_mm = -1  # invalid default
                 if hasattr(self.camera, 'zed'):
-                    err, point_cloud = self.camera.zed.retrieve_measure(sl.MEASURE.MEASURED_DEPTH)
+                    err, point_cloud = self.camera.zed.retrieve_measure(sl.MEASURE.DEPTH)
                     if err == sl.ERROR_CODE.SUCCESS:
                         z_depth = point_cloud.get_value(cx, cy)[1]  # (x, y, z); z = depth in mm
                         if z_depth and np.isfinite(z_depth) and z_depth > 0:
