@@ -72,44 +72,66 @@ class HMIController:
         os.execv(python, [python, script])
 
     def cleanup_yolo_model(self):
-            if (hasattr(self.tracking_service, 'tracker') and 
-                self.tracking_service.tracker is not None and 
-                hasattr(self.tracking_service.tracker, 'model')):
-                try:
-                    self.tracking_service.tracker.model.shutdown()
-                    print("[FSM] YOLO model CUDA resources cleaned up")
-                except Exception as e:
-                    print(f"[FSM] Warning: Error during YOLO model cleanup: {e}")
+        """Cleanup YOLO model CUDA resources without stopping the tracker"""
+        if (hasattr(self.tracking_service, 'tracker') and 
+            self.tracking_service.tracker is not None and 
+            hasattr(self.tracking_service.tracker, 'model')):
+            try:
+                self.tracking_service.tracker.model.shutdown()
+                print("[FSM] YOLO model CUDA resources cleaned up")
+            except Exception as e:
+                print(f"[FSM] Warning: Error during YOLO model cleanup: {e}")
+
+    def safe_stop_tracking(self):
+        """Safely stop tracking with proper CUDA cleanup order"""
+        try:
+            # First cleanup YOLO model while tracker is still active
+            self.cleanup_yolo_model()
+            # Then stop the tracker
+            self.tracking_service.stop_tracker()
+            print("[FSM] Tracking safely stopped with CUDA cleanup")
+        except Exception as e:
+            print(f"[FSM] Warning: Error during safe tracking stop: {e}")
+            # Force stop tracker even if cleanup failed
+            try:
                 self.tracking_service.stop_tracker()
+            except:
+                pass
 
     def stop_threads(self):
         try:
             self.mqtt_client.stop()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
+            
         if self.image_thread is not None:
             self.image_thread.stop()
             self.image_thread.join()
             self.image_thread = None
 
-        self.cleanup_yolo_model()
+        # Use safe tracking stop method
+        self.safe_stop_tracking()
 
         if self.controller_thread is not None and self.controller_thread.is_alive():
             self.stop_controller_event.set()
             self.controller_thread.join()
             self.controller_thread = None
+            
         if self.path_thread is not None and self.path_thread.is_alive():
             self.path_thread.stop()
             self.path_thread = None
+            
         if self.ball_finder is not None:
             self.ball_finder.stop()
             self.ball_finder = None
+            
         if self.disco_thread is not None:
             self.disco_thread.stop()
             self.disco_thread.join()
             self.disco_thread = None
-            self.tracking_service.stop_tracker()
-            self.tracking_service.camera.close()
+            
+        # Close camera last
+        self.tracking_service.camera.close()
 
     def stop_program(self):
         print("Stopping program...")
@@ -587,7 +609,8 @@ class HMIController:
                     self.image_thread = None
                     self.custom_goal = None
 
-                self.cleanup_yolo_model()
+                # Use safe tracking stop method
+                self.safe_stop_tracking()
                 
                 if self.path_thread is not None and self.path_thread.is_alive():
                     self.path_thread.stop()
