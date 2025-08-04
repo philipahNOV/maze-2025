@@ -45,6 +45,7 @@ class YOLOModel:
         self.stream = cuda.Stream()
         self.is_shutdown = False
         self.lock = threading.Lock()
+        print("[DEBUG] Engine input shape:", self.engine.get_binding_shape(self.input_binding_idx))
 
     def _init_pytorch_fallback(self, model_path):
         pt_path = model_path.replace(".engine", ".pt")
