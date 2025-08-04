@@ -169,7 +169,7 @@ class YOLOModel:
 
             # Detach CUDA context
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
-                self.cuda_ctx.detach()
+                self.cuda_ctx.pop()
                 self.cuda_ctx = None
 
             print("[YOLOModel] Shutdown completed successfully")
