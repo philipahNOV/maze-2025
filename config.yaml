@@ -54,10 +54,10 @@ controller:
   position_controller_normal:
     kp_x: 0.00007
     kp_y: 0.00007
-    kd_x: 0.0001
-    kd_y: 0.0001
-    ki_x: 0.000015
-    ki_y: 0.000015
+    kd_x: 0.0002
+    kd_y: 0.0002
+    ki_x: 0.00002
+    ki_y: 0.00002
     position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
     feedforward_t: 6
@@ -81,8 +81,8 @@ controller:
     tolerance: 0.002         # rad
     time_limit: 10           # seconds
   arduino:
-    x_offset: 0.02                # rad
-    y_offset: -0.0035                 # rad
+    x_offset: 0.01                # rad
+    y_offset: 0.001                 # rad
     minimum_velocity: 22
     maximum_velocity: 100
     minimum_velocity_difference: 10

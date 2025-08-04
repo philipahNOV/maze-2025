@@ -74,13 +74,13 @@ class YOLOModel:
         np.copyto(self.input_host, img.ravel())
 
 
-    def predict(self, image, conf=0.35):
+    def predict(self, image, conf=0.25):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.35):
+    def _predict_tensorrt(self, image, conf=0.25):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -112,7 +112,7 @@ class YOLOModel:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
     
-    def _predict_pytorch(self, image, conf=0.35):
+    def _predict_pytorch(self, image, conf=0.25):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -133,7 +133,7 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.35):
+    def postprocess(self, output, conf_thres=0.25):
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
