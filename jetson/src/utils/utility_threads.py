@@ -58,6 +58,7 @@ class LookForBall:
     def _check_loop(self):
         while not self._stop_event.is_set():
             pos = self.tracking_service.get_ball_position()
+            print(pos)
             if pos is not None:
                 print(f"[LookForBall] Ball found at {pos}")
                 if self.on_ball_found:

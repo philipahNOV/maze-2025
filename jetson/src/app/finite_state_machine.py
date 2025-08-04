@@ -103,6 +103,7 @@ class HMIController:
         sys.exit(0)
 
     def on_ball_found(self):
+        print(self.tracking_service.get_ball_position())
         if is_in_elevator(self.config, self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
         else:
@@ -437,7 +438,7 @@ class HMIController:
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
                     for _ in range(5):
-                        self.arduino_thread.send_elevator(-1)
+                        self.arduino_thread.send_elevator(1)
                         time.sleep(0.05)
                     #self.arduino_thread.send_elevator(1)
                     #self.controller.elevator_state = "up"
