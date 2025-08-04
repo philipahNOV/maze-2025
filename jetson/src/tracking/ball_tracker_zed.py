@@ -22,6 +22,7 @@ class BallTracker:
         self.timing_print_counter = 0
         self._normalization_array = None
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
+        self.timing_print_counter = 0  # Add counter to reduce print frequency
 
     def init_zed_object_detection(self):
         if not self.zed_od_initialized and hasattr(self.camera, 'zed'):
@@ -47,16 +48,19 @@ class BallTracker:
 
     def consumer_loop(self):
         while self.running:
-            start = time.time()
+            loop_start = time.time()
             if not self.frame_queue:
                 time.sleep(0.001)
                 continue
 
             rgb, bgr = self.frame_queue.popleft()
             self.latest_bgr_frame = bgr
+            inference_start = time.time()
             results = self.model.predict(rgb)
+            inference_time = (time.time() - inference_start) * 1000
 
             custom_boxes = []
+            post_start = time.time()
             for box in results.boxes:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
@@ -90,6 +94,22 @@ class BallTracker:
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
                 custom_boxes.append(obj)
+
+                post_time = (time.time() - post_start) * 1000
+
+                ingest_start = time.time()
+                if custom_boxes and self.zed_od_initialized:
+                    self.camera.zed.ingest_custom_box_objects(custom_boxes)
+                    self.camera.zed.retrieve_custom_objects(self.objects, self.object_runtime_params)
+                ingest_time = (time.time() - ingest_start) * 1000
+
+                total_loop_time = (time.time() - loop_start) * 1000
+                
+                # Only print timing every 30 frames (1 second at 30fps) to reduce I/O overhead
+                self.timing_print_counter += 1
+                if self.timing_print_counter >= 30:
+                    print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
+                    self.timing_print_counter = 0
 
             self.frame_counter = 0
             if custom_boxes and self.zed_od_initialized and self.frame_counter % 3 == 0:
