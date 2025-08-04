@@ -50,7 +50,7 @@ def main(tracker: TrackerService,
     # logger.start()
     # controller.logger = logger
 
-    TARGET_HZ = 60
+    TARGET_HZ = 40
     LOOP_DT = 1.0 / TARGET_HZ
     blinker = None
 

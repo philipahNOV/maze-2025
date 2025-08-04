@@ -93,6 +93,8 @@ class Controller:
         self.stuck_vel_threshold = config["controller"].get("stuck_velocity_threshold", 20)  # px/s
         self.stuck_upper_pos_threshold = config["controller"].get("stuck_upper_position_threshold", 90)  # px
 
+        self.velocity_smoothing_alpha = config["controller"].get("velocity_smoothing_alpha", 0.9)
+
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
         for i, name in enumerate(param_names):
@@ -127,7 +129,7 @@ class Controller:
         e_y = ref[1] - self.pos[1]
 
         edot_x = edot_y = 0
-        alpha = 0.9
+        alpha = self.velocity_smoothing_alpha
         if self.prevError and self.prevTime:
             dt = time.time() - self.prevTime
             if dt > 0.0001:
