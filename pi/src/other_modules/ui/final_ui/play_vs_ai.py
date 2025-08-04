@@ -273,8 +273,11 @@ class PlayVsAIScreen(tk.Frame):
                     fill="red", outline="white", width=2, tags="goal_marker"
                 )
 
-                maze_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
-                maze_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+                x_ratio = self.true_width / self.canvas_width
+                y_ratio = self.true_height / self.canvas_height
+
+                maze_x = self.true_width - int(x * x_ratio) + self.offset_x
+                maze_y = self.true_height - int(y * y_ratio) + self.offset_y
 
                 self.mqtt_client.client.publish("jetson/command", f"Goal_set:{maze_x},{maze_y}")
                 self.status_label.config(text=f"GOAL SET AT ({maze_x}, {maze_y}) - CLICK START BATTLE")
