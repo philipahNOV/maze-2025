@@ -16,15 +16,15 @@ class YOLOModel:
             print(f"[YOLOModel] TensorRT initialization failed: {e}, falling back to PyTorch")
             self._init_pytorch_fallback(model_path)
             self.engine_type = "pytorch"
-    
+
     def _init_tensorrt(self, model_path, input_shape):
         self.input_shape = input_shape
         self.names = ['ball']
-        self.original_h, self.original_w = 512, 512
-        
+        self.original_h, self.original_w = input_shape
+
         cuda.init()
         self.cuda_ctx = cuda.Device(0).make_context()
-        
+
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
 
@@ -38,23 +38,23 @@ class YOLOModel:
         self.output_shape = self.engine.get_binding_shape(self.output_binding_idx)
         self.input_dtype = trt.nptype(self.engine.get_binding_dtype(self.input_binding_idx))
         self.output_dtype = trt.nptype(self.engine.get_binding_dtype(self.output_binding_idx))
-        self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float16)
-        self.output_host = cuda.pagelocked_empty(trt.volume(self.output_shape), dtype=self.output_dtype)
+
+        self.input_host = cuda.register_host_memory(np.empty(trt.volume((1, 3, *input_shape)), dtype=self.input_dtype))
+        self.output_host = cuda.register_host_memory(np.empty(trt.volume(self.output_shape), dtype=self.output_dtype))
         self.input_device = cuda.mem_alloc(self.input_host.nbytes)
         self.output_device = cuda.mem_alloc(self.output_host.nbytes)
         self.stream = cuda.Stream()
         self.is_shutdown = False
         self.lock = threading.Lock()
 
+        print("[YOLOModel] Initialized TensorRT engine with:", self.input_shape, self.input_dtype)
+
     def _init_pytorch_fallback(self, model_path):
         pt_path = model_path.replace(".engine", ".pt")
-        try:
-            self.model = YOLO(pt_path)
-            self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-            self.names = self.model.names
-            print(f"[YOLOModel] PyTorch fallback model loaded from: {pt_path}")
-        except Exception as e:
-            raise RuntimeError(f"[YOLOModel] Both TensorRT and PyTorch models failed: {e}")
+        self.model = YOLO(pt_path)
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.names = self.model.names
+        print(f"[YOLOModel] PyTorch fallback model loaded from: {pt_path}")
 
     def __del__(self):
         if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
@@ -64,31 +64,21 @@ class YOLOModel:
     def preprocess(self, image):
         if self.engine_type != "tensorrt":
             return
-
         input_w, input_h = self.input_shape
-        img = cv2.resize(image, (input_w, input_h))  # (H, W, C)
-
-        # Avoid chaining operations on float16 — work in float32
-        img = img.astype(np.float32) / 255.0  # Normalize
-
-        img = np.transpose(img, (2, 0, 1))  # (C, H, W)
-        img = np.expand_dims(img, axis=0)   # (1, C, H, W)
-
-        # Now convert once and directly
+        img = cv2.resize(image, (input_w, input_h), interpolation=cv2.INTER_LINEAR)
+        img = img.astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))
+        img = np.expand_dims(img, axis=0)
         img_fp16 = img.astype(np.float16)
+        np.copyto(self.input_host, img_fp16.flatten())
 
-        # Copy into preallocated input_host (which must be dtype=np.float16)
-        np.copyto(self.input_host, img_fp16.ravel())
-
-
-
-    def predict(self, image, conf=0.4):
+    def predict(self, image, conf=0.2):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
-    
-    def _predict_tensorrt(self, image, conf=0.4):
+
+    def _predict_tensorrt(self, image, conf=0.2):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -99,10 +89,12 @@ class YOLOModel:
                 self.preprocess(image)
 
                 cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
+
                 self.context.execute_async_v2(
                     bindings=[int(self.input_device), int(self.output_device)],
                     stream_handle=self.stream.handle
                 )
+
                 cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
                 self.stream.synchronize()
 
@@ -119,36 +111,27 @@ class YOLOModel:
                 except Exception as e:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
-    
-    def _predict_pytorch(self, image, conf=0.4):
+    def _predict_pytorch(self, image, conf=0.2):
         try:
             with torch.no_grad():
                 results = self.model.predict(
                     source=image,
                     conf=conf,
                     device=self.device,
-                    imgsz=512,
+                    imgsz=self.input_shape[0],
                     verbose=False
                 )
                 return results[0]
         except Exception as e:
             print(f"[YOLOModel] PyTorch inference failed: {e}")
             return self._empty_result()
-    
-    def _empty_result(self):
-        class EmptyResult:
-            def __init__(self):
-                self.boxes = []
-        return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.4):
-        output = output.squeeze()  # (5, 8400)
-
+    def postprocess(self, output, conf_thres=0.2):
+        output = output.squeeze()
         if output.shape[0] != 5:
             return self._empty_result()
 
         x_center, y_center, width, height, conf = output
-
         mask = conf >= conf_thres
         if not np.any(mask):
             return self._empty_result()
@@ -193,23 +176,23 @@ class YOLOModel:
         boxes = [Box(x1[i], y1[i], x2[i], y2[i], conf[i], cls[i]) for i in range(len(conf))]
         return Result(boxes)
 
+    def _empty_result(self):
+        class EmptyResult:
+            def __init__(self):
+                self.boxes = []
+        return EmptyResult()
 
     def get_label(self, cls_id):
-        if self.engine_type == "tensorrt":
-            return self.names[int(cls_id)]
-        else:
-            return self.names[int(cls_id)]
-        
+        return self.names[int(cls_id)]
+
     def shutdown(self):
         print("[YOLOModel] Starting shutdown...")
         with self.lock:
             if self.is_shutdown:
                 return
             self.is_shutdown = True
-        # safe cleanup here
 
         try:
-            # Free device memory
             if hasattr(self, 'input_device') and self.input_device is not None:
                 self.input_device.free()
                 self.input_device = None
@@ -218,7 +201,6 @@ class YOLOModel:
                 self.output_device.free()
                 self.output_device = None
 
-            # Delete TensorRT objects
             if hasattr(self, 'context') and self.context is not None:
                 del self.context
                 self.context = None
@@ -231,12 +213,10 @@ class YOLOModel:
                 del self.runtime
                 self.runtime = None
 
-            # Delete CUDA stream
             if hasattr(self, 'stream') and self.stream is not None:
                 del self.stream
                 self.stream = None
 
-            # Pop CUDA context from the stack (but do not detach!)
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
                 try:
                     self.cuda_ctx.pop()
