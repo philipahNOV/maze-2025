@@ -399,7 +399,7 @@ class HMIController:
                 self.disco_thread = utility_threads.DiscoThread(self.arduino_thread, self.config['general'].get('idle_light_time', 15))
                 self.disco_thread.start()
                 if self.controller.elevator_state is not None:
-                    self.arduino_thread.send_elevator(1)
+                    self.arduino_thread.send_elevator(-1)
         
         # --- MAIN_SCREEN STATE ---
         elif self.state == SystemState.MAIN_SCREEN:
@@ -433,6 +433,8 @@ class HMIController:
                 # Transition to LOCATING and start ball tracking
                 self.state = SystemState.LOCATING
                 if self.controller.elevator_state is not None:
+                    self.arduino_thread.send_elevator(-1)
+                    time.sleep(0.5)
                     self.arduino_thread.send_elevator(1)
                     #self.controller.elevator_state = "up"
                 if self.disco_thread is not None:

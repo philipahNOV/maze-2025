@@ -136,7 +136,10 @@ class CustomPathScreen(tk.Frame):
                 self.canvas.delete(self.click_marker)
 
             r = 5
-            self.click_marker = self.canvas.create_oval(x - r, y - r, x + r, y + r, fill="green", outline="")
+            self.click_marker = self.canvas.create_oval(
+                    event.x - r, event.y - r, event.x + r, event.y + r,
+                    fill="red", outline="white", width=2, tags="goal_marker"
+                )
 
             transformed_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
             transformed_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
