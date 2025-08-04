@@ -38,7 +38,7 @@ class YOLOModel:
         self.output_shape = self.engine.get_binding_shape(self.output_binding_idx)
         self.input_dtype = trt.nptype(self.engine.get_binding_dtype(self.input_binding_idx))
         self.output_dtype = trt.nptype(self.engine.get_binding_dtype(self.output_binding_idx))
-        self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float32)
+        self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float16)
         self.output_host = cuda.pagelocked_empty(trt.volume(self.output_shape), dtype=self.output_dtype)
         self.input_device = cuda.mem_alloc(self.input_host.nbytes)
         self.output_device = cuda.mem_alloc(self.output_host.nbytes)
@@ -68,7 +68,7 @@ class YOLOModel:
         # input shape is (720, 1280, 3)
         input_w, input_h = self.input_shape
         img = cv2.resize(image, (input_w, input_h))  # (640, 640)
-        img = img.astype(np.float32) / 255.0
+        img = img.astype(np.float16) / 255.0
         img = np.transpose(img, (2, 0, 1))
         img = np.expand_dims(img, axis=0)
         np.copyto(self.input_host, img.ravel())
