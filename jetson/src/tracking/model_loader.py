@@ -5,6 +5,7 @@ import pycuda.driver as cuda
 import pycuda.autoinit
 import torch
 from ultralytics import YOLO
+import threading
 
 class YOLOModel:
     def __init__(self, model_path="new-v8-fp16.engine", input_shape=(640, 640)):
@@ -78,27 +79,38 @@ class YOLOModel:
             return self._predict_pytorch(image, conf)
     
     def _predict_tensorrt(self, image, conf=0.35):
-        if not self.cuda_ctx:
-            raise RuntimeError("CUDA not initialized properly")
-        
-        try:
-            self.cuda_ctx.push()
-            self.original_h, self.original_w = image.shape[:2]
-            self.preprocess(image)
-            cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
-            self.context.execute_async_v2(
-                bindings=[int(self.input_device), int(self.output_device)],
-                stream_handle=self.stream.handle
-            )
-            cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
-            self.stream.synchronize()
-            raw_output = self.output_host.reshape(self.output_shape)
-            return self.postprocess(raw_output, conf)
-        except Exception as e:
-            print(f"[YOLOModel] TensorRT inference failed: {e}")
-            return self._empty_result()
-        finally:
-            self.cuda_ctx.pop()
+        print(f"[YOLOModel] _predict_tensorrt in thread: {threading.current_thread().name}")
+
+        if self.is_shutdown or not self.cuda_ctx:
+            raise RuntimeError("Cannot run inference after shutdown.")
+
+        with self.lock:
+            try:
+                self.cuda_ctx.push()
+                self.original_h, self.original_w = image.shape[:2]
+                self.preprocess(image)
+
+                cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
+                self.context.execute_async_v2(
+                    bindings=[int(self.input_device), int(self.output_device)],
+                    stream_handle=self.stream.handle
+                )
+                cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
+                self.stream.synchronize()
+
+                raw_output = self.output_host.reshape(self.output_shape)
+                return self.postprocess(raw_output, conf)
+
+            except Exception as e:
+                print(f"[YOLOModel] Inference failed: {e}")
+                return self._empty_result()
+
+            finally:
+                try:
+                    self.cuda_ctx.pop()
+                except Exception as e:
+                    print(f"[YOLOModel] Warning: context pop failed - {e}")
+
     
     def _predict_pytorch(self, image, conf=0.35):
         try:
