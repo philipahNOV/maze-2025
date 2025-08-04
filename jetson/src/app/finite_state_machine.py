@@ -59,6 +59,7 @@ class HMIController:
         self.disco_mode = 0
         self.disco_thread = None
         self.loop_path = False
+        self.maze_version = None
         self.config = config
 
     def restart_program(self):
@@ -112,7 +113,8 @@ class HMIController:
                 )
             self.ball_finder.start_ball_check()
 
-    def on_path_found(self, path, path_lookahead):
+    def on_path_found(self, path, path_lookahead, maze_version):
+        self.maze_version = maze_version
         self.path = path
         self.path_lookahead = path_lookahead
         if self.path is not None:

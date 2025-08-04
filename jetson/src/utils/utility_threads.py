@@ -112,11 +112,11 @@ class PathFindingThread(threading.Thread):
 
         # Draw a white filled rectangle on safe_mask
         cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
-        self.determine_maze(safe_mask)
+        maze_version = self.determine_maze(safe_mask)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
-            self.on_path_found(None, None)
+            self.on_path_found(None, None, maze_version)
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])
@@ -137,7 +137,7 @@ class PathFindingThread(threading.Thread):
             if path:
                 self.path_cache.cache_path(start, self.goal, path)
             else:
-                self.on_path_found(None, None)
+                self.on_path_found(None, None, maze_version)
                 return
 
         if self._stop_event.is_set():
@@ -152,7 +152,8 @@ class PathFindingThread(threading.Thread):
 
         final_path = [(x, y) for y, x in waypoints]
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
-        self.on_path_found(final_path, final_path_lookahead)
+        print(f"Maze version: {maze_version}")
+        self.on_path_found(final_path, final_path_lookahead, maze_version)
 
     def determine_maze(self, frame, center=(992, 500), box_size=(10, 10), threshold=30):
         h, w = frame.shape[:2]
@@ -170,9 +171,11 @@ class PathFindingThread(threading.Thread):
 
         # Count black pixels (pixel value == 0)
         black_pixels = np.sum(roi == 0)
-        print(f"Black pixels in ROI: {black_pixels}")
 
-        return black_pixels >= threshold, black_pixels
+        if black_pixels >= threshold:
+            return "Hard"
+        else:
+            return "Easy"
 
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
