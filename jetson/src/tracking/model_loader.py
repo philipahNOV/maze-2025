@@ -81,8 +81,6 @@ class YOLOModel:
             return self._predict_pytorch(image, conf)
     
     def _predict_tensorrt(self, image, conf=0.35):
-        print(f"[YOLOModel] _predict_tensorrt in thread: {threading.current_thread().name}")
-
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
