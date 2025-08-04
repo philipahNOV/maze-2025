@@ -113,10 +113,6 @@ class PathFindingThread(threading.Thread):
         # Draw a white filled rectangle on safe_mask
         cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
 
-        cv2.imshow("Safe Mask", safe_mask)
-        cv2.waitKey(0)         # Wait until a key is pressed
-        cv2.destroyAllWindows()  # Close the window
-
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
             self.on_path_found(None, None)
