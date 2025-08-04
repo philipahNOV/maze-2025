@@ -15,7 +15,7 @@ def compute_repulsion_cost(array, min_safe_dist = 14):
     repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
     return repulsion, mask_safe
 
-def astar(array, start, goal, repulsion_weight=15.0):
+def astar(array, start, goal, repulsion_weight=5.0):
     rows, cols = array.shape
     repulsion_map, walkable_mask = compute_repulsion_cost(array)
 
@@ -45,7 +45,7 @@ def astar(array, start, goal, repulsion_weight=15.0):
 
         closed[current] = True
 
-        for dx, dy in neighbors: # could be better optimized
+        for dx, dy in neighbors: # TODO: could be better optimized
             nx, ny = current[0] + dx, current[1] + dy
 
             if not (0 <= nx < rows and 0 <= ny < cols):
@@ -66,20 +66,3 @@ def astar(array, start, goal, repulsion_weight=15.0):
                     in_open.add(neighbor)
 
     return []
-
-# default scale is 0.60, shows a good balanace, adjust based on needs
-def astar_downscaled(array, start, goal, repulsion_weight=5.0, scale=1.0):
-    small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-    small_array = (small_array > 0).astype(np.uint8)
-
-    start_small = (int(start[0] * scale), int(start[1] * scale))
-    goal_small = (int(goal[0] * scale), int(goal[1] * scale))
-
-    path_small = astar(small_array, start_small, goal_small, repulsion_weight)
-
-    if not path_small:
-        print("A* failed in downscaled space.")
-        return []
-
-    path = [(int(y / scale), int(x / scale)) for y, x in path_small]
-    return path

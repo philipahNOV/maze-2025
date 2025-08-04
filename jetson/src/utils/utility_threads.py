@@ -1,6 +1,6 @@
 import time
 import threading
-from control.astar.astar import astar_downscaled
+from control.astar.astar import astar
 from control.astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 from control.astar.nearest_point import find_nearest_walkable
 from control.astar.waypoint_sampling import sample_waypoints
@@ -75,7 +75,6 @@ class PathFindingThread(threading.Thread):
         self.goal = goal
         self.on_path_found = on_path_found
         self.repulsion_weight = self.config['path_finding'].get('repulsion_weight', 5)
-        self.scale = self.config['path_finding'].get('astar_downscale', 1.0)
         self.path_cache = PathMemory(config)
         self._stop_event = threading.Event()
 
@@ -114,8 +113,7 @@ class PathFindingThread(threading.Thread):
         if cached:
             path = cached
         else:
-            path = astar_downscaled(safe_mask, start, self.goal,
-                                    repulsion_weight=self.repulsion_weight, scale=self.scale)
+            path = astar(safe_mask, start, self.goal, repulsion_weight=self.repulsion_weight)
             if self._stop_event.is_set():
                 return
             if path:
