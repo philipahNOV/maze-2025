@@ -36,7 +36,7 @@ tracking:
     upper: [85, 255, 255]     # Light green HSV upper bound
   hsv_window_size: 80
   hsv_min_contour_area: 150  # px^2
-  smoothing_alpha: 0.5       # smoothing factor for exponential filter
+  smoothing_alpha: 0.5      # smoothing factor for exponential filter
   hsv_fail_threshold: 60     # frames to wait before fallback to YOLO
   yolo_cooldown_period: 20   # frames before allowing YOLO recheck
   yolo_frame_interval: 5
@@ -52,15 +52,15 @@ controller:
   integration_pos_threshold: 70        # px, reset integral if error exceeds this
   integration_vel_threshold: 40        # px/s, reset integral if velocity exceeds this
   position_controller_normal:
-    kp_x: 0.00007
-    kp_y: 0.00007
-    kd_x: 0.0002
-    kd_y: 0.0002
-    ki_x: 0.00002
-    ki_y: 0.00002
+    kp_x: 0.00004
+    kp_y: 0.00004
+    kd_x: 0.00005
+    kd_y: 0.00005
+    ki_x: 0.00005
+    ki_y: 0.00005
     position_tolerance: 40        # px
     velocity_tolerance: 20        # px/s
-    feedforward_t: 6
+    feedforward_t: 4.5
   position_controller_lookahead:
     kp_x: 0.00002
     kp_y: 0.00002
@@ -85,7 +85,7 @@ controller:
     y_offset: 0.001                 # rad
     minimum_velocity: 22
     maximum_velocity: 100
-    minimum_velocity_difference: 10
+    minimum_velocity_difference: 5
 
 path_finding:
   repulsion_weight: 10           # how strongly path avoids walls
