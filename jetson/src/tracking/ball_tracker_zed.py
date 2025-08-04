@@ -47,6 +47,9 @@ class BallTracker:
             time.sleep(sleep_time)
 
     def consumer_loop(self):
+        MAX_BOXES = 2  # Limit number of tracked balls per frame
+        reusable_objects = [sl.CustomBoxObjectData() for _ in range(MAX_BOXES)]  # Pre-allocate
+
         while self.running:
             loop_start = time.time()
             if not self.frame_queue:
@@ -55,20 +58,30 @@ class BallTracker:
 
             rgb, bgr = self.frame_queue.popleft()
             self.latest_bgr_frame = bgr
+
+            # --- Inference ---
             inference_start = time.time()
             results = self.model.predict(rgb)
             inference_time = (time.time() - inference_start) * 1000
 
+            # --- Postprocessing ---
+            h, w = rgb.shape[:2]
             custom_boxes = []
-            post_start = time.time()
-            for box in results.boxes:
-                if self.model.get_label(box.cls[0]) != "ball":
-                    continue
+            self.ball_position = None
 
-                h, w = rgb.shape[:2]
+            post_start = time.time()
+
+            # Filter and cap number of valid detections
+            ball_boxes = [
+                box for box in results.boxes
+                if self.model.get_label(box.cls[0]) == "ball"
+            ][:MAX_BOXES]
+
+            for i, box in enumerate(ball_boxes):
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
                 self.ball_position = (cx, cy)
+
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
                 width_norm = width / w
@@ -78,7 +91,7 @@ class BallTracker:
                 x_max = x_center_norm + width_norm / 2
                 y_min = y_center_norm - height_norm / 2
                 y_max = y_center_norm + height_norm / 2
-                
+
                 self._bbox_buffer[0, 0] = x_min
                 self._bbox_buffer[0, 1] = y_min
                 self._bbox_buffer[1, 0] = x_max
@@ -88,39 +101,37 @@ class BallTracker:
                 self._bbox_buffer[3, 0] = x_min
                 self._bbox_buffer[3, 1] = y_max
 
-                obj = sl.CustomBoxObjectData()
-                obj.bounding_box_2d = self._bbox_buffer.copy()  # copy for ZED
+                # Reuse pre-allocated CustomBoxObjectData
+                obj = reusable_objects[i]
+                obj.bounding_box_2d = self._bbox_buffer.copy()  # safe to copy here
                 obj.label = int(box.cls[0])
                 obj.probability = float(box.conf[0])
                 obj.is_grounded = False
+
                 custom_boxes.append(obj)
 
-                post_time = (time.time() - post_start) * 1000
+            post_time = (time.time() - post_start) * 1000
 
-                ingest_start = time.time()
-                if custom_boxes and self.zed_od_initialized:
-                    self.camera.zed.ingest_custom_box_objects(custom_boxes)
-                    self.camera.zed.retrieve_custom_objects(self.objects, self.object_runtime_params)
-                ingest_time = (time.time() - ingest_start) * 1000
-
-                total_loop_time = (time.time() - loop_start) * 1000
-                
-                # Only print timing every 30 frames (1 second at 30fps) to reduce I/O overhead
-                self.timing_print_counter += 1
-                if self.timing_print_counter >= 30:
-                    print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
-                    self.timing_print_counter = 0
-
-            self.frame_counter = 0
-            if custom_boxes and self.zed_od_initialized and self.frame_counter % 3 == 0:
+            # --- Ingest into ZED ---
+            ingest_start = time.time()
+            if custom_boxes and self.zed_od_initialized:
                 self.camera.zed.ingest_custom_box_objects(custom_boxes)
                 self.camera.zed.retrieve_custom_objects(self.objects, self.object_runtime_params)
-            self.frame_counter += 1
+            ingest_time = (time.time() - ingest_start) * 1000
 
+            # --- Timing output ---
+            total_loop_time = (time.time() - loop_start) * 1000
+            self.timing_print_counter += 1
+            if self.timing_print_counter >= 30:
+                print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | ZED: {ingest_time:.2f}ms | Total: {total_loop_time:.2f}ms")
+                self.timing_print_counter = 0
+
+            # --- Frame pacing ---
             TARGET_FPS = 60
             loop_duration = time.time() - loop_start
             sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
             time.sleep(sleep_time)
+
 
     def start(self):
         self.running = True
