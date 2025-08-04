@@ -103,6 +103,7 @@ class PathFindingThread(threading.Thread):
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])
+
         start = find_nearest_walkable(safe_mask, ball_pos)
 
         if self._stop_event.is_set():
