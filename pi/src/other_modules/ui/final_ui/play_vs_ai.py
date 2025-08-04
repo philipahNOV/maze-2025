@@ -15,6 +15,8 @@ class PlayVsAIScreen(tk.Frame):
         self.scale_ratio = controller.config['camera'].get('maze_image_scale', 0.65)
         self.true_width = controller.config['camera'].get('maze_width', 730)
         self.true_height = controller.config['camera'].get('maze_height', 640)
+        self.offset_x = controller.config['camera'].get('maze_offset_x', 390)
+        self.offset_y = controller.config['camera'].get('maze_offset_y', 10)
         self.current_turn = "waiting"
         self.pid_result = None
         self.human_result = None
@@ -257,6 +259,27 @@ class PlayVsAIScreen(tk.Frame):
         self.start_battle_button.config(text="TRY AGAIN")
 
     def on_canvas_click(self, event):
+        if self.current_turn == "waiting":
+            x, y = event.x, event.y
+            canvas_width = int(self.true_width * self.scale_ratio)
+            canvas_height = int(self.true_height * self.scale_ratio)
+
+            if 0 <= x <= canvas_width and 0 <= y <= canvas_height:
+                self.canvas.delete("goal_marker")
+
+                r = 5
+                self.canvas.create_oval(
+                    event.x - r, event.y - r, event.x + r, event.y + r,
+                    fill="red", outline="white", width=2, tags="goal_marker"
+                )
+
+                maze_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
+                maze_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+
+                self.mqtt_client.client.publish("jetson/command", f"Goal_set:{maze_x},{maze_y}")
+                self.status_label.config(text=f"GOAL SET AT ({maze_x}, {maze_y}) - CLICK START BATTLE")
+
+    def on_canvas_click_old(self, event):
         if self.current_turn == "waiting":
             x_ratio = self.true_width / self.canvas_width
             y_ratio = self.true_height / self.canvas_height
