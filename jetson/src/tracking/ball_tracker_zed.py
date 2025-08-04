@@ -6,7 +6,7 @@ from collections import deque
 from tracking.model_loader import YOLOModel
 
 class BallTracker:
-    def __init__(self, camera=None, tracking_config=None, model_path="v8-512.engine"):
+    def __init__(self, camera=None, tracking_config=None, model_path="new-v8-fp16.engine"):
         self.model = YOLOModel(model_path)
         self.camera = camera  # Should have .grab_frame() that returns (rgb, bgr)
         self.tracking_config = tracking_config or {}

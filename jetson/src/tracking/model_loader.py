@@ -8,7 +8,7 @@ from ultralytics import YOLO
 import threading
 
 class YOLOModel:
-    def __init__(self, model_path="v8-512.engine", input_shape=(512, 512)):
+    def __init__(self, model_path="new-v8-fp16.engine", input_shape=(640, 640)):
         try:
             self._init_tensorrt(model_path, input_shape)
             self.engine_type = "tensorrt"
@@ -20,8 +20,8 @@ class YOLOModel:
     def _init_tensorrt(self, model_path, input_shape):
         self.input_shape = input_shape
         self.names = ['ball']
-        self.original_h, self.original_w = 512, 512
-
+        self.original_h, self.original_w = 640, 640
+        
         cuda.init()
         self.cuda_ctx = cuda.Device(0).make_context()
         
@@ -67,7 +67,7 @@ class YOLOModel:
 
         # input shape is (720, 1280, 3)
         input_w, input_h = self.input_shape
-        img = cv2.resize(image, (input_w, input_h))
+        img = cv2.resize(image, (input_w, input_h))  # (640, 640)
         img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))
         img = np.expand_dims(img, axis=0)
@@ -119,7 +119,7 @@ class YOLOModel:
                     source=image,
                     conf=conf,
                     device=self.device,
-                    imgsz=512,
+                    imgsz=640,
                     verbose=False
                 )
                 return results[0]
