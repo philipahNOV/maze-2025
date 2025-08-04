@@ -91,7 +91,7 @@ class BallTracker:
                 self.timing_print_counter = 0
 
             # --- Frame pacing ---
-            TARGET_FPS = 60
+            TARGET_FPS = 40
             loop_duration = time.time() - loop_start
             sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
             time.sleep(sleep_time)
