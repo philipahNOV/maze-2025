@@ -9,7 +9,7 @@ from control.image_controller import ImageController
 from control.image_controller import ImageSenderThread
 from control.joystick_controller import JoystickController
 import control.position_controller as position_controller
-from utils.utility_functions import is_in_elevator, remove_withing_elevator
+from utils.utility_functions import is_in_elevator, remove_withing_elevator, determine_maze
 import app.run_controller_main as run_controller_main
 import threading
 import os
@@ -113,8 +113,7 @@ class HMIController:
                 )
             self.ball_finder.start_ball_check()
 
-    def on_path_found(self, path, path_lookahead, maze_version):
-        self.maze_version = maze_version
+    def on_path_found(self, path, path_lookahead):
         self.path = path
         self.path_lookahead = path_lookahead
         if self.path is not None:
@@ -751,6 +750,8 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
+                self.maze_version = determine_maze(self.tracking_service)
+                print(self.maze_version)
 
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
