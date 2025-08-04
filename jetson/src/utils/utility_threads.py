@@ -9,6 +9,7 @@ from control.astar.path_memory import PathMemory
 import colorsys
 import cv2
 import random
+import numpy as np
 
 
 class BlinkRed(threading.Thread):
@@ -155,6 +156,26 @@ class PathFindingThread(threading.Thread):
         final_path = [(x, y) for y, x in waypoints]
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
         self.on_path_found(final_path, final_path_lookahead)
+
+    def determine_maze(self, frame, center=(992, 500), box_size=(10, 10), threshold=30):
+        h, w = frame.shape[:2]
+        x, y = center
+        box_w, box_h = box_size
+
+        # Define bounding box coordinates and clip to image boundaries
+        x1 = max(0, x - box_w // 2)
+        y1 = max(0, y - box_h // 2)
+        x2 = min(w, x + box_w // 2)
+        y2 = min(h, y + box_h // 2)
+
+        # Extract the region of interest
+        roi = frame[y1:y2, x1:x2]
+
+        # Count black pixels (pixel value == 0)
+        black_pixels = np.sum(roi == 0)
+        print(f"Black pixels in ROI: {black_pixels}")
+
+        return black_pixels >= threshold, black_pixels
 
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
