@@ -103,6 +103,7 @@ class HMIController:
         sys.exit(0)
 
     def on_ball_found(self):
+        print(self.tracking_service.get_ball_position())
         if is_in_elevator(self.config, self.tracking_service.get_ball_position()):
             self.mqtt_client.client.publish("pi/info", "ball_found")
         else:
