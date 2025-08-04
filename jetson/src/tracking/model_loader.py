@@ -44,6 +44,7 @@ class YOLOModel:
         self.output_device = cuda.mem_alloc(self.output_host.nbytes)
         self.stream = cuda.Stream()
         self.is_shutdown = False
+        self.lock = threading.Lock()
 
     def _init_pytorch_fallback(self, model_path):
         pt_path = model_path.replace(".engine", ".pt")
@@ -195,7 +196,11 @@ class YOLOModel:
         
     def shutdown(self):
         print("[YOLOModel] Starting shutdown...")
-        self.is_shutdown = True
+        with self.lock:
+            if self.is_shutdown:
+                return
+            self.is_shutdown = True
+        # safe cleanup here
 
         try:
             # Free device memory
