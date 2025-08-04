@@ -55,11 +55,11 @@ controller:
   position_controller_normal:
     kp_x: 0.00004
     kp_y: 0.00004
-    kd_x: 0.000045
-    kd_y: 0.000045
-    ki_x: 0.0001
-    ki_y: 0.0001
-    position_tolerance: 25        # px
+    kd_x: 0.00005
+    kd_y: 0.00005
+    ki_x: 0.0002
+    ki_y: 0.0002
+    position_tolerance: 30        # px
     velocity_tolerance: 20        # px/s
     feedforward_t: 8
   position_controller_lookahead:
