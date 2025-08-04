@@ -750,8 +750,6 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
-                self.maze_version = determine_maze(self.tracking_service)
-                print(f"[FSM] Detected maze version: {self.maze_version}")
 
             elif cmd == "Back":
                 self.tracking_service.stop_tracker()
@@ -769,6 +767,8 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
+                self.maze_version = determine_maze(self.tracking_service)
+                print(f"[FSM] Detected maze version: {self.maze_version}")
 
         # --- AUTO_PATH STATE ---
         elif self.state == SystemState.AUTO_PATH:
