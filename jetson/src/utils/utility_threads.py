@@ -97,7 +97,20 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        cv2.circle(safe_mask, (998, 588), 70, 255, -1)
+        #cv2.circle(safe_mask, (998, 588), 70, 255, -1)
+        # Define the starting point (rightmost edge of the rectangle)
+        start_point = (998, 588)
+
+        # Define the width and height of the rectangle
+        width = 70     # How far to stretch to the left (along -x)
+        height = 40     # Height of the rectangle
+
+        # Define the top-left and bottom-right corners
+        top_left = (start_point[0] - width, start_point[1] - height // 2)
+        bottom_right = (start_point[0], start_point[1] + height // 2)
+
+        # Draw a white filled rectangle on safe_mask
+        cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
