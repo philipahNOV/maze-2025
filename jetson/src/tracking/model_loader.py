@@ -140,35 +140,40 @@ class YOLOModel:
     def shutdown(self):
         print("[YOLOModel] Starting shutdown...")
         try:
+            # Free device memory
             if hasattr(self, 'input_device') and self.input_device is not None:
-                cuda.mem_free(self.input_device)
+                self.input_device.free()  # Free via object method
                 self.input_device = None
-                
+
             if hasattr(self, 'output_device') and self.output_device is not None:
-                cuda.mem_free(self.output_device)
+                self.output_device.free()
                 self.output_device = None
-                
+
+            # Delete TensorRT objects
             if hasattr(self, 'context') and self.context is not None:
                 del self.context
                 self.context = None
-                
+
             if hasattr(self, 'engine') and self.engine is not None:
                 del self.engine
                 self.engine = None
-                
+
             if hasattr(self, 'runtime') and self.runtime is not None:
                 del self.runtime
                 self.runtime = None
-                
-            if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
-                self.cuda_ctx.detach()
-                self.cuda_ctx = None
-            
+
+            # Delete CUDA stream
             if hasattr(self, 'stream') and self.stream is not None:
                 del self.stream
                 self.stream = None
-                
+
+            # Detach CUDA context
+            if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
+                self.cuda_ctx.detach()
+                self.cuda_ctx = None
+
             print("[YOLOModel] Shutdown completed successfully")
-            
+
         except Exception as e:
             print(f"[YOLOModel] Error during shutdown: {e}")
+
