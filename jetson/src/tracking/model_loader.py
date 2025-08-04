@@ -65,13 +65,21 @@ class YOLOModel:
         if self.engine_type != "tensorrt":
             return
 
-        # input shape is (720, 1280, 3)
         input_w, input_h = self.input_shape
-        img = cv2.resize(image, (input_w, input_h))  # (640, 640)
-        img = img.astype(np.float16) / 255.0
-        img = np.transpose(img, (2, 0, 1))
-        img = np.expand_dims(img, axis=0)
-        np.copyto(self.input_host, img.ravel())
+        img = cv2.resize(image, (input_w, input_h))  # (H, W, C)
+
+        # Avoid chaining operations on float16 — work in float32
+        img = img.astype(np.float32) / 255.0  # Normalize
+
+        img = np.transpose(img, (2, 0, 1))  # (C, H, W)
+        img = np.expand_dims(img, axis=0)   # (1, C, H, W)
+
+        # Now convert once and directly
+        img_fp16 = img.astype(np.float16)
+
+        # Copy into preallocated input_host (which must be dtype=np.float16)
+        np.copyto(self.input_host, img_fp16.ravel())
+
 
 
     def predict(self, image, conf=0.4):
