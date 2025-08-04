@@ -162,6 +162,7 @@ class EscapeElevatorThread(threading.Thread):
         self.arduino_thread = arduino_thread
         self.duration = 1.2
         self.y_duration = 0.1
+        self.opposite_duration = 0.2
         self.speed = 255
         self._stop_event = threading.Event()
         self.start_time = time.time()
@@ -170,7 +171,9 @@ class EscapeElevatorThread(threading.Thread):
     def run(self):
         while time.time() - self.start_time < self.duration:
             elapsed = time.time() - self.start_time
-            if elapsed >= self.y_duration:
+            if elapsed < self.opposite_duration:
+                self.arduino_thread.send_speed(0, self.speed)
+            elif elapsed >= self.y_duration + self.opposite_duration:
                 self.arduino_thread.send_speed(25, -self.speed)
             else:
                 self.arduino_thread.send_speed(0, -self.speed)
