@@ -51,6 +51,7 @@ controller:
   stuck_unstuck_hold_time: 0.2 # seconds, time to hold before unsticking
   integration_pos_threshold: 70        # px, reset integral if error exceeds this
   integration_vel_threshold: 40        # px/s, reset integral if velocity exceeds this
+  velocity_smoothing_alpha: 0.5       # smoothing factor for velocity smoothing
   position_controller_normal:
     kp_x: 0.00007
     kp_y: 0.00007
