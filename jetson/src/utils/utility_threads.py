@@ -102,12 +102,12 @@ class PathFindingThread(threading.Thread):
         start_point = (998, 588)
 
         # Define the width and height of the rectangle
-        width = 80     # How far to stretch to the left (along -x)
+        width = 120     # How far to stretch to the left (along -x)
         height = 55     # Height of the rectangle
 
         # Define the top-left and bottom-right corners
         top_left = (start_point[0] - width, start_point[1] - height // 2)
-        bottom_right = (start_point[0], start_point[1] + height // 2)
+        bottom_right = (start_point[0] + 40, start_point[1] + height // 2)
 
         # Draw a white filled rectangle on safe_mask
         cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
