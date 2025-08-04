@@ -61,12 +61,6 @@ class BallTracker:
                 if self.model.get_label(box.cls[0]) != "ball":
                     continue
 
-                # Check confidence threshold
-                confidence = float(box.conf[0])
-                if confidence < 0.55:
-                    self.ball_position = None
-                    continue
-
                 h, w = rgb.shape[:2]
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
