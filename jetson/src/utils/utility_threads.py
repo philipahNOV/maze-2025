@@ -103,11 +103,6 @@ class PathFindingThread(threading.Thread):
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])
-        cv2.circle(safe_mask, ball_pos, 5, (255, 0, 0), -1)
-        cv2.imshow("Safe Mask", safe_mask)
-        cv2.waitKey(0)         # Wait until a key is pressed
-        cv2.destroyAllWindows()  # Close the window
-
 
         start = find_nearest_walkable(safe_mask, ball_pos)
 
