@@ -60,7 +60,6 @@ class LookForBall:
             pos = self.tracking_service.get_ball_position()
             print(pos)
             if pos is not None:
-                print(f"[LookForBall] Ball found at {pos}")
                 if self.on_ball_found:
                     self.on_ball_found()
                 break
