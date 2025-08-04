@@ -112,6 +112,7 @@ class PathFindingThread(threading.Thread):
 
         # Draw a white filled rectangle on safe_mask
         cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
+        self.determine_maze(safe_mask)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
