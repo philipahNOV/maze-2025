@@ -410,6 +410,10 @@ class HMIController:
             self.joystick_controller.stop()
         if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
             self.joystick_thread.join()
+        if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
         
         self.tracking_service.stop_tracker()
         print("[PLAYVSAI] Human turn ended")
