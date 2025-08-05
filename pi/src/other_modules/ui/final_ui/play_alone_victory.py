@@ -12,6 +12,8 @@ class PlayAloneVictoryScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
 
+        self.duration = -1  # Duration will be set when the MQTT message is received
+
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         except Exception as e:
@@ -88,12 +90,21 @@ class PlayAloneVictoryScreen(tk.Frame):
 
         self.title = tk.Label(
             self,
-            text="MAZE COMPLETED",
-            font=("Jockey One", 55),
+            text="MAZE COMPLETED!",
+            font=("Jockey One", 30),
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=320, y=100)
+        self.title.place(x=512, y=200, anchor="n")
+
+        self.under_title = tk.Label(
+            self,
+            text="YOUR TIME: " + self.format_duration(self.duration),
+            font=("Jockey One", 20),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
+        )
+        self.under_title.place(x=512, y=250, anchor="n")
 
         self.leaderboard_button = tk.Button(
             self,

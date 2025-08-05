@@ -666,6 +666,15 @@ class HMIController:
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+                
+        elif cmd == "Leaderboard":
+                print("[FSM] Entering LEADERBOARD mode")
+                self.state = SystemState.LEADERBOARD
+                self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
+                
+                from utils.leaderboard_utils import send_leaderboard_data
+                send_leaderboard_data(self.mqtt_client, 1)
+                send_leaderboard_data(self.mqtt_client, 2)
 
         elif self.state == SystemState.PLAYALONE_VICTORY:
             if cmd == "Back":
