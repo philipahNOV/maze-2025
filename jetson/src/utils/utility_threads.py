@@ -9,6 +9,7 @@ from control.astar.path_memory import PathMemory
 import colorsys
 import cv2
 import random
+import numpy as np
 
 
 class BlinkRed(threading.Thread):
@@ -97,7 +98,25 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        cv2.circle(safe_mask, (998, 588), 70, 255, -1)
+        #cv2.circle(safe_mask, (998, 588), 70, 255, -1)
+        # Define the starting point (rightmost edge of the rectangle)
+        start_point = (998, 588)
+
+        # Define the width and height of the rectangle
+        width = 90     # How far to stretch to the left (along -x)
+        height = 55     # Height of the rectangle
+
+        # Define the top-left and bottom-right corners
+        top_left = (start_point[0] - width, start_point[1] - height // 2)
+        bottom_right = (start_point[0] + 30, start_point[1] + height // 2)
+
+        cv2.imshow("Safe Mask", safe_mask)
+        cv2.waitKey(0)         # Wait until a key is pressed
+        cv2.destroyAllWindows()  # Close the window
+
+        # Draw a white filled rectangle on safe_mask
+        cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
+        #maze_version = self.determine_maze(safe_mask)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
@@ -139,6 +158,28 @@ class PathFindingThread(threading.Thread):
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
         self.on_path_found(final_path, final_path_lookahead)
 
+    def determine_maze(self, frame, center=(992, 500), box_size=(10, 10), threshold=30):
+        h, w = frame.shape[:2]
+        x, y = center
+        box_w, box_h = box_size
+
+        # Define bounding box coordinates and clip to image boundaries
+        x1 = max(0, x - box_w // 2)
+        y1 = max(0, y - box_h // 2)
+        x2 = min(w, x + box_w // 2)
+        y2 = min(h, y + box_h // 2)
+
+        # Extract the region of interest
+        roi = frame[y1:y2, x1:x2]
+
+        # Count black pixels (pixel value == 0)
+        black_pixels = np.sum(roi == 0)
+
+        if black_pixels >= threshold:
+            return "Hard"
+        else:
+            return "Easy"
+
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
         self._stop_event.set()
@@ -149,6 +190,7 @@ class EscapeElevatorThread(threading.Thread):
         self.arduino_thread = arduino_thread
         self.duration = 1.2
         self.y_duration = 0.1
+        self.opposite_duration = 0.2
         self.speed = 255
         self._stop_event = threading.Event()
         self.start_time = time.time()
@@ -157,7 +199,9 @@ class EscapeElevatorThread(threading.Thread):
     def run(self):
         while time.time() - self.start_time < self.duration:
             elapsed = time.time() - self.start_time
-            if elapsed >= self.y_duration:
+            if elapsed < self.opposite_duration:
+                self.arduino_thread.send_speed(0, self.speed)
+            elif elapsed >= self.y_duration + self.opposite_duration:
                 self.arduino_thread.send_speed(25, -self.speed)
             else:
                 self.arduino_thread.send_speed(0, -self.speed)

@@ -9,6 +9,7 @@ def get_leaderboard_file(maze_id: int):
     return os.path.join(LEADERBOARD_FOLDER, f"leaderboard_maze{maze_id}.csv")
 
 def add_score(name: str, time: float, maze_id: int, mqtt_client=None):
+    print("[LEADERBOARD] Adding score:", name, time, maze_id)
     filepath = get_leaderboard_file(maze_id)
     date_str = datetime.now().strftime("%d-%m-%Y")
     os.makedirs(LEADERBOARD_FOLDER, exist_ok=True)
