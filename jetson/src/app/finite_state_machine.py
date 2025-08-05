@@ -357,8 +357,13 @@ class HMIController:
         print("[PLAYVSAI] Starting human turn...")
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
+
+        for _ in range(5):
+            self.arduino_thread.send_elevator(1)
+            time.sleep(0.05)
         
         self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
+        self.image_controller.set_new_path(None)
         self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
         self.image_thread.start()  
         self._start_joystick_control()
