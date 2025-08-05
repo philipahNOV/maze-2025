@@ -1,16 +1,16 @@
 # Autonomous Maze Solver – NOV 2025
 
-This project is the final version of NOV’s autonomous maze-solving system, developed during Summer 2025. Building on earlier prototypes from previous years, the system is now complete and fully functional.
+This project is the final version of NOV’s autonomous maze-solving system, completed during the summer of 2025. It builds on earlier prototypes and is now fully functional. The system tilts a physical maze board to guide a steel ball from a start point to a goal without falling into holes or hitting obstacles. The movement is done by two motors that tilt the board in the X and Y directions.
 
-The goal is to balance a steel ball through a physical maze using camera-based tracking, real-time control, and path planning without falling into any holes. The system is designed to operate reliably and autonomously from end to end.
+The system uses a ZED 2i stereo camera mounted above the maze to detect the position of the ball. A Jetson device acts as the main processor. It runs an optimized YOLOv8 model to find the ball in each video frame, calculates the shortest path using the A* algorithm, and sends tilt commands. An Arduino controls the motors using PID logic to follow those commands. The communication between the Jetson and Arduino is handled through MQTT. All main logic runs on the Jetson, and the system operates without direct user input on the it once started.
 
-Key features:
-- Real-time ball tracking using YOLOv8 and HSV-based refinement
-- Path planning with A* using dynamic obstacle maps
-- PID-based position control with Arduino-driven actuation
-- MQTT communication between Jetson (control) and Raspberry Pi (HMI)
+A Raspberry Pi is also connected to the system and acts as the HMI. It communicates with the Jetson over MQTT and provides a touchscreen interface where users can select between two modes. In Robot Mode, the system runs fully autonomously once a goal for the path is given. The camera tracks the ball, the path is calculated, and the PID controller moves the ball through the maze. In Human Mode, the user takes control. A joystick allows manual control of the maze tilt, and a timer tracks how long it takes the player to solve the maze. A leaderboard system stores high scores locally so users can compete by completing the mazes in the shortest time.
 
-The system runs on NVIDIA Jetson and integrates with a ZED camera and Arduino-based tilt platform. It is configured through a single `config.yaml` file and is structured for maintainability and testing.
+All system settings are configured in a single file called config.yaml. This includes PID values, MQTT topics, camera parameters, and the maze layout. The software is organized into separate modules for detection, path planning, control, communication, and HMI interaction. The main script starts and coordinates all parts of the system.
+
+To set up the system, connect the Jetson, Arduino, Raspberry Pi, camera, and motors. Ensure the config.yaml is correctly filled out for your maze. Start the system using the main script. In Robot Mode, the ball will be tracked and guided to the goal automatically. In Human Mode, the user can control the maze manually and try to complete it as fast as possible.
+
+This version of the project is stable and designed for both demonstration and user interaction. It supports any maze layout that fits the board and provides both autonomous operation and a competitive manual play mode.
 
 ---
 
