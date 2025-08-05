@@ -35,12 +35,12 @@ class LeaderboardScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=10)
 
-        columns = ("Name", "Time", "Date", "Maze")
+        columns = ("Ranks","Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=200, anchor="center")
+            self.tree.column(col, width=150 if col == "Rank" else 200, anchor="center")
 
         self.tree.place(x=100, y=100)
 
@@ -102,8 +102,8 @@ class LeaderboardScreen(tk.Frame):
 
         entries.sort(key=lambda x: x[1])
 
-        for row in entries:
-            self.tree.insert("", "end", values=row)
+        for idx, row in enumerate(entries, start=1):
+            self.tree.insert("", "end", values=(idx, *row))
 
     def update_leaderboard_data(self, maze_id: int, csv_data: str):
         try:
@@ -131,8 +131,8 @@ class LeaderboardScreen(tk.Frame):
                                 continue
             
             entries.sort(key=lambda x: x[1])
-            for row in entries:
-                self.tree.insert("", "end", values=row)
+            for idx, row in enumerate(entries, start=1):
+                self.tree.insert("", "end", values=(idx, *row))
                 
             print(f"[LEADERBOARD UI] Updated display with {len(entries)} entries for maze {maze_id}")
         except Exception as e:
