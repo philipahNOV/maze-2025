@@ -40,6 +40,7 @@ class SystemState(Enum):
     LEADERBOARD = auto()
     PLAYALONE_VICTORY = auto()
     PLAYALONE_FAILED = auto()
+    ADMIN_TOOLS = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -514,6 +515,9 @@ class HMIController:
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
                 self.ball_finder.start_ball_check()
+            elif cmd == "AdminTools":
+                self.state = SystemState.ADMIN_TOOLS
+                print("[FSM] Transitioned to ADMIN_TOOLS")
         
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:

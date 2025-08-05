@@ -45,6 +45,10 @@ class MainScreen(tk.Frame):
             self.mqtt_client.client.publish("jetson/command", "Restart")
         self.controller.on_close()
 
+    def on_button_click_admin_tools(self):
+        self.mqtt_client.client.publish("jetson/command", "AdminTools")
+        self.controller.show_frame("AdminToolsScreen")
+
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
             self,
@@ -143,6 +147,20 @@ class MainScreen(tk.Frame):
             command=self.on_button_click_disco
         )
         self.disco_button.place(x=391, y=405, width=243, height=74)
+
+        self.admin_tools_button = tk.Button(
+            self,
+            text="ADMIN TOOLS",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_admin_tools
+        )
+        self.admin_tools_button.place(x=650, y=405, width=100, height=40)
 
         self.title = tk.Label(
             self,
