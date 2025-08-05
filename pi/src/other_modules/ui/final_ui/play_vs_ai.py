@@ -333,6 +333,14 @@ class PlayVsAIScreen(tk.Frame):
 
         self.start_battle_button.config(state=tk.NORMAL, text="START ROBOT")
         self.start_human_button.config(state=tk.DISABLED)
+
+        self.canvas.delete("all")
+        self.canvas_image_id = self.canvas.create_image(
+            self.canvas_width // 2,
+            self.canvas_height // 2,
+            anchor="center",
+            image=None
+        )
         
         self.canvas.delete("goal_marker")
 
