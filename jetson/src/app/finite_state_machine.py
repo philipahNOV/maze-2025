@@ -176,6 +176,7 @@ class HMIController:
                 for line in lines:
                     if line.strip():
                         parts = line.split(',')
+                        print(parts)
                         if len(parts) == 4:
                             name, time_str, date_str, maze_str = parts
                             try:
@@ -184,7 +185,7 @@ class HMIController:
                                     rank += 1
                             except ValueError:
                                 continue
-        self.rank = rank
+        return rank
         
 
     def run_playalone_game(self):
