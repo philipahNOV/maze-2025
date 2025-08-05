@@ -120,7 +120,11 @@ class LeaderboardScreen(tk.Frame):
                         parts = line.split(',')
                         if len(parts) == 4:
                             name, time_str, date_str, maze_str = parts
-                            print(maze_str)
+                            if maze_str == "1":
+                                maze_str = "Hard"
+                            elif maze_str == "2":
+                                maze_str = "Easy"
+                                
                             try:
                                 entries.append((name, float(time_str), date_str, maze_str))
                             except ValueError:
