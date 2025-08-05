@@ -120,6 +120,7 @@ class LeaderboardScreen(tk.Frame):
                         parts = line.split(',')
                         if len(parts) == 4:
                             name, time_str, date_str, maze_str = parts
+                            print(maze_str)
                             try:
                                 entries.append((name, float(time_str), date_str, maze_str))
                             except ValueError:
