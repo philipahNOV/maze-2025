@@ -1,4 +1,5 @@
 import numpy as np
+import cv2
 from control.astar.board_masking import get_dynamic_threshold, create_binary_mask, dilate_mask
 
 def densify_path(self, path, factor=6):
@@ -71,3 +72,12 @@ def determine_maze(tracking_service, center=(992, 500), box_size=(10, 10), thres
             return "Hard"
         else:
             return "Easy"
+        
+def is_within_goal(maze, position):
+    if maze == "Hard":
+        corners = [(720, 32), (890, 32), (890, 110), (720, 110)]
+    else:
+        corners = [(760, 32), (904, 32), (904, 72), (760, 72)]
+    contour = np.array(corners, dtype=np.int32)
+    result = cv2.pointPolygonTest(contour, position, measureDist=False)
+    return result >= 0

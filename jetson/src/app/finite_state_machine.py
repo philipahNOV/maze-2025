@@ -9,7 +9,7 @@ from control.image_controller import ImageController
 from control.image_controller import ImageSenderThread
 from control.joystick_controller import JoystickController
 import control.position_controller as position_controller
-from utils.utility_functions import is_in_elevator, remove_withing_elevator, determine_maze
+from utils.utility_functions import is_in_elevator, remove_withing_elevator, determine_maze, is_within_goal
 import app.run_controller_main as run_controller_main
 import threading
 import os
@@ -17,6 +17,7 @@ import sys
 from typing import Dict, Any
 from utils.leaderboard_utils import add_score
 from datetime import datetime
+import numpy as np
 
 
 class SystemState(Enum):
@@ -165,6 +166,7 @@ class HMIController:
         
         distance = ((x - goal_x) ** 2 + (y - goal_y) ** 2) ** 0.5
         return distance <= radius
+        
 
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
@@ -217,7 +219,7 @@ class HMIController:
                     print("[PLAYALONE] Ball seen and game started — starting timer.")
                     start_time = time.time()
 
-                if self._ball_crossed_goal(ball_pos) and start_time is not None:
+                if is_within_goal(self.maze_version, ball_pos) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
                     add_score(player_name, duration, maze_id, self.mqtt_client)
@@ -298,7 +300,7 @@ class HMIController:
             else:
                 last_valid_pos_time = time.time()
                 
-                if self._ball_crossed_goal(ball_pos):
+                if is_within_goal(self.maze_version, ball_pos):
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
@@ -351,7 +353,7 @@ class HMIController:
                     print("[PLAYVSAI] Human ball seen and game started — starting timer.")
                     start_time = time.time()
 
-                if self._ball_crossed_goal(ball_pos) and start_time is not None:
+                if is_within_goal(self.maze_version, ball_pos) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] Human succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_human_success:{duration:.2f}")
