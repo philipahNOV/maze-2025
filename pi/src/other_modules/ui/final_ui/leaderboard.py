@@ -39,14 +39,28 @@ class LeaderboardScreen(tk.Frame):
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
         for col in columns:
+            if col == "Rank":
+                width = 70
+            elif col == "Name":
+                width = 180
+            elif col == "Time":
+                width = 100
+            elif col == "Date":
+                width = 120
+            else:  # Maze
+                width = 80
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=150 if col == "Rank" else 200, anchor="center")
+            self.tree.column(col, width=width, anchor="center")
 
-        self.tree.place(x=100, y=100)
+        tree_x = 100
+        tree_y = 100
+        tree_width = sum([70, 180, 100, 120, 80])  # Sum of all column widths = 550
+
+        self.tree.place(x=tree_x, y=tree_y)
 
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.place(x=900, y=100, height=325)
+        scrollbar.place(x=tree_x + tree_width, y=tree_y, height=325)
 
         self.maze_toggle_button = tk.Button(
             self,
