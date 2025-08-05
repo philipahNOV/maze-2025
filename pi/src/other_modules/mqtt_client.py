@@ -152,14 +152,18 @@ class MQTTClientPi(threading.Thread):
         elif msg.topic == "pi/tracking_status":
             if self.app and hasattr(self.app, 'frames'):
                 play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                playvsai_frame = self.app.frames.get('PlayVsAIScreen')
                 if play_alone_frame:
                     payload = msg.payload.decode()
                     if payload == "tracking_started":
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+                        playvsai_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
                     elif payload == "ball_detected":
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=True)
+                        playvsai_frame.update_tracking_status(tracking_ready=True, ball_detected=True)
                     elif payload == "ball_lost":
                         play_alone_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
+                        playvsai_frame.update_tracking_status(tracking_ready=True, ball_detected=False)
         elif msg.topic.startswith("pi/leaderboard_data/"):
             try:
                 maze_id = int(msg.topic.split("/")[-1])
