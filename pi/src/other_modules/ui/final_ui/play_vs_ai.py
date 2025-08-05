@@ -265,10 +265,11 @@ class PlayVsAIScreen(tk.Frame):
             canvas_height = int(self.true_height * self.scale_ratio)
 
             if 0 <= x <= canvas_width and 0 <= y <= canvas_height:
-                self.canvas.delete("goal_marker")
+                if hasattr(self, 'click_marker') and self.click_marker is not None:
+                    self.canvas.delete(self.click_marker)
 
                 r = 5
-                self.canvas.create_oval(
+                self.click_marker = self.canvas.create_oval(
                     event.x - r, event.y - r, event.x + r, event.y + r,
                     fill="red", outline="white", width=2, tags="goal_marker"
                 )

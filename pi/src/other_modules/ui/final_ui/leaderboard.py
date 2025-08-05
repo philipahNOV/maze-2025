@@ -35,18 +35,42 @@ class LeaderboardScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=10)
 
-        columns = ("Name", "Time", "Date", "Maze")
+        columns = ("Rank","Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
+
+        style = ttk.Style(self)
+
+        style.configure("Treeview", rowheight=25)
+
+        style.map("Treeview")  # prevents styling overrides from being stripped
+
+        self.tree.tag_configure('evenrow', background="#CECECE")  # light gray
+        self.tree.tag_configure('oddrow', background='#FFFFFF')  # white
+
+        style.configure("Treeview", borderwidth=0, relief="flat")
+        style.configure("Treeview.Heading", font=("Jockey One", 14, "bold"))
+
+        column_widths = {
+            "Rank": 80,
+            "Name": 220,
+            "Time": 120,
+            "Date": 150,
+            "Maze": 100
+        }
 
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, width=200, anchor="center")
+            self.tree.column(col, width=column_widths[col], anchor="center")
 
-        self.tree.place(x=100, y=100)
+        tree_x = (1024 - sum(column_widths.values())) // 2  # Center horizontally
+        tree_y = 100
+        tree_width = sum(column_widths.values())  # 670 in this case
+
+        self.tree.place(x=tree_x, y=tree_y)
 
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.place(x=900, y=100, height=325)
+        scrollbar.place(x=tree_x + tree_width, y=tree_y, height=370)
 
         self.maze_toggle_button = tk.Button(
             self,
@@ -102,8 +126,9 @@ class LeaderboardScreen(tk.Frame):
 
         entries.sort(key=lambda x: x[1])
 
-        for row in entries:
-            self.tree.insert("", "end", values=row)
+        for idx, row in enumerate(entries, start=1):
+            tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+            self.tree.insert("", "end", values=(idx, *row), tags=(tag,))
 
     def update_leaderboard_data(self, maze_id: int, csv_data: str):
         try:
@@ -131,8 +156,9 @@ class LeaderboardScreen(tk.Frame):
                                 continue
             
             entries.sort(key=lambda x: x[1])
-            for row in entries:
-                self.tree.insert("", "end", values=row)
+            for idx, row in enumerate(entries, start=1):
+                tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+                self.tree.insert("", "end", values=(idx, *row), tags=(tag,))
                 
             print(f"[LEADERBOARD UI] Updated display with {len(entries)} entries for maze {maze_id}")
         except Exception as e:
