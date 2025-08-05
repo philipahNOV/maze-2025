@@ -99,7 +99,7 @@ class PlayAloneVictoryScreen(tk.Frame):
 
         self.under_title = tk.Label(
             self,
-            text="YOUR TIME: " + self.format_duration(self.duration),
+            text="YOUR TIME: " + str(self.duration) + " seconds",
             font=("Jockey One", 20),
             fg="#1A1A1A",
             bg="#D9D9D9"
@@ -127,3 +127,4 @@ class PlayAloneVictoryScreen(tk.Frame):
     def show(self):
         self.focus_set()
         self.update_idletasks()
+        self.under_title.config(text="YOUR TIME: " + str(self.duration) + " seconds")
