@@ -72,7 +72,6 @@ class MQTTClientPi(threading.Thread):
         if msg.topic == "pi/command":
             payload = msg.payload.decode()
             if payload.startswith("playalone_success:"):
-                print(payload)
                 duration = payload.split(":")[1]
                 rank = payload.split(":")[2]
                 if self.app and hasattr(self.app, 'frames'):

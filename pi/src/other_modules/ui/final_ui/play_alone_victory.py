@@ -107,14 +107,14 @@ class PlayAloneVictoryScreen(tk.Frame):
         )
         self.under_title.place(x=512, y=280, anchor="n")
 
-        self.under_title = tk.Label(
+        self.under_title2 = tk.Label(
             self,
             text="YOUR RANK: " + str(self.rank),
             font=("Jockey One", 30),  # 1.5x of original 20
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=320, anchor="n")
+        self.under_title2.place(x=512, y=350, anchor="n")
 
         self.leaderboard_button = tk.Button(
             self,
@@ -156,4 +156,4 @@ class PlayAloneVictoryScreen(tk.Frame):
         self.focus_set()
         self.update_idletasks()
         self.under_title.config(text="YOUR TIME: " + str(self.duration) + " seconds")
-        self.under_title.config(text="YOUR RANK: " + str(self.rank))
+        self.under_title2.config(text="YOUR RANK: " + str(self.rank))
