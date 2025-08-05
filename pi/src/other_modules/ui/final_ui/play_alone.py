@@ -59,7 +59,7 @@ class PlayAloneScreen(tk.Frame):
         ]
 
         screen_width = 1024
-        keyboard_width = screen_width - 40
+        keyboard_width = screen_width - 80
         
         for row_idx, row in enumerate(keys):
             row_length = len(row)
