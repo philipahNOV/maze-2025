@@ -208,7 +208,7 @@ class HMIController:
                 elif ball_previously_detected:
                     self.mqtt_client.client.publish("pi/tracking_status", "ball_lost")
                     ball_previously_detected = False
-            else:
+            elif is_in_elevator(self.config, ball_pos):
                 last_valid_pos_time = time.time()
                 
                 if not ball_previously_detected:
