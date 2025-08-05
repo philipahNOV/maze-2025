@@ -13,6 +13,7 @@ class PlayAloneVictoryScreen(tk.Frame):
         self.mqtt_client = mqtt_client
 
         self.duration = -1  # Duration will be set when the MQTT message is received
+        self.rank = -1  # Rank will be determined based on the leaderboard data
 
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -95,7 +96,7 @@ class PlayAloneVictoryScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=512, y=150, anchor="n")  # shifted down to keep spacing similar
+        self.title.place(x=512, y=200, anchor="n")  # shifted down to keep spacing similar
 
         self.under_title = tk.Label(
             self,
@@ -104,7 +105,16 @@ class PlayAloneVictoryScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=230, anchor="n")
+        self.under_title.place(x=512, y=280, anchor="n")
+
+        self.under_title = tk.Label(
+            self,
+            text="YOUR RANK: " + str(self.rank),
+            font=("Jockey One", 30),  # 1.5x of original 20
+            fg="#1A1A1A",
+            bg="#D9D9D9"
+        )
+        self.under_title.place(x=512, y=320, anchor="n")
 
         self.leaderboard_button = tk.Button(
             self,
@@ -118,7 +128,25 @@ class PlayAloneVictoryScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.show_leaderboard
         )
-        self.leaderboard_button.place(x=391, y=450, width=243, height=74)
+        self.leaderboard_button.place(x=391, y=400, width=243, height=74)
+
+    def determine_rank(self, data):
+        rank = 1
+        if data.strip():
+                lines = data.strip().split('\n')
+                for line in lines:
+                    if line.strip():
+                        parts = line.split(',')
+                        if len(parts) == 4:
+                            name, time_str, date_str, maze_str = parts
+                            try:
+                                time_value = float(time_str)
+                                if time_value < self.duration:
+                                    rank += 1
+                            except ValueError:
+                                continue
+        self.rank = rank
+
 
     def show_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "Leaderboard")
@@ -128,3 +156,4 @@ class PlayAloneVictoryScreen(tk.Frame):
         self.focus_set()
         self.update_idletasks()
         self.under_title.config(text="YOUR TIME: " + str(self.duration) + " seconds")
+        self.under_title.config(text="YOUR RANK: " + str(self.rank))

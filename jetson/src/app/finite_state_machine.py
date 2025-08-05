@@ -16,6 +16,7 @@ import os
 import sys
 from typing import Dict, Any
 from utils.leaderboard_utils import add_score
+from utils.leaderboard_utils import read_leaderboard
 from datetime import datetime
 import numpy as np
 
@@ -167,6 +168,23 @@ class HMIController:
         
         distance = ((x - goal_x) ** 2 + (y - goal_y) ** 2) ** 0.5
         return distance <= radius
+    
+    def determine_rank(self, data, duration):
+        rank = 1
+        if data.strip():
+                lines = data.strip().split('\n')
+                for line in lines:
+                    if line.strip():
+                        parts = line.split(',')
+                        if len(parts) == 4:
+                            name, time_str, date_str, maze_str = parts
+                            try:
+                                time_value = float(time_str)
+                                if time_value < duration:
+                                    rank += 1
+                            except ValueError:
+                                continue
+        self.rank = rank
         
 
     def run_playalone_game(self):
@@ -231,7 +249,16 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
                     add_score(player_name, duration, maze_id, self.mqtt_client)
-                    self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}")
+
+                    leaderboard_data = read_leaderboard(maze_id)
+                    csv_data = []
+                    for entry in leaderboard_data:
+                        csv_data.append(f"{entry['name']},{entry['time']:.2f},{entry['date']},{entry['maze_id']}")
+                    
+                    csv_string = '\n'.join(csv_data)
+                    rank = self.determine_rank(csv_string, duration)
+
+                    self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     break
 
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
@@ -666,7 +693,7 @@ class HMIController:
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                
+
         elif cmd == "Leaderboard":
                 print("[FSM] Entering LEADERBOARD mode")
                 self.state = SystemState.LEADERBOARD

@@ -73,6 +73,7 @@ class MQTTClientPi(threading.Thread):
             payload = msg.payload.decode()
             if payload.startswith("playalone_success:"):
                 duration = payload.split(":")[1]
+                rank = payload.split(":")[2]
                 if self.app and hasattr(self.app, 'frames'):
                     play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
                     if play_alone_frame:
@@ -80,6 +81,7 @@ class MQTTClientPi(threading.Thread):
                     victory_screen = self.app.frames.get('PlayAloneVictoryScreen')
                     if victory_screen:
                         victory_screen.duration = duration
+                        victory_screen.rank = rank
                     self.app.show_frame("PlayAloneVictoryScreen")
             elif payload == "playalone_fail":
                 if self.app and hasattr(self.app, 'frames'):
