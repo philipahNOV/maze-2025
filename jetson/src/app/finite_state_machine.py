@@ -571,6 +571,10 @@ class HMIController:
                 self._start_joystick_control()
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
 
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.05)
+
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
