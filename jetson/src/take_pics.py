@@ -96,7 +96,7 @@ def main():
     zed = init_zed_camera()
     save_dir = "img_finetune"
     os.makedirs(save_dir, exist_ok=True)
-    img_count = 26
+    img_count = 1
     
     # Shared variables for picture taking
     current_frame = None
