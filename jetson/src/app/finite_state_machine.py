@@ -412,20 +412,24 @@ class HMIController:
             time.sleep(0.1)
         
         if hasattr(self, 'joystick_controller'):
-            self.joystick_controller.stop()
+                    self.joystick_controller.stop()
         if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
             self.joystick_thread.join()
-        if self.image_thread is not None:
-                    self.image_thread.stop()
-                    self.image_thread.join()
-                    self.image_thread = None
         
         self.tracking_service.stop_tracker()
+        
+        if self.image_thread is not None:
+            self.image_thread.stop()
+            self.image_thread.join()
+            self.image_thread = None
+        if self.path_thread is not None:
+            self.path_thread.stop()
+            self.path_thread = None
+        self.path = None
         print("[PLAYVSAI] Human turn ended")
         
         if self.state == SystemState.PLAYVSAI_HUMAN:
             self.playvsai_goal = None
-            self.state = SystemState.HUMAN_CONTROLLER
 
     def start_playvsai_human_timer(self):
         self.playvsai_human_timer_start_requested = True
@@ -887,6 +891,15 @@ class HMIController:
                     self.joystick_thread.join()
                 
                 self.tracking_service.stop_tracker()
+                
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                if self.path_thread is not None:
+                    self.path_thread.stop()
+                    self.path_thread = None
+                self.path = None
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
             
             elif cmd == "StartHumanTurn":
