@@ -142,13 +142,13 @@ class HMIController:
         self.arduino_thread.send_speed(0, 0)
         threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
-    def _start_joystick_control(self): # could be moved to sep file
+    def _start_joystick_control(self, playalone_wait=False): # could be moved to sep file
         if hasattr(self, 'joystick_controller'):
             self.joystick_controller.stop()
             if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
                 self.joystick_thread.join()
 
-        self.joystick_controller = JoystickController(self.arduino_thread)
+        self.joystick_controller = JoystickController(self.arduino_thread, self.mqtt_client, playalone_wait=playalone_wait)
         self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
         self.joystick_thread.start()
 
@@ -605,7 +605,7 @@ class HMIController:
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
-                self._start_joystick_control()
+                self._start_joystick_control(playalone_wait=True)
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
 
                 for _ in range(5):
