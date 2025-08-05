@@ -243,6 +243,8 @@ class PlayAloneStartScreen(tk.Frame):
             )
             
         elif result_type == "failure":
+            self.controller.show_frame("PlayAloneFailedScreen")
+            self.mqtt_client.client.publish("jetson/command", "PlayAloneFailed")
             self.start_button.config(
                 state="normal",
                 bg="#F44336",

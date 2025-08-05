@@ -39,6 +39,7 @@ class SystemState(Enum):
     PLAYVSAI_HUMAN = auto()
     LEADERBOARD = auto()
     PLAYALONE_VICTORY = auto()
+    PLAYALONE_FAILED = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -669,8 +670,35 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
-                print("test")
                 self.state = SystemState.PLAYALONE_VICTORY
+                self.playalone_timer_start_requested = False
+                self.playalone_game_stop_requested = True
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                    del self.joystick_thread
+                
+                self.tracking_service.stop_tracker()
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                    self.custom_goal = None
+                
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+
+            elif cmd == "PlayAloneFailed":
+                print("[FSM] Entering PLAYALONE_FAILED mode")
+                self.state = SystemState.PLAYALONE_FAILED
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
                 
@@ -741,7 +769,16 @@ class HMIController:
                 from utils.leaderboard_utils import send_leaderboard_data
                 send_leaderboard_data(self.mqtt_client, 1)
                 send_leaderboard_data(self.mqtt_client, 2)
-            
+        
+        elif self.state == SystemState.PLAYALONE_FAILED:
+            if cmd == "Back":
+                self.state = SystemState.HUMAN_CONTROLLER
+            if cmd == "Retry":
+                print("[FSM] Entering PLAYALONE mode")
+                self.playalone_timer_start_requested = False
+                self.state = SystemState.PLAYALONE
+                self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
+
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
