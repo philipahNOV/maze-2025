@@ -88,6 +88,11 @@ class MQTTClientPi(threading.Thread):
                     play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
                     if play_alone_frame:
                         play_alone_frame.show_game_result("failure", None)
+            elif payload == "playalone_start":
+                if self.app and hasattr(self.app, 'frames'):
+                    play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
+                    if play_alone_frame:
+                        play_alone_frame.on_start_game_click()
             elif payload == "show_playvsai_screen":
                 if self.app:
                     self.app.show_frame("PlayVsAIScreen")

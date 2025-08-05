@@ -2,12 +2,15 @@ import pygame
 import time
 from functools import wraps
 from arduino_connection import ArduinoConnection
+from mqtt.mqtt_client import MQTTClientJetson
 
 
 class JoystickController:
-    def __init__(self, arduino: ArduinoConnection):
+    def __init__(self, arduino: ArduinoConnection, mqtt_client: MQTTClientJetson, playalone_wait):
         self.arduino = arduino
+        self.mqtt_client = mqtt_client
         self.running = False
+        self.playalone_wait = playalone_wait
         self.deadzone = 5000
         self.max_raw = 32767
         self.update_rate_hz = 120
@@ -46,6 +49,16 @@ class JoystickController:
             while self.running:
                 loop_start = time.time()
                 pygame.event.pump()
+
+                if self.playalone_wait:
+                    button = joystick.get_button(0)
+                    if button and self.prev_button_state != button:
+                        self.prev_button_state = button
+                        self.mqtt_client.client.publish("pi/command", "playalone_start")
+                        self.playalone_wait = False
+                    time.sleep(max(0, interval - (time.time() - loop_start)))
+                    continue
+
                 axis_x = -joystick.get_axis(1)  # venstre horisontal
                 axis_y = -joystick.get_axis(0)  # vensre vertikal
                 vel_x = self.scaled_output(axis_x)
