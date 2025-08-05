@@ -91,20 +91,20 @@ class PlayAloneVictoryScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="MAZE COMPLETED!",
-            font=("Jockey One", 30),
+            font=("Jockey One", 45),  # 1.5x of original 30
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=512, y=200, anchor="n")
+        self.title.place(x=512, y=300, anchor="n")  # shifted down to keep spacing similar
 
         self.under_title = tk.Label(
             self,
             text="YOUR TIME: " + str(self.duration) + " seconds",
-            font=("Jockey One", 20),
+            font=("Jockey One", 30),  # 1.5x of original 20
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=250, anchor="n")
+        self.under_title.place(x=512, y=370, anchor="n")
 
         self.leaderboard_button = tk.Button(
             self,
