@@ -73,7 +73,10 @@ def determine_maze(tracking_service, center=(992, 500), box_size=(10, 10), thres
         else:
             return "Easy"
         
-def is_within_goal(maze, position):
+def is_within_goal(maze, position, custom_goal=None):
+    if custom_goal is not None:
+        return np.linalg.norm(np.array(position) - np.array(custom_goal)) < 100
+
     if maze == "Hard":
         corners = [(720, 32), (890, 32), (890, 110), (720, 110)]
     else:

@@ -333,7 +333,7 @@ class PlayVsAIScreen(tk.Frame):
                 img_pil = Image.fromarray(img_rgb)
                 img_tk = ImageTk.PhotoImage(img_pil)
                 
-                self.canvas.delete("all")
+                #self.canvas.delete("all")
                 self.canvas.create_image(
                     self.canvas_width // 2, 
                     self.canvas_height // 2, 

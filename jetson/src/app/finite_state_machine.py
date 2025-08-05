@@ -338,7 +338,7 @@ class HMIController:
             else:
                 last_valid_pos_time = time.time()
                 
-                if is_within_goal(self.maze_version, ball_pos):
+                if is_within_goal(self.maze_version, ball_pos, self.playvsai_goal):
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
@@ -391,7 +391,7 @@ class HMIController:
                     print("[PLAYVSAI] Human ball seen and game started — starting timer.")
                     start_time = time.time()
 
-                if is_within_goal(self.maze_version, ball_pos) and start_time is not None:
+                if is_within_goal(self.maze_version, ball_pos, self.playvsai_goal) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] Human succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_human_success:{duration:.2f}")
@@ -552,6 +552,10 @@ class HMIController:
                 self.image_thread.start()                
                 self.state = SystemState.PLAYVSAI
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
+
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.05)
 
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
