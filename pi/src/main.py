@@ -16,6 +16,7 @@ from other_modules.ui.final_ui.play_alone_start import PlayAloneStartScreen
 from other_modules.ui.final_ui.play_vs_ai import PlayVsAIScreen
 from other_modules.ui.final_ui.leaderboard import LeaderboardScreen
 from other_modules.ui.final_ui.play_alone_victory import PlayAloneVictoryScreen
+from other_modules.ui.final_ui.play_alone_failed import PlayAloneFailedScreen
 
 import signal
 import sys
@@ -61,7 +62,7 @@ class MainApp(tk.Tk):
 
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,
-                  PlayAloneScreen, PlayAloneStartScreen, PlayVsAIScreen, LeaderboardScreen, PlayAloneVictoryScreen):
+                  PlayAloneScreen, PlayAloneStartScreen, PlayVsAIScreen, LeaderboardScreen, PlayAloneVictoryScreen, PlayAloneFailedScreen):
             frame = F(parent=container, controller=self, mqtt_client=self.mqtt_client)
             frame.grid(row=0, column=0, sticky="nsew")
             frame.lower()

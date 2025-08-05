@@ -39,6 +39,7 @@ class SystemState(Enum):
     PLAYVSAI_HUMAN = auto()
     LEADERBOARD = auto()
     PLAYALONE_VICTORY = auto()
+    PLAYALONE_FAILED = auto()
 
 class HMIController:
     def __init__(self, tracking_service: TrackerService, arduino_thread: ArduinoConnection, mqtt_client: MQTTClientJetson, config: Dict[str, Any]):
@@ -337,7 +338,7 @@ class HMIController:
             else:
                 last_valid_pos_time = time.time()
                 
-                if is_within_goal(self.maze_version, ball_pos):
+                if is_within_goal(self.maze_version, ball_pos, self.playvsai_goal):
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
@@ -356,8 +357,15 @@ class HMIController:
         print("[PLAYVSAI] Starting human turn...")
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
+
+        for _ in range(5):
+            self.arduino_thread.send_elevator(1)
+            time.sleep(0.05)
         
         self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
+        self.image_controller.set_new_path(None)
+        self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        self.image_thread.start()  
         self._start_joystick_control()
         
         game_running = True
@@ -390,7 +398,7 @@ class HMIController:
                     print("[PLAYVSAI] Human ball seen and game started — starting timer.")
                     start_time = time.time()
 
-                if is_within_goal(self.maze_version, ball_pos) and start_time is not None:
+                if is_within_goal(self.maze_version, ball_pos, self.playvsai_goal) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] Human succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_human_success:{duration:.2f}")
@@ -407,6 +415,10 @@ class HMIController:
             self.joystick_controller.stop()
         if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
             self.joystick_thread.join()
+        if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
         
         self.tracking_service.stop_tracker()
         print("[PLAYVSAI] Human turn ended")
@@ -552,6 +564,10 @@ class HMIController:
                 self.state = SystemState.PLAYVSAI
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.05)
+
             elif cmd == "PlayAlone":
                 print("[FSM] Entering PLAYALONE mode")
                 self.playalone_timer_start_requested = False
@@ -670,8 +686,35 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
-                print("test")
                 self.state = SystemState.PLAYALONE_VICTORY
+                self.playalone_timer_start_requested = False
+                self.playalone_game_stop_requested = True
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                    del self.joystick_controller
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                    del self.joystick_thread
+                
+                self.tracking_service.stop_tracker()
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                    self.custom_goal = None
+                
+                self.path = None
+                self.image_controller.set_new_path(self.path)
+
+            elif cmd == "PlayAloneFailed":
+                print("[FSM] Entering PLAYALONE_FAILED mode")
+                self.state = SystemState.PLAYALONE_FAILED
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
                 
@@ -742,7 +785,33 @@ class HMIController:
                 from utils.leaderboard_utils import send_leaderboard_data
                 send_leaderboard_data(self.mqtt_client, 1)
                 send_leaderboard_data(self.mqtt_client, 2)
-            
+        
+        elif self.state == SystemState.PLAYALONE_FAILED:
+            if cmd == "Back":
+                self.state = SystemState.HUMAN_CONTROLLER
+            if cmd == "Retry":
+                self.state = SystemState.PLAYALONE_START
+                print("[PLAYALONE] Entering play alone start screen")
+                self.playalone_timer_start_requested = False
+                self.playalone_game_stop_requested = False
+                
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                self.path = None
+                self.image_controller.set_new_path(None)
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
+                self.arduino_thread.send_speed(0, 0)
+                self._start_joystick_control(playalone_wait=True)
+                threading.Thread(target=self.run_playalone_game, daemon=True).start()
+
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.05)
+
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
