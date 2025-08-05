@@ -96,8 +96,8 @@ class PlayAloneScreen(tk.Frame):
                     command=lambda k=key: self.key_press(k)
                 )
                 
-                if row_idx == 4:
-                    btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
+                if row_idx == 2:
+                    btn.place(x=start_x + (col_idx + 2) * button_spacing, y=240 + row_idx * 75, width=keyboard_width // 11 - 10, height=50)
                 else:
                     btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
 
