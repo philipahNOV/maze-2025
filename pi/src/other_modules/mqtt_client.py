@@ -77,6 +77,9 @@ class MQTTClientPi(threading.Thread):
                     play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
                     if play_alone_frame:
                         play_alone_frame.show_game_result("success", duration)
+                    play_alone_victory_frame = self.app.frames.get('PlayAloneVictoryScreen')
+                    if play_alone_victory_frame:
+                        play_alone_victory_frame.show()
             elif payload == "playalone_fail":
                 if self.app and hasattr(self.app, 'frames'):
                     play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
