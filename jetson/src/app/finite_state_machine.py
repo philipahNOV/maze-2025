@@ -170,7 +170,7 @@ class HMIController:
         print("[PLAYALONE] Starting tracking thread...")
         self.maze_version = determine_maze(self.tracking_service)
         game_config = self.config.get("game", {})
-        if self.maze_version is "Hard":
+        if self.maze_version is not None and self.maze_version == "Hard":
             maze_id = 1
         else:
             maze_id = 2
