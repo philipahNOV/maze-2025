@@ -110,19 +110,7 @@ class AdminToolsScreen(tk.Frame):
         self.clear_leaderboard_easy.place(x=391, y=400, width=243, height=74)
 
     def clear_easy_leaderboard(self):
-         # Build the relative path from the current file's location
-        file_path = os.path.abspath(
-            os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "..", "jetson", "src", "data", "leaderboard_data", "leaderboard_maze2.csv")
-        )
-
-        try:
-            if os.path.exists(file_path):
-                os.remove(file_path)
-                print(f"[INFO] Deleted: {file_path}")
-            else:
-                print(f"[INFO] File does not exist: {file_path}")
-        except Exception as e:
-            print(f"[ERROR] Failed to delete leaderboard_maze2.csv: {e}")
+        self.mqtt_client.client.publish("jetson/command", "ClearEasyLeaderboard")
     
     def show(self):
         self.focus_set()

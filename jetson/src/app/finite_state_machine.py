@@ -17,6 +17,7 @@ import sys
 from typing import Dict, Any
 from utils.leaderboard_utils import add_score
 from utils.leaderboard_utils import read_leaderboard
+from utils.leaderboard_utils import clear_leaderboard
 from datetime import datetime
 import numpy as np
 
@@ -518,6 +519,18 @@ class HMIController:
             elif cmd == "AdminTools":
                 self.state = SystemState.ADMIN_TOOLS
                 print("[FSM] Transitioned to ADMIN_TOOLS")
+
+        elif self.state == SystemState.ADMIN_TOOLS:
+            if cmd == "Back":
+                self.state = SystemState.MAIN_SCREEN
+                print("[FSM] Transitioned to MAIN_SCREEN")
+            elif cmd == "ClearEasyLeaderboard":
+                clear_leaderboard(2)
+                print("[FSM] Easy leaderboard cleared")
+            elif cmd == "ClearHardLeaderboard":
+                clear_leaderboard(1)
+                print("[FSM] Hard leaderboard cleared")   
+        
         
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
