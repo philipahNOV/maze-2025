@@ -46,6 +46,7 @@ def remove_withing_elevator(config, path, radius: int = 80):
 def determine_maze(tracking_service, center=(992, 500), box_size=(10, 10), threshold=30):
 
         frame = tracking_service.get_stable_frame()
+        if frame is None: return None
         gray = get_dynamic_threshold(frame)
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)

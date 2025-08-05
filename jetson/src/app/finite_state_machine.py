@@ -168,21 +168,22 @@ class HMIController:
 
     def run_playalone_game(self):
         print("[PLAYALONE] Starting tracking thread...")
-        self.maze_version = determine_maze(self.tracking_service)
         game_config = self.config.get("game", {})
-        if self.maze_version is not None and self.maze_version == "Hard":
-            maze_id = 1
-        else:
-            maze_id = 2
         #maze_id = game_config.get("maze_id", 1)
         player_name = self.current_player_name
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
-        print(f"[PLAYALONE] Playing on Maze {self.maze_version} with timeout {ball_lost_timeout}s")
-        print(f"[PLAYALONE] Player name: {player_name}")
-
         self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
+
+        self.maze_version = determine_maze(self.tracking_service)
+        if self.maze_version is not None and self.maze_version == "Hard":
+            maze_id = 1
+        else:
+            maze_id = 2
+
+        print(f"[PLAYALONE] Playing on Maze {self.maze_version} with timeout {ball_lost_timeout}s")
+        print(f"[PLAYALONE] Player name: {player_name}")
 
         game_running = True
         start_time = None
