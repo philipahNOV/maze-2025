@@ -175,7 +175,7 @@ class HMIController:
         
         self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
-
+        time.sleep(0.1)
         self.maze_version = determine_maze(self.tracking_service)
         if self.maze_version is not None and self.maze_version == "Hard":
             maze_id = 1
