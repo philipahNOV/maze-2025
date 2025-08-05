@@ -5,6 +5,8 @@ import csv
 import os
 from typing import TYPE_CHECKING
 
+from matplotlib import style
+
 if TYPE_CHECKING:
     from main import MainApp
 
@@ -38,6 +40,18 @@ class LeaderboardScreen(tk.Frame):
         columns = ("Rank","Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
+        style = ttk.Style(self)
+
+        style.configure("Treeview", rowheight=25)
+
+        style.map("Treeview")  # prevents styling overrides from being stripped
+
+        self.tree.tag_configure('evenrow', background="#CECECE")  # light gray
+        self.tree.tag_configure('oddrow', background='#FFFFFF')  # white
+
+        style.configure("Treeview", borderwidth=0, relief="flat")
+        style.configure("Treeview.Heading", font=("Jockey One", 14, "bold"))
+
         column_widths = {
             "Rank": 80,
             "Name": 220,
@@ -51,7 +65,7 @@ class LeaderboardScreen(tk.Frame):
             self.tree.column(col, width=column_widths[col], anchor="center")
 
         tree_x = (1024 - sum(column_widths.values())) // 2  # Center horizontally
-        tree_y = 80
+        tree_y = 100
         tree_width = sum(column_widths.values())  # 670 in this case
 
         self.tree.place(x=tree_x, y=tree_y)
@@ -115,7 +129,8 @@ class LeaderboardScreen(tk.Frame):
         entries.sort(key=lambda x: x[1])
 
         for idx, row in enumerate(entries, start=1):
-            self.tree.insert("", "end", values=(idx, *row))
+            tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+            self.tree.insert("", "end", values=(idx, *row), tags=(tag,))
 
     def update_leaderboard_data(self, maze_id: int, csv_data: str):
         try:
@@ -144,7 +159,8 @@ class LeaderboardScreen(tk.Frame):
             
             entries.sort(key=lambda x: x[1])
             for idx, row in enumerate(entries, start=1):
-                self.tree.insert("", "end", values=(idx, *row))
+                tag = 'evenrow' if idx % 2 == 0 else 'oddrow'
+                self.tree.insert("", "end", values=(idx, *row), tags=(tag,))
                 
             print(f"[LEADERBOARD UI] Updated display with {len(entries)} entries for maze {maze_id}")
         except Exception as e:
