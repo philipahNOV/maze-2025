@@ -39,19 +39,8 @@ class LeaderboardScreen(tk.Frame):
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
         style = ttk.Style(self)
-        style.theme_use("clam")
 
         style.configure("Treeview", rowheight=25)
-        style.configure("Treeview", 
-            rowheight=25,
-            borderwidth=0,
-            relief="flat"
-        )
-        style.configure("Treeview.Heading", 
-            font=("Jockey One", 14, "bold"),
-            relief="raised", 
-            borderwidth=1
-        )
 
         style.map("Treeview")  # prevents styling overrides from being stripped
 
@@ -81,7 +70,13 @@ class LeaderboardScreen(tk.Frame):
 
         scrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
-        scrollbar.place(x=tree_x + tree_width, y=tree_y, height=self.tree.winfo_reqheight())
+        row_height = style.lookup("Treeview", "rowheight")
+        visible_rows = 15  # same as your `height=15`
+        heading_height = 30  # estimated value for heading area
+
+        total_height = visible_rows * row_height + heading_height
+
+        scrollbar.place(x=tree_x + tree_width, y=tree_y, height=total_height)
 
         self.maze_toggle_button = tk.Button(
             self,
@@ -93,7 +88,7 @@ class LeaderboardScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.toggle_maze
         )
-        self.maze_toggle_button.place(x=380, y=460, width=260, height=50)
+        self.maze_toggle_button.place(x=380, y=520, width=260, height=50)
 
         self.back_button = tk.Button(
             self,

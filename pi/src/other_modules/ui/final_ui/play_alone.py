@@ -59,7 +59,7 @@ class PlayAloneScreen(tk.Frame):
         ]
 
         screen_width = 1024
-        keyboard_width = screen_width - 40
+        keyboard_width = screen_width - 80
         
         for row_idx, row in enumerate(keys):
             row_length = len(row)
@@ -96,8 +96,10 @@ class PlayAloneScreen(tk.Frame):
                     command=lambda k=key: self.key_press(k)
                 )
                 
-                if row_idx == 4:
-                    btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
+                if row_idx == 2:
+                    btn.place(x=start_x + 18 + (col_idx + 2) * (keyboard_width // 11), y=240 + row_idx * 75, width=keyboard_width // 11 - 10, height=50)
+                elif row_idx == 1:
+                    btn.place(x=start_x + 18 + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
                 else:
                     btn.place(x=start_x + col_idx * button_spacing, y=240 + row_idx * 75, width=button_width, height=50)
 
