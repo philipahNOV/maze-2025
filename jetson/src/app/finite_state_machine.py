@@ -775,10 +775,27 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.HUMAN_CONTROLLER
             if cmd == "Retry":
-                print("[FSM] Entering PLAYALONE mode")
+                self.state = SystemState.PLAYALONE_START
+                print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
-                self.state = SystemState.PLAYALONE
-                self.mqtt_client.client.publish("pi/command", "show_playalone_screen")
+                self.playalone_game_stop_requested = False
+                
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                self.path = None
+                self.image_controller.set_new_path(None)
+                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+                self.image_thread.start()
+                self.arduino_thread.send_speed(0, 0)
+                self._start_joystick_control(playalone_wait=True)
+                threading.Thread(target=self.run_playalone_game, daemon=True).start()
+
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(1)
+                    time.sleep(0.05)
 
         elif self.state == SystemState.LEADERBOARD:
             if cmd == "Back":

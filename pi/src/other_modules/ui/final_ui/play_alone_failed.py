@@ -114,10 +114,8 @@ class PlayAloneFailedScreen(tk.Frame):
 
     def retry_clicked(self):
         self.mqtt_client.client.publish("jetson/command", "Retry")
-        self.controller.show_frame("PlayAloneScreen")
+        self.controller.show_frame("PlayAloneStartScreen")
 
     def show(self):
         self.focus_set()
         self.update_idletasks()
-        self.under_title.config(text="YOUR TIME: " + str(self.duration) + " seconds")
-        self.under_title2.config(text="YOUR RANK: " + str(self.rank))
