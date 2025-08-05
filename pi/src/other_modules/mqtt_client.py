@@ -162,7 +162,6 @@ class MQTTClientPi(threading.Thread):
                 
                 if self.app and hasattr(self.app, 'frames'):
                     leaderboard_frame = self.app.frames.get('LeaderboardScreen')
-                    print(leaderboard_frame)
                     if leaderboard_frame:
                         leaderboard_frame.update_leaderboard_data(maze_id, csv_data)
                         print(f"[MQTT] Updated leaderboard data for maze {maze_id}")

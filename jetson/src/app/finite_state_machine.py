@@ -259,6 +259,10 @@ class HMIController:
                     csv_string = '\n'.join(csv_data)
                     rank = self.determine_rank(csv_string, duration)
 
+                    from utils.leaderboard_utils import send_leaderboard_data
+                    send_leaderboard_data(self.mqtt_client, 1)
+                    send_leaderboard_data(self.mqtt_client, 2)
+
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     break
 
