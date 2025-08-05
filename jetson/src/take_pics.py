@@ -7,7 +7,7 @@ import time
 import pygame
 
 # Add parent directory to path to import joystick controller
-from control.joystick_controller import JoystickController
+from joystick2 import JoystickController
 from arduino_connection import ArduinoConnection
 
 class PictureTakingJoystickController(JoystickController):
