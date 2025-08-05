@@ -35,7 +35,7 @@ class LeaderboardScreen(tk.Frame):
             fg="#1A1A1A"
         ).place(x=330, y=10)
 
-        columns = ("Ranks","Name", "Time", "Date", "Maze")
+        columns = ("Rank","Name", "Time", "Date", "Maze")
         self.tree = ttk.Treeview(self, columns=columns, show="headings", height=15)
 
         for col in columns:
