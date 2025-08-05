@@ -28,14 +28,13 @@ class PlayVsAIScreen(tk.Frame):
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.goal = None
 
+        self.create_widgets()
         self.canvas_image_id = self.canvas.create_image(
             self.canvas_width // 2,
             self.canvas_height // 2,
             anchor="center",
             image=None
         )
-
-        self.create_widgets()
         self.update_image()
 
     def create_widgets(self):
