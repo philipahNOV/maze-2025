@@ -259,10 +259,6 @@ class HMIController:
                     csv_string = '\n'.join(csv_data)
                     rank = self.determine_rank(csv_string, duration)
 
-                    from utils.leaderboard_utils import send_leaderboard_data
-                    send_leaderboard_data(self.mqtt_client, 1)
-                    send_leaderboard_data(self.mqtt_client, 2)
-
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     break
 
@@ -673,6 +669,7 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
+                print("test")
                 self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
@@ -699,14 +696,14 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(self.path)
 
-        elif cmd == "Leaderboard":
-                print("[FSM] Entering LEADERBOARD mode")
-                self.state = SystemState.LEADERBOARD
-                self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
-                
-                from utils.leaderboard_utils import send_leaderboard_data
-                send_leaderboard_data(self.mqtt_client, 1)
-                send_leaderboard_data(self.mqtt_client, 2)
+            elif cmd == "Leaderboard":
+                    print("[FSM] Entering LEADERBOARD mode")
+                    self.state = SystemState.LEADERBOARD
+                    self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
+                    
+                    from utils.leaderboard_utils import send_leaderboard_data
+                    send_leaderboard_data(self.mqtt_client, 1)
+                    send_leaderboard_data(self.mqtt_client, 2)
 
         elif self.state == SystemState.PLAYALONE_VICTORY:
             if cmd == "Back":
