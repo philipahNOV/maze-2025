@@ -57,7 +57,7 @@ class HMIController:
         self.stop_controller_event = threading.Event()
         self.custom_goal = None
         self.playvsai_goal = None
-        self.current_player_name = "Unknown"  # Will be set via MQTT
+        self.current_player_name = "Unknown"
         self.path_thread = None
         self.disco_mode = 0
         self.disco_thread = None
@@ -311,7 +311,7 @@ class HMIController:
         if self.controller_thread is None or not self.controller_thread.is_alive():
             self.controller_thread = threading.Thread(
                 target=run_controller_main.main,
-                args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event, self.config),
+                args=(self.tracking_service, self.controller.lookahead, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event, self.config),
                 daemon=True
             )
             self.controller_thread.start()

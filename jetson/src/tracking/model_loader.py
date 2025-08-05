@@ -67,28 +67,19 @@ class YOLOModel:
 
         input_w, input_h = self.input_shape
         img = cv2.resize(image, (input_w, input_h), interpolation=cv2.INTER_AREA)
-
-        # Avoid chaining operations on float16 — work in float32
-        img = img.astype(np.float32) / 255.0  # Normalize
-
+        img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # (C, H, W)
         img = np.expand_dims(img, axis=0)   # (1, C, H, W)
-
-        # Now convert once and directly
         img_fp16 = img.astype(np.float16)
-
-        # Copy into preallocated input_host (which must be dtype=np.float16)
         np.copyto(self.input_host, img_fp16.ravel())
 
-
-
-    def predict(self, image, conf=0.2):
+    def predict(self, image, conf=0.35):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.2):
+    def _predict_tensorrt(self, image, conf=0.35):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -120,7 +111,7 @@ class YOLOModel:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
     
-    def _predict_pytorch(self, image, conf=0.2):
+    def _predict_pytorch(self, image, conf=0.35):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -141,7 +132,7 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.2):
+    def postprocess(self, output, conf_thres=0.35):
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
@@ -206,10 +197,8 @@ class YOLOModel:
             if self.is_shutdown:
                 return
             self.is_shutdown = True
-        # safe cleanup here
 
         try:
-            # Free device memory
             if hasattr(self, 'input_device') and self.input_device is not None:
                 self.input_device.free()
                 self.input_device = None
@@ -218,7 +207,6 @@ class YOLOModel:
                 self.output_device.free()
                 self.output_device = None
 
-            # Delete TensorRT objects
             if hasattr(self, 'context') and self.context is not None:
                 del self.context
                 self.context = None
@@ -231,12 +219,10 @@ class YOLOModel:
                 del self.runtime
                 self.runtime = None
 
-            # Delete CUDA stream
             if hasattr(self, 'stream') and self.stream is not None:
                 del self.stream
                 self.stream = None
 
-            # Pop CUDA context from the stack (but do not detach!)
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
                 try:
                     self.cuda_ctx.pop()
