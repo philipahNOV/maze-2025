@@ -359,6 +359,8 @@ class HMIController:
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
         self.mqtt_client.client.publish("pi/command", "playvsai_human_started")
+        self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
+        self.image_thread.start()  
         self._start_joystick_control()
         
         game_running = True
