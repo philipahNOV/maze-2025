@@ -88,7 +88,7 @@ class LeaderboardScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.toggle_maze
         )
-        self.maze_toggle_button.place(x=380, y=550, width=260, height=50)
+        self.maze_toggle_button.place(x=380, y=520, width=260, height=50)
 
         self.back_button = tk.Button(
             self,
