@@ -67,19 +67,19 @@ class YOLOModel:
 
         input_w, input_h = self.input_shape
         img = cv2.resize(image, (input_w, input_h), interpolation=cv2.INTER_AREA)
-        img = img.astype(np.float32) / 255.0  # Normalize
+        img = img.astype(np.float32) / 255.0
         img = np.transpose(img, (2, 0, 1))  # (C, H, W)
         img = np.expand_dims(img, axis=0)   # (1, C, H, W)
         img_fp16 = img.astype(np.float16)
         np.copyto(self.input_host, img_fp16.ravel())
 
-    def predict(self, image, conf=0.2):
+    def predict(self, image, conf=0.35):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.2):
+    def _predict_tensorrt(self, image, conf=0.35):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -111,7 +111,7 @@ class YOLOModel:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
     
-    def _predict_pytorch(self, image, conf=0.2):
+    def _predict_pytorch(self, image, conf=0.35):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -132,7 +132,7 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.2):
+    def postprocess(self, output, conf_thres=0.35):
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
