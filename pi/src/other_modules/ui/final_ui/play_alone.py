@@ -52,9 +52,9 @@ class PlayAloneScreen(tk.Frame):
         self.name_entry_display.place(x=270, y=160, height=50)
 
         keys = [
-            list("ABCDEFGHIJ"),
-            list("KLMNOPQRST"),
-            list("UVWXYZÆØÅ"),
+            list("QWERTYUIOPÅ"),
+            list("ASDFGHJKLØÆ"),
+            list("ZXCVBNM"),
             ["SPACE", "BACK", "CLEAR"]
         ]
 
