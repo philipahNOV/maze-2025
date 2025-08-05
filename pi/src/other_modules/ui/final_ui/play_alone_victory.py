@@ -95,7 +95,7 @@ class PlayAloneVictoryScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=512, y=300, anchor="n")  # shifted down to keep spacing similar
+        self.title.place(x=512, y=150, anchor="n")  # shifted down to keep spacing similar
 
         self.under_title = tk.Label(
             self,
@@ -104,7 +104,7 @@ class PlayAloneVictoryScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=370, anchor="n")
+        self.under_title.place(x=512, y=230, anchor="n")
 
         self.leaderboard_button = tk.Button(
             self,
@@ -118,7 +118,7 @@ class PlayAloneVictoryScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.show_leaderboard
         )
-        self.leaderboard_button.place(x=391, y=490, width=243, height=74)
+        self.leaderboard_button.place(x=391, y=450, width=243, height=74)
 
     def show_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "Leaderboard")
