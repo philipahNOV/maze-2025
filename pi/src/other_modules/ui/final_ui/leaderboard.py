@@ -5,8 +5,6 @@ import csv
 import os
 from typing import TYPE_CHECKING
 
-from matplotlib import style
-
 if TYPE_CHECKING:
     from main import MainApp
 
