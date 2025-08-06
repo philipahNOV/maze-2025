@@ -230,12 +230,14 @@ class HMIController:
                     break
                 elif ball_previously_detected:
                     self.mqtt_client.client.publish("pi/tracking_status", "ball_lost")
+                    self.joystick_controller.ball_in_elevator = False
                     ball_previously_detected = False
             elif not game_timer_started:
                 last_valid_pos_time = time.time()
                 
                 if not ball_previously_detected and is_in_elevator(self.config, ball_pos):
                     self.mqtt_client.client.publish("pi/tracking_status", "ball_detected")
+                    self.joystick_controller.ball_in_elevator = True
                     ball_previously_detected = True
 
             else:
@@ -243,6 +245,7 @@ class HMIController:
                 
                 if not ball_previously_detected:
                     self.mqtt_client.client.publish("pi/tracking_status", "ball_detected")
+                    self.joystick_controller.ball_in_elevator = True
                     ball_previously_detected = True
 
                 if game_timer_started and start_time is None:
@@ -679,7 +682,6 @@ class HMIController:
             
             elif cmd == "StartPlayAloneGame":
                 print("[PLAYALONE] Start game button clicked - activating timer")
-                self.joystick_controller.playalone_wait = False
                 self.start_playalone_timer()
             
             elif cmd == "RestartPlayAlone":
