@@ -11,6 +11,7 @@ class AdminToolsScreen(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
+        self.active_offset_field = None
 
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -139,6 +140,7 @@ class AdminToolsScreen(tk.Frame):
             justify="center"
         )
         self.x_offset_entry.place(x=491, y=500, width=143, height=30)
+        self.x_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('x'))
 
         # --- Y Offset Input ---
         self.y_offset_label = tk.Label(
@@ -156,11 +158,12 @@ class AdminToolsScreen(tk.Frame):
             justify="center"
         )
         self.y_offset_entry.place(x=491, y=550, width=143, height=30)
+        self.y_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('y'))
 
         # --- Submit Button ---
         self.submit_offsets_button = tk.Button(
             self,
-            text="SUBMIT OFFSETS",
+            text="SUBMIT",
             font=("Jockey One", 15),
             fg="white",
             borderwidth=0,
@@ -170,7 +173,30 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_offsets
         )
-        self.submit_offsets_button.place(x=391, y=600, width=243, height=50)
+        self.submit_offsets_button.place(x=500, y=550, width=100, height=50)
+
+        # Digit Buttons (keypad-style)
+        button_font = ("Jockey One", 14)
+        start_x, start_y = 740, 320
+        btn_w, btn_h = 50, 40
+        pad = 5
+
+        digits = [
+            ("1", 0, 0), ("2", 1, 0), ("3", 2, 0),
+            ("4", 0, 1), ("5", 1, 1), ("6", 2, 1),
+            ("7", 0, 2), ("8", 1, 2), ("9", 2, 2),
+            ("C", 0, 3), ("0", 1, 3), ("-", 2, 3)
+        ]
+
+        for text, col, row in digits:
+            btn = tk.Button(
+                self,
+                text=text,
+                font=button_font,
+                width=2,
+                command=lambda t=text: self.append_digit(t)
+            )
+            btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
 
     def clear_easy_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "ClearEasyLeaderboard")
@@ -182,6 +208,26 @@ class AdminToolsScreen(tk.Frame):
             x_offset = self.x_offset_entry.get()
             y_offset = self.y_offset_entry.get()
             self.mqtt_client.client.publish("jetson/command", f"SetOffsets:{x_offset},{y_offset}")
+
+    def append_digit(self, char):
+        if self.active_offset_field == 'x':
+            entry = self.x_offset_entry
+        elif self.active_offset_field == 'y':
+            entry = self.y_offset_entry
+        else:
+            return  # No field selected
+
+        current = entry.get()
+
+        if char == "C":
+            entry.delete(0, tk.END)
+        elif char == "-" and not current.startswith("-"):
+            entry.insert(0, "-")
+        elif char.isdigit():
+            entry.insert(tk.END, char)
+
+    def set_active_field(self, field):
+        self.active_offset_field = field
 
     def show(self):
         self.focus_set()
