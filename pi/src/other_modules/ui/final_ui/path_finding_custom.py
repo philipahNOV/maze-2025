@@ -142,7 +142,7 @@ class CustomPathScreen(tk.Frame):
                 )
 
             transformed_x = self.true_width - int(x / self.scale_ratio) + self.offset_x
-            transformed_y = self.true_height - int(y / self.scale_ratio) + self.offset_y
+            transformed_y = self.true_height - int(y / self.scale_ratio) + self.offset_y + 20
 
             self.enable_button_calculate()
             print(f"[CustomPathScreen] Clicked at pixel: ({transformed_x}, {transformed_y})")

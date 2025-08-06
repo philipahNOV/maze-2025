@@ -12,6 +12,8 @@ class AdminToolsScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
         self.active_offset_field = None
+        self.config_offset_x = controller.config["controller"]["arduino"].get("x_offset", 0.015)
+        self.config_offset_y = controller.config["controller"]["arduino"].get("y_offset", 0.0)
 
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -108,7 +110,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.clear_easy_leaderboard
         )
-        self.clear_leaderboard_easy.place(x=391, y=315, width=243, height=74)
+        self.clear_leaderboard_easy.place(x=30, y=200, width=243, height=74)
 
         self.clear_leaderboard_hard = tk.Button(
             self,
@@ -122,7 +124,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.clear_hard_leaderboard
         )
-        self.clear_leaderboard_hard.place(x=391, y=400, width=243, height=74)
+        self.clear_leaderboard_hard.place(x=30, y=285, width=243, height=74)
 
         # --- X Offset Input ---
         self.x_offset_label = tk.Label(
@@ -132,14 +134,14 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
-        self.x_offset_label.place(x=391, y=500)
+        self.x_offset_label.place(x=391, y=200)
         
         self.x_offset_entry = tk.Entry(
             self,
             font=("Jockey One", 15),
             justify="center"
         )
-        self.x_offset_entry.place(x=491, y=500, width=143, height=30)
+        self.x_offset_entry.place(x=491, y=200, width=143, height=30)
         self.x_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('x'))
 
         # --- Y Offset Input ---
@@ -150,14 +152,14 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
-        self.y_offset_label.place(x=391, y=550)
+        self.y_offset_label.place(x=391, y=250)
         
         self.y_offset_entry = tk.Entry(
             self,
             font=("Jockey One", 15),
             justify="center"
         )
-        self.y_offset_entry.place(x=491, y=550, width=143, height=30)
+        self.y_offset_entry.place(x=491, y=250, width=143, height=30)
         self.y_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('y'))
 
         # --- Submit Button ---
@@ -173,7 +175,25 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_offsets
         )
-        self.submit_offsets_button.place(x=100, y=550, width=100, height=50)
+        self.submit_offsets_button.place(x=491, y=290, width=100, height=50)
+
+        self.offset_info_label = tk.Label(
+            self,
+            text=f"Default Offsets → X: {self.config_offset_x:.3f}, Y: {self.config_offset_y:.3f}",
+            font=("Jockey One", 14),
+            bg="#D9D9D9",
+            fg="#333333"
+        )
+        self.offset_info_label.place(x=491, y=350, anchor="n")  # Just below the title
+
+        self.offset_info_label = tk.Label(
+            self,
+            text=f"Default Offsets → X: {self.config_offset_x:.3f}, Y: {self.config_offset_y:.3f}",
+            font=("Jockey One", 14),
+            bg="#D9D9D9",
+            fg="#333333"
+        )
+        self.offset_info_label.place(x=491, y=350, anchor="n")  # Just below the title
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
