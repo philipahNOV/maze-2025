@@ -2,6 +2,7 @@ import paho.mqtt.client as mqtt
 import sys
 import os
 import subprocess
+import traceback
 
 BROKER_ADDRESS = "192.168.1.3"
 PORT = 1883
@@ -20,14 +21,22 @@ def on_message(client, userdata, msg):
 
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
 
+        if "DISPLAY" not in os.environ:
+            os.environ["DISPLAY"] = ":0"
+
         try:
-            subprocess.Popen([
-                "gnome-terminal",
-                "--", "bash", "-c", f"python3 '{script_path}'; exec bash"
-            ])
-            print(f"Launched main.py in new GNOME Terminal window.")
-        except FileNotFoundError:
-            print("Error: gnome-terminal not found. Please install it with: sudo apt install gnome-terminal")
+            print(f"Resolved script path: {script_path}")
+            log_path = os.path.join(os.path.dirname(__file__), "recovery_log.txt")
+            with open(log_path, "w") as log_file:
+                subprocess.Popen([
+                    "gnome-terminal",
+                    "--", "bash", "-c",
+                    f"{sys.executable} '{script_path}'; exec bash"
+                ], stdout=log_file, stderr=subprocess.STDOUT)
+            print("Launched main.py in new GNOME Terminal window.")
+        except Exception:
+            print("Failed to launch gnome-terminal.")
+            traceback.print_exc()
 
 
 def main():
