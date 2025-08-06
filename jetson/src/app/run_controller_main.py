@@ -17,7 +17,7 @@ def main(tracker: TrackerService,
          image_controller:ImageController = None,
          stop_event=None,
          config=None,
-         robotvsai=False):
+         playervsai=False):
 
     smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
 
@@ -69,7 +69,7 @@ def main(tracker: TrackerService,
                 pathFollower.follow_path(ball_pos)
                 # logger.set_waypoint(pathFollower.get_current_waypoint())
 
-                if blinker is not None and not robotvsai:
+                if blinker is not None:
                     blinker.stop()
                     # if logger is not None:
                     #     logger.reset_ball_lost()
@@ -91,7 +91,7 @@ def main(tracker: TrackerService,
             else:
                 ball_pos = smoother.update(ball_pos)
 
-                if blinker is None:
+                if blinker is None and not playervsai:
                     controller.arduinoThread.send_speed(0, 0)
                     blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
                     blinker.start()
