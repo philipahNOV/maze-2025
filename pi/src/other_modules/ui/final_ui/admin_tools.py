@@ -173,7 +173,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_offsets
         )
-        self.submit_offsets_button.place(x=500, y=550, width=100, height=50)
+        self.submit_offsets_button.place(x=100, y=550, width=100, height=50)
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
@@ -185,7 +185,8 @@ class AdminToolsScreen(tk.Frame):
             ("1", 0, 0), ("2", 1, 0), ("3", 2, 0),
             ("4", 0, 1), ("5", 1, 1), ("6", 2, 1),
             ("7", 0, 2), ("8", 1, 2), ("9", 2, 2),
-            ("C", 0, 3), ("0", 1, 3), ("-", 2, 3)
+            ("-", 0, 3), ("0", 1, 3), (".", 2, 3),
+            ("⌫", 1, 4), ("C", 2, 4)
         ]
 
         for text, col, row in digits:
@@ -221,10 +222,11 @@ class AdminToolsScreen(tk.Frame):
 
         if char == "C":
             entry.delete(0, tk.END)
-        elif char == "-" and not current.startswith("-"):
-            entry.insert(0, "-")
-        elif char.isdigit():
+        elif char == "⌫":
+            entry.delete(len(current) - 1, tk.END)
+        else:
             entry.insert(tk.END, char)
+
 
     def set_active_field(self, field):
         self.active_offset_field = field
