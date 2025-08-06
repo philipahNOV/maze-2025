@@ -125,6 +125,10 @@ def main(tracker: TrackerService,
             blinker.stop()
             blinker = None
         controller.arduinoThread.send_speed(0, 0)
+        controller.arduinoThread.send_color(255, 255, 255)
+        for _ in range(5):
+            controller.arduinoThread.send_elevator(-1)
+            time.sleep(0.05)
         if image_thread.is_alive():
             image_thread.stop()
             image_thread.join()

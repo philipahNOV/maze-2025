@@ -23,13 +23,14 @@ class BlinkRed(threading.Thread):
         self.controller = controller
 
     def run(self):
-        print("STARTED")
         red = (255, 0, 0)
         white = (255, 255, 255)
         self.start_time = time.time()
 
         self.arduino_thread.send_color(*white)
         time.sleep(1.0)
+        if self._stop_event.is_set():
+            return
         self.arduino_thread.send_color(*red)
         time.sleep(0.1)
         
@@ -53,7 +54,6 @@ class BlinkRed(threading.Thread):
     def stop(self):
         self._stop_event.set()
         self.arduino_thread.send_color(255, 255, 255)
-        print("STOPPED")
 
 
 class LookForBall:
