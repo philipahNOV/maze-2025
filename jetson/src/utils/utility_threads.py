@@ -63,7 +63,7 @@ class ImAliveThread(threading.Thread):
 
     def run(self):
         while True:
-            self.mqtt_client.publish("pi/info", "alive")
+            self.mqtt_client.client.publish("pi/info", "alive")
             time.sleep(self.interval)
 
 class LookForBall:
