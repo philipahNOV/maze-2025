@@ -44,34 +44,24 @@ def remove_withing_elevator(config, path, radius: int = 80):
             new_path.pop(i)
         return new_path
 
-def determine_maze(tracking_service, center=(992, 500), box_size=(10, 10), threshold=30):
+def determine_maze(tracking_service, threshold_ratio=0.1):
+    frame = tracking_service.get_stable_frame()
+    if frame is None:
+        return None
 
-        frame = tracking_service.get_stable_frame()
-        if frame is None: return None
-        gray = get_dynamic_threshold(frame)
-        binary_mask = create_binary_mask(gray)
-        safe_mask = dilate_mask(binary_mask)
+    gray = get_dynamic_threshold(frame)
+    binary_mask = create_binary_mask(gray)
+    safe_mask = dilate_mask(binary_mask)
 
-        h, w = safe_mask.shape[:2]
-        x, y = center
-        box_w, box_h = box_size
-
-        # Define bounding box coordinates and clip to image boundaries
-        x1 = max(0, x - box_w // 2)
-        y1 = max(0, y - box_h // 2)
-        x2 = min(w, x + box_w // 2)
-        y2 = min(h, y + box_h // 2)
-
-        # Extract the region of interest
-        roi = safe_mask[y1:y2, x1:x2]
-
-        # Count black pixels (pixel value == 0)
-        black_pixels = np.sum(roi == 0)
-
-        if black_pixels >= threshold:
-            return "Hard"
-        else:
-            return "Easy"
+    # Calculate normalized black pixel ratio
+    total_pixels = safe_mask.size
+    black_pixels = np.sum(safe_mask == 0)
+    black_ratio = black_pixels / total_pixels
+    print(f"Black pixel ratio: {black_ratio:.4f}")
+    if black_ratio >= threshold_ratio:
+        return "Hard"
+    else:
+        return "Easy"
         
 def is_within_goal(maze, position, custom_goal=None):
     if custom_goal is not None:
