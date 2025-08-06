@@ -17,8 +17,8 @@ class ImAliveThread(threading.Thread):
                 self.app.show_frame("ConnectionLostScreen")
                 time.sleep(5)  # Wait before trying to recover
                 print("[ImAliveThread] Connection lost")
-                self.app.restart_program()
                 self.app.mqtt_client.client.publish("jetson/recovery", "recover")
+                self.app.restart_program()
             elif elapsed <= 5:
                 if self.connection_lost:
                     self.connection_lost = False
