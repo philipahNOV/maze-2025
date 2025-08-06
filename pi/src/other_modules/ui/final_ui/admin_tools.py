@@ -123,11 +123,65 @@ class AdminToolsScreen(tk.Frame):
         )
         self.clear_leaderboard_hard.place(x=391, y=400, width=243, height=74)
 
+        # --- X Offset Input ---
+        self.x_offset_label = tk.Label(
+            self,
+            text="X Offset:",
+            font=("Jockey One", 15),
+            bg="#D9D9D9",
+            fg="#1A1A1A"
+        )
+        self.x_offset_label.place(x=391, y=500)
+        
+        self.x_offset_entry = tk.Entry(
+            self,
+            font=("Jockey One", 15),
+            justify="center"
+        )
+        self.x_offset_entry.place(x=491, y=500, width=143, height=30)
+
+        # --- Y Offset Input ---
+        self.y_offset_label = tk.Label(
+            self,
+            text="Y Offset:",
+            font=("Jockey One", 15),
+            bg="#D9D9D9",
+            fg="#1A1A1A"
+        )
+        self.y_offset_label.place(x=391, y=550)
+        
+        self.y_offset_entry = tk.Entry(
+            self,
+            font=("Jockey One", 15),
+            justify="center"
+        )
+        self.y_offset_entry.place(x=491, y=550, width=143, height=30)
+
+        # --- Submit Button ---
+        self.submit_offsets_button = tk.Button(
+            self,
+            text="SUBMIT OFFSETS",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#3C8D2F",
+            activebackground="#327727",
+            activeforeground="#DFDFDF",
+            command=self.submit_offsets
+        )
+        self.submit_offsets_button.place(x=391, y=600, width=243, height=50)
+
     def clear_easy_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "ClearEasyLeaderboard")
 
     def clear_hard_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "ClearHardLeaderboard")
+
+    def submit_offsets(self):
+            x_offset = self.x_offset_entry.get()
+            y_offset = self.y_offset_entry.get()
+            self.mqtt_client.client.publish("jetson/command", f"SetOffsets:{x_offset},{y_offset}")
 
     def show(self):
         self.focus_set()

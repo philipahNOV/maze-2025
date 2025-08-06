@@ -533,8 +533,22 @@ class HMIController:
             elif cmd == "ClearHardLeaderboard":
                 clear_leaderboard(1)
                 print("[FSM] Hard leaderboard cleared")   
-        
-        
+            elif cmd.startswith("SetOffsets"):
+                offsets_str = cmd.split(":")[1].split(",")
+                try:
+                    offset_x = float(offsets_str[0])
+                    self.controller.x_offset = offset_x
+                    print(f"[FSM] X offset set to {offset_x}")
+                except:
+                    self.controller.x_offset = self.config["controller"]["arduino"].get("x_offset", 0.002)
+                try:
+                    offset_y = float(offsets_str[1])
+                    self.controller.y_offset = offset_y
+                    print(f"[FSM] Y offset set to {offset_y}")
+                except:
+                    self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
+
+
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
             if cmd == "Back":
