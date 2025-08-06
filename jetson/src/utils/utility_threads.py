@@ -65,6 +65,7 @@ class ImAliveThread(threading.Thread):
     def run(self):
         while not self._stop_event.is_set():
             self.mqtt_client.client.publish("pi/info", "alive")
+            print("SENT ALIVE")
             time.sleep(self.interval)
 
     def stop(self):
