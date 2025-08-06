@@ -63,7 +63,7 @@ class MainApp(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
-        self.alive_reciever = ImAliveThread(mqtt_client)
+        self.alive_reciever = ImAliveThread()
         self.alive_reciever.start()
         self.mqtt_client.alive_reciever = self.alive_reciever
 
