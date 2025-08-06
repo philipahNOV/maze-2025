@@ -16,7 +16,8 @@ def main(tracker: TrackerService,
          path_array=None,
          image_controller:ImageController = None,
          stop_event=None,
-         config=None):
+         config=None,
+         robotvsai=False):
 
     smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
 
@@ -68,7 +69,7 @@ def main(tracker: TrackerService,
                 pathFollower.follow_path(ball_pos)
                 # logger.set_waypoint(pathFollower.get_current_waypoint())
 
-                if blinker is not None:
+                if blinker is not None and not robotvsai:
                     blinker.stop()
                     # if logger is not None:
                     #     logger.reset_ball_lost()
