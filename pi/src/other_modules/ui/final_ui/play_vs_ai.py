@@ -26,8 +26,15 @@ class PlayVsAIScreen(tk.Frame):
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.background_label = tk.Label(self, image=self.background_image)
         self.background_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.goal = None
 
         self.create_widgets()
+        self.canvas_image_id = self.canvas.create_image(
+            self.canvas_width // 2,
+            self.canvas_height // 2,
+            anchor="center",
+            image=None
+        )
         self.update_image()
 
     def create_widgets(self):
@@ -107,7 +114,7 @@ class PlayVsAIScreen(tk.Frame):
 
         self.start_battle_button = tk.Button(
             self,
-            text="START BATTLE",
+            text="START ROBOT",
             font=("Jockey One", 20),
             bg="#60666C",
             fg="white",
@@ -163,6 +170,14 @@ class PlayVsAIScreen(tk.Frame):
         self.status_label.config(text="ROBOT IS ATTEMPTING THE MAZE...")
         self.pid_result_label.config(text="ROBOT - RUNNING...", fg="#D2691E")
         self.mqtt_client.client.publish("jetson/command", "StartBattle")
+
+        if hasattr(self, 'click_marker') and self.click_marker is not None:
+            self.canvas.delete(self.click_marker)
+            r = 8
+            self.click_marker = self.canvas.create_oval(
+                self.goal[0] - r, self.goal[1] - r, self.goal[0] + r, self.goal[1] + r,
+                fill="green", outline="white", width=4, tags="goal_marker"
+            )
 
     def start_human_turn(self):
         if self.current_turn == "human":
@@ -280,8 +295,10 @@ class PlayVsAIScreen(tk.Frame):
                 maze_x = self.true_width - int(x * x_ratio) + self.offset_x
                 maze_y = self.true_height - int(y * y_ratio) + self.offset_y
 
+                self.goal = (x, y)
+
                 self.mqtt_client.client.publish("jetson/command", f"Goal_set:{maze_x},{maze_y}")
-                self.status_label.config(text=f"GOAL SET AT ({maze_x}, {maze_y}) - CLICK START BATTLE")
+                self.status_label.config(text=f"GOAL SET AT ({maze_x}, {maze_y}) - CLICK START ROBOT")
 
     def on_canvas_click_old(self, event):
         if self.current_turn == "waiting":
@@ -309,13 +326,21 @@ class PlayVsAIScreen(tk.Frame):
         self.ball_detected = False
         self.game_started = False
         
-        self.status_label.config(text="CLICK TO SET GOAL - THEN START BATTLE")
+        self.status_label.config(text="CLICK TO SET GOAL - THEN START ROBOT")
         self.pid_result_label.config(text="ROBOT: WAITING...", fg="#1A1A1A")
         self.human_result_label.config(text="PLAYER: WAITING...", fg="#1A1A1A")
         self.winner_label.config(text="")
-        
-        self.start_battle_button.config(state=tk.NORMAL, text="START BATTLE")
+
+        self.start_battle_button.config(state=tk.NORMAL, text="START ROBOT")
         self.start_human_button.config(state=tk.DISABLED)
+
+        self.canvas.delete("all")
+        self.canvas_image_id = self.canvas.create_image(
+            self.canvas_width // 2,
+            self.canvas_height // 2,
+            anchor="center",
+            image=None
+        )
         
         self.canvas.delete("goal_marker")
 
@@ -335,11 +360,7 @@ class PlayVsAIScreen(tk.Frame):
                 img_tk = ImageTk.PhotoImage(img_pil)
                 
                 #self.canvas.delete("all")
-                self.canvas.create_image(
-                    self.canvas_width // 2, 
-                    self.canvas_height // 2, 
-                    image=img_tk
-                )
+                self.canvas.itemconfig(self.canvas_image_id, image=img_tk)
                 self.canvas.image = img_tk
                 
             except Exception as e:

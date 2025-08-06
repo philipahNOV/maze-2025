@@ -29,6 +29,8 @@ class MQTTClientPi(threading.Thread):
         self.path_failed = False
         self.connected = False
         self.retry_interval = 1
+        self.last_alive_time = None
+        self.alive_reciever = None
         
         threading.Thread(target=self.connect_to_broker, daemon=True).start()
 
@@ -149,6 +151,8 @@ class MQTTClientPi(threading.Thread):
                 print("[Pi] Path not found by Jetson.")
                 self.finding_path = False
                 self.path_failed = True
+            if msg.payload.decode() == "alive":
+                self.alive_reciever.last_alive_time = time.time()
         elif msg.topic == "pi/tracking_status":
             if self.app and hasattr(self.app, 'frames'):
                 play_alone_frame = self.app.frames.get('PlayAloneStartScreen')

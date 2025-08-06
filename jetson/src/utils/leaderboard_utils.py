@@ -66,3 +66,18 @@ def read_leaderboard(maze_id: int):
                 except ValueError:
                     continue
         return sorted(entries, key=lambda x: x["time"])
+    
+def clear_leaderboard(maze_id: int):
+        # Build the relative path from the current file's location
+    file_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "data", "leaderboard_data", f"leaderboard_maze{maze_id}.csv")
+    )
+
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+            print(f"[INFO] Deleted: {file_path}")
+        else:
+            print(f"[INFO] File does not exist: {file_path}")
+    except Exception as e:
+        print(f"[ERROR] Failed to delete leaderboard_maze2.csv: {e}")

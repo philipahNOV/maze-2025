@@ -26,11 +26,18 @@ class BlinkRed(threading.Thread):
         red = (255, 0, 0)
         white = (255, 255, 255)
         self.start_time = time.time()
-        self.arduino_thread.send_color(*red)
-        time.sleep(2.0)
+
         self.arduino_thread.send_color(*white)
+        time.sleep(1.0)
+        if self._stop_event.is_set():
+            return
+        self.arduino_thread.send_color(*red)
+        time.sleep(0.1)
         
         while not self._stop_event.is_set():
+            self.arduino_thread.send_color(*white)
+            time.sleep(2.0)
+            self.arduino_thread.send_color(*red)
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 for _ in range(5):
                     self.triggered = True
@@ -39,13 +46,25 @@ class BlinkRed(threading.Thread):
                 #self.arduino_thread.send_elevator(1)
                 self.arduino_thread.send_color(*white)
                 self.triggered = True
+                self.stop()
                 #self.controller.elevator_state = "up"
 
-            time.sleep(0.2)
+            time.sleep(0.1)
 
     def stop(self):
         self._stop_event.set()
+        self.arduino_thread.send_color(255, 255, 255)
 
+class ImAliveThread(threading.Thread):
+    def __init__(self, mqtt_client):
+        super().__init__(daemon=True)
+        self.mqtt_client = mqtt_client
+        self.interval = 2  # seconds
+
+    def run(self):
+        while True:
+            self.mqtt_client.client.publish("pi/info", "alive")
+            time.sleep(self.interval)
 
 class LookForBall:
     def __init__(self, tracking_service, on_ball_found=None):
@@ -185,7 +204,7 @@ class EscapeElevatorThread(threading.Thread):
         super().__init__(daemon=True)
         self.arduino_thread = arduino_thread
         self.duration = 1.2
-        self.y_duration = 0.1
+        self.y_duration = 0.2
         self.opposite_duration = 0.2
         self.speed = 255
         self._stop_event = threading.Event()

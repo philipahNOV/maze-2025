@@ -16,7 +16,8 @@ def main(tracker: TrackerService,
          path_array=None,
          image_controller:ImageController = None,
          stop_event=None,
-         config=None):
+         config=None,
+         playervsai=False):
 
     smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
 
@@ -89,13 +90,12 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
             else:
                 ball_pos = smoother.update(ball_pos)
-
-                if blinker is None:
-                    controller.arduinoThread.send_speed(0, 0)
+                controller.arduinoThread.send_speed(0, 0)
+                if blinker is None and not playervsai:
                     blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
                     blinker.start()
                     ball_not_found_timer = time.time()
-                    
+
                     # if logger is not None:
                     #     logger.mark_ball_lost()
 
@@ -125,6 +125,10 @@ def main(tracker: TrackerService,
             blinker.stop()
             blinker = None
         controller.arduinoThread.send_speed(0, 0)
+        controller.arduinoThread.send_color(255, 255, 255)
+        for _ in range(5):
+            controller.arduinoThread.send_elevator(-1)
+            time.sleep(0.05)
         if image_thread.is_alive():
             image_thread.stop()
             image_thread.join()

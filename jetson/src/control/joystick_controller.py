@@ -16,6 +16,7 @@ class JoystickController:
         self.update_rate_hz = 120
         self.elevator_state = 1
         self.prev_button_state = 0
+        self.ball_in_elevator = False
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -52,7 +53,7 @@ class JoystickController:
 
                 if self.playalone_wait:
                     button = joystick.get_button(0)
-                    if button and self.prev_button_state != button:
+                    if button and self.prev_button_state != button and self.ball_in_elevator:
                         self.prev_button_state = button
                         self.mqtt_client.client.publish("pi/command", "playalone_start")
                         self.playalone_wait = False
