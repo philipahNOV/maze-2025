@@ -70,7 +70,6 @@ def determine_maze(tracking_service, center=(766, 341), box_size=(300, 300), thr
     total_pixels = roi.size
     black_pixels = np.sum(roi == 0)
     black_ratio = black_pixels / total_pixels
-    print(f"Black pixel ratio in ROI: {black_ratio:.4f}")
     if black_ratio >= threshold_ratio:
         return "Hard"
     else:
