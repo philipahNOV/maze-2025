@@ -44,7 +44,7 @@ def remove_withing_elevator(config, path, radius: int = 80):
             new_path.pop(i)
         return new_path
 
-def determine_maze(tracking_service, center=(766, 341), box_size=(300, 300), threshold_ratio=0.1):
+def determine_maze(tracking_service, center=(766, 341), box_size=(300, 300), threshold_ratio=0.15):
     frame = tracking_service.get_stable_frame()
     if frame is None:
         return None
