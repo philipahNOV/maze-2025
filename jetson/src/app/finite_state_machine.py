@@ -679,6 +679,7 @@ class HMIController:
             
             elif cmd == "StartPlayAloneGame":
                 print("[PLAYALONE] Start game button clicked - activating timer")
+                self.joystick_controller.playalone_wait = False
                 self.start_playalone_timer()
             
             elif cmd == "RestartPlayAlone":

@@ -98,7 +98,7 @@ class AdminToolsScreen(tk.Frame):
         self.clear_leaderboard_easy = tk.Button(
             self,
             text="CLEAR EASY LEADERBOARD",
-            font=("Jockey One", 20),
+            font=("Jockey One", 15),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
@@ -112,7 +112,7 @@ class AdminToolsScreen(tk.Frame):
         self.clear_leaderboard_hard = tk.Button(
             self,
             text="CLEAR HARD LEADERBOARD",
-            font=("Jockey One", 20),
+            font=("Jockey One", 15),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
