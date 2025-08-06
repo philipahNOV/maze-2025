@@ -90,14 +90,12 @@ def main(tracker: TrackerService,
                     ball_not_found_timer = None
             else:
                 ball_pos = smoother.update(ball_pos)
+                controller.arduinoThread.send_speed(0, 0)
+                if blinker is None and not playervsai:
+                    blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
+                    blinker.start()
+                    ball_not_found_timer = time.time()
 
-                if blinker is None:
-                    controller.arduinoThread.send_speed(0, 0)
-                    if not playervsai:
-                        blinker = utility_threads.BlinkRed(controller.arduinoThread, config, controller)
-                        blinker.start()
-                        ball_not_found_timer = time.time()
-                    
                     # if logger is not None:
                     #     logger.mark_ball_lost()
 
