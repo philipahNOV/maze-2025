@@ -73,13 +73,13 @@ class YOLOModel:
         img_fp16 = img.astype(np.float16)
         np.copyto(self.input_host, img_fp16.ravel())
 
-    def predict(self, image, conf=0.22):
+    def predict(self, image, conf=0.4):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.22):
+    def _predict_tensorrt(self, image, conf=0.4):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -111,7 +111,7 @@ class YOLOModel:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
     
-    def _predict_pytorch(self, image, conf=0.22):
+    def _predict_pytorch(self, image, conf=0.4):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -132,7 +132,7 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.22):
+    def postprocess(self, output, conf_thres=0.4):
         output = output.squeeze()  # (5, 8400)
 
         if output.shape[0] != 5:
@@ -157,6 +157,16 @@ class YOLOModel:
 
         scale_x = self.original_w / self.input_shape[0]
         scale_y = self.original_h / self.input_shape[1]
+
+        print(f"[YOLOModel] Detections (conf ≥ 0.15):")
+        for i in range(len(conf)):
+            score = conf[i]
+            if score >= 0.15:
+                cx = x_center[i]
+                cy = y_center[i]
+                cx_orig = cx * scale_x
+                cy_orig = cy * scale_y
+                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
 
         x1 *= scale_x
         x2 *= scale_x
