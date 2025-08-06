@@ -293,7 +293,7 @@ class PlayVsAIScreen(tk.Frame):
                 y_ratio = self.true_height / self.canvas_height
 
                 maze_x = self.true_width - int(x * x_ratio) + self.offset_x
-                maze_y = self.true_height - int(y * y_ratio) + self.offset_y
+                maze_y = self.true_height - int(y * y_ratio) + self.offset_y - 20
 
                 self.goal = (x, y)
 

@@ -68,8 +68,8 @@ class HMIController:
         self.maze_version = None
         self.config = config
 
-        alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
-        alive_thread.start()
+        self.alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
+        self.alive_thread.start()
 
     def restart_program(self):
         print("Restart requested...")
@@ -101,14 +101,13 @@ class HMIController:
         if self.ball_finder is not None:
             self.ball_finder.stop()
             self.ball_finder = None
+        if self.alive_thread is not None:
+            self.alive_thread.stop()
+            self.alive_thread = None
         if self.disco_thread is not None:
             self.disco_thread.stop()
             self.disco_thread.join()
             self.disco_thread = None
-        if self.joystick_thread is not None:
-            self.joystick_thread.stop()
-            self.joystick_thread.join()
-            self.joystick_thread = None
         self.tracking_service.camera.close()
 
     def stop_program(self):

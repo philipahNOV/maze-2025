@@ -78,6 +78,7 @@ class BootScreen(tk.Frame):
         if self.mqtt_client.handshake_complete:
             self.mqtt_client.client.publish("jetson/command", "booted")
             self.controller.show_frame("MainScreen")
+            self.controller.start_alive_reciever()
         else:
             self.after(200, self.check_pi_state)
 
