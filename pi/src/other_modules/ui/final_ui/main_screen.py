@@ -160,7 +160,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_admin_tools
         )
-        self.admin_tools_button.place(x=914, y=20, width=100, height=40)
+        self.admin_tools_button.place(x=914, y=70, width=110, height=40)
 
         self.title = tk.Label(
             self,
