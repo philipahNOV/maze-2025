@@ -151,7 +151,7 @@ class MainScreen(tk.Frame):
         self.admin_tools_button = tk.Button(
             self,
             text="ADMIN TOOLS",
-            font=("Jockey One", 15),
+            font=("Jockey One", 10),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
@@ -160,7 +160,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_admin_tools
         )
-        self.admin_tools_button.place(x=650, y=405, width=100, height=40)
+        self.admin_tools_button.place(x=914, y=20, width=100, height=40)
 
         self.title = tk.Label(
             self,

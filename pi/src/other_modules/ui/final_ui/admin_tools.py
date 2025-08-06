@@ -98,7 +98,7 @@ class AdminToolsScreen(tk.Frame):
         self.clear_leaderboard_easy = tk.Button(
             self,
             text="CLEAR EASY LEADERBOARD",
-            font=("Jockey One", 25),
+            font=("Jockey One", 20),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
@@ -107,11 +107,28 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.clear_easy_leaderboard
         )
-        self.clear_leaderboard_easy.place(x=391, y=400, width=243, height=74)
+        self.clear_leaderboard_easy.place(x=391, y=315, width=243, height=74)
+
+        self.clear_leaderboard_hard = tk.Button(
+            self,
+            text="CLEAR HARD LEADERBOARD",
+            font=("Jockey One", 20),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.clear_hard_leaderboard
+        )
+        self.clear_leaderboard_hard.place(x=391, y=400, width=243, height=74)
 
     def clear_easy_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "ClearEasyLeaderboard")
-    
+
+    def clear_hard_leaderboard(self):
+        self.mqtt_client.client.publish("jetson/command", "ClearHardLeaderboard")
+
     def show(self):
         self.focus_set()
         self.update_idletasks()
