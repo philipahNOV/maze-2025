@@ -9,7 +9,7 @@ class ImAliveThread(threading.Thread):
         self.app = app
 
     def run(self):
-        time.sleep(1)  # Initial delay to allow other components to start
+        time.sleep(5)  # Initial delay to allow other components to start
         while True:
             elapsed = time.time() - (self.last_alive_time if self.last_alive_time else 0)
             if elapsed > 5 and not self.connection_lost:
