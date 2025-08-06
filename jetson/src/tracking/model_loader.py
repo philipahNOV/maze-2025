@@ -133,40 +133,41 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.4):
-        output = output.squeeze()  # (5, 8400)
+        output = output.squeeze()
 
-        if output.shape[0] != 5:
+        if len(output.shape) == 2 and output.shape[0] == 5:
+            # Transpose from (5, N) to (N, 5)
+            output = output.T
+        elif len(output.shape) == 2 and output.shape[1] == 5:
+            pass  # Already (N, 5)
+        else:
+            print("[YOLOModel] Unexpected output shape:", output.shape)
             return self._empty_result()
 
-        x_center, y_center, width, height, conf = output
+        # Now: output.shape = (N, 5)
+        scale_x = self.original_w / self.input_shape[0]
+        scale_y = self.original_h / self.input_shape[1]
 
-        mask = conf >= conf_thres
+        print(f"[YOLOModel] Detections (conf ≥ 0.15):")
+        for i in range(len(output)):
+            cx, cy, w, h, score = output[i]
+            if score >= 0.15:
+                cx_orig = cx * scale_x
+                cy_orig = cy * scale_y
+                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
+
+        # Filter detections
+        mask = output[:, 4] >= conf_thres
         if not np.any(mask):
             return self._empty_result()
 
-        x_center = x_center[mask]
-        y_center = y_center[mask]
-        width = width[mask]
-        height = height[mask]
-        conf = conf[mask]
+        filtered = output[mask]
+        x_center, y_center, width, height, conf = filtered[:, 0], filtered[:, 1], filtered[:, 2], filtered[:, 3], filtered[:, 4]
 
         x1 = x_center - width / 2
         y1 = y_center - height / 2
         x2 = x_center + width / 2
         y2 = y_center + height / 2
-
-        scale_x = self.original_w / self.input_shape[0]
-        scale_y = self.original_h / self.input_shape[1]
-
-        print(f"[YOLOModel] Detections (conf ≥ 0.15):")
-        for i in range(len(conf)):
-            score = conf[i]
-            if score >= 0.15:
-                cx = x_center[i]
-                cy = y_center[i]
-                cx_orig = cx * scale_x
-                cy_orig = cy * scale_y
-                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
 
         x1 *= scale_x
         x2 *= scale_x
@@ -175,24 +176,14 @@ class YOLOModel:
 
         cls = np.zeros_like(conf)
 
-        class Box:
-            def __init__(self, x1, y1, x2, y2, conf, cls):
-                self.xyxy = np.array([x1, y1, x2, y2])
-                self.conf = np.array([conf])
-                self.cls = np.array([cls])
-                self.xywh = np.array([
-                    (x1 + x2) / 2,
-                    (y1 + y2) / 2,
-                    x2 - x1,
-                    y2 - y1
-                ]).reshape(1, 4)
+        boxes = [self._make_box(x1[i], y1[i], x2[i], y2[i], conf[i], cls[i]) for i in range(len(conf))]
 
         class Result:
             def __init__(self, boxes):
                 self.boxes = boxes
 
-        boxes = [Box(x1[i], y1[i], x2[i], y2[i], conf[i], cls[i]) for i in range(len(conf))]
         return Result(boxes)
+
 
 
     def get_label(self, cls_id):
