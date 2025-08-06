@@ -14,8 +14,9 @@ class ImAliveThread(threading.Thread):
             elapsed = time.time() - (self.last_alive_time if self.last_alive_time else 0)
             if elapsed > 5 and not self.connection_lost:
                 self.connection_lost = True
-                self.app.show_frame("InfoScreen")
+                self.app.show_frame("ConnectionLostScreen")
                 print("[ImAliveThread] Connection lost")
+                self.app.mqtt_client.client.publish("jetson/recovery", "recover")
             elif elapsed <= 5:
                 if self.connection_lost:
                     self.connection_lost = False
