@@ -18,25 +18,30 @@ def on_message(client, userdata, msg):
 
     if payload == "recover":
         print("[RecoveryListener] Triggering recovery action...")
-
-        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
-
-        if "DISPLAY" not in os.environ:
-            os.environ["DISPLAY"] = ":0"
-
+        
         try:
+            print("Entering recovery try-block...")
+
+            script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
             print(f"Resolved script path: {script_path}")
+
+            if not os.path.isfile(script_path):
+                print("❌ main.py not found at resolved path!")
+                return
+
             log_path = os.path.join(os.path.dirname(__file__), "recovery_log.txt")
             with open(log_path, "w") as log_file:
-                subprocess.Popen([
+                result = subprocess.Popen([
                     "gnome-terminal",
                     "--", "bash", "-c",
                     f"{sys.executable} '{script_path}'; exec bash"
                 ], stdout=log_file, stderr=subprocess.STDOUT)
-            print("Launched main.py in new GNOME Terminal window.")
-        except Exception:
-            print("Failed to launch gnome-terminal.")
+                print(f"Subprocess Popen result: {result}")
+            print("✅ Launched main.py in new GNOME Terminal window.")
+        except Exception as e:
+            print("❌ Exception during recovery action:")
             traceback.print_exc()
+
 
 
 def main():
