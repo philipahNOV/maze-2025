@@ -30,7 +30,7 @@ class BallTracker:
             time.sleep(sleep_time)
 
     def consumer_loop(self):
-        MAX_BOXES = 2
+        MAX_BOXES = 1
         while self.running:
             loop_start = time.time()
             if not self.frame_queue:
