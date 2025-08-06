@@ -40,7 +40,6 @@ class BallTracker:
             rgb, bgr = self.frame_queue.popleft()
             self.latest_bgr_frame = bgr
 
-            # --- Inference ---
             inference_start = time.time()
             results = self.model.predict(rgb)
             inference_time = (time.time() - inference_start) * 1000

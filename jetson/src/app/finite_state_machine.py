@@ -86,6 +86,7 @@ class HMIController:
             self.mqtt_client.stop()
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
+        self.tracking_service.stop_tracker()
         if self.image_thread is not None:
             self.image_thread.stop()
             self.image_thread.join()
@@ -104,7 +105,10 @@ class HMIController:
             self.disco_thread.stop()
             self.disco_thread.join()
             self.disco_thread = None
-        self.tracking_service.stop_tracker()
+        if self.joystick_thread is not None:
+            self.joystick_thread.stop()
+            self.joystick_thread.join()
+            self.joystick_thread = None
         self.tracking_service.camera.close()
 
     def stop_program(self):
