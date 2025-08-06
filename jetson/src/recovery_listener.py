@@ -1,6 +1,7 @@
 import paho.mqtt.client as mqtt
-import time
+import sys
 import os
+import subprocess
 
 BROKER_ADDRESS = "192.168.1.3"
 PORT = 1883
@@ -15,8 +16,20 @@ def on_message(client, userdata, msg):
     print(f"[RecoveryListener] Received: {payload}")
 
     if payload == "recover":
-        # Example: Trigger recovery logic
         print("[RecoveryListener] Triggering recovery action...")
+
+        script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+
+        try:
+            subprocess.Popen(["lxterminal", "--command", f"python3 {script_path}"])
+            print(f"Launched main.py in new lxterminal window.")
+        except FileNotFoundError:
+            print("lxterminal not found. Trying xterm...")
+            try:
+                subprocess.Popen(["xterm", "-e", f"python3 {script_path}"])
+                print("Launched in xterm.")
+            except FileNotFoundError:
+                print("No compatible terminal found. Please install lxterminal or xterm.")
 
 def main():
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
