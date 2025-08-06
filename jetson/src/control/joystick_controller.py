@@ -51,9 +51,9 @@ class JoystickController:
                 loop_start = time.time()
                 pygame.event.pump()
 
-                if self.playalone_wait and self.ball_in_elevator:
+                if self.playalone_wait:
                     button = joystick.get_button(0)
-                    if button and self.prev_button_state != button:
+                    if button and self.prev_button_state != button and self.ball_in_elevator:
                         self.prev_button_state = button
                         self.mqtt_client.client.publish("pi/command", "playalone_start")
                         self.playalone_wait = False
