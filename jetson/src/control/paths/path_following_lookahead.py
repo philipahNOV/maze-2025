@@ -38,7 +38,7 @@ class PathFollower:
         self.last_closest_index = 0
 
         self.max_skip_ahead = max(5, int(self.length / 10))
-        self.max_skip_behind = max(5, int(self.length / 15))
+        self.max_skip_behind = max(5, int(self.length / 25))
 
     def get_path_curvature_at_index(self, idx):
         if idx <= 0 or idx >= self.length - 2:
