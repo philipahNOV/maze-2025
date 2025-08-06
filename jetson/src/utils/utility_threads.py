@@ -55,6 +55,16 @@ class BlinkRed(threading.Thread):
         self._stop_event.set()
         self.arduino_thread.send_color(255, 255, 255)
 
+class ImAliveThread(threading.Thread):
+    def __init__(self, mqtt_client):
+        super().__init__(daemon=True)
+        self.mqtt_client = mqtt_client
+        self.interval = 2  # seconds
+
+    def run(self):
+        while True:
+            self.mqtt_client.publish("pi/info", "alive")
+            time.sleep(self.interval)
 
 class LookForBall:
     def __init__(self, tracking_service, on_ball_found=None):

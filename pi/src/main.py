@@ -18,6 +18,8 @@ from other_modules.ui.final_ui.leaderboard import LeaderboardScreen
 from other_modules.ui.final_ui.play_alone_victory import PlayAloneVictoryScreen
 from other_modules.ui.final_ui.play_alone_failed import PlayAloneFailedScreen
 from other_modules.ui.final_ui.admin_tools import AdminToolsScreen
+from other_modules.alive_reciever import ImAliveThread
+import threading
 
 import signal
 import sys
@@ -60,6 +62,10 @@ class MainApp(tk.Tk):
         container.pack(side="top", fill="both", expand=True)
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
+
+        self.alive_reciever = ImAliveThread(mqtt_client)
+        self.alive_reciever.start()
+        self.mqtt_client.alive_reciever = self.alive_reciever
 
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,

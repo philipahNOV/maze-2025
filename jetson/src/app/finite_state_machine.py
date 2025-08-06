@@ -68,6 +68,9 @@ class HMIController:
         self.maze_version = None
         self.config = config
 
+        alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
+        alive_thread.start()
+
     def restart_program(self):
         print("Restart requested...")
         self.stop_threads()
