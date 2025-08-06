@@ -101,6 +101,9 @@ class HMIController:
         if self.ball_finder is not None:
             self.ball_finder.stop()
             self.ball_finder = None
+        if self.alive_thread is not None:
+            self.alive_thread.stop()
+            self.alive_thread = None
         if self.disco_thread is not None:
             self.disco_thread.stop()
             self.disco_thread.join()

@@ -58,13 +58,17 @@ class BlinkRed(threading.Thread):
 class ImAliveThread(threading.Thread):
     def __init__(self, mqtt_client):
         super().__init__(daemon=True)
+        self._stop_event = threading.Event()
         self.mqtt_client = mqtt_client
         self.interval = 1  # seconds
 
     def run(self):
-        while True:
+        while not self._stop_event.is_set():
             self.mqtt_client.client.publish("pi/info", "alive")
             time.sleep(self.interval)
+
+    def stop(self):
+        self._stop_event.set()
 
 class LookForBall:
     def __init__(self, tracking_service, on_ball_found=None):
