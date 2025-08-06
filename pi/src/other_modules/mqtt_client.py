@@ -154,7 +154,7 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode() == "alive":
                 if self.alive_reciever is not None:
                     print("RECIVED ALIVE")
-                    self.alive_reciever.last_alive_time = time.time()
+                    self.last_alive_time = time.time()
         elif msg.topic == "pi/tracking_status":
             if self.app and hasattr(self.app, 'frames'):
                 play_alone_frame = self.app.frames.get('PlayAloneStartScreen')
