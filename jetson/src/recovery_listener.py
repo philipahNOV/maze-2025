@@ -21,15 +21,14 @@ def on_message(client, userdata, msg):
         script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
 
         try:
-            subprocess.Popen(["lxterminal", "--command", f"python3 {script_path}"])
-            print(f"Launched main.py in new lxterminal window.")
+            subprocess.Popen([
+                "gnome-terminal",
+                "--", "bash", "-c", f"python3 '{script_path}'; exec bash"
+            ])
+            print(f"Launched main.py in new GNOME Terminal window.")
         except FileNotFoundError:
-            print("lxterminal not found. Trying xterm...")
-            try:
-                subprocess.Popen(["xterm", "-e", f"python3 {script_path}"])
-                print("Launched in xterm.")
-            except FileNotFoundError:
-                print("No compatible terminal found. Please install lxterminal or xterm.")
+            print("Error: gnome-terminal not found. Please install it with: sudo apt install gnome-terminal")
+
 
 def main():
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
