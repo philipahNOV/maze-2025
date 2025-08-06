@@ -63,6 +63,8 @@ class MainApp(tk.Tk):
         container.grid_rowconfigure(0, weight=1)
         container.grid_columnconfigure(0, weight=1)
 
+        self.alive_reciever = None
+
         self.frames = {}
         for F in (BootScreen, NavigationScreen, InfoScreen, LocatingScreen, MainScreen, AutoPathScreen, CustomPathScreen, ControllingScreen, HumanScreen, PracticeScreen,
                   PlayAloneScreen, PlayAloneStartScreen, PlayVsAIScreen, LeaderboardScreen, PlayAloneVictoryScreen, PlayAloneFailedScreen, AdminToolsScreen, ConnectionLostScreen):

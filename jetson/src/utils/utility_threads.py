@@ -59,7 +59,7 @@ class ImAliveThread(threading.Thread):
     def __init__(self, mqtt_client):
         super().__init__(daemon=True)
         self.mqtt_client = mqtt_client
-        self.interval = 2  # seconds
+        self.interval = 1  # seconds
 
     def run(self):
         while True:
