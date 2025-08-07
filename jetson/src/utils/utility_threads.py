@@ -225,7 +225,7 @@ class EscapeElevatorThread(threading.Thread):
             if elapsed < self.opposite_duration:
                 self.arduino_thread.send_speed(0, self.speed)
             elif elapsed >= self.y_duration + self.opposite_duration:
-                self.arduino_thread.send_speed(25, -self.speed)
+                self.arduino_thread.send_speed(35, -self.speed)
             else:
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)
