@@ -26,7 +26,7 @@ import sys
 import os
 from pathlib import Path
 import yaml
-
+import subprocess
 
 class MainApp(tk.Tk):
     def __init__(self, mqtt_client, config):
@@ -84,6 +84,13 @@ class MainApp(tk.Tk):
         self.alive_reciever = ImAliveThread(self)
         self.alive_reciever.start()
         self.mqtt_client.alive_reciever = self.alive_reciever
+
+    def reboot_pi(self):
+        try:
+            self.mqtt_client.shut_down()
+        except Exception as e:
+            print(f"Error stopping MQTT client: {e}")
+        subprocess.run(['sudo', 'reboot'], check=True)
 
     def show_frame(self, page_name):
         print("Attempting to show frame:", page_name)

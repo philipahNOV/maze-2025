@@ -20,6 +20,7 @@ from utils.leaderboard_utils import read_leaderboard
 from utils.leaderboard_utils import clear_leaderboard
 from datetime import datetime
 import numpy as np
+import subprocess
 
 
 class SystemState(Enum):
@@ -553,6 +554,9 @@ class HMIController:
                     print(f"[FSM] Y offset set to {offset_y}")
                 except:
                     self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
+            elif cmd == "Reboot":
+                self.stop_threads()
+                subprocess.run(['sudo', 'reboot'], check=True)
 
 
         # --- INFO_SCREEN STATE ---
