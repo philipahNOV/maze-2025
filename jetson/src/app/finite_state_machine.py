@@ -557,6 +557,9 @@ class HMIController:
             elif cmd == "Reboot":
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/reboot'], check=True)
+            elif cmd == "Shutdown":
+                self.stop_threads()
+                subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
 
 
         # --- INFO_SCREEN STATE ---
