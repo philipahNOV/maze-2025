@@ -154,15 +154,12 @@ class YOLOModel:
         scores = conf[mask]
         indices = self.nms(boxes, scores, iou_thres)
 
-        now = time.time()
-        if now - self._last_print_time > 5:
-            print(f"[YOLOModel] Detections after NMS (conf ≥ {self.conf_thres}):")
-            for i in indices:
-                score = scores[i]
-                cx_orig = (boxes[i][0] + boxes[i][2]) / 2
-                cy_orig = (boxes[i][1] + boxes[i][3]) / 2
-                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
-            self._last_print_time = now
+        print(f"[YOLOModel] Detections after NMS (conf ≥ {self.conf_thres}):")
+        for i in indices:
+            score = scores[i]
+            cx_orig = (boxes[i][0] + boxes[i][2]) / 2
+            cy_orig = (boxes[i][1] + boxes[i][3]) / 2
+            print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
 
         def make_box(i):
             b = boxes[i]

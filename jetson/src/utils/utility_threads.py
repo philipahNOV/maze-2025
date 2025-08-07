@@ -118,6 +118,10 @@ class PathFindingThread(threading.Thread):
         binary_mask = create_binary_mask(gray)
         safe_mask = dilate_mask(binary_mask)
 
+        cv2.imshow("Safe Mask", safe_mask)
+        cv2.waitKey(0)         # Wait until a key is pressed
+        cv2.destroyAllWindows()  # Close the window
+
         if self._stop_event.is_set():
             return
 
