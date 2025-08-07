@@ -26,7 +26,7 @@ def on_message(client, userdata, msg):
             print(f"Resolved script path: {script_path}")
 
             if not os.path.isfile(script_path):
-                print("❌ main.py not found at resolved path!")
+                print("main.py not found at resolved path!")
                 return
 
             log_path = os.path.join(os.path.dirname(__file__), "recovery_log.txt")
@@ -37,9 +37,9 @@ def on_message(client, userdata, msg):
                     f"{sys.executable} '{script_path}'; exec bash"
                 ], stdout=log_file, stderr=subprocess.STDOUT)
                 print(f"Subprocess Popen result: {result}")
-            print("✅ Launched main.py in new GNOME Terminal window.")
+            print("Launched main.py in new GNOME Terminal window.")
         except Exception as e:
-            print("❌ Exception during recovery action:")
+            print("Exception during recovery action:")
             traceback.print_exc()
 
 
