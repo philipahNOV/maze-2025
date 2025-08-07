@@ -4,9 +4,9 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 import torch
-import torchvision.ops as ops
 from ultralytics import YOLO
 import threading
+import time
 
 class YOLOModel:
     def __init__(self, model_path="v8-512.engine", input_shape=(512, 512)):
@@ -17,15 +17,15 @@ class YOLOModel:
             print(f"[YOLOModel] TensorRT initialization failed: {e}, falling back to PyTorch")
             self._init_pytorch_fallback(model_path)
             self.engine_type = "pytorch"
-    
+
     def _init_tensorrt(self, model_path, input_shape):
         self.input_shape = input_shape
         self.names = ['ball']
         self.original_h, self.original_w = 512, 512
-        
+
         cuda.init()
         self.cuda_ctx = cuda.Device(0).make_context()
-        
+
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
 
@@ -63,10 +63,35 @@ class YOLOModel:
             self.cuda_ctx = None
 
     def nms(self, boxes, scores, iou_threshold=0.5):
-        boxes = torch.tensor(boxes).to('cuda')
-        scores = torch.tensor(scores).to('cuda')
-        keep = ops.nms(boxes, scores, iou_threshold)
-        return keep.cpu().numpy()
+        if len(boxes) == 0:
+            return []
+
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+
+        areas = (x2 - x1) * (y2 - y1)
+        order = scores.argsort()[::-1]
+
+        keep = []
+        while order.size > 0:
+            i = order[0]
+            keep.append(i)
+            xx1 = np.maximum(x1[i], x1[order[1:]])
+            yy1 = np.maximum(y1[i], y1[order[1:]])
+            xx2 = np.minimum(x2[i], x2[order[1:]])
+            yy2 = np.minimum(y2[i], y2[order[1:]])
+
+            w = np.maximum(0.0, xx2 - xx1)
+            h = np.maximum(0.0, yy2 - yy1)
+            inter = w * h
+            union = areas[i] + areas[order[1:]] - inter
+            iou = inter / (union + 1e-6)
+
+            order = order[1:][iou <= iou_threshold]
+
+        return keep
 
     def preprocess(self, image):
         if self.engine_type != "tensorrt":
@@ -85,7 +110,7 @@ class YOLOModel:
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
-    
+
     def _predict_tensorrt(self, image, conf=0.3):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
@@ -117,7 +142,6 @@ class YOLOModel:
                 except Exception as e:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
-    
     def _predict_pytorch(self, image, conf=0.3):
         try:
             with torch.no_grad():
@@ -132,7 +156,7 @@ class YOLOModel:
         except Exception as e:
             print(f"[YOLOModel] PyTorch inference failed: {e}")
             return self._empty_result()
-    
+
     def _empty_result(self):
         class EmptyResult:
             def __init__(self):
@@ -140,13 +164,11 @@ class YOLOModel:
         return EmptyResult()
 
     def postprocess(self, output, conf_thres=0.3, iou_thres=0.5):
-        output = output.squeeze()  # (5, 8400)
-
+        output = output.squeeze()
         if output.shape[0] != 5:
             return self._empty_result()
 
         x_center, y_center, width, height, conf = output
-
         mask = conf >= conf_thres
         if not np.any(mask):
             return self._empty_result()
@@ -170,45 +192,46 @@ class YOLOModel:
         x2 *= scale_x
         y2 *= scale_y
 
-        boxes = np.stack([x1, y1, x2, y2], axis=1)  # (N, 4)
+        boxes = np.stack([x1, y1, x2, y2], axis=1)
         indices = self.nms(boxes, conf, iou_threshold=iou_thres)
         boxes = boxes[indices]
         conf = conf[indices]
-
         cls = np.zeros_like(conf)
 
-        print(f"[YOLOModel] Detections after NMS (conf ≥ {conf_thres}):")
-        for i in range(len(conf)):
-            score = conf[i]
-            cx_orig = (boxes[i][0] + boxes[i][2]) / 2
-            cy_orig = (boxes[i][1] + boxes[i][3]) / 2
-            print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
+        # Only print every 5 seconds
+        if not hasattr(self, "_last_print_time"):
+            self._last_print_time = 0
+        now = time.time()
+        if now - self._last_print_time > 5:
+            print(f"[YOLOModel] Detections after NMS (conf ≥ {conf_thres}):")
+            for i in range(len(conf)):
+                score = conf[i]
+                cx_orig = (boxes[i][0] + boxes[i][2]) / 2
+                cy_orig = (boxes[i][1] + boxes[i][3]) / 2
+                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
+            self._last_print_time = now
 
         class Box:
             def __init__(self, x1, y1, x2, y2, conf, cls):
                 self.xyxy = np.array([x1, y1, x2, y2])
                 self.conf = np.array([conf])
                 self.cls = np.array([cls])
-                self.xywh = np.array([ (x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1 ]).reshape(1, 4)
+                self.xywh = np.array([
+                    (x1 + x2) / 2,
+                    (y1 + y2) / 2,
+                    x2 - x1,
+                    y2 - y1
+                ]).reshape(1, 4)
 
         class Result:
             def __init__(self, boxes):
                 self.boxes = boxes
 
-        result_boxes = [
-            Box(boxes[i][0], boxes[i][1], boxes[i][2], boxes[i][3], conf[i], cls[i])
-            for i in range(len(conf))
-        ]
-        return Result(result_boxes)
-
-
+        return Result([Box(*boxes[i], conf[i], cls[i]) for i in range(len(conf))])
 
     def get_label(self, cls_id):
-        if self.engine_type == "tensorrt":
-            return self.names[int(cls_id)]
-        else:
-            return self.names[int(cls_id)]
-        
+        return self.names[int(cls_id)]
+
     def shutdown(self):
         print("[YOLOModel] Starting shutdown...")
         with self.lock:
@@ -219,36 +242,22 @@ class YOLOModel:
         try:
             if hasattr(self, 'input_device') and self.input_device is not None:
                 self.input_device.free()
-                self.input_device = None
-
             if hasattr(self, 'output_device') and self.output_device is not None:
                 self.output_device.free()
-                self.output_device = None
-
             if hasattr(self, 'context') and self.context is not None:
                 del self.context
-                self.context = None
-
             if hasattr(self, 'engine') and self.engine is not None:
                 del self.engine
-                self.engine = None
-
             if hasattr(self, 'runtime') and self.runtime is not None:
                 del self.runtime
-                self.runtime = None
-
             if hasattr(self, 'stream') and self.stream is not None:
                 del self.stream
-                self.stream = None
-
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx is not None:
                 try:
                     self.cuda_ctx.pop()
                 except cuda.LogicError:
                     print("[YOLOModel] CUDA context already popped or invalid")
                 self.cuda_ctx = None
-
             print("[YOLOModel] Shutdown completed successfully")
-
         except Exception as e:
             print(f"[YOLOModel] Error during shutdown: {e}")
