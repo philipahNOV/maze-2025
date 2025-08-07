@@ -29,7 +29,7 @@ class BallTracker:
             time.sleep(sleep_time)
 
     def consumer_loop(self):
-        TARGET_FPS = 40
+        TARGET_FPS = 30
         MAX_BOXES = 1
         while self.running:
             loop_start = time.time()
