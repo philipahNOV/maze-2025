@@ -561,8 +561,8 @@ class HMIController:
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
             elif cmd == "Horizontal":
-                thread = threading.Thread(target=self.controller.horizontal, daemon=True)
-                thread.start()
+                print("[FSM] Starting horizontal controller")
+                self.controller.horizontal()
 
 
         # --- INFO_SCREEN STATE ---
