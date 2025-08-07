@@ -569,6 +569,8 @@ class HMIController:
                     lookahead=False,
                     config=self.config
                 )
+                controller.x_offset = self.controller.x_offset
+                controller.y_offset = self.controller.y_offset
                 controller.horizontal()
 
 
