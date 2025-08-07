@@ -4,7 +4,6 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 import torch
-import torch.nn.functional as F
 from ultralytics import YOLO
 import threading
 import time
@@ -40,8 +39,11 @@ class YOLOModel:
         self.output_shape = self.engine.get_binding_shape(self.output_binding_idx)
         self.input_dtype = trt.nptype(self.engine.get_binding_dtype(self.input_binding_idx))
         self.output_dtype = trt.nptype(self.engine.get_binding_dtype(self.output_binding_idx))
-        self.input_device = cuda.mem_alloc(np.prod((1, 3, *input_shape)) * np.dtype(np.float16).itemsize)
-        self.output_device = cuda.mem_alloc(np.prod(self.output_shape) * np.dtype(self.output_dtype).itemsize)
+        self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float16)
+        self.output_host = cuda.pagelocked_empty(trt.volume(self.output_shape), dtype=self.output_dtype)
+        self.input_device = cuda.mem_alloc(self.input_host.nbytes)
+        self.output_device = cuda.mem_alloc(self.output_host.nbytes)
+        self.output_array = self.output_host.reshape(self.output_shape)  # cached reshape
         self.stream = cuda.Stream()
         self.is_shutdown = False
         self.lock = threading.Lock()
@@ -81,10 +83,13 @@ class YOLOModel:
         return keep
 
     def preprocess(self, image):
-        img = torch.from_numpy(image).float().to("cuda") / 255.0
-        img = img.permute(2, 0, 1).unsqueeze(0)  # (1, 3, H, W)
-        img = F.interpolate(img, size=self.input_shape, mode="bilinear", align_corners=False)
-        return img.to(dtype=torch.float16).contiguous().view(-1)
+        input_w, input_h = self.input_shape
+        img = cv2.resize(image, (input_w, input_h), interpolation=cv2.INTER_AREA)
+        img = img.astype(np.float32) / 255.0
+        img = np.transpose(img, (2, 0, 1))  # (C, H, W)
+        img = np.expand_dims(img, axis=0)  # (1, C, H, W)
+        img_fp16 = img.astype(np.float16)
+        np.copyto(self.input_host, img_fp16.ravel())
 
     def predict(self, image, conf=0.3):
         if self.engine_type == "tensorrt":
@@ -100,23 +105,20 @@ class YOLOModel:
             try:
                 self.cuda_ctx.push()
                 self.original_h, self.original_w = image.shape[:2]
-                input_tensor = self.preprocess(image)
-                cuda.memcpy_htod_async(self.input_device, input_tensor.data_ptr(), self.stream)
+                self.preprocess(image)
 
-                # Set shape explicitly in case engine uses dynamic shapes
                 self.context.set_binding_shape(self.input_binding_idx, (1, 3, *self.input_shape))
                 assert self.context.all_binding_shapes_specified
 
+                cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
                 self.context.execute_async_v2(
                     bindings=[int(self.input_device), int(self.output_device)],
                     stream_handle=self.stream.handle
                 )
-
-                output_host = np.empty(self.output_shape, dtype=self.output_dtype)
-                cuda.memcpy_dtoh_async(output_host, self.output_device, self.stream)
+                cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
                 self.stream.synchronize()
 
-                return self.postprocess(output_host, conf)
+                return self.postprocess(self.output_array, conf)
 
             except Exception as e:
                 print(f"[YOLOModel] Inference failed: {e}")
@@ -135,7 +137,7 @@ class YOLOModel:
                     source=image,
                     conf=conf,
                     device=self.device,
-                    imgsz=self.input_shape[0],
+                    imgsz=512,
                     verbose=False
                 )
                 return results[0]
@@ -170,7 +172,6 @@ class YOLOModel:
 
         scale_x = self.original_w / self.input_shape[0]
         scale_y = self.original_h / self.input_shape[1]
-
         x1 *= scale_x
         y1 *= scale_y
         x2 *= scale_x
@@ -182,7 +183,6 @@ class YOLOModel:
         conf = conf[indices]
         cls = np.zeros_like(conf)
 
-        # Optional print throttle
         if not hasattr(self, "_last_print_time"):
             self._last_print_time = 0
         now = time.time()
