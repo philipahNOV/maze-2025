@@ -258,7 +258,7 @@ class AdminToolsScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Reboot")
         self.controller.reboot_pi()
 
-    def reboot_button_click(self):
+    def shutdown_button_click(self):
         self.mqtt_client.client.publish("jetson/command", "Shutdown")
         self.controller.shutdown_pi()
 
