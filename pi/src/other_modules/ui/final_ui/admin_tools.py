@@ -138,6 +138,18 @@ class AdminToolsScreen(tk.Frame):
         )
         self.clear_leaderboard_hard.place(x=30, y=370, width=243, height=74)
 
+        self.clear_leaderboard_hard = tk.Button(
+            self,
+            text="SHUTDOWN",
+            font=("Jockey One", 15),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            command=self.shutdown_button_click
+        )
+        self.clear_leaderboard_hard.place(x=30, y=455, width=243, height=74)
+
         # --- X Offset Input ---
         self.x_offset_label = tk.Label(
             self,
@@ -245,6 +257,11 @@ class AdminToolsScreen(tk.Frame):
     def reboot_button_click(self):
         self.mqtt_client.client.publish("jetson/command", "Reboot")
         self.controller.reboot_pi()
+
+    def reboot_button_click(self):
+        self.mqtt_client.client.publish("jetson/command", "Shutdown")
+        self.controller.shutdown_pi()
+
 
     def append_digit(self, char):
         if self.active_offset_field == 'x':

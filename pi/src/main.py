@@ -81,6 +81,9 @@ class MainApp(tk.Tk):
         return self.current_screen 
     
     def start_alive_reciever(self):
+        if self.alive_reciever is not None:
+            print("Alive receiver already running")
+            return
         self.alive_reciever = ImAliveThread(self)
         self.alive_reciever.start()
         self.mqtt_client.alive_reciever = self.alive_reciever
@@ -91,6 +94,13 @@ class MainApp(tk.Tk):
         except Exception as e:
             print(f"Error stopping MQTT client: {e}")
         subprocess.run(['sudo', 'reboot'], check=True)
+
+    def reboot_pi(self):
+        try:
+            self.mqtt_client.shut_down()
+        except Exception as e:
+            print(f"Error stopping MQTT client: {e}")
+        subprocess.run(['sudo', 'poweroff'], check=True)
 
     def show_frame(self, page_name):
         print("Attempting to show frame:", page_name)
