@@ -39,7 +39,7 @@ class PathFollower:
 
         self.max_skip_ahead = max(5, int(self.length / 10))
         self.max_skip_behind = max(5, int(self.length / 25))
-        self.max_skip_behind = 1
+        #self.max_skip_behind = 1
 
     def get_path_curvature_at_index(self, idx):
         if idx <= 0 or idx >= self.length - 2:
@@ -127,15 +127,35 @@ class PathFollower:
         end_index = min(self.length - 1, self.last_closest_index + self.max_skip_ahead)
         search_range = range(start_index, end_index)
 
+        v_ball = None
+        if self.prev_ball_pos is not None:
+            v_ball = ball_pos_np - np.array(self.prev_ball_pos)
+            if np.linalg.norm(v_ball) > 1e-6:
+                v_ball = v_ball / np.linalg.norm(v_ball)
+
+        min_score = float("inf")
         for i in search_range:
             a = self.path_np[i]
             b = self.path_np[i + 1]
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
             dist = np.linalg.norm(ball_pos_np - proj)
-            if dist < min_dist:
-                min_dist = dist
+
+            # Directional alignment scoring
+            angle_penalty = 1.0
+            if v_ball is not None:
+                v_path = b - a
+                if np.linalg.norm(v_path) > 1e-6:
+                    v_path = v_path / np.linalg.norm(v_path)
+                    alignment = np.dot(v_ball, v_path)  # +1 is same dir, -1 is opposite
+                    angle_penalty = 1.5 - alignment  # So backward = 2.5, forward = 0.5
+
+            score = dist * angle_penalty
+
+            if score < min_score:
+                min_score = score
                 closest_index = i
                 closest_proj = proj
+
 
         self.last_closest_index = closest_index
 
