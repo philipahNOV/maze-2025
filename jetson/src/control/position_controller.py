@@ -298,7 +298,7 @@ class Controller:
             #print(orientation)
             #print(f"Sending speeds: vel_x={vel_x}, vel_y={vel_y}")
             self.arduinoThread.send_speed(vel_x, vel_y)
-            time.sleep(self.command_delay)
+            time.sleep(0.02)
 
     def get_last_command(self):
         return (self.prev_vel_x, self.prev_vel_y)
