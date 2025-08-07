@@ -562,7 +562,14 @@ class HMIController:
                 subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
             elif cmd == "Horizontal":
                 print("[FSM] Starting horizontal controller")
-                self.controller.horizontal()
+                controller = position_controller.Controller(
+                    arduinoThread=self.arduino_thread,
+                    tracker=self.tracker_service,
+                    path_following=True,
+                    lookahead=False,
+                    config=self.config
+                )
+                controller.horizontal()
 
 
         # --- INFO_SCREEN STATE ---
