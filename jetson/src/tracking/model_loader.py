@@ -60,6 +60,34 @@ class YOLOModel:
         if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
             self.cuda_ctx.pop()
             self.cuda_ctx = None
+    
+    def nms(self, boxes, scores, iou_threshold=0.5):
+        x1 = boxes[:, 0]
+        y1 = boxes[:, 1]
+        x2 = boxes[:, 2]
+        y2 = boxes[:, 3]
+
+        areas = (x2 - x1) * (y2 - y1)
+        order = scores.argsort()[::-1]
+
+        keep = []
+        while order.size > 0:
+            i = order[0]
+            keep.append(i)
+            xx1 = np.maximum(x1[i], x1[order[1:]])
+            yy1 = np.maximum(y1[i], y1[order[1:]])
+            xx2 = np.minimum(x2[i], x2[order[1:]])
+            yy2 = np.minimum(y2[i], y2[order[1:]])
+
+            w = np.maximum(0.0, xx2 - xx1)
+            h = np.maximum(0.0, yy2 - yy1)
+            inter = w * h
+            ovr = inter / (areas[i] + areas[order[1:]] - inter)
+
+            inds = np.where(ovr <= iou_threshold)[0]
+            order = order[inds + 1]
+
+        return keep
 
     def preprocess(self, image):
         if self.engine_type != "tensorrt":
@@ -73,13 +101,13 @@ class YOLOModel:
         img_fp16 = img.astype(np.float16)
         np.copyto(self.input_host, img_fp16.ravel())
 
-    def predict(self, image, conf=0.4):
+    def predict(self, image, conf=0.3):
         if self.engine_type == "tensorrt":
             return self._predict_tensorrt(image, conf)
         else:
             return self._predict_pytorch(image, conf)
     
-    def _predict_tensorrt(self, image, conf=0.4):
+    def _predict_tensorrt(self, image, conf=0.3):
         if self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
 
@@ -111,7 +139,7 @@ class YOLOModel:
                     print(f"[YOLOModel] Warning: context pop failed - {e}")
 
     
-    def _predict_pytorch(self, image, conf=0.4):
+    def _predict_pytorch(self, image, conf=0.3):
         try:
             with torch.no_grad():
                 results = self.model.predict(
@@ -132,57 +160,67 @@ class YOLOModel:
                 self.boxes = []
         return EmptyResult()
 
-    def postprocess(self, output, conf_thres=0.4):
-        output = output.squeeze()
+    def postprocess(self, output, conf_thres=0.3, iou_thres=0.5):
+        output = output.squeeze()  # (5, 8400)
 
-        if len(output.shape) == 2 and output.shape[0] == 5:
-            # Transpose from (5, N) to (N, 5)
-            output = output.T
-        elif len(output.shape) == 2 and output.shape[1] == 5:
-            pass  # Already (N, 5)
-        else:
-            print("[YOLOModel] Unexpected output shape:", output.shape)
+        if output.shape[0] != 5:
             return self._empty_result()
 
-        # Now: output.shape = (N, 5)
-        scale_x = self.original_w / self.input_shape[0]
-        scale_y = self.original_h / self.input_shape[1]
+        x_center, y_center, width, height, conf = output
 
-        print(f"[YOLOModel] Detections (conf ≥ 0.15):")
-        for i in range(len(output)):
-            cx, cy, w, h, score = output[i]
-            if score >= 0.15:
-                cx_orig = cx * scale_x
-                cy_orig = cy * scale_y
-                print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
-
-        # Filter detections
-        mask = output[:, 4] >= conf_thres
+        mask = conf >= conf_thres
         if not np.any(mask):
             return self._empty_result()
 
-        filtered = output[mask]
-        x_center, y_center, width, height, conf = filtered[:, 0], filtered[:, 1], filtered[:, 2], filtered[:, 3], filtered[:, 4]
+        x_center = x_center[mask]
+        y_center = y_center[mask]
+        width = width[mask]
+        height = height[mask]
+        conf = conf[mask]
 
         x1 = x_center - width / 2
         y1 = y_center - height / 2
         x2 = x_center + width / 2
         y2 = y_center + height / 2
 
+        scale_x = self.original_w / self.input_shape[0]
+        scale_y = self.original_h / self.input_shape[1]
+
         x1 *= scale_x
-        x2 *= scale_x
         y1 *= scale_y
+        x2 *= scale_x
         y2 *= scale_y
+
+        boxes = np.stack([x1, y1, x2, y2], axis=1)  # (N, 4)
+        indices = self.nms(boxes, conf, iou_threshold=iou_thres)
+        boxes = boxes[indices]
+        conf = conf[indices]
 
         cls = np.zeros_like(conf)
 
-        boxes = [self._make_box(x1[i], y1[i], x2[i], y2[i], conf[i], cls[i]) for i in range(len(conf))]
+        print(f"[YOLOModel] Detections after NMS (conf ≥ {conf_thres}):")
+        for i in range(len(conf)):
+            score = conf[i]
+            cx_orig = (boxes[i][0] + boxes[i][2]) / 2
+            cy_orig = (boxes[i][1] + boxes[i][3]) / 2
+            print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
+
+        class Box:
+            def __init__(self, x1, y1, x2, y2, conf, cls):
+                self.xyxy = np.array([x1, y1, x2, y2])
+                self.conf = np.array([conf])
+                self.cls = np.array([cls])
+                self.xywh = np.array([ (x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1 ]).reshape(1, 4)
 
         class Result:
             def __init__(self, boxes):
                 self.boxes = boxes
 
-        return Result(boxes)
+        result_boxes = [
+            Box(boxes[i][0], boxes[i][1], boxes[i][2], boxes[i][3], conf[i], cls[i])
+            for i in range(len(conf))
+        ]
+        return Result(result_boxes)
 
 
 
