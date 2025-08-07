@@ -564,7 +564,7 @@ class HMIController:
                 print("[FSM] Starting horizontal controller")
                 controller = position_controller.Controller(
                     arduinoThread=self.arduino_thread,
-                    tracker=self.tracker_service,
+                    tracker=self.tracking_service,
                     path_following=True,
                     lookahead=False,
                     config=self.config
