@@ -82,8 +82,8 @@ controller:
     tolerance: 0.002         # rad
     time_limit: 10           # seconds
   arduino:
-    x_offset: 0.014                # rad
-    y_offset: 0.00                 # rad
+    x_offset: 0.017                # rad
+    y_offset: 0.002                 # rad
     minimum_velocity: 22
     maximum_velocity: 100
     minimum_velocity_difference: 5
