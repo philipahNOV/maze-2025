@@ -181,28 +181,6 @@ class PathFindingThread(threading.Thread):
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
         self.on_path_found(final_path, final_path_lookahead)
 
-    def determine_maze(self, frame, center=(992, 500), box_size=(10, 10), threshold=30):
-        h, w = frame.shape[:2]
-        x, y = center
-        box_w, box_h = box_size
-
-        # Define bounding box coordinates and clip to image boundaries
-        x1 = max(0, x - box_w // 2)
-        y1 = max(0, y - box_h // 2)
-        x2 = min(w, x + box_w // 2)
-        y2 = min(h, y + box_h // 2)
-
-        # Extract the region of interest
-        roi = frame[y1:y2, x1:x2]
-
-        # Count black pixels (pixel value == 0)
-        black_pixels = np.sum(roi == 0)
-
-        if black_pixels >= threshold:
-            return "Hard"
-        else:
-            return "Easy"
-
     # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
         self._stop_event.set()
@@ -225,7 +203,7 @@ class EscapeElevatorThread(threading.Thread):
             if elapsed < self.opposite_duration:
                 self.arduino_thread.send_speed(0, self.speed)
             elif elapsed >= self.y_duration + self.opposite_duration:
-                self.arduino_thread.send_speed(25, -self.speed)
+                self.arduino_thread.send_speed(35, -self.speed)
             else:
                 self.arduino_thread.send_speed(0, -self.speed)
             time.sleep(0.1)

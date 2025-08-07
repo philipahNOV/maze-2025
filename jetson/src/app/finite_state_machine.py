@@ -162,23 +162,6 @@ class HMIController:
         self.joystick_thread = threading.Thread(target=self.joystick_controller.start, daemon=True)
         self.joystick_thread.start()
 
-    def _ball_crossed_goal(self, position):
-        if (self.state in [SystemState.PLAYVSAI_PID, SystemState.PLAYVSAI_HUMAN] and 
-            hasattr(self, 'playvsai_goal') and self.playvsai_goal is not None):
-            goal = self.playvsai_goal
-            radius = 30
-        else:
-            goal_config = self.config.get("game", {})
-            goal_pos = goal_config.get("goal_position", {"x": 49, "y": 763})
-            goal = (goal_pos["x"], goal_pos["y"])
-            radius = goal_config.get("goal_radius", 30)
-        
-        x, y = position
-        goal_x, goal_y = goal
-        
-        distance = ((x - goal_x) ** 2 + (y - goal_y) ** 2) ** 0.5
-        return distance <= radius
-    
     def determine_rank(self, data, duration):
         rank = 1
         if data.strip():
