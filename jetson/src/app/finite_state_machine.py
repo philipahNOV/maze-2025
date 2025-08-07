@@ -560,6 +560,9 @@ class HMIController:
             elif cmd == "Shutdown":
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
+            elif cmd == "Horizontal":
+                thread = threading.Thread(target=self.controller.horizontal, daemon=True)
+                thread.start()
 
 
         # --- INFO_SCREEN STATE ---

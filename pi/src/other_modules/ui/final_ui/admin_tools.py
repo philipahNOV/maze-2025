@@ -201,6 +201,20 @@ class AdminToolsScreen(tk.Frame):
         )
         self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
 
+        self.horizontal_button = tk.Button(
+            self,
+            text="HORIZONTAL",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.horizontal_button_click
+        )
+        self.horizontal_button.place(x=491, y=460, width=100, height=50)
+
         self.offset_info_label = tk.Label(
             self,
             text=f"Original offsets → X: {self.config_offset_x:.3f}, Y: {self.config_offset_y:.3f}",
@@ -221,7 +235,7 @@ class AdminToolsScreen(tk.Frame):
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
-        start_x, start_y = 740, 300
+        start_x, start_y = 740, 200
         btn_w, btn_h = 50, 40
         pad = 5
 
@@ -261,6 +275,9 @@ class AdminToolsScreen(tk.Frame):
     def shutdown_button_click(self):
         self.mqtt_client.client.publish("jetson/command", "Shutdown")
         self.controller.shutdown_pi()
+
+    def horizontal_button_click(self):
+        self.mqtt_client.client.publish("jetson/command", "Horizontal")
 
 
     def append_digit(self, char):
