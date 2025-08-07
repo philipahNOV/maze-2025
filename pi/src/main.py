@@ -95,7 +95,7 @@ class MainApp(tk.Tk):
             print(f"Error stopping MQTT client: {e}")
         subprocess.run(['sudo', 'reboot'], check=True)
 
-    def reboot_pi(self):
+    def shutdown_pi(self):
         try:
             self.mqtt_client.shut_down()
         except Exception as e:
