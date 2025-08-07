@@ -16,6 +16,21 @@ class BallTracker:
         self.ball_position = None
         self.timing_print_counter = 0
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
+        camera_config = self.tracking_config.get('camera', {})
+        
+        top_left = camera_config.get('top_left', [430, 27])
+        top_right = camera_config.get('top_right', [1085, 27])
+        bottom_left = camera_config.get('bottom_left', [430, 682])
+        bottom_right = camera_config.get('bottom_right', [1085, 682])
+        
+        self.maze_x_min = min(top_left[0], bottom_left[0])
+        self.maze_x_max = max(top_right[0], bottom_right[0])
+        self.maze_y_min = min(top_left[1], top_right[1])
+        self.maze_y_max = max(bottom_left[1], bottom_right[1])
+            
+    def _is_point_in_maze(self, x, y):
+        return (self.maze_x_min <= x <= self.maze_x_max and 
+                self.maze_y_min <= y <= self.maze_y_max)
 
     def producer_loop(self):
         TARGET_FPS = 60
@@ -58,26 +73,30 @@ class BallTracker:
             for box in ball_boxes:
                 x_center, y_center, width, height = box.xywh[0]
                 cx, cy = int(x_center), int(y_center)
-                self.ball_position = (cx, cy)
+                
+                if self._is_point_in_maze(cx, cy):
+                    self.ball_position = (cx, cy)
 
-                x_center_norm = x_center / w
-                y_center_norm = y_center / h
-                width_norm = width / w
-                height_norm = height / h
+                    x_center_norm = x_center / w
+                    y_center_norm = y_center / h
+                    width_norm = width / w
+                    height_norm = height / h
 
-                x_min = x_center_norm - width_norm / 2
-                x_max = x_center_norm + width_norm / 2
-                y_min = y_center_norm - height_norm / 2
-                y_max = y_center_norm + height_norm / 2
+                    x_min = x_center_norm - width_norm / 2
+                    x_max = x_center_norm + width_norm / 2
+                    y_min = y_center_norm - height_norm / 2
+                    y_max = y_center_norm + height_norm / 2
 
-                self._bbox_buffer[0, 0] = x_min
-                self._bbox_buffer[0, 1] = y_min
-                self._bbox_buffer[1, 0] = x_max
-                self._bbox_buffer[1, 1] = y_min
-                self._bbox_buffer[2, 0] = x_max
-                self._bbox_buffer[2, 1] = y_max
-                self._bbox_buffer[3, 0] = x_min
-                self._bbox_buffer[3, 1] = y_max
+                    self._bbox_buffer[0, 0] = x_min
+                    self._bbox_buffer[0, 1] = y_min
+                    self._bbox_buffer[1, 0] = x_max
+                    self._bbox_buffer[1, 1] = y_min
+                    self._bbox_buffer[2, 0] = x_max
+                    self._bbox_buffer[2, 1] = y_max
+                    self._bbox_buffer[3, 0] = x_min
+                    self._bbox_buffer[3, 1] = y_max
+                    
+                    break
 
             post_time = (time.time() - post_start) * 1000
             total_loop_time = (time.time() - loop_start) * 1000
