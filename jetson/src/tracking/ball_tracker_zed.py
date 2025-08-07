@@ -1,14 +1,13 @@
 import threading
 import time
 import numpy as np
-import cv2
 from collections import deque
 from tracking.model_loader import YOLOModel
 
 class BallTracker:
     def __init__(self, camera=None, tracking_config=None, model_path="v8-512.engine"):
         self.model = YOLOModel(model_path)
-        self.camera = camera  # Should have .grab_frame() that returns (rgb, bgr)
+        self.camera = camera
         self.tracking_config = tracking_config or {}
         self.running = False
         self.initialized = False
@@ -19,17 +18,18 @@ class BallTracker:
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
 
     def producer_loop(self):
+        TARGET_FPS = 60
         while self.running:
             start = time.time()
             rgb, bgr = self.camera.grab_frame()
             if rgb is not None and bgr is not None:
                 self.frame_queue.append((rgb, bgr))
-            TARGET_FPS = 60
             loop_duration = time.time() - start
             sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
             time.sleep(sleep_time)
 
     def consumer_loop(self):
+        TARGET_FPS = 40
         MAX_BOXES = 1
         while self.running:
             loop_start = time.time()
@@ -37,19 +37,19 @@ class BallTracker:
                 time.sleep(0.001)
                 continue
 
+            while len(self.frame_queue) > 1:
+                self.frame_queue.popleft()
+
             rgb, bgr = self.frame_queue.popleft()
             self.latest_bgr_frame = bgr
-
             inference_start = time.time()
             results = self.model.predict(rgb)
             inference_time = (time.time() - inference_start) * 1000
 
-            # --- Postprocessing ---
             h, w = rgb.shape[:2]
             self.ball_position = None
             post_start = time.time()
 
-            # Filter and cap detections
             ball_boxes = [
                 box for box in results.boxes
                 if self.model.get_label(box.cls[0]) == "ball"
@@ -60,7 +60,6 @@ class BallTracker:
                 cx, cy = int(x_center), int(y_center)
                 self.ball_position = (cx, cy)
 
-                # Optional: fill bbox buffer if you still need it elsewhere
                 x_center_norm = x_center / w
                 y_center_norm = y_center / h
                 width_norm = width / w
@@ -81,16 +80,13 @@ class BallTracker:
                 self._bbox_buffer[3, 1] = y_max
 
             post_time = (time.time() - post_start) * 1000
-
-            # --- Timing ---
             total_loop_time = (time.time() - loop_start) * 1000
+
             self.timing_print_counter += 1
             if self.timing_print_counter >= 30:
                 print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | Total: {total_loop_time:.2f}ms")
                 self.timing_print_counter = 0
 
-            # --- Frame pacing ---
-            TARGET_FPS = 40
             loop_duration = time.time() - loop_start
             sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
             time.sleep(sleep_time)
