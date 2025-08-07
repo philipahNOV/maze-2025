@@ -4,6 +4,7 @@ import tensorrt as trt
 import pycuda.driver as cuda
 import pycuda.autoinit
 import torch
+import torch.nn.functional as F
 from ultralytics import YOLO
 import threading
 import time
@@ -39,23 +40,18 @@ class YOLOModel:
         self.output_shape = self.engine.get_binding_shape(self.output_binding_idx)
         self.input_dtype = trt.nptype(self.engine.get_binding_dtype(self.input_binding_idx))
         self.output_dtype = trt.nptype(self.engine.get_binding_dtype(self.output_binding_idx))
-        self.input_host = cuda.pagelocked_empty(trt.volume((1, 3, *input_shape)), dtype=np.float16)
-        self.output_host = cuda.pagelocked_empty(trt.volume(self.output_shape), dtype=self.output_dtype)
-        self.input_device = cuda.mem_alloc(self.input_host.nbytes)
-        self.output_device = cuda.mem_alloc(self.output_host.nbytes)
+        self.input_device = cuda.mem_alloc(np.prod((1, 3, *input_shape)) * np.dtype(np.float16).itemsize)
+        self.output_device = cuda.mem_alloc(np.prod(self.output_shape) * np.dtype(self.output_dtype).itemsize)
         self.stream = cuda.Stream()
         self.is_shutdown = False
         self.lock = threading.Lock()
 
     def _init_pytorch_fallback(self, model_path):
         pt_path = model_path.replace(".engine", ".pt")
-        try:
-            self.model = YOLO(pt_path)
-            self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
-            self.names = self.model.names
-            print(f"[YOLOModel] PyTorch fallback model loaded from: {pt_path}")
-        except Exception as e:
-            raise RuntimeError(f"[YOLOModel] Both TensorRT and PyTorch models failed: {e}")
+        self.model = YOLO(pt_path)
+        self.device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
+        self.names = self.model.names
+        print(f"[YOLOModel] PyTorch fallback model loaded from: {pt_path}")
 
     def __del__(self):
         if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
@@ -65,15 +61,9 @@ class YOLOModel:
     def nms(self, boxes, scores, iou_threshold=0.5):
         if len(boxes) == 0:
             return []
-
-        x1 = boxes[:, 0]
-        y1 = boxes[:, 1]
-        x2 = boxes[:, 2]
-        y2 = boxes[:, 3]
-
+        x1, y1, x2, y2 = boxes[:, 0], boxes[:, 1], boxes[:, 2], boxes[:, 3]
         areas = (x2 - x1) * (y2 - y1)
         order = scores.argsort()[::-1]
-
         keep = []
         while order.size > 0:
             i = order[0]
@@ -82,28 +72,19 @@ class YOLOModel:
             yy1 = np.maximum(y1[i], y1[order[1:]])
             xx2 = np.minimum(x2[i], x2[order[1:]])
             yy2 = np.minimum(y2[i], y2[order[1:]])
-
             w = np.maximum(0.0, xx2 - xx1)
             h = np.maximum(0.0, yy2 - yy1)
             inter = w * h
             union = areas[i] + areas[order[1:]] - inter
             iou = inter / (union + 1e-6)
-
             order = order[1:][iou <= iou_threshold]
-
         return keep
 
     def preprocess(self, image):
-        if self.engine_type != "tensorrt":
-            return
-
-        input_w, input_h = self.input_shape
-        img = cv2.resize(image, (input_w, input_h), interpolation=cv2.INTER_AREA)
-        img = img.astype(np.float32) / 255.0
-        img = np.transpose(img, (2, 0, 1))  # (C, H, W)
-        img = np.expand_dims(img, axis=0)   # (1, C, H, W)
-        img_fp16 = img.astype(np.float16)
-        np.copyto(self.input_host, img_fp16.ravel())
+        img = torch.from_numpy(image).float().to("cuda") / 255.0
+        img = img.permute(2, 0, 1).unsqueeze(0)  # (1, 3, H, W)
+        img = F.interpolate(img, size=self.input_shape, mode="bilinear", align_corners=False)
+        return img.to(dtype=torch.float16).contiguous().view(-1)
 
     def predict(self, image, conf=0.3):
         if self.engine_type == "tensorrt":
@@ -119,18 +100,23 @@ class YOLOModel:
             try:
                 self.cuda_ctx.push()
                 self.original_h, self.original_w = image.shape[:2]
-                self.preprocess(image)
+                input_tensor = self.preprocess(image)
+                cuda.memcpy_htod_async(self.input_device, input_tensor.data_ptr(), self.stream)
 
-                cuda.memcpy_htod_async(self.input_device, self.input_host, self.stream)
+                # Set shape explicitly in case engine uses dynamic shapes
+                self.context.set_binding_shape(self.input_binding_idx, (1, 3, *self.input_shape))
+                assert self.context.all_binding_shapes_specified
+
                 self.context.execute_async_v2(
                     bindings=[int(self.input_device), int(self.output_device)],
                     stream_handle=self.stream.handle
                 )
-                cuda.memcpy_dtoh_async(self.output_host, self.output_device, self.stream)
+
+                output_host = np.empty(self.output_shape, dtype=self.output_dtype)
+                cuda.memcpy_dtoh_async(output_host, self.output_device, self.stream)
                 self.stream.synchronize()
 
-                raw_output = self.output_host.reshape(self.output_shape)
-                return self.postprocess(raw_output, conf)
+                return self.postprocess(output_host, conf)
 
             except Exception as e:
                 print(f"[YOLOModel] Inference failed: {e}")
@@ -149,7 +135,7 @@ class YOLOModel:
                     source=image,
                     conf=conf,
                     device=self.device,
-                    imgsz=512,
+                    imgsz=self.input_shape[0],
                     verbose=False
                 )
                 return results[0]
@@ -173,11 +159,9 @@ class YOLOModel:
         if not np.any(mask):
             return self._empty_result()
 
-        x_center = x_center[mask]
-        y_center = y_center[mask]
-        width = width[mask]
-        height = height[mask]
-        conf = conf[mask]
+        x_center, y_center, width, height, conf = (
+            x_center[mask], y_center[mask], width[mask], height[mask], conf[mask]
+        )
 
         x1 = x_center - width / 2
         y1 = y_center - height / 2
@@ -198,7 +182,7 @@ class YOLOModel:
         conf = conf[indices]
         cls = np.zeros_like(conf)
 
-        # Only print every 5 seconds
+        # Optional print throttle
         if not hasattr(self, "_last_print_time"):
             self._last_print_time = 0
         now = time.time()
@@ -216,12 +200,7 @@ class YOLOModel:
                 self.xyxy = np.array([x1, y1, x2, y2])
                 self.conf = np.array([conf])
                 self.cls = np.array([cls])
-                self.xywh = np.array([
-                    (x1 + x2) / 2,
-                    (y1 + y2) / 2,
-                    x2 - x1,
-                    y2 - y1
-                ]).reshape(1, 4)
+                self.xywh = np.array([ (x1 + x2) / 2, (y1 + y2) / 2, x2 - x1, y2 - y1 ]).reshape(1, 4)
 
         class Result:
             def __init__(self, boxes):
