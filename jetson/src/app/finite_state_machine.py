@@ -556,7 +556,7 @@ class HMIController:
                     self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
             elif cmd == "Reboot":
                 self.stop_threads()
-                subprocess.run(['sudo', 'reboot'], check=True)
+                subprocess.run(['sudo', '/usr/sbin/reboot'], check=True)
 
 
         # --- INFO_SCREEN STATE ---
