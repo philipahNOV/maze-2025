@@ -534,6 +534,10 @@ class HMIController:
             if cmd == "Back":
                 self.state = SystemState.MAIN_SCREEN
                 print("[FSM] Transitioned to MAIN_SCREEN")
+                self.disco_thread = utility_threads.DiscoThread(
+                    self.arduino_thread, self.config['general'].get('idle_light_time', 15)
+                )
+                self.disco_thread.start()
             elif cmd == "ClearEasyLeaderboard":
                 clear_leaderboard(2)
                 print("[FSM] Easy leaderboard cleared")
@@ -561,6 +565,11 @@ class HMIController:
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
             elif cmd == "Horizontal":
+                print("[FSM] Starting horizontal controller")
+                if self.disco_thread is not None:
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
                 thread = threading.Thread(target=self.controller.horizontal, daemon=True)
                 thread.start()
 

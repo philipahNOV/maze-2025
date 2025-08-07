@@ -110,7 +110,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.clear_easy_leaderboard
         )
-        self.clear_leaderboard_easy.place(x=30, y=200, width=243, height=74)
+        self.clear_leaderboard_easy.place(x=30, y=115, width=243, height=74)
 
         self.clear_leaderboard_hard = tk.Button(
             self,
@@ -124,9 +124,9 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.clear_hard_leaderboard
         )
-        self.clear_leaderboard_hard.place(x=30, y=285, width=243, height=74)
+        self.clear_leaderboard_hard.place(x=30, y=200, width=243, height=74)
 
-        self.clear_leaderboard_hard = tk.Button(
+        self.reboot_button = tk.Button(
             self,
             text="REBOOT",
             font=("Jockey One", 15),
@@ -136,9 +136,9 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.reboot_button_click
         )
-        self.clear_leaderboard_hard.place(x=30, y=370, width=243, height=74)
+        self.reboot_button.place(x=30, y=370, width=243, height=74)
 
-        self.clear_leaderboard_hard = tk.Button(
+        self.shutdown_button = tk.Button(
             self,
             text="SHUTDOWN",
             font=("Jockey One", 15),
@@ -148,7 +148,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.shutdown_button_click
         )
-        self.clear_leaderboard_hard.place(x=30, y=455, width=243, height=74)
+        self.shutdown_button.place(x=30, y=455, width=243, height=74)
 
         # --- X Offset Input ---
         self.x_offset_label = tk.Label(
