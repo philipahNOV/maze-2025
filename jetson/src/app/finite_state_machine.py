@@ -497,6 +497,7 @@ class HMIController:
                     for _ in range(5):
                         self.arduino_thread.send_elevator(-1)
                         time.sleep(0.05)
+                    time.sleep(1)
                     for _ in range(5):
                         self.arduino_thread.send_elevator(1)
                         time.sleep(0.05)
