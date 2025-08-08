@@ -94,6 +94,7 @@ class Controller:
         self.wiggle_bias = config["controller"].get("wiggle_direction_bias", 0.0)  # rad
 
         self.velocity_smoothing_alpha = config["controller"].get("velocity_smoothing_alpha", 0.9)
+        self.motor_smoothing_alpha = config["controller"]["arduino"].get("motor_smoothing_alpha", 0.3)
 
     def set_pid_parameters(self, params):
         param_names = ["x_offset", "y_offset", "kp_x", "kp_y", "kd_x", "kd_y", "ki_x", "ki_y", "kf_min", "kf_max"]
@@ -298,7 +299,7 @@ class Controller:
             vel_x = new_vel_x
             vel_y = new_vel_y
 
-            alpha = 0.7
+            alpha = self.motor_smoothing_alpha
             # Smooth the new command
             smoothed_vel_x = alpha * self.prev_vel_x + (1 - alpha) * vel_x
             smoothed_vel_y = alpha * self.prev_vel_y + (1 - alpha) * vel_y
