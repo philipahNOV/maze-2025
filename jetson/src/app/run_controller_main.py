@@ -19,7 +19,8 @@ def main(tracker: TrackerService,
          config=None,
          playervsai=False):
 
-    smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.1)
+    alpha = config["controller"].get("position_smoothing_alpha", 0.1)
+    smoother = utils.low_pass_filter.SmoothedTracker(alpha=alpha)
 
     ball_not_found_timer = None
     ball_not_found_limit = 60  # seconds
@@ -74,6 +75,7 @@ def main(tracker: TrackerService,
                     # if logger is not None:
                     #     logger.reset_ball_lost()
                     if blinker.triggered:
+                        time.sleep(1.0)
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
                         time.sleep(escape_thread.duration)
