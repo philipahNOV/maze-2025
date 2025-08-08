@@ -277,8 +277,8 @@ class Controller:
         e_x = theta_x - ref[0]
         e_y = theta_y - ref[1]
 
-        vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * min(self.kp_theta * abs(e_x), self.vel_max)
-        vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(self.kp_theta * abs(e_y), self.vel_max)
+        vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * int(min(self.kp_theta * abs(e_x), self.vel_max))
+        vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * int(min(self.kp_theta * abs(e_y), self.vel_max))
         if self.logger is not None:
             self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
 
@@ -295,6 +295,16 @@ class Controller:
             self.prev_command = (vel_x, vel_y)
             vel_x = new_vel_x
             vel_y = new_vel_y
+
+            alpha = 0.5
+            # Smooth the new command
+            smoothed_vel_x = alpha * self.prev_vel_x + (1 - alpha) * vel_x
+            smoothed_vel_y = alpha * self.prev_vel_y + (1 - alpha) * vel_y
+
+            # Quantize to int (or keep as float if supported)
+            smoothed_vel_x = int(smoothed_vel_x)
+            smoothed_vel_y = int(smoothed_vel_y)
+            
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command_time = time.time()
 
