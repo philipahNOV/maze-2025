@@ -298,7 +298,7 @@ class Controller:
             vel_x = new_vel_x
             vel_y = new_vel_y
 
-            alpha = 0.3
+            alpha = 0.7
             # Smooth the new command
             smoothed_vel_x = alpha * self.prev_vel_x + (1 - alpha) * vel_x
             smoothed_vel_y = alpha * self.prev_vel_y + (1 - alpha) * vel_y
