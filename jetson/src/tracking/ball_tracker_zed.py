@@ -16,12 +16,12 @@ class BallTracker:
         self.ball_position = None
         self.timing_print_counter = 0
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
-        self.top_left = [460, 5]
+        self.top_left = [420, 5]
         self.top_right = [1100, 5]
-        self.bottom_left = [460, 720]
+        self.bottom_left = [420, 720]
         self.bottom_right = [1100, 720]
 
-        x_coords = [460, 1100]
+        x_coords = [420, 1100]
         y_coords = [5, 720]
 
         self.maze_x_min = min(x_coords)
