@@ -75,6 +75,7 @@ def main(tracker: TrackerService,
                     # if logger is not None:
                     #     logger.reset_ball_lost()
                     if blinker.triggered:
+                        controller.arduinoThread.send_speed(0, 0)
                         time.sleep(1.0)
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
