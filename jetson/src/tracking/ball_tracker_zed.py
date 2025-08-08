@@ -16,18 +16,19 @@ class BallTracker:
         self.ball_position = None
         self.timing_print_counter = 0
         self._bbox_buffer = np.zeros((4, 2), dtype=np.float32)
-        camera_config = self.tracking_config.get('camera', {})
-        
-        top_left = camera_config.get('top_left', [430, 27])
-        top_right = camera_config.get('top_right', [1085, 27])
-        bottom_left = camera_config.get('bottom_left', [430, 682])
-        bottom_right = camera_config.get('bottom_right', [1085, 682])
-        
-        self.maze_x_min = min(top_left[0], bottom_left[0])
-        self.maze_x_max = max(top_right[0], bottom_right[0])
-        self.maze_y_min = min(top_left[1], top_right[1])
-        self.maze_y_max = max(bottom_left[1], bottom_right[1])
-            
+        self.top_left = [420, 5]
+        self.top_right = [1100, 5]
+        self.bottom_left = [420, 720]
+        self.bottom_right = [1100, 720]
+
+        x_coords = [420, 1100]
+        y_coords = [5, 720]
+
+        self.maze_x_min = min(x_coords)
+        self.maze_x_max = max(x_coords)
+        self.maze_y_min = min(y_coords)
+        self.maze_y_max = max(y_coords)
+
     def _is_point_in_maze(self, x, y):
         return (self.maze_x_min <= x <= self.maze_x_max and 
                 self.maze_y_min <= y <= self.maze_y_max)
