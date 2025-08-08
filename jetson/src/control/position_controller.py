@@ -208,7 +208,7 @@ class Controller:
         stuck_x = False
         stuck_y = False
         #print(f"SPEEDS: vel_x={vel_x}, vel_y={vel_y}")
-        if abs(vel_x) < self.stuck_vel_threshold and abs(e_x) > self.pos_tol:
+        if abs(vel_x) < self.stuck_vel_threshold and abs(e_x) > self.pos_tol // 2:
             if self.stuck_timer_x is None:
                 self.stuck_timer_x = time.time()
             elif time.time() - self.stuck_timer_x > self.stuck_time_threshold:
@@ -223,7 +223,7 @@ class Controller:
                     self.stuck_x_active = False
             else:
                 self.unstuck_timer_x = None
-        if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol:
+        if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol // 2:
             if self.stuck_timer_y is None:
                 self.stuck_timer_y = time.time()
             elif time.time() - self.stuck_timer_y > self.stuck_time_threshold:
