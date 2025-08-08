@@ -223,7 +223,7 @@ class Controller:
                     self.stuck_x_active = False
             else:
                 self.unstuck_timer_x = None
-        if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol // 2:
+        if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol // 1.5:
             if self.stuck_timer_y is None:
                 self.stuck_timer_y = time.time()
             elif time.time() - self.stuck_timer_y > self.stuck_time_threshold:
