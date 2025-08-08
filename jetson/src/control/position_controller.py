@@ -91,6 +91,7 @@ class Controller:
         self.stuck_wiggle_frequency = config["controller"].get("stuck_wiggle_frequency", 10)  # Hz
         self.stuck_vel_threshold = config["controller"].get("stuck_velocity_threshold", 20)  # px/s
         self.stuck_upper_pos_threshold = config["controller"].get("stuck_upper_position_threshold", 90)  # px
+        self.wiggle_bias = config["controller"].get("wiggle_direction_bias", 0.0)  # rad
 
         self.velocity_smoothing_alpha = config["controller"].get("velocity_smoothing_alpha", 0.9)
 
@@ -243,8 +244,15 @@ class Controller:
 
         #print(dist, self.stuck_x_active, self.stuck_y_active)
         if self.stuck_x_active or self.stuck_y_active:
-            theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
-            theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
+            dist = np.linalg.norm(np.array((e_x, e_y)))
+            if dist > 1e-6:
+                dir_x = dx / dist
+                dir_y = dy / dist
+            else:
+                dir_x, dir_y = 0.0, 0.0  # fallback if at target
+
+            theta_x += np.sign(e_x) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency) + dir_x * self.wiggle_bias
+            theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency) + dir_y * self.wiggle_bias
 
         #if self.stuck_y_active:
         #    theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
