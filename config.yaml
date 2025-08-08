@@ -17,10 +17,10 @@ camera:
   elevator_center_x: 998
   elevator_center_y: 588
   elevator_radius: 60    # px
-  bottom_right: [1085, 682]
-  bottom_left: [430, 682]
-  top_right: [1085, 27]
-  top_left: [430, 27]
+  bottom_right: [1100, 720]
+  bottom_left: [460, 720]
+  top_right: [1100, 5]
+  top_left: [460, 5]
   padding: 20            # px
   maze_relative_angle: 1 # deg
 
