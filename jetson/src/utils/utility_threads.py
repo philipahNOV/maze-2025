@@ -36,7 +36,12 @@ class BlinkRed(threading.Thread):
         
         while not self._stop_event.is_set():
             self.arduino_thread.send_color(*white)
-            time.sleep(2.0)
+            time.sleep(1.0)
+            if self._stop_event.is_set():
+                break
+            time.sleep(1)
+            if self._stop_event.is_set():
+                break
             self.arduino_thread.send_color(*red)
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
                 for _ in range(5):
@@ -50,6 +55,7 @@ class BlinkRed(threading.Thread):
                 #self.controller.elevator_state = "up"
 
             time.sleep(0.1)
+        self.arduino_thread.send_color(255, 255, 255)
 
     def stop(self):
         self._stop_event.set()

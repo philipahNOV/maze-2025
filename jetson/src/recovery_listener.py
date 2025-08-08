@@ -49,6 +49,8 @@ def main():
     client.on_connect = on_connect
     client.on_message = on_message
 
+    print("--- Recovery Listener Started ---")
+
     try:
         client.connect(BROKER_ADDRESS, PORT, 60)
     except Exception as e:
