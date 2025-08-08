@@ -55,7 +55,9 @@ class BlinkRed(threading.Thread):
                 #self.controller.elevator_state = "up"
 
             time.sleep(0.1)
-        self.arduino_thread.send_color(255, 255, 255)
+        time.sleep(0.2)
+        for _ in range(5):
+            self.arduino_thread.send_color(255, 255, 255)
 
     def stop(self):
         self._stop_event.set()

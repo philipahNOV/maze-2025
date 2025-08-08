@@ -19,7 +19,7 @@ def main(tracker: TrackerService,
          config=None,
          playervsai=False):
 
-    smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.5)
+    smoother = utils.low_pass_filter.SmoothedTracker(alpha=0.4)
 
     ball_not_found_timer = None
     ball_not_found_limit = 60  # seconds
