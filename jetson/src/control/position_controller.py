@@ -149,6 +149,8 @@ class Controller:
         self.e_y_int += e_y * dt
         if abs(edot_x) > self.integration_vel_threshold or abs(e_x) > self.integration_pos_threshold: self.e_x_int = 0 # Reset integral if large error or velocity
         if abs(edot_y) > self.integration_vel_threshold or abs(e_y) > self.integration_pos_threshold: self.e_y_int = 0 # Reset integral if large error or velocity
+        if self.e_x_int > 0 or self.e_y_int > 0:
+            print("INTEGRAL ACTION ACTIVE")
 
         #--- Feedforward ---
         ff_x = ff_y = 0
