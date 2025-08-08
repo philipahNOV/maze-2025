@@ -281,11 +281,12 @@ class Controller:
             new_vel_y = np.sign(vel_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
 
         if self.stuck_x_active or self.stuck_y_active or self.significant_motor_change_x(vel_x) or self.significant_motor_change_y(vel_y):
+            self.prev_command = (vel_x, vel_y)
             vel_x = new_vel_x
             vel_y = new_vel_y
             self.arduinoThread.send_speed(vel_x, vel_y)
-            self.prev_command = (vel_x, vel_y)
             self.prev_command_time = time.time()
+            print(f"SPEEDS: vel_x={vel_x}, vel_y={vel_y}")
 
         self.prev_vel_x = vel_x
         self.prev_vel_y = vel_y
