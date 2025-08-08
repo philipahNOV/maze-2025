@@ -285,11 +285,11 @@ class Controller:
         if not self.significant_motor_change_x(vel_x):
             new_vel_x = self.prev_command[0]
         else:
-            new_vel_x = np.sign(vel_x) * min(max(abs(vel_x), self.min_velocity), self.vel_max)
+            new_vel_x = np.sign(vel_x) * min(max(abs(vel_x), 0), self.vel_max)
         if not self.significant_motor_change_y(vel_y):
             new_vel_y = self.prev_command[1]
         else:
-            new_vel_y = np.sign(vel_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
+            new_vel_y = np.sign(vel_y) * min(max(abs(vel_y), 0), self.vel_max)
 
         smoothed_vel_x = new_vel_x
         smoothed_vel_y = new_vel_y
