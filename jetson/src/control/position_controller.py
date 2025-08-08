@@ -2,8 +2,6 @@ import time
 import numpy as np
 from tracking.tracker_service import TrackerService
 import arduino_connection
-from logger import LoggingThread
-
 
 class Controller:
     def __init__(self, arduinoThread: arduino_connection.ArduinoConnection,
