@@ -1,5 +1,4 @@
-import ttkbootstrap as ttk
-from ttkbootstrap.constants import *
+import tkinter as tk
 from PIL import Image, ImageTk
 import os
 from typing import TYPE_CHECKING
@@ -7,15 +6,11 @@ if TYPE_CHECKING:
     from main import MainApp
 
 
-class MainScreen(ttk.Frame):
+class MainScreen(tk.Frame):
     def __init__(self, parent, controller: 'MainApp', mqtt_client):
         super().__init__(parent)
         self.controller = controller
         self.mqtt_client = mqtt_client
-
-        # Set the theme to 'darkly'
-        style = ttk.Style()
-        style.theme_use('darkly')
 
         try:
             print("Loading background from:", controller.background_path)
@@ -55,27 +50,48 @@ class MainScreen(ttk.Frame):
         self.controller.show_frame("AdminToolsScreen")
 
     def add_essential_buttons(self):
-        self.exit_button = ttk.Button(
+        self.exit_button = tk.Button(
             self,
             text="✖",
-            bootstyle="danger",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
             command=self.on_button_click_exit
         )
         self.exit_button.place(x=964, y=10, width=50, height=50)
 
-        self.restart_button = ttk.Button(
+        self.exit_button = tk.Button(
             self,
             text="⟲",
-            bootstyle="danger",
+            font=("Jockey One", 30),
+            fg="white",
+            bg="#EE3229",
+            activebackground="#B82F27",
+            activeforeground="#DFDFDF",
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
             command=self.on_button_click_restart
         )
-        self.restart_button.place(x=904, y=10, width=50, height=50)
+        self.exit_button.place(x=904, y=10, width=50, height=50)
 
-        self.info_button = ttk.Button(
-            self,
-            text="INFO",
-            bootstyle="danger",
-            command=self.on_button_click_info
+        self.info_button = tk.Button(
+        self,
+        text="INFO",
+        font=("Jockey One", 26),
+        fg="white",
+        bg="#EE3229",
+        activebackground="#B82F27",
+        activeforeground="#DFDFDF",
+        borderwidth=0,
+        highlightthickness=0,
+        relief="flat",
+        command=self.on_button_click_info
         )
         self.info_button.place(x=744, y=10, width=150, height=50)
 
@@ -83,50 +99,75 @@ class MainScreen(ttk.Frame):
         self.update()
 
         if self.background_image:
-            self.bg_label = ttk.Label(self, image=self.background_image)
-            self.bg_label.image = self.background_image
+            self.bg_label = tk.Label(self, image=self.background_image)
+            self.bg_label.image = self.background_image  # <- PERSISTENT REFERENCE
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
         self.add_essential_buttons()
 
-        self.navigation_button = ttk.Button(
+        self.navigation_button = tk.Button(
             self,
             text="ROBOT MODE",
-            bootstyle="secondary",
+            font=("Jockey One", 30),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
             command=self.on_button_click_navigation
         )
         self.navigation_button.place(x=391, y=235, width=243, height=74)
 
-        self.human_button = ttk.Button(
-            self,
-            text="HUMAN MODE",
-            bootstyle="secondary",
-            command=self.on_button_click_human_mode
+        self.human_button = tk.Button(
+        self,
+        text="HUMAN MODE",
+        font=("Jockey One", 30),
+        fg="white",
+        borderwidth=0,
+        highlightthickness=0,
+        background="#60666C",
+        activebackground="#4B4C4C",
+        activeforeground="#DFDFDF",
+        command=self.on_button_click_human_mode
         )
         self.human_button.place(x=391, y=320, width=243, height=74)
 
-        self.disco_button = ttk.Button(
+
+        self.disco_button = tk.Button(
             self,
             text="LIGHTS MODE",
-            bootstyle="secondary",
+            font=("Jockey One", 30),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
             command=self.on_button_click_disco
         )
         self.disco_button.place(x=391, y=405, width=243, height=74)
 
-        self.admin_tools_button = ttk.Button(
+        self.admin_tools_button = tk.Button(
             self,
             text="ADMIN TOOLS",
-            bootstyle="secondary",
+            font=("Jockey One", 10),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
             command=self.on_button_click_admin_tools
         )
         self.admin_tools_button.place(x=904, y=70, width=110, height=40)
 
-        self.title = ttk.Label(
+        self.title = tk.Label(
             self,
             text="WELCOME",
             font=("Jockey One", 55),
-            foreground="#FFFFFF",
-            background="#2C2C2C"
+            fg="#1A1A1A",
+            bg="#D9D9D9"
         )
         self.title.place(x=380, y=100)
 
