@@ -8,7 +8,6 @@ import utils.utility_threads as utility_threads
 from control.image_controller import ImageController
 from control.image_controller import ImageSenderThread
 from tracking.tracker_service import TrackerService
-from logger import LoggingThread
 
 def main(tracker: TrackerService,
          controller: position_controller.Controller,
