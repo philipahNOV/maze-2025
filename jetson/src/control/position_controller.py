@@ -45,6 +45,7 @@ class Controller:
         self.e_x_int = 0
         self.e_y_int = 0
         self.feedforward_vector = (0, 0)
+        self.prev_command = (0, 0)
 
         self.prev_command_time = time.time()
 
@@ -104,9 +105,11 @@ class Controller:
     def set_ball_pos(self, pos):
         self.pos = pos
 
-    def significant_motor_change(self, vel_x, vel_y):
-        return not (abs(vel_x - self.prev_vel_x) < self.min_vel_diff and
-                    abs(vel_y - self.prev_vel_y) < self.min_vel_diff)
+    def significant_motor_change_x(self, vel_x):
+        return not (abs(vel_x - self.prev_command[0]) < self.min_vel_diff)
+
+    def significant_motor_change_y(self, vel_y):
+        return not (abs(vel_y - self.prev_command[1]) < self.min_vel_diff)
 
     def saturate_angles(self, theta_x, theta_y):
         rad = np.deg2rad(self.max_angle)
@@ -267,8 +270,14 @@ class Controller:
         vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(max(int(self.kp_theta * abs(e_y)), self.min_velocity), self.vel_max)
         if self.logger is not None:
             self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
-        if self.stuck_x_active or self.stuck_y_active or self.significant_motor_change(vel_x, vel_y):
-            self.arduinoThread.send_speed(vel_x, vel_y)
+        if self.stuck_x_active or self.stuck_y_active:
+            if not self.significant_motor_change_x(vel_x):
+                vel_x = self.prev_command[0]
+            if not self.significant_motor_change_y(vel_y):
+                vel_y = self.prev_command[1]
+            if self.significant_motor_change_x(vel_x) or self.significant_motor_change_y(vel_y):
+                self.arduinoThread.send_speed(vel_x, vel_y)
+                self.prev_command = (vel_x, vel_y)
             self.prev_command_time = time.time()
 
         self.prev_vel_x = vel_x
