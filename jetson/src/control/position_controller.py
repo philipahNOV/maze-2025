@@ -266,18 +266,23 @@ class Controller:
         e_x = theta_x - ref[0]
         e_y = theta_y - ref[1]
 
-        vel_x = 0 if abs(e_x) < tol else -self.kp_theta * e_x
-        vel_y = 0 if abs(e_y) < tol else -self.kp_theta * e_y
+        vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * min(self.kp_theta * abs(e_x), self.vel_max)
+        vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * min(self.kp_theta * abs(e_y), self.vel_max)
         if self.logger is not None:
             self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
 
         if not self.significant_motor_change_x(vel_x):
-            vel_x = self.prev_command[0]
+            new_vel_x = self.prev_command[0]
+        else:
+            new_vel_x = np.sign(e_x) * min(max(abs(vel_x), self.min_velocity), self.vel_max)
         if not self.significant_motor_change_y(vel_y):
-            vel_y = self.prev_command[1]
+            new_vel_y = self.prev_command[1]
+        else:
+            new_vel_y = np.sign(e_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
+
         if self.stuck_x_active or self.stuck_y_active or self.significant_motor_change_x(vel_x) or self.significant_motor_change_y(vel_y):
-            vel_x = np.sign(e_x) * min(max(abs(vel_x), self.min_velocity), self.vel_max)
-            vel_y = np.sign(e_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
+            vel_x = new_vel_x
+            vel_y = new_vel_y
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command = (vel_x, vel_y)
             self.prev_command_time = time.time()
