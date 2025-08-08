@@ -44,8 +44,10 @@ class BlinkRed(threading.Thread):
                 break
             self.arduino_thread.send_color(*red)
             if not self.triggered and (time.time() - self.start_time) > self.trigger_delay:
+                self.triggered = True
+                self.controller.horizontal()
+                time.sleep(0.5)
                 for _ in range(5):
-                    self.triggered = True
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.05)
                 #self.arduino_thread.send_elevator(1)
