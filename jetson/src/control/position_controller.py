@@ -274,11 +274,11 @@ class Controller:
         if not self.significant_motor_change_x(vel_x):
             new_vel_x = self.prev_command[0]
         else:
-            new_vel_x = np.sign(e_x) * min(max(abs(vel_x), self.min_velocity), self.vel_max)
+            new_vel_x = np.sign(vel_x) * min(max(abs(vel_x), self.min_velocity), self.vel_max)
         if not self.significant_motor_change_y(vel_y):
             new_vel_y = self.prev_command[1]
         else:
-            new_vel_y = np.sign(e_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
+            new_vel_y = np.sign(vel_y) * min(max(abs(vel_y), self.min_velocity), self.vel_max)
 
         if self.stuck_x_active or self.stuck_y_active or self.significant_motor_change_x(vel_x) or self.significant_motor_change_y(vel_y):
             vel_x = new_vel_x
