@@ -279,6 +279,8 @@ class Controller:
             self.arduinoThread.send_speed(vel_x, vel_y)
             self.prev_command = (vel_x, vel_y)
             self.prev_command_time = time.time()
+        
+        print("SPEEDS:", vel_x, vel_y)
 
         self.prev_vel_x = vel_x
         self.prev_vel_y = vel_y
