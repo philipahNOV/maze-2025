@@ -159,16 +159,6 @@ class YOLOModel:
         best_idx = max(nms_indices, key=lambda i: scores[i])
         indices = [best_idx]
 
-        now = time.time()
-        if now - self._last_print_time > 3:
-            print(f"[YOLOModel] Top-1 detection (conf ≥ {self.conf_thres}):")
-            i = best_idx
-            score = scores[i]
-            cx_orig = (boxes[i][0] + boxes[i][2]) / 2
-            cy_orig = (boxes[i][1] + boxes[i][3]) / 2
-            print(f"  - conf: {score:.2f}, center: ({cx_orig:.1f}, {cy_orig:.1f})")
-            self._last_print_time = now
-
         def make_box(i):
             b = boxes[i]
             return Box(b[0], b[1], b[2], b[3], scores[i], 0)

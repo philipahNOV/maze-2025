@@ -99,14 +99,6 @@ class BallTracker:
                     
                     break
 
-            post_time = (time.time() - post_start) * 1000
-            total_loop_time = (time.time() - loop_start) * 1000
-
-            self.timing_print_counter += 1
-            if self.timing_print_counter >= 30:
-                print(f"[TIMING] Inference: {inference_time:.2f}ms | Postproc: {post_time:.2f}ms | Total: {total_loop_time:.2f}ms")
-                self.timing_print_counter = 0
-
             loop_duration = time.time() - loop_start
             sleep_time = max(0, (1 / TARGET_FPS) - loop_duration)
             time.sleep(sleep_time)
