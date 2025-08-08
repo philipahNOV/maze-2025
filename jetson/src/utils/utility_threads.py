@@ -47,6 +47,7 @@ class BlinkRed(threading.Thread):
                 self.arduino_thread.send_color(*white)
                 self.triggered = True
                 self.stop()
+                break
                 #self.controller.elevator_state = "up"
 
             time.sleep(0.1)

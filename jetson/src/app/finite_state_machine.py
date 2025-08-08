@@ -1169,7 +1169,7 @@ class HMIController:
         elif self.state == SystemState.CONTROLLING:
             if cmd == "Back":
                 self.stop_controller()
-                self.arduino_thread.send_color(255, 255, 255)
+                #self.arduino_thread.send_color(255, 255, 255)
                 self.tracking_service.stop_tracker()
                 if self.image_thread is not None:
                     self.image_thread.stop()
