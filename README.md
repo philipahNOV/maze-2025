@@ -79,6 +79,15 @@ This project integrates multiple subsystems including camera-based ball tracking
 
 ---
 
+## Physical Setup
+Before operation, the transport rod needs to be disconnected by unscrewing the screw using a hex key size 3. Then screw the screw back in at the bottom.
+![Alt text](/pictures/transport_rod_up.png)
+
+Before transportation, move the transport rod to the upper part.
+![Alt text](/pictures/transport_rod_down.png)
+
+To unscrew the panels over the electronics panel, a hex size 2 is used.
+
 ## Setup & Configuration
 
 ### Dependencies
@@ -203,6 +212,51 @@ All command triggers are mapped to state transitions in a finite-state machine.
 - Tune `feedforward_t` values for more/less anticipatory movement based on distance to next waypoint.
 
 ---
+
+### Electical setup
+The project's electrical system is powered by a Mean Well 85 DC power supply which gives out a 5V and a 12V output.
+
+The 5V system consists of the Raspberry Pi 5, LCD display, servo motor, and the LEDs.
+
+The 12V system consists of the Nvidia Jetson Orin Nano, the motor controller, and a fan for the electronic compartment.
+
+The Arduino Mega is powered through the USB connection to the Jetson.
+
+Arduino connections: From the Arduino, the 5V output is connected to the positive potentiometer reference of the motors.
+
+The potentiometer reference voltage pins are connected to analog inputs A4 for motor 1 and A3 for motor 2. This signal gives out 2 when the actuator is at the bottom and 1018 when it's at 50mm.
+
+To control the motors, a PWM signal is sent to the motor controller for up and down. For motor 1, pin 9 is PWM up and pin 10 is PWM down. For motor 2, pin 11 is PWM up and pin 12 is PWM down.
+
+To control the servo motor for the elevator, pin 5 is used. To control the LEDs, pin 7 is used.
+
+Electrical schematic:
+
+![Alt text](/pictures/maze_schematic_color.svg)
+![Alt text](/pictures/maze_schematic_black_and_white.svg)
+<!--- Velg hvilken som ser best ut -->
+
+Fuse:
+The power entry module has a 3.15A ceramic cartridge fuse, and both motors have a 2.15A glass cartridge fuse. Both types of fuses are in the travel box with the robot.
+<!--- Hisker ikke om det er 2.15 så sjekk om det er riktig ved å lese på pakken -->
+
+Pass-Through panel:
+At the back of the maze robot, there is a pass-through panel. There are two USB A connectors, two HDMI connectors, and one USB C connector.
+
+![Alt text](/pictures/pass-through_render.png)
+![Alt text](/pictures/pass-through.png)
+<!--- Velg om virkelig eller rendra bilde ser best ut -->
+
+At the bottom, the USB A and HDMI cable is connected to the Raspberry Pi 5, and the USB C connector is connected directly to 5V from the power supply.
+
+The top USB A and HDMI are connected to the Nvidia Jetson.
+
+Connect the touch screen:
+To power the screen, the USB C cable is used and is always connected whether the screen is connected to the Raspberry Pi or the Nvidia Jetson.
+
+The USB A cables from the screen are for touch.
+
+Under normal operation, the HDMI and USB A cable from the screen is connected to the pass-through connectors connected to the Raspberry Pi 5.
 
 ## MQTT Communication
 
