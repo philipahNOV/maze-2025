@@ -517,6 +517,10 @@ class HMIController:
                 self.ball_finder.start_ball_check()
             elif cmd == "AdminTools":
                 self.state = SystemState.ADMIN_TOOLS
+                if self.disco_thread is not None:
+                    self.disco_thread.stop()
+                    self.disco_thread.join()
+                    self.disco_thread = None
                 print("[FSM] Transitioned to ADMIN_TOOLS")
 
         elif self.state == SystemState.ADMIN_TOOLS:
@@ -581,10 +585,6 @@ class HMIController:
                 subprocess.run(['sudo', '/usr/sbin/poweroff'], check=True)
             elif cmd == "Horizontal":
                 print("[FSM] Starting horizontal controller")
-                if self.disco_thread is not None:
-                    self.disco_thread.stop()
-                    self.disco_thread.join()
-                    self.disco_thread = None
                 thread = threading.Thread(target=self.controller.horizontal, daemon=True)
                 thread.start()
             elif cmd == "LoadOffsets":
