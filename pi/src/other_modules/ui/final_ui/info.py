@@ -68,7 +68,7 @@ class InfoScreen(tk.Frame):
 
         # Info text frame
         self.info_frame = tk.Frame(self, bg="#FFFFFF", bd=2, relief="sunken")
-        self.info_frame.place(x=200, y=200, width=600, height=300)
+        self.info_frame.place(x=112, y=150, width=800, height=400)
 
         self.scrollbar = tk.Scrollbar(self.info_frame)
         self.scrollbar.pack(side="right", fill="y")
@@ -133,7 +133,7 @@ class InfoScreen(tk.Frame):
         self.clear_info_text()
 
         self.insert_formatted_line("Project information", "title")
-        self.insert_formatted_line("This project aims to create a maze-solving robot", "normal")
+        self.insert_formatted_line("\nThis project aims to create a maze-solving robot", "normal")
         self.insert_formatted_line("that can autonomously balance a ball through the maze.", "normal")
         self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
         self.insert_formatted_line("Project members:", "subtitle")
