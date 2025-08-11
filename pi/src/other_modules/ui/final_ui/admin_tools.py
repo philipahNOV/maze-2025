@@ -321,7 +321,7 @@ class AdminToolsScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Horizontal")
 
     def elevator_button_click(self):
-        self.mqtt_client.client.publish(f"jetson/command", f"Elevator{self.last_elevator_dir}")
+        self.mqtt_client.client.publish(f"jetson/command", f"Elevator:{self.last_elevator_dir}")
         if self.last_elevator_dir == 1:
             self.last_elevator_dir = -1
         else:
