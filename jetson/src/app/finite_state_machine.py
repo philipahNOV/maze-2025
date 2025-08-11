@@ -587,6 +587,11 @@ class HMIController:
                 print("[FSM] Starting horizontal controller")
                 thread = threading.Thread(target=self.controller.horizontal, daemon=True)
                 thread.start()
+            elif cmd.startswith("Elevator"):
+                direction = cmd.split(":")[1]
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(direction)
+
             elif cmd == "LoadOffsets":
                 x_offset = self.config["controller"]["arduino"].get("x_offset", 0.002)
                 y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)

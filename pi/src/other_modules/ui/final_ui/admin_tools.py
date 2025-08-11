@@ -16,6 +16,7 @@ class AdminToolsScreen(tk.Frame):
         self.config_offset_y = controller.config["controller"]["arduino"].get("y_offset", 0.0)
         self.x_offset = None
         self.y_offset = None
+        self.last_elevator_dir = 1
 
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -232,6 +233,20 @@ class AdminToolsScreen(tk.Frame):
         )
         self.horizontal_button.place(x=491, y=460, width=100, height=50)
 
+        self.elevator_button = tk.Button(
+            self,
+            text="ELEVATOR",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.elevator_button_click
+        )
+        self.elevator_button.place(x=491, y=460, width=100, height=50)
+
         self.offset_info_label = tk.Label(
             self,
             text=f"Click 'load' to load default. Submit to save changes",
@@ -248,7 +263,7 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=225, anchor="n")
+        self.offset_info_label.place(x=491, y=230, anchor="n")
 
         self.offset_info_label = tk.Label(
             self,
@@ -257,11 +272,11 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=250, anchor="n")  # Just below the title
+        self.offset_info_label.place(x=491, y=260, anchor="n")  # Just below the title
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
-        start_x, start_y = 740, 200
+        start_x, start_y = 740, 250
         btn_w, btn_h = 50, 40
         pad = 5
 
@@ -304,6 +319,13 @@ class AdminToolsScreen(tk.Frame):
 
     def horizontal_button_click(self):
         self.mqtt_client.client.publish("jetson/command", "Horizontal")
+
+    def elevator_button_click(self):
+        self.mqtt_client.client.publish(f"jetson/command", f"Elevator{self.last_elevator_dir}")
+        if self.last_elevator_dir == 1:
+            self.last_elevator_dir = -1
+        else:
+            self.last_elevator_dir = 1
 
     def load_offsets(self):
         self.mqtt_client.client.publish("jetson/command", "LoadOffsets")
