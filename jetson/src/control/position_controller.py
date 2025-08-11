@@ -309,10 +309,10 @@ class Controller:
             smoothed_vel_x = int(smoothed_vel_x)
             smoothed_vel_y = int(smoothed_vel_y)
 
-            deadband_thresh = 10  # try between 3–10
+            deadband_thresh = 22  # try between 3–10
 
             if abs(smoothed_vel_x) < deadband_thresh:
-                smoothed_vel_x = 0
+                smoothed_vel_x = self.prev_
             if abs(smoothed_vel_y) < deadband_thresh:
                 smoothed_vel_y = 0
 
