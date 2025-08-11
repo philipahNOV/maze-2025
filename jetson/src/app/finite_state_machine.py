@@ -549,7 +549,7 @@ class HMIController:
                 except:
                     self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
 
-                project_root = Path(__file__).resolve().parents[2]  # up from src → jetson → maze-2025
+                project_root = Path(__file__).resolve().parents[3]  # up from src → jetson → maze-2025
                 config_path = project_root / "config.yaml"
 
                 with open(config_path, 'r') as file:
