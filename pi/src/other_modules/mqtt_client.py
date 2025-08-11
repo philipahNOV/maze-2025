@@ -139,6 +139,7 @@ class MQTTClientPi(threading.Thread):
             elif payload.startswith("LoadOffsets:"):
                 offsets = payload.split(":")[1]
                 x_offset, y_offset = map(float, offsets.split(","))
+                print(f"[MQTT] Loading offsets: x_offset={x_offset}, y_offset={y_offset}")
                 if self.app and hasattr(self.app, 'frames'):
                     admin_tools = self.app.frames.get('AdminToolsScreen')
                     if admin_tools:
