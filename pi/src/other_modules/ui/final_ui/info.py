@@ -70,7 +70,7 @@ class InfoScreen(tk.Frame):
         self.info_frame = tk.Frame(self, bg="#FFFFFF", bd=2, relief="sunken")
         self.info_frame.place(x=112, y=150, width=800, height=400)
 
-        self.scrollbar = tk.Scrollbar(self.info_frame)
+        self.scrollbar = tk.Scrollbar(self.info_frame, width=15)
         self.scrollbar.pack(side="right", fill="y")
 
         self.info_text = tk.Text(
@@ -161,7 +161,7 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("When the robot is finished, it is the player's turn. Press 'start turn', and control the robot using the Xbox controller.", "normal")
         self.insert_formatted_line("Your time will be saved, and the winner will be determined based on the fastest completion time.", "normal")
 
-        self.insert_formatted_line("Play alone", "subsubtitle")
+        self.insert_formatted_line("\nPlay alone", "subsubtitle")
         self.insert_formatted_line("In this mode, you can control the robot using an Xbox controller.", "normal")
         self.insert_formatted_line("Press 'start game' or 'A' on the controller in order to start the run.", "normal")
         self.insert_formatted_line("When you reach the goal, your time will be saved and added to the leaderboard.", "normal")
