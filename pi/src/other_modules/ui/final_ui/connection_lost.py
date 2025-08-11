@@ -54,7 +54,7 @@ class ConnectionLostScreen(tk.Frame):
         self.under_title = tk.Label(
             self,
             text="ATTEMPTING TO RECOVER IN 5 SECONDS",
-            font=("Jockey One", 30),  # 1.5x of original 20
+            font=("Jockey One", 30),
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
@@ -63,11 +63,11 @@ class ConnectionLostScreen(tk.Frame):
         self.under_title = tk.Label(
             self,
             text="PLEASE WAIT...",
-            font=("Jockey One", 30),  # 1.5x of original 20
+            font=("Jockey One", 30),
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=360, anchor="n")
+        self.under_title.place(x=512, y=340, anchor="n")
 
     def show(self):
         pass
