@@ -602,6 +602,10 @@ class HMIController:
                     with open(offset_file, "w") as f:
                         f.write(f"{x_offset},{y_offset}")
                 print(f"[FSM] Loading offsets from file: {x_offset}, {y_offset}")
+
+                self.controller.x_offset = x_offset
+                self.controller.y_offset = y_offset
+
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
 
         # --- INFO_SCREEN STATE ---
