@@ -110,6 +110,7 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
             
+            print(pathFollower.next_waypoint)
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:

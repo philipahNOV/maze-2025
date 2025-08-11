@@ -151,8 +151,6 @@ class Controller:
         self.e_y_int += e_y * dt
         if abs(edot_x) > self.integration_vel_threshold or abs(e_x) > self.integration_pos_threshold: self.e_x_int = 0 # Reset integral if large error or velocity
         if abs(edot_y) > self.integration_vel_threshold or abs(e_y) > self.integration_pos_threshold: self.e_y_int = 0 # Reset integral if large error or velocity
-        if self.e_x_int > 0 or self.e_y_int > 0:
-            print("INTEGRAL ACTION ACTIVE")
 
         #--- Feedforward ---
         ff_x = ff_y = 0
@@ -223,6 +221,7 @@ class Controller:
                     self.unstuck_timer_x = time.time()
                 elif time.time() - self.unstuck_timer_x > self.stuck_unstuck_hold_time:
                     self.stuck_x_active = False
+                    self.e_x_int = 0
             else:
                 self.unstuck_timer_x = None
         if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol // 1.5:
@@ -238,6 +237,7 @@ class Controller:
                     self.unstuck_timer_y = time.time()
                 elif time.time() - self.unstuck_timer_y > self.stuck_unstuck_hold_time:
                     self.stuck_y_active = False
+                    self.e_y_int = 0
             else:
                 self.unstuck_timer_y = None
 
