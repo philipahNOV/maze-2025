@@ -312,7 +312,7 @@ class Controller:
             deadband_thresh = 22  # try between 3–10
 
             if abs(smoothed_vel_x) < deadband_thresh:
-                smoothed_vel_x = self.prev_
+                smoothed_vel_x = 0
             if abs(smoothed_vel_y) < deadband_thresh:
                 smoothed_vel_y = 0
 
