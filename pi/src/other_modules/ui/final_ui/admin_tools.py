@@ -160,14 +160,14 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
-        self.x_offset_label.place(x=391, y=300)
+        self.x_offset_label.place(x=391, y=350)
         
         self.x_offset_entry = tk.Entry(
             self,
             font=("Jockey One", 15),
             justify="center"
         )
-        self.x_offset_entry.place(x=491, y=300, width=143, height=30)
+        self.x_offset_entry.place(x=491, y=350, width=143, height=30)
         self.x_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('x'))
 
         # --- Y Offset Input ---
@@ -178,14 +178,14 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#1A1A1A"
         )
-        self.y_offset_label.place(x=391, y=350)
+        self.y_offset_label.place(x=391, y=400)
         
         self.y_offset_entry = tk.Entry(
             self,
             font=("Jockey One", 15),
             justify="center"
         )
-        self.y_offset_entry.place(x=491, y=350, width=143, height=30)
+        self.y_offset_entry.place(x=491, y=400, width=143, height=30)
         self.y_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('y'))
 
         # --- Submit Button ---
@@ -201,7 +201,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_offsets
         )
-        self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
+        self.submit_offsets_button.place(x=491, y=450, width=100, height=50)
 
         # --- Submit Button ---
         self.load_offsets_button = tk.Button(
@@ -216,7 +216,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.load_offsets
         )
-        self.load_offsets_button.place(x=601, y=400, width=100, height=50)
+        self.load_offsets_button.place(x=601, y=450, width=100, height=50)
 
         self.horizontal_button = tk.Button(
             self,
@@ -234,7 +234,7 @@ class AdminToolsScreen(tk.Frame):
 
         self.offset_info_label = tk.Label(
             self,
-            text=f"Original offsets → X: {self.config_offset_x:.3f}, Y: {self.config_offset_y:.3f}",
+            text=f"Click 'load' to load default. Submit to save changes",
             font=("Jockey One", 14),
             bg="#D9D9D9",
             fg="#333333"
@@ -243,12 +243,21 @@ class AdminToolsScreen(tk.Frame):
 
         self.offset_info_label = tk.Label(
             self,
-            text=f"Recommended range: X: 0.01-0.02, Y: 0.00-0.005",
+            text=f"+x: ↓   -x: ↑   +y: →   -y: ←",
             font=("Jockey One", 14),
             bg="#D9D9D9",
             fg="#333333"
         )
         self.offset_info_label.place(x=491, y=250, anchor="n")  # Just below the title
+
+        self.offset_info_label = tk.Label(
+            self,
+            text=f"Recommended range: X: 0.01-0.02, Y: 0.00-0.005",
+            font=("Jockey One", 14),
+            bg="#D9D9D9",
+            fg="#333333"
+        )
+        self.offset_info_label.place(x=491, y=300, anchor="n")
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
