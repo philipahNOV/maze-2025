@@ -172,6 +172,15 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("In this mode, you can practice solving the maze without having your time saved.", "normal")
         self.insert_formatted_line("Use the joystick on the Xbox controller to control the robot.", "normal")
 
+        self.insert_formatted_line("\nKey features", "subtitle")
+        self.insert_formatted_line("• Trained AI model using YOLO to recognize the ball in camera frame.", "bullet")
+        self.insert_formatted_line("• Maze mapping using color based thresholding.", "bullet")
+        self.insert_formatted_line("• Path planning using A* algorithm.", "bullet")
+        self.insert_formatted_line("• Waypoint sampling to optimize path following.", "bullet")
+        self.insert_formatted_line("• Lookahead based path following.", "bullet")
+        self.insert_formatted_line("• PID controller with feedforward to control the ball.", "bullet")
+        self.insert_formatted_line("• Stuck prevention using velocity based wiggle, waypoint reverting and dynamic integral action.", "bullet")
+
         self.insert_formatted_line("\nThanks to", "subtitle")
         self.insert_formatted_line("• The summer interns at NOV, summer 2024 - A lot of the hardware of the robot is built by the 2024 team.", "bullet")
         self.insert_formatted_line("• Tor Gunnar Hovet & Staale Enes - Responsible for the summer interns that worked on the robot.", "bullet")
