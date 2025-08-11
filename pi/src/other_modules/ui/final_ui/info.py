@@ -89,6 +89,7 @@ class InfoScreen(tk.Frame):
         # Define text tags for formatting
         self.info_text.tag_configure("title", font=("Jockey One", 20, "bold"), spacing3=10)
         self.info_text.tag_configure("subtitle", font=("Jockey One", 16, "bold"), foreground="#333")
+        self.info_text.tag_configure("subsubtitle", font=("Jockey One", 14, "bold"), foreground="#333")
         self.info_text.tag_configure("bullet", lmargin1=15, lmargin2=30)
         self.info_text.tag_configure("highlight", foreground="red", font=("Jockey One", 14, "bold"))
         self.info_text.tag_configure("normal", font=("Jockey One", 14))
@@ -141,9 +142,9 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("• Philip A. Haugen", "bullet")
         self.insert_formatted_line("• Lyder K. Jacobsen", "bullet")
 
-        self.insert_formatted_line("How to use", "subtitle")
+        self.insert_formatted_line("\nHow to use", "subtitle")
         self.insert_formatted_line("The robot has several modes of operation", "normal")
-        self.insert_formatted_line("\nAutonomous solving", "subtitle")
+        self.insert_formatted_line("\nAutonomous solving", "subsubtitle")
         self.insert_formatted_line("This is the main mode, allowing for autonomous solving of the maze.", "normal")
         self.insert_formatted_line("Touch anywhere in the image of the maze, and press 'calculate path'", "normal")
         self.insert_formatted_line("The robot reads the maze, computes a path through it, then controls the ball", "normal")
