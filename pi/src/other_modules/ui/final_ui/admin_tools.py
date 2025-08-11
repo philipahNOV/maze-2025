@@ -248,7 +248,7 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=250, anchor="n")  # Just below the title
+        self.offset_info_label.place(x=491, y=230, anchor="n")  # Just below the title
 
         self.offset_info_label = tk.Label(
             self,
