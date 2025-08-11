@@ -1,136 +1,141 @@
-# config.yaml
-
-general:
-  idle_light_time: 15 # seconds, time to wait before going idle
-  get_ball_delay: 4   # seconds before elevator triggers
-
-camera:
-  resolution: "HD720" # don't change
-  fps: 60 # don't change
-  depth_mode: "NONE"
-  coordinate_units: "MILLIMETER"
-  maze_width: 655        # px
-  maze_height: 655       # px
-  maze_offset_x: 430     # px
-  maze_offset_y: 27      # px
-  maze_image_scale: 0.87
-  elevator_center_x: 998
-  elevator_center_y: 588
-  elevator_radius: 60    # px
-  bottom_right: [1085, 682]
-  bottom_left: [430, 682]
-  top_right: [1085, 27]
-  top_left: [430, 27]
-  padding: 20            # px
-  maze_relative_angle: 1 # deg
-
-tracking:
-  model_path: "tracking/v8-512.engine"
-  init_ball_region:
-    x_min: 420
-    y_min: 25
-    x_max: 1200
-    y_max: 700
-  hsv_range:
-    lower: [35, 55, 55]       # Light green HSV lower bound
-    upper: [85, 255, 255]     # Light green HSV upper bound
-  hsv_window_size: 80
-  hsv_min_contour_area: 150  # px^2
-  smoothing_alpha: 0.5      # smoothing factor for exponential filter
-  hsv_fail_threshold: 60     # frames to wait before fallback to YOLO
-  yolo_cooldown_period: 20   # frames before allowing YOLO recheck
-  yolo_frame_interval: 5
-  box_iou_threshold: 0.4
-
-controller:
-  stuck_wiggle_amplitude: 0.4     # deg, amplitude of wiggle when stuck
-  stuck_wiggle_frequency: 20      # Hz, frequency of wiggle when stuck
-  wiggle_direction_bias: 0.007
-  stuck_velocity_threshold: 30    # px/s, velocity threshold to consider stuck
-  stuck_upper_position_threshold: 70 # px, upper position threshold to consider stuck
-  stuck_time_threshold: 0.5  # seconds, time to consider stuck
-  stuck_unstuck_hold_time: 0.2 # seconds, time to hold before unsticking
-  integration_pos_threshold: 80        # px, reset integral if error exceeds this
-  integration_vel_threshold: 40       # px/s, reset integral if velocity exceeds this
-  velocity_smoothing_alpha: 0.99       # smoothing factor for velocity smoothing
-  position_smoothing_alpha: 0.1
-  position_controller_normal:
-    kp_x: 0.00004
-    kp_y: 0.00004
-    kd_x: 0.000085
-    kd_y: 0.000085
-    ki_x: 0.0004
-    ki_y: 0.0004
-    position_tolerance: 25        # px
-    velocity_tolerance: 20        # px/s
-    feedforward_t: 7.8
-  position_controller_lookahead:
-    kp_x: 0.00001
-    kp_y: 0.00001
-    kd_x: 0.0002
-    kd_y: 0.0002
-    ki_x: 0.0002
-    ki_y: 0.0002
-    position_tolerance: 35        # px
-    velocity_tolerance: 20        # px/s
-    feedforward_t: 10.5
-  angular_controller:
-    kp: 6500
-    max_angle: 1.4                # deg
-    command_delay: 0.0001
-    angle_tolerance: 0.001      # rad
-  horizontal_controller:
-    kp: 900
-    tolerance: 0.002         # rad
-    time_limit: 10           # seconds
-  arduino:
-    x_offset: 0.014                # rad
-    y_offset: 0.00                 # rad
-    x_offset_temp: 0
-    y_offset_temp: 0
-    minimum_velocity: 22
-    maximum_velocity: 100
-    minimum_velocity_difference: 5
-    motor_smoothing_alpha: 0.1
-
-path_finding:
-  repulsion_weight: 10           # how strongly path avoids walls
-  min_safe_distance: 14           # distance from obstacles for safe navigation
-  astar_downscale: 1.0            # downscaling factor
-  clear_path_kernel_size: 6       # morph kernel for visibility check
-  dilation_iterations: 2
-  clahe_clip_limit: 1.0
-  adaptive_threshold_target: 130
-  path_cache_size: 30                 # max_paths in PathMemory
-  path_cache_tolerance: 15           # tolerance for cache reuse
-  path_cache_file: "control/astar/path_cache.json" # default cache filename
-
-path_following:
-  lookahead:
-    lookahead_distance: 80
-    adaptive: false
-    lookahead_distance_min: 60
-    lookahead_distance_max: 100
-    smoothing_alpha: 0.03
-    velocity_gain: 150
-    curvature_gain: 0.99
-  normal:
-    velocity_threshold: 50
-    stuck_retry_time: 3
-    dwell_time: 0.35
-    checkpoint_timeout: 10  # seconds, time to wait before changing checkpoint
-
 animations:
   locating_ball:
     fps: 30
   path_finding:
     fps: 8
-
+camera:
+  bottom_left:
+  - 430
+  - 682
+  bottom_right:
+  - 1085
+  - 682
+  coordinate_units: MILLIMETER
+  depth_mode: NONE
+  elevator_center_x: 998
+  elevator_center_y: 588
+  elevator_radius: 60
+  fps: 60
+  maze_height: 655
+  maze_image_scale: 0.87
+  maze_offset_x: 430
+  maze_offset_y: 27
+  maze_relative_angle: 1
+  maze_width: 655
+  padding: 20
+  resolution: HD720
+  top_left:
+  - 430
+  - 27
+  top_right:
+  - 1085
+  - 27
+controller:
+  angular_controller:
+    angle_tolerance: 0.001
+    command_delay: 0.0001
+    kp: 6500
+    max_angle: 1.4
+  arduino:
+    maximum_velocity: 100
+    minimum_velocity: 22
+    minimum_velocity_difference: 5
+    motor_smoothing_alpha: 0.15
+    x_offset: 0.014
+    x_offset_temp: 0.014
+    y_offset: 0.0
+    y_offset_temp: 0.5
+  horizontal_controller:
+    kp: 900
+    time_limit: 10
+    tolerance: 0.002
+  integration_pos_threshold: 80
+  integration_vel_threshold: 40
+  position_controller_lookahead:
+    feedforward_t: 10.5
+    kd_x: 0.0002
+    kd_y: 0.0002
+    ki_x: 0.0002
+    ki_y: 0.0002
+    kp_x: 1.0e-05
+    kp_y: 1.0e-05
+    position_tolerance: 35
+    velocity_tolerance: 20
+  position_controller_normal:
+    feedforward_t: 7.8
+    kd_x: 8.5e-05
+    kd_y: 8.5e-05
+    ki_x: 0.0004
+    ki_y: 0.0004
+    kp_x: 4.0e-05
+    kp_y: 4.0e-05
+    position_tolerance: 25
+    velocity_tolerance: 20
+  position_smoothing_alpha: 0.1
+  stuck_time_threshold: 0.5
+  stuck_unstuck_hold_time: 0.2
+  stuck_upper_position_threshold: 70
+  stuck_velocity_threshold: 30
+  stuck_wiggle_amplitude: 0.4
+  stuck_wiggle_frequency: 20
+  velocity_smoothing_alpha: 0.99
+  wiggle_direction_bias: 0.007
 game:
-  maze_id: 1              # maze configuration (1 or 2)
-  player_name: "Player"
-  goal_position:          # goal coordinates for current maze
+  ball_lost_timeout: 5
+  goal_position:
     x: 763
     y: 49
-  goal_radius: 30         # goal detection radius in pixels
-  ball_lost_timeout: 5    # seconds before game fails when ball is lost
+  goal_radius: 30
+  maze_id: 1
+  player_name: Player
+general:
+  get_ball_delay: 4
+  idle_light_time: 15
+path_finding:
+  adaptive_threshold_target: 130
+  astar_downscale: 1.0
+  clahe_clip_limit: 1.0
+  clear_path_kernel_size: 6
+  dilation_iterations: 2
+  min_safe_distance: 14
+  path_cache_file: control/astar/path_cache.json
+  path_cache_size: 30
+  path_cache_tolerance: 15
+  repulsion_weight: 10
+path_following:
+  lookahead:
+    adaptive: false
+    curvature_gain: 0.99
+    lookahead_distance: 80
+    lookahead_distance_max: 100
+    lookahead_distance_min: 60
+    smoothing_alpha: 0.03
+    velocity_gain: 150
+  normal:
+    checkpoint_timeout: 10
+    dwell_time: 0.35
+    stuck_retry_time: 3
+    velocity_threshold: 50
+tracking:
+  box_iou_threshold: 0.4
+  hsv_fail_threshold: 60
+  hsv_min_contour_area: 150
+  hsv_range:
+    lower:
+    - 35
+    - 55
+    - 55
+    upper:
+    - 85
+    - 255
+    - 255
+  hsv_window_size: 80
+  init_ball_region:
+    x_max: 1200
+    x_min: 420
+    y_max: 700
+    y_min: 25
+  model_path: tracking/v8-512.engine
+  smoothing_alpha: 0.5
+  yolo_cooldown_period: 20
+  yolo_frame_interval: 5
