@@ -81,7 +81,7 @@ controller:
   velocity_smoothing_alpha: 0.99
   wiggle_direction_bias: 0.007
 game:
-  ball_lost_timeout: 5
+  ball_lost_timeout: 1
   goal_position:
     x: 763
     y: 49
