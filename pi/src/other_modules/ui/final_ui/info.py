@@ -134,9 +134,11 @@ class InfoScreen(tk.Frame):
         self.clear_info_text()
 
         self.insert_formatted_line("Project information", "title")
+
         self.insert_formatted_line("This project aims to create a maze-solving robot", "normal")
         self.insert_formatted_line("that can autonomously balance a ball through the maze.", "normal")
         self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
+
         self.insert_formatted_line("\nProject members:", "subtitle")
         self.insert_formatted_line("• Erlend O. Berge", "bullet")
         self.insert_formatted_line("• Philip A. Haugen", "bullet")
@@ -144,12 +146,37 @@ class InfoScreen(tk.Frame):
 
         self.insert_formatted_line("\nHow to use", "subtitle")
         self.insert_formatted_line("The robot has several modes of operation", "normal")
+
         self.insert_formatted_line("\nAutonomous solving", "subsubtitle")
         self.insert_formatted_line("This is the main mode, allowing for autonomous solving of the maze.", "normal")
-        self.insert_formatted_line("Touch anywhere in the image of the maze, and press 'calculate path'", "normal")
-        self.insert_formatted_line("The robot reads the maze, computes a path through it, then controls the ball", "normal")
-        self.insert_formatted_line("Then chose one of the two types of control: 'fast' or 'safe'", "normal")
+        self.insert_formatted_line("Touch anywhere in the image of the maze to set the goal, and press 'calculate path'.", "normal")
+        self.insert_formatted_line("The robot will read the maze and compute a path through it.", "normal")
+        self.insert_formatted_line("Then choose one of the two types of control: 'fast' or 'safe'.", "normal")
         self.insert_formatted_line("Autonomous balancing of the ball through the maze will then start shortly.", "normal")
+
+        self.insert_formatted_line("\nRobot vs Player", "subsubtitle")
+        self.insert_formatted_line("In this mode, you can manually control the robot using an Xbox controller.", "normal")
+        self.insert_formatted_line("Similar to 'Autonomous solving', you first touch the maze image to choose a goal destination.", "normal")
+        self.insert_formatted_line("Then press 'start robot'. The robot will now try to finish the maze autonomously. The time of the completion will be saved.", "normal")
+        self.insert_formatted_line("When the robot is finished, it is the player's turn. Press 'start turn', and control the robot using the Xbox controller.", "normal")
+        self.insert_formatted_line("Your time will be saved, and the winner will be determined based on the fastest completion time.", "normal")
+
+        self.insert_formatted_line("\n", "subsubtitle")
+        self.insert_formatted_line("Play alone", "normal")
+        self.insert_formatted_line("In this mode, you can control the robot using an Xbox controller.", "normal")
+        self.insert_formatted_line("Press 'start game' or 'A' on the controller in order to start the run.", "normal")
+        self.insert_formatted_line("When you reach the goal, your time will be saved and added to the leaderboard.", "normal")
+        self.insert_formatted_line("There are two leaderboards. One for the hard maze and one for the easy maze.", "normal")
+        self.insert_formatted_line("Check the corresponding leaderboard to see your ranking among other players.", "normal")
+
+        self.insert_formatted_line("\nPractice", "subsubtitle")
+        self.insert_formatted_line("In this mode, you can practice solving the maze without having your time saved.", "normal")
+        self.insert_formatted_line("Use the joystick on the Xbox controller to control the robot.", "normal")
+
+        self.insert_formatted_line("\nThanks to", "subtitle")
+        self.insert_formatted_line("• The summer interns at NOV, summer 2024. A lot of the hardware of the robot is built by the 2024 team.", "bullet")
+        self.insert_formatted_line("• Tor Gunnar Hovet & Staale Enes. Responsible for the summer interns that worked on the robot.", "bullet")
+
 
     def show(self):
         pass
