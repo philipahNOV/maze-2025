@@ -133,16 +133,22 @@ class InfoScreen(tk.Frame):
         self.clear_info_text()
 
         self.insert_formatted_line("Project information", "title")
-        self.insert_formatted_line("\nThis project aims to create a maze-solving robot", "normal")
+        self.insert_formatted_line("This project aims to create a maze-solving robot", "normal")
         self.insert_formatted_line("that can autonomously balance a ball through the maze.", "normal")
         self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
-        self.insert_formatted_line("Project members:", "subtitle")
+        self.insert_formatted_line("\nProject members:", "subtitle")
         self.insert_formatted_line("• Erlend O. Berge", "bullet")
         self.insert_formatted_line("• Philip A. Haugen", "bullet")
         self.insert_formatted_line("• Lyder K. Jacobsen", "bullet")
 
-        self.insert_formatted_line("\nWarnings", "subtitle")
-        self.insert_formatted_line("• Position drift is high", "highlight")
+        self.insert_formatted_line("How to use", "subtitle")
+        self.insert_formatted_line("The robot has several modes of operation", "normal")
+        self.insert_formatted_line("\nAutonomous solving", "subtitle")
+        self.insert_formatted_line("This is the main mode, allowing for autonomous solving of the maze.", "normal")
+        self.insert_formatted_line("Touch anywhere in the image of the maze, and press 'calculate path'", "normal")
+        self.insert_formatted_line("The robot reads the maze, computes a path through it, then controls the ball", "normal")
+        self.insert_formatted_line("Then chose one of the two types of control: 'fast' or 'safe'", "normal")
+        self.insert_formatted_line("Autonomous balancing of the ball through the maze will then start shortly.", "normal")
 
     def show(self):
         pass
