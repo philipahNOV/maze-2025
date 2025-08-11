@@ -140,7 +140,7 @@ class HMIController:
                 self.image_thread.start()
             return
         self.path = remove_withing_elevator(self.config, self.path, radius=self.config['camera'].get('elevator_radius', 60))
-        self.path_lookahead = remove_withing_elevator(self.config, self.path_lookahead, radius=self.config['camera'].get('elevator_radius', 60)+20)
+        self.path_lookahead = remove_withing_elevator(self.config, self.path_lookahead, radius=self.config['camera'].get('elevator_radius', 60))
         self.image_controller.set_new_path(self.path)
         if self.image_thread is None:
             self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
