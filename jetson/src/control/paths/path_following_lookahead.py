@@ -182,14 +182,58 @@ class PathFollower:
             total_dist += seg_len
             a = b
 
-        now = time.time()
-        if self.looping and (self.last_reverse_time is None or now - self.last_reverse_time > self.reverse_cooldown):
-            self.forward = not self.forward
-            self.last_reverse_time = now
-            self.last_closest_index = self.length - 2 if self.forward else 1
-            return self.path[self.last_closest_index]
-        else:
-            return tuple(closest_proj), closest_index
+        # now = time.time()
+        # if self.looping and (self.last_reverse_time is None or now - self.last_reverse_time > self.reverse_cooldown):
+        #     self.forward = not self.forward
+        #     self.last_reverse_time = now
+        #     self.last_closest_index = self.length - 2 if self.forward else 1
+        #     return self.path[self.last_closest_index]
+        # else:
+        #     return tuple(closest_proj), closest_index
+
+        # --- Wrap around for looping ---
+        if self.looping:
+            remaining_distance = lookahead_dist - total_dist
+
+            if self.forward:
+                j = 0
+                while j < self.length - 1 and remaining_distance > 0:
+                    a = np.array(self.path[j])
+                    b = np.array(self.path[j + 1])
+                    seg_len = np.linalg.norm(b - a)
+
+                    if seg_len < 1e-6:
+                        j += 1
+                        continue
+
+                    if remaining_distance <= seg_len:
+                        ratio = remaining_distance / seg_len
+                        lookahead_point = a + (b - a) * ratio
+                        return tuple(lookahead_point), j
+
+                    remaining_distance -= seg_len
+                    j += 1
+            else:
+                j = self.length - 1
+                while j > 0 and remaining_distance > 0:
+                    a = np.array(self.path[j])
+                    b = np.array(self.path[j - 1])
+                    seg_len = np.linalg.norm(b - a)
+
+                    if seg_len < 1e-6:
+                        j -= 1
+                        continue
+
+                    if remaining_distance <= seg_len:
+                        ratio = remaining_distance / seg_len
+                        lookahead_point = a + (b - a) * ratio
+                        return tuple(lookahead_point), j
+
+                    remaining_distance -= seg_len
+                    j -= 1
+
+        # Fallback: last known projection
+        return tuple(closest_proj), closest_index
 
     def _project_point_onto_segment(self, p, a, b):
         ap = p - a
