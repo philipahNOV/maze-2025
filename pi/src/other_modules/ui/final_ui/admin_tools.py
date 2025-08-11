@@ -245,7 +245,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.elevator_button_click
         )
-        self.elevator_button.place(x=491, y=460, width=100, height=50)
+        self.elevator_button.place(x=491, y=520, width=100, height=50)
 
         self.offset_info_label = tk.Label(
             self,
@@ -254,7 +254,7 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=200, anchor="n")  # Just below the title
+        self.offset_info_label.place(x=500, y=200, anchor="n")  # Just below the title
 
         self.offset_info_label = tk.Label(
             self,
@@ -263,7 +263,7 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=230, anchor="n")
+        self.offset_info_label.place(x=500, y=230, anchor="n")
 
         self.offset_info_label = tk.Label(
             self,
@@ -272,7 +272,7 @@ class AdminToolsScreen(tk.Frame):
             bg="#D9D9D9",
             fg="#333333"
         )
-        self.offset_info_label.place(x=491, y=260, anchor="n")  # Just below the title
+        self.offset_info_label.place(x=500, y=260, anchor="n")  # Just below the title
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
