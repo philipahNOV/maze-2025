@@ -164,28 +164,23 @@ class PathFollower:
 
         if self.forward:
             range_iter = range(closest_index, self.length - 1)
-            direction = 1
         else:
             range_iter = range(closest_index, 0, -1)
-            direction = -1
 
         for j in range_iter:
-            try:
-                a = np.array(self.path[j])
-                b = np.array(self.path[j + direction])
-            except IndexError:
-                continue  # In case of bad index on edge
+            b = np.array(self.path[j + 1] if self.forward else self.path[j - 1])
 
             seg_len = np.linalg.norm(b - a)
             if seg_len < 1e-6:
-                continue
+                continue  # skip zero-length segment
 
             if total_dist + seg_len >= lookahead_dist:
                 ratio = (lookahead_dist - total_dist) / seg_len
                 lookahead_point = a + (b - a) * ratio
                 return tuple(lookahead_point), j
 
-            total_di
+            total_dist += seg_len
+            a = b
 
         # now = time.time()
         # if self.looping and (self.last_reverse_time is None or now - self.last_reverse_time > self.reverse_cooldown):
@@ -203,7 +198,7 @@ class PathFollower:
         if self.looping and can_reverse:
             self.forward = not self.forward
             self.last_reverse_time = now
-            self.last_closest_index = self.length - 2 if self.forward else 1
+            self.last_closest_index = self.length - 2 if not self.forward else 1
             print(f"[PATHFOLLOWER] Reversing direction at path end — now {'forward' if self.forward else 'backward'}")
             return self.path[self.last_closest_index], self.last_closest_index
 
