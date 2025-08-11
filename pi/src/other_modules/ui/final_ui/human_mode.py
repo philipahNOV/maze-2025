@@ -88,7 +88,7 @@ class HumanScreen(tk.Frame):
 
         self.title = tk.Label(
             self,
-            text="HUMAN MODE",
+            text="GAME MODES",
             font=("Jockey One", 55),
             fg="#1A1A1A",
             bg="#D9D9D9"

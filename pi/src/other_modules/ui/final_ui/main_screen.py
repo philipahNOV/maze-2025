@@ -93,7 +93,7 @@ class MainScreen(tk.Frame):
         self.navigation_button = tk.Button(
             self,
             text="AUTONOMOUS SOLVING",
-            font=("Jockey One", 18),
+            font=("Jockey One", 20),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
