@@ -24,7 +24,6 @@ class AdminToolsScreen(tk.Frame):
             self.background_image = None
 
         self.create_widgets()
-        self.load_offsets_temp()
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -335,9 +334,4 @@ class AdminToolsScreen(tk.Frame):
     def show(self):
         self.focus_set()
         self.update_idletasks()
-        if self.x_offset is not None:
-            self.x_offset_entry.delete(0, tk.END)
-            self.x_offset_entry.insert(0, str(self.x_offset))
-        if self.y_offset is not None:
-            self.y_offset_entry.delete(0, tk.END)
-            self.y_offset_entry.insert(0, str(self.y_offset))
+        self.load_offsets_temp()
