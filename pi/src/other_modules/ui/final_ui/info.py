@@ -117,7 +117,7 @@ class InfoScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=400, y=100)
+        self.title.place(x=420, y=20)
 
     def clear_info_text(self):
         self.info_text.config(state="normal")
@@ -132,12 +132,14 @@ class InfoScreen(tk.Frame):
     def show_info_message(self):
         self.clear_info_text()
 
-        self.insert_formatted_line("System Information", "title")
-        self.insert_formatted_line("Ball Maze Controller v1.2", "subtitle")
-        self.insert_formatted_line("Status: ", "subtitle")
-        self.insert_formatted_line("• Connected to MQTT broker", "bullet")
-        self.insert_formatted_line("• Arduino active", "bullet")
-        self.insert_formatted_line("• Ball detected", "bullet")
+        self.insert_formatted_line("Project information", "title")
+        self.insert_formatted_line("This project aims to create a maze-solving robot", "normal")
+        self.insert_formatted_line("that can autonomously balance a ball through the maze.", "normal")
+        self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
+        self.insert_formatted_line("Project members:", "subtitle")
+        self.insert_formatted_line("• Erlend O. Berge", "bullet")
+        self.insert_formatted_line("• Philip A. Haugen", "bullet")
+        self.insert_formatted_line("• Lyder K. Jacobsen", "bullet")
 
         self.insert_formatted_line("\nWarnings", "subtitle")
         self.insert_formatted_line("• Position drift is high", "highlight")
