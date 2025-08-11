@@ -300,7 +300,7 @@ class Controller:
             vel_x = new_vel_x
             vel_y = new_vel_y
 
-            alpha = self.motor_smoothing_alpha
+        alpha = self.motor_smoothing_alpha if not self.lookahead else self.motor_smoothing_alpha * 0.5  # Less smooth for lookahead path following
             # Smooth the new command
             smoothed_vel_x = alpha * self.prev_vel_x + (1 - alpha) * vel_x
             smoothed_vel_y = alpha * self.prev_vel_y + (1 - alpha) * vel_y
