@@ -20,30 +20,10 @@ class BootScreen(tk.Frame):
         self.images = [ImageTk.PhotoImage(Image.open(path)) for path in self.image_paths]
         self.image_index = 0
 
-        self.animation_image_paths = []
-        for i in range(1, 5):
-            self.animation_image_paths.append(os.path.join(self.controller.booting_animation_path, f"{i}.png"))
-        self.animation_images = [
-            ImageTk.PhotoImage(
-                Image.open(path).convert("RGBA").resize(
-                    (200, 200),
-                    Image.Resampling.LANCZOS
-                )
-            )
-            for path in self.animation_image_paths
-        ]
-        self.animation_image_index = 0
-
         self.create_widgets()
         self.cycle_images()
         self.check_pi_state()
         self.mqtt_client.initiate_handshake()
-        self.cycle_animation_images()
-
-    def cycle_animation_images(self):
-        self.image_label.configure(image=self.animation_images[self.animation_image_index])
-        self.animation_image_index = (self.animation_image_index + 1) % len(self.animation_images)
-        self.after(int(1000 / 30), lambda: self.after_idle(self.cycle_animation_images))
 
     def on_button_click_exit(self):
         if self.mqtt_client.handshake_complete and self.controller.reset_jetson_on_exit:
@@ -58,8 +38,6 @@ class BootScreen(tk.Frame):
     def create_widgets(self):
         self.bg_label = tk.Label(self, image=self.images[self.image_index])
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.image_label = tk.Label(self)
-        self.image_label.place(x=412, y=350, width=200, height=200)
 
         self.exit_button = tk.Button(
             self,
