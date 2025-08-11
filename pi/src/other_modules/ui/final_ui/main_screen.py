@@ -80,6 +80,44 @@ class MainScreen(tk.Frame):
         )
         self.exit_button.place(x=904, y=10, width=50, height=50)
 
+    def create_widgets(self):
+        self.update()
+
+        if self.background_image:
+            self.bg_label = tk.Label(self, image=self.background_image)
+            self.bg_label.image = self.background_image  # <- PERSISTENT REFERENCE
+            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+
+        self.add_essential_buttons()
+
+        self.navigation_button = tk.Button(
+            self,
+            text="AUTONOMOUS CONTROL",
+            font=("Jockey One", 25),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.on_button_click_navigation
+        )
+        self.navigation_button.place(x=391, y=235, width=243, height=74)
+
+        self.human_button = tk.Button(
+        self,
+        text="GAME MODES",
+        font=("Jockey One", 30),
+        fg="white",
+        borderwidth=0,
+        highlightthickness=0,
+        background="#60666C",
+        activebackground="#4B4C4C",
+        activeforeground="#DFDFDF",
+        command=self.on_button_click_human_mode
+        )
+        self.human_button.place(x=391, y=320, width=243, height=74)
+
         self.info_button = tk.Button(
         self,
         text="INFO",
@@ -93,50 +131,12 @@ class MainScreen(tk.Frame):
         relief="flat",
         command=self.on_button_click_info
         )
-        self.info_button.place(x=744, y=10, width=150, height=50)
-
-    def create_widgets(self):
-        self.update()
-
-        if self.background_image:
-            self.bg_label = tk.Label(self, image=self.background_image)
-            self.bg_label.image = self.background_image  # <- PERSISTENT REFERENCE
-            self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-
-        self.add_essential_buttons()
-
-        self.navigation_button = tk.Button(
-            self,
-            text="ROBOT MODE",
-            font=("Jockey One", 30),
-            fg="white",
-            borderwidth=0,
-            highlightthickness=0,
-            background="#60666C",
-            activebackground="#4B4C4C",
-            activeforeground="#DFDFDF",
-            command=self.on_button_click_navigation
-        )
-        self.navigation_button.place(x=391, y=235, width=243, height=74)
-
-        self.human_button = tk.Button(
-        self,
-        text="HUMAN MODE",
-        font=("Jockey One", 30),
-        fg="white",
-        borderwidth=0,
-        highlightthickness=0,
-        background="#60666C",
-        activebackground="#4B4C4C",
-        activeforeground="#DFDFDF",
-        command=self.on_button_click_human_mode
-        )
-        self.human_button.place(x=391, y=320, width=243, height=74)
+        self.info_button.place(x=391, y=405, width=243, height=74)
 
 
         self.disco_button = tk.Button(
             self,
-            text="LIGHTS MODE",
+            text="TOGGLE LIGHTS",
             font=("Jockey One", 30),
             fg="white",
             borderwidth=0,
@@ -146,7 +146,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_disco
         )
-        self.disco_button.place(x=391, y=405, width=243, height=74)
+        self.disco_button.place(x=391, y=490, width=243, height=74)
 
         self.admin_tools_button = tk.Button(
             self,
