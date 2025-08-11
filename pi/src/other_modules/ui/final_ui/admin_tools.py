@@ -14,6 +14,8 @@ class AdminToolsScreen(tk.Frame):
         self.active_offset_field = None
         self.config_offset_x = controller.config["controller"]["arduino"].get("x_offset", 0.015)
         self.config_offset_y = controller.config["controller"]["arduino"].get("y_offset", 0.0)
+        self.x_offset = None
+        self.y_offset = None
 
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
@@ -22,6 +24,7 @@ class AdminToolsScreen(tk.Frame):
             self.background_image = None
 
         self.create_widgets()
+        self.load_offsets_temp()
 
     def on_button_click_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")
@@ -201,6 +204,21 @@ class AdminToolsScreen(tk.Frame):
         )
         self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
 
+        # --- Submit Button ---
+        self.load_offsets_button = tk.Button(
+            self,
+            text="LOAD",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#3C8D2F",
+            activebackground="#327727",
+            activeforeground="#DFDFDF",
+            command=self.load_offsets
+        )
+        self.load_offsets_button.place(x=601, y=400, width=100, height=50)
+
         self.horizontal_button = tk.Button(
             self,
             text="HORIZONTAL",
@@ -279,6 +297,19 @@ class AdminToolsScreen(tk.Frame):
     def horizontal_button_click(self):
         self.mqtt_client.client.publish("jetson/command", "Horizontal")
 
+    def load_offsets(self):
+        self.mqtt_client.client.publish("jetson/command", "LoadOffsets")
+
+    def load_offsets_temp(self):
+        self.mqtt_client.client.publish("jetson/command", "LoadOffsetsTemp")
+
+    def set_offsets(self, x_offset, y_offset):
+        self.x_offset = x_offset
+        self.y_offset = y_offset
+        self.x_offset_entry.delete(0, tk.END)
+        self.x_offset_entry.insert(0, str(x_offset))
+        self.y_offset_entry.delete(0, tk.END)
+        self.y_offset_entry.insert(0, str(y_offset))
 
     def append_digit(self, char):
         if self.active_offset_field == 'x':
@@ -304,3 +335,9 @@ class AdminToolsScreen(tk.Frame):
     def show(self):
         self.focus_set()
         self.update_idletasks()
+        if self.x_offset is not None:
+            self.x_offset_entry.delete(0, tk.END)
+            self.x_offset_entry.insert(0, str(self.x_offset))
+        if self.y_offset is not None:
+            self.y_offset_entry.delete(0, tk.END)
+            self.y_offset_entry.insert(0, str(self.y_offset))

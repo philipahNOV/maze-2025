@@ -21,6 +21,8 @@ from utils.leaderboard_utils import clear_leaderboard
 from datetime import datetime
 import numpy as np
 import subprocess
+import yaml
+from pathlib import Path
 
 
 class SystemState(Enum):
@@ -539,12 +541,23 @@ class HMIController:
                     print(f"[FSM] X offset set to {offset_x}")
                 except:
                     self.controller.x_offset = self.config["controller"]["arduino"].get("x_offset", 0.002)
+
                 try:
                     offset_y = float(offsets_str[1])
                     self.controller.y_offset = offset_y
                     print(f"[FSM] Y offset set to {offset_y}")
                 except:
                     self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
+
+                project_root = Path(__file__).resolve().parents[2]  # up from src → jetson → maze-2025
+                config_path = project_root / "config.yaml"
+
+                with open(config_path, 'r') as file:
+                    config_data = yaml.safe_load(file)
+                config_data["controller"]["arduino"]["x_offset_temp"] = self.controller.x_offset
+                config_data["controller"]["arduino"]["y_offset_temp"] = self.controller.y_offset
+                with open(config_path, 'w') as file:
+                    yaml.safe_dump(config_data, file)
             elif cmd == "Reboot":
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/reboot'], check=True)
@@ -559,7 +572,14 @@ class HMIController:
                     self.disco_thread = None
                 thread = threading.Thread(target=self.controller.horizontal, daemon=True)
                 thread.start()
-
+            elif cmd == "LoadOffsets":
+                x_offset = self.config["controller"]["arduino"].get("x_offset", 0.002)
+                y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
+                self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
+            elif cmd == "LoadOffsetsTemp":
+                x_offset = self.config["controller"]["arduino"].get("x_offset_temp", 0.002)
+                y_offset = self.config["controller"]["arduino"].get("y_offset_temp", 0.001)
+                self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
 
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:

@@ -136,6 +136,14 @@ class MQTTClientPi(threading.Thread):
             elif payload == "clear_image_buffer":
                 print("[MQTT] Clearing image buffer")
                 self.img = None
+            elif payload.startswith("LoadOffsets:"):
+                offsets = payload.split(":")[1]
+                x_offset, y_offset = map(float, offsets.split(","))
+                if self.app and hasattr(self.app, 'frames'):
+                    admin_tools = self.app.frames.get('AdminToolsScreen')
+                    if admin_tools:
+                        admin_tools.set_offsets(x_offset, y_offset)
+
         elif msg.topic == "pi/info":
             if msg.payload.decode() == "ball_found":
                 self.ball_found = True
