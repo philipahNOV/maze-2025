@@ -191,48 +191,19 @@ class PathFollower:
         # else:
         #     return tuple(closest_proj), closest_index
 
-        # --- Wrap around for looping ---
-        if self.looping:
-            remaining_distance = lookahead_dist - total_dist
+        # --- Reached the end of the path without finding a valid lookahead ---
+        now = time.time()
+        can_reverse = self.last_reverse_time is None or (now - self.last_reverse_time > self.reverse_cooldown)
 
-            if self.forward:
-                j = 0
-                while j < self.length - 1 and remaining_distance > 0:
-                    a = np.array(self.path[j])
-                    b = np.array(self.path[j + 1])
-                    seg_len = np.linalg.norm(b - a)
+        if self.looping and can_reverse:
+            self.forward = not self.forward
+            self.last_reverse_time = now
+            self.last_closest_index = self.length - 2 if self.forward else 1
+            print(f"[PATHFOLLOWER] Reversing direction at path end — now {'forward' if self.forward else 'backward'}")
+            return self.path[self.last_closest_index], self.last_closest_index
 
-                    if seg_len < 1e-6:
-                        j += 1
-                        continue
-
-                    if remaining_distance <= seg_len:
-                        ratio = remaining_distance / seg_len
-                        lookahead_point = a + (b - a) * ratio
-                        return tuple(lookahead_point), j
-
-                    remaining_distance -= seg_len
-                    j += 1
-            else:
-                j = self.length - 1
-                while j > 0 and remaining_distance > 0:
-                    a = np.array(self.path[j])
-                    b = np.array(self.path[j - 1])
-                    seg_len = np.linalg.norm(b - a)
-
-                    if seg_len < 1e-6:
-                        j -= 1
-                        continue
-
-                    if remaining_distance <= seg_len:
-                        ratio = remaining_distance / seg_len
-                        lookahead_point = a + (b - a) * ratio
-                        return tuple(lookahead_point), j
-
-                    remaining_distance -= seg_len
-                    j -= 1
-
-        # Fallback: last known projection
+        # Fallback: just keep going toward the closest point
+        print("[PATHFOLLOWER] No reversal yet — holding position at closest point")
         return tuple(closest_proj), closest_index
 
     def _project_point_onto_segment(self, p, a, b):
