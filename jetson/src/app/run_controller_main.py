@@ -77,8 +77,10 @@ def main(tracker: TrackerService,
                         controller.arduinoThread.send_speed(0, 0)
                         controller.e_x_int = 0
                         controller.e_y_int = 0
-                        controller.prev_vel_x = None
-                        controller.prev_vel_y = None
+                        controller.prevPos = None
+                        controller.prevVel = None
+                        controller.vel = None
+                        controller.pos = None
                         time.sleep(1.0)
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
