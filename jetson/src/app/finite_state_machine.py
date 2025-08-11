@@ -549,15 +549,30 @@ class HMIController:
                 except:
                     self.controller.y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
 
-                project_root = Path(__file__).resolve().parents[3]  # up from src → jetson → maze-2025
-                config_path = project_root / "config.yaml"
+                # project_root = Path(__file__).resolve().parents[3]  # up from src → jetson → maze-2025
+                # config_path = project_root / "config.yaml"
 
-                with open(config_path, 'r') as file:
-                    config_data = yaml.safe_load(file)
-                config_data["controller"]["arduino"]["x_offset_temp"] = self.controller.x_offset
-                config_data["controller"]["arduino"]["y_offset_temp"] = self.controller.y_offset
-                with open(config_path, 'w') as file:
-                    yaml.safe_dump(config_data, file)
+                # with open(config_path, 'r') as file:
+                #     config_data = yaml.safe_load(file)
+                # config_data["controller"]["arduino"]["x_offset_temp"] = self.controller.x_offset
+                # config_data["controller"]["arduino"]["y_offset_temp"] = self.controller.y_offset
+                # with open(config_path, 'w') as file:
+                #     yaml.safe_dump(config_data, file)
+
+                offset_file = "offsets.txt"
+                if os.path.exists(offset_file):
+                    with open(offset_file, "r") as f:
+                        line = f.read().strip()
+                        x_offset, y_offset = map(float, line.split(","))
+                else:
+                    x_offset, y_offset = (self.controller.x_offset, self.controller.y_offset)
+                    with open(offset_file, "w") as f:
+                        f.write(f"{x_offset},{y_offset}")
+
+                x_offset, y_offset = (self.controller.x_offset, self.controller.y_offset)
+                with open(offset_file, "w") as f:
+                    f.write(f"{x_offset},{y_offset}")
+
             elif cmd == "Reboot":
                 self.stop_threads()
                 subprocess.run(['sudo', '/usr/sbin/reboot'], check=True)
@@ -577,8 +592,15 @@ class HMIController:
                 y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
             elif cmd == "LoadOffsetsTemp":
-                x_offset = self.config["controller"]["arduino"].get("x_offset_temp", 0.002)
-                y_offset = self.config["controller"]["arduino"].get("y_offset_temp", 0.001)
+                offset_file = "offsets.txt"
+                if os.path.exists(offset_file):
+                    with open(offset_file, "r") as f:
+                        line = f.read().strip()
+                        x_offset, y_offset = map(float, line.split(","))
+                else:
+                    x_offset, y_offset = (self.controller.x_offset, self.controller.y_offset)
+                    with open(offset_file, "w") as f:
+                        f.write(f"{x_offset},{y_offset}")
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
 
         # --- INFO_SCREEN STATE ---
