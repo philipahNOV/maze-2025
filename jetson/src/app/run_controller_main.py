@@ -75,6 +75,10 @@ def main(tracker: TrackerService,
                     #     logger.reset_ball_lost()
                     if blinker.triggered:
                         controller.arduinoThread.send_speed(0, 0)
+                        controller.e_x_int = 0
+                        controller.e_y_int = 0
+                        controller.prev_vel_x = None
+                        controller.prev_vel_y = None
                         time.sleep(1.0)
                         escape_thread = utility_threads.EscapeElevatorThread(controller.arduinoThread, controller)
                         escape_thread.start()
@@ -110,7 +114,6 @@ def main(tracker: TrackerService,
                     mqtt_client.client.publish("pi/info", "timeout")
                     break
             
-            print(pathFollower.next_waypoint)
             loop_duration = time.time() - loop_start
             sleep_time = LOOP_DT - loop_duration
             if sleep_time > 0:
