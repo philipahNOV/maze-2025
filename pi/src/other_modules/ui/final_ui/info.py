@@ -140,9 +140,9 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
 
         self.insert_formatted_line("\nProject members:", "subtitle")
-        self.insert_formatted_line("• Erlend O. Berge", "bullet")
-        self.insert_formatted_line("• Philip A. Haugen", "bullet")
-        self.insert_formatted_line("• Lyder K. Jacobsen", "bullet")
+        self.insert_formatted_line("• Erlend O. Berge - Arduino driver & Hardware", "bullet")
+        self.insert_formatted_line("• Philip A. Haugen - Ball tracking, Maze reading & Path finding", "bullet")
+        self.insert_formatted_line("• Lyder K. Jacobsen - Control system & Human-Machine Interface", "bullet")
 
         self.insert_formatted_line("\nHow to use", "subtitle")
         self.insert_formatted_line("The robot has several modes of operation", "normal")
@@ -161,8 +161,7 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("When the robot is finished, it is the player's turn. Press 'start turn', and control the robot using the Xbox controller.", "normal")
         self.insert_formatted_line("Your time will be saved, and the winner will be determined based on the fastest completion time.", "normal")
 
-        self.insert_formatted_line("\n", "subsubtitle")
-        self.insert_formatted_line("Play alone", "normal")
+        self.insert_formatted_line("Play alone", "subsubtitle")
         self.insert_formatted_line("In this mode, you can control the robot using an Xbox controller.", "normal")
         self.insert_formatted_line("Press 'start game' or 'A' on the controller in order to start the run.", "normal")
         self.insert_formatted_line("When you reach the goal, your time will be saved and added to the leaderboard.", "normal")
@@ -174,8 +173,8 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("Use the joystick on the Xbox controller to control the robot.", "normal")
 
         self.insert_formatted_line("\nThanks to", "subtitle")
-        self.insert_formatted_line("• The summer interns at NOV, summer 2024. A lot of the hardware of the robot is built by the 2024 team.", "bullet")
-        self.insert_formatted_line("• Tor Gunnar Hovet & Staale Enes. Responsible for the summer interns that worked on the robot.", "bullet")
+        self.insert_formatted_line("• The summer interns at NOV, summer 2024 - A lot of the hardware of the robot is built by the 2024 team.", "bullet")
+        self.insert_formatted_line("• Tor Gunnar Hovet & Staale Enes - Responsible for the summer interns that worked on the robot.", "bullet")
 
 
     def show(self):
