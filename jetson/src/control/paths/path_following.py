@@ -14,6 +14,8 @@ class PathFollower:
         self.prev_waypoint = 0
         self.next_waypoint = 0
         self.looping = False
+        self.time_started = time.time()
+        self.allow_waypoint_advancement_after = 1
 
         self.prev_time = None
         self.prev_ball_pos = None
@@ -42,6 +44,11 @@ class PathFollower:
         self.acceptance_radius_out = self.controller.pos_tol + 10
 
     def _advance_waypoint(self):
+
+        if time.time() - self.time_started < self.allow_waypoint_advancement_after:
+            # Don't advance if minimum time hasn't passed
+            return
+
         if self.forward:
             if self.next_waypoint >= self.length - 1:
                 if self.looping:
