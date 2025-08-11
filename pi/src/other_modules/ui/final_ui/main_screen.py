@@ -92,8 +92,8 @@ class MainScreen(tk.Frame):
 
         self.navigation_button = tk.Button(
             self,
-            text="AUTONOMOUS CONTROL",
-            font=("Jockey One", 25),
+            text="AUTONOMOUS SOLVING",
+            font=("Jockey One", 18),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
@@ -131,7 +131,7 @@ class MainScreen(tk.Frame):
         relief="flat",
         command=self.on_button_click_info
         )
-        self.info_button.place(x=391, y=405, width=243, height=74)
+        self.info_button.place(x=391, y=490, width=243, height=74)
 
 
         self.disco_button = tk.Button(
@@ -146,7 +146,7 @@ class MainScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.on_button_click_disco
         )
-        self.disco_button.place(x=391, y=490, width=243, height=74)
+        self.disco_button.place(x=391, y=405, width=243, height=74)
 
         self.admin_tools_button = tk.Button(
             self,
