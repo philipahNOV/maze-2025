@@ -281,13 +281,6 @@ class Controller:
         vel_x = 0 if abs(e_x) < tol else -np.sign(e_x) * int(min(self.kp_theta * abs(e_x), self.vel_max))
         vel_y = 0 if abs(e_y) < tol else -np.sign(e_y) * int(min(self.kp_theta * abs(e_y), self.vel_max))
 
-        deadband_thresh = 10  # try between 3–10
-
-        if abs(vel_x) < deadband_thresh:
-            vel_x = 0
-        if abs(vel_y) < deadband_thresh:
-            vel_y = 0
-
         if self.logger is not None:
             self.logger.update_state(self.pos, self.ori, self.ball_velocity, (vel_x, vel_y))
 
@@ -315,6 +308,13 @@ class Controller:
             # Quantize to int (or keep as float if supported)
             smoothed_vel_x = int(smoothed_vel_x)
             smoothed_vel_y = int(smoothed_vel_y)
+
+            deadband_thresh = 10  # try between 3–10
+
+            if abs(smoothed_vel_x) < deadband_thresh:
+                smoothed_vel_x = 0
+            if abs(smoothed_vel_y) < deadband_thresh:
+                smoothed_vel_y = 0
 
             self.arduinoThread.send_speed(smoothed_vel_x, smoothed_vel_y)
             self.prev_command_time = time.time()
