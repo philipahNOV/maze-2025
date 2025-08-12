@@ -254,7 +254,6 @@ class PlayAloneStartScreen(tk.Frame):
                 text="FAILED - TRY AGAIN",
                 fg="#C62828"
             )
-            print("[PLAYALONE UI] Player failed - ball lost!")
 
     def _auto_reset_after_result(self):
         self.reset_game_state()

@@ -93,7 +93,6 @@ class LookForBall:
     def _check_loop(self):
         while not self._stop_event.is_set():
             pos = self.tracking_service.get_ball_position()
-            print(pos)
             if pos is not None:
                 if self.on_ball_found:
                     self.on_ball_found()
@@ -115,8 +114,6 @@ class PathFindingThread(threading.Thread):
         self._stop_event = threading.Event()
 
     def run(self):
-        print("[PathFindingThread] Started path finding...")
-
         if self._stop_event.is_set():
             return
 
@@ -135,21 +132,14 @@ class PathFindingThread(threading.Thread):
         if self._stop_event.is_set():
             return
 
-        #cv2.circle(safe_mask, (998, 588), 70, 255, -1)
-        # Define the starting point (rightmost edge of the rectangle)
         start_point = (998, 588)
 
-        # Define the width and height of the rectangle
-        width = 90     # How far to stretch to the left (along -x)
-        height = 55     # Height of the rectangle
 
-        # Define the top-left and bottom-right corners
+        width = 90
+        height = 55
         top_left = (start_point[0] - width, start_point[1] - height // 2)
         bottom_right = (start_point[0] + 30, start_point[1] + height // 2)
-
-        # Draw a white filled rectangle on safe_mask
         cv2.rectangle(safe_mask, top_left, bottom_right, 255, -1)
-        #maze_version = self.determine_maze(safe_mask)
 
         ball_pos = self.tracking_service.get_ball_position()
         if ball_pos is None or self._stop_event.is_set():
@@ -157,14 +147,11 @@ class PathFindingThread(threading.Thread):
             return
 
         ball_pos = (ball_pos[1], ball_pos[0])
-
         start = find_nearest_walkable(safe_mask, ball_pos)
-
         if self._stop_event.is_set():
             return
 
         cached = self.path_cache.get_cached_path(start, self.goal)
-
         if cached:
             path = cached
         else:
@@ -191,7 +178,6 @@ class PathFindingThread(threading.Thread):
         final_path_lookahead = [(x, y) for y, x in waypoints_lookahead]
         self.on_path_found(final_path, final_path_lookahead)
 
-    # function to stop the thread if we fsm receives the "back" command from states auto path or custom path
     def stop(self):
         self._stop_event.set()
 

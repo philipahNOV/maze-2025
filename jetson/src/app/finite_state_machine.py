@@ -171,7 +171,6 @@ class HMIController:
                 for line in lines:
                     if line.strip():
                         parts = line.split(',')
-                        print(parts)
                         if len(parts) == 4:
                             name, time_str, date_str, maze_str = parts
                             try:
@@ -341,7 +340,6 @@ class HMIController:
         
         while game_running and self.state == SystemState.PLAYVSAI_PID:
             if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
-                print("[PLAYVSAI] PID turn stop requested")
                 break
                 
             ball_pos = self.tracking_service.get_ball_position()
@@ -643,7 +641,6 @@ class HMIController:
                 speed = 22
                 if direction == "stop":
                     self.arduino_thread.send_speed(0, 0)
-                    print(self.tracking_service.get_orientation())
                 elif direction == "up":
                     self.arduino_thread.send_speed(speed, 0)
                 elif direction == "down":
@@ -862,17 +859,14 @@ class HMIController:
                 
                 time.sleep(0.5)
                 
-                print("[PLAYALONE] Restarting tracking service...")
                 self.tracking_service.start_tracker()
                 self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
                 self.arduino_thread.send_speed(0,0)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
-                
-                print("[PLAYALONE] Image system completely reset with tracking active")
+            
 
             elif cmd == "PlayAloneVictory":
-                print("TEST")
                 threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
@@ -971,7 +965,6 @@ class HMIController:
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
 
-                # Safely stop and clear old image thread
                 if self.image_thread is not None:
                     try:
                         print("[PLAYALONE] Stopping previous image thread")
@@ -981,13 +974,10 @@ class HMIController:
                     except Exception as e:
                         print(f"[PLAYALONE] Error stopping image thread: {e}")
 
-                # Clean path and update image controller
                 self.path = None
                 self.image_controller.set_new_path(None)
-
                 self.tracking_service.start_tracker()
 
-                # Validate tracking service and CUDA context
                 if self.tracking_service is None or not self.tracking_service.started:
                     print("[PLAYALONE] Error: Tracking service not available or not started")
                     return
@@ -997,7 +987,6 @@ class HMIController:
                     return
 
                 try:
-                    # (Re)start image thread
                     print("[PLAYALONE] Creating image thread")
                     self.image_thread = ImageSenderThread(
                         self.image_controller,
@@ -1006,22 +995,17 @@ class HMIController:
                         self.path
                     )
                     print("[PLAYALONE] Starting image thread")
-                    time.sleep(0.1)  # Let context settle if recently shut down
+                    time.sleep(0.1)
                     self.image_thread.start()
                 except Exception as e:
                     print(f"[PLAYALONE] Failed to start image thread: {e}")
                     return
 
-                # Stop the robot
                 self.arduino_thread.send_speed(0, 0)
-
-                # Start joystick thread with playalone wait mode
-                print("[PLAYALONE] Starting joystick control")
                 self._start_joystick_control(playalone_wait=True)
                 self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
                 self.playalone_game_thread.start()
 
-                # Elevator movement animation
                 try:
                     for _ in range(5):
                         self.arduino_thread.send_elevator(-1)

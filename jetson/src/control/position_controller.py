@@ -258,7 +258,6 @@ class Controller:
         #if self.stuck_y_active:
         #    theta_y += np.sign(e_y) * np.deg2rad(self.stuck_wiggle_amplitude) * np.sin(time.time() * self.stuck_wiggle_frequency)
 
-        # Send angles to axis control
         self.axisControl(self.saturate_angles(theta_y, theta_x))
 
     def axisControl(self, ref):

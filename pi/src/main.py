@@ -76,8 +76,6 @@ class MainApp(tk.Tk):
             frame.lower()
             self.frames[F.__name__] = frame
         
-        print("Frames initialized:", self.frames)
-
         self.show_frame("BootScreen")
 
     def get_current_screen(self):
@@ -85,7 +83,6 @@ class MainApp(tk.Tk):
     
     def start_alive_reciever(self):
         if self.alive_reciever is not None:
-            print("Alive receiver already running")
             return
         self.alive_reciever = ImAliveThread(self)
         self.alive_reciever.start()
@@ -106,7 +103,6 @@ class MainApp(tk.Tk):
         subprocess.run(['sudo', 'poweroff'], check=True)
 
     def show_frame(self, page_name):
-        print("Attempting to show frame:", page_name)
         self.current_screen = page_name
         frame = self.frames[page_name]
         frame.tkraise()
@@ -123,7 +119,6 @@ class MainApp(tk.Tk):
         sys.exit(0)
     
     def restart_program(self):
-        print("Restart requested...")
         try:
             self.mqtt_client.shut_down()
         except Exception as e:
@@ -148,13 +143,12 @@ def load_config():
     return config
 
 def signal_handler(sig, frame):
-    print('Signal received:', sig)
-    if sig == signal.SIGINT or sig == signal.SIGTSTP: # type: ignore
+    if sig == signal.SIGINT or sig == signal.SIGTSTP:
         app.on_close()
         sys.exit(0)
 
 signal.signal(signal.SIGINT, signal_handler)
-signal.signal(signal.SIGTSTP, signal_handler) # type: ignore
+signal.signal(signal.SIGTSTP, signal_handler)
 
 def main():
     global app

@@ -27,10 +27,10 @@ class PathFollower:
 
         self.path_np = np.array(path_array, dtype=np.float64)
 
-        self.filtered_lookahead = self.lookahead_distance  # initial default
-        self.alpha = self.config["path_following"]["lookahead"].get("smoothing_alpha", 0.03)  # low-pass factor, smaller = smoother
-        self.min_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_min", 50)  # minimum lookahead distance
-        self.max_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_max", 80)  # maximum lookahead distance
+        self.filtered_lookahead = self.lookahead_distance
+        self.alpha = self.config["path_following"]["lookahead"].get("smoothing_alpha", 0.03)
+        self.min_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_min", 50)
+        self.max_lookahead = self.config["path_following"]["lookahead"].get("lookahead_distance_max", 80)
 
         self.last_reverse_time = None
         self.reverse_cooldown = 3  # seconds before another reversal is allowed
@@ -61,7 +61,7 @@ class PathFollower:
         dot = np.clip(np.dot(v1, v2), -1.0, 1.0)
         angle = np.arccos(dot)  # in radians
 
-        return angle / np.pi  # angle between segments at idx (0 = straight, 1 = U-turn)
+        return angle / np.pi
 
     def follow_path(self, ballPos):
         if not ballPos:
@@ -140,7 +140,6 @@ class PathFollower:
             proj = self._project_point_onto_segment(ball_pos_np, a, b)
             dist = np.linalg.norm(ball_pos_np - proj)
 
-            # Directional alignment scoring
             angle_penalty = 1.0
             if v_ball is not None:
                 v_path = b - a
@@ -191,7 +190,6 @@ class PathFollower:
         # else:
         #     return tuple(closest_proj), closest_index
 
-        # --- Reached the end of the path without finding a valid lookahead ---
         now = time.time()
         can_reverse = self.last_reverse_time is None or (now - self.last_reverse_time > self.reverse_cooldown)
 
@@ -199,11 +197,8 @@ class PathFollower:
             self.forward = not self.forward
             self.last_reverse_time = now
             self.last_closest_index = self.length - 2 if not self.forward else 1
-            print(f"[PATHFOLLOWER] Reversing direction at path end — now {'forward' if self.forward else 'backward'}")
             return self.path[self.last_closest_index], self.last_closest_index
 
-        # Fallback: just keep going toward the closest point
-        print("[PATHFOLLOWER] No reversal yet — holding position at closest point")
         return tuple(closest_proj), closest_index
 
     def _project_point_onto_segment(self, p, a, b):
