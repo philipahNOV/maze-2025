@@ -25,6 +25,10 @@ class CalibratingScreen(tk.Frame):
         self.dir = None
         self.mqtt_client.client.publish("jetson/command", "Motor:stop")
 
+    def on_button_click_confirm(self):
+        self.mqtt_client.client.publish("jetson/command", "Confirm")
+        self.controller.show_frame("AdminToolsScreen")
+
     def create_widgets(self):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
@@ -65,7 +69,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.up_button.place(x=175, y=320, width=74, height=74)
+        self.up_button.place(x=452, y=200, width=120, height=120)
         self.up_button.bind("<ButtonRelease-1>", self.on_release)
         self.up_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))
 
@@ -80,7 +84,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.down_button.place(x=175, y=480, width=74, height=74)       
+        self.down_button.place(x=452, y=440, width=120, height=120)
         self.down_button.bind("<ButtonRelease-1>", self.on_release)
         self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("down")) 
 
@@ -95,7 +99,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.left_button.place(x=95, y=400, width=74, height=74)   
+        self.left_button.place(x=332, y=320, width=120, height=120)   
         self.left_button.bind("<ButtonRelease-1>", self.on_release)    
         self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("left")) 
 
@@ -110,9 +114,24 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.right_button.place(x=255, y=400, width=74, height=74)   
+        self.right_button.place(x=692, y=320, width=120, height=120)   
         self.right_button.bind("<ButtonRelease-1>", self.on_release)     
         self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("right"))  
+
+        self.info_button = tk.Button(
+        self,
+        text="CONFIRM",
+        font=("Jockey One", 26),
+        fg="white",
+        bg="#EE3229",
+        activebackground="#B82F27",
+        activeforeground="#DFDFDF",
+        borderwidth=0,
+        highlightthickness=0,
+        relief="flat",
+        command=self.on_button_click_confirm
+        )
+        self.info_button.place(x=391, y=450, width=243, height=74)
 
     def show(self):
         pass

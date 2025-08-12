@@ -645,6 +645,14 @@ class HMIController:
                     self.arduino_thread.send_speed(0, speed)
                 elif direction == "right":
                     self.arduino_thread.send_speed(0, -speed)
+            elif cmd == "Confirm":
+                ori_x = self.tracking_service.get_orientation()[1]
+                ori_y = self.tracking_service.get_orientation()[0]
+
+                with open(offset_file, "w") as f:
+                    f.write(f"{-ori_x},{-ori_y}")
+                self.controller.x_offset = -ori_x
+                self.controller.y_offset = -ori_y
 
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
