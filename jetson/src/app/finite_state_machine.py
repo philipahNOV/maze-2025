@@ -247,7 +247,6 @@ class HMIController:
                 if is_within_goal(self.maze_version, ball_pos) and start_time is not None:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
-                    add_score(player_name, duration, maze_id, self.mqtt_client)
 
                     leaderboard_data = read_leaderboard(maze_id)
                     csv_data = []
@@ -256,6 +255,8 @@ class HMIController:
                     
                     csv_string = '\n'.join(csv_data)
                     rank = self.determine_rank(csv_string, duration)
+
+                    add_score(player_name, duration, maze_id, self.mqtt_client)
 
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     break
