@@ -615,6 +615,8 @@ class HMIController:
                 x_offset = self.config["controller"]["arduino"].get("x_offset", 0.002)
                 y_offset = self.config["controller"]["arduino"].get("y_offset", 0.001)
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
+                thread = threading.Thread(target=self.controller.horizontal, daemon=True)
+                thread.start()
             elif cmd == "LoadOffsetsTemp":
                 offset_file = "offsets.txt"
                 if os.path.exists(offset_file):

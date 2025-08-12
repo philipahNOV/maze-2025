@@ -205,19 +205,19 @@ class AdminToolsScreen(tk.Frame):
         self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
 
         # --- Submit Button ---
-        self.load_offsets_button = tk.Button(
-            self,
-            text="LOAD",
-            font=("Jockey One", 15),
-            fg="white",
-            borderwidth=0,
-            highlightthickness=0,
-            background="#3C8D2F",
-            activebackground="#327727",
-            activeforeground="#DFDFDF",
-            command=self.load_offsets
-        )
-        self.load_offsets_button.place(x=601, y=400, width=100, height=50)
+        # self.load_offsets_button = tk.Button(
+        #     self,
+        #     text="LOAD",
+        #     font=("Jockey One", 15),
+        #     fg="white",
+        #     borderwidth=0,
+        #     highlightthickness=0,
+        #     background="#3C8D2F",
+        #     activebackground="#327727",
+        #     activeforeground="#DFDFDF",
+        #     command=self.load_offsets
+        # )
+        # self.load_offsets_button.place(x=601, y=400, width=100, height=50)
 
         self.horizontal_button = tk.Button(
             self,
@@ -231,7 +231,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.horizontal_button_click
         )
-        self.horizontal_button.place(x=491, y=460, width=100, height=50)
+        self.horizontal_button.place(x=391, y=285, width=243, height=74)
 
         self.elevator_button = tk.Button(
             self,
@@ -245,7 +245,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.elevator_button_click
         )
-        self.elevator_button.place(x=491, y=520, width=100, height=50)
+        self.elevator_button.place(x=391, y=370, width=243, height=74)
 
         self.calibrate_button = tk.Button(
             self,
@@ -259,58 +259,58 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.calibrate_button_click
         )
-        self.calibrate_button.place(x=601, y=520, width=100, height=50)
+        self.calibrate_button.place(x=391, y=200, width=243, height=74)
 
-        self.offset_info_label = tk.Label(
-            self,
-            text=f"Click 'load' to load default. Submit to save changes",
-            font=("Jockey One", 14),
-            bg="#D9D9D9",
-            fg="#333333"
-        )
-        self.offset_info_label.place(x=500, y=200, anchor="n")  # Just below the title
+        # self.offset_info_label = tk.Label(
+        #     self,
+        #     text=f"Click 'load' to load default. Submit to save changes",
+        #     font=("Jockey One", 14),
+        #     bg="#D9D9D9",
+        #     fg="#333333"
+        # )
+        # self.offset_info_label.place(x=500, y=200, anchor="n")  # Just below the title
 
-        self.offset_info_label = tk.Label(
-            self,
-            text=f"Recommended range: X: 0.01-0.02, Y: 0.00-0.005",
-            font=("Jockey One", 14),
-            bg="#D9D9D9",
-            fg="#333333"
-        )
-        self.offset_info_label.place(x=500, y=230, anchor="n")
+        # self.offset_info_label = tk.Label(
+        #     self,
+        #     text=f"Recommended range: X: 0.01-0.02, Y: 0.00-0.005",
+        #     font=("Jockey One", 14),
+        #     bg="#D9D9D9",
+        #     fg="#333333"
+        # )
+        # self.offset_info_label.place(x=500, y=230, anchor="n")
 
-        self.offset_info_label = tk.Label(
-            self,
-            text=f"+x: ↓   -x: ↑   +y: →   -y: ←",
-            font=("Jockey One", 14),
-            bg="#D9D9D9",
-            fg="#333333"
-        )
-        self.offset_info_label.place(x=500, y=260, anchor="n")  # Just below the title
+        # self.offset_info_label = tk.Label(
+        #     self,
+        #     text=f"+x: ↓   -x: ↑   +y: →   -y: ←",
+        #     font=("Jockey One", 14),
+        #     bg="#D9D9D9",
+        #     fg="#333333"
+        # )
+        # self.offset_info_label.place(x=500, y=260, anchor="n")  # Just below the title
 
-        # Digit Buttons (keypad-style)
-        button_font = ("Jockey One", 14)
-        start_x, start_y = 740, 250
-        btn_w, btn_h = 50, 40
-        pad = 5
+        # # Digit Buttons (keypad-style)
+        # button_font = ("Jockey One", 14)
+        # start_x, start_y = 740, 250
+        # btn_w, btn_h = 50, 40
+        # pad = 5
 
-        digits = [
-            ("1", 0, 0), ("2", 1, 0), ("3", 2, 0),
-            ("4", 0, 1), ("5", 1, 1), ("6", 2, 1),
-            ("7", 0, 2), ("8", 1, 2), ("9", 2, 2),
-            ("-", 0, 3), ("0", 1, 3), (".", 2, 3),
-            ("⌫", 1, 4), ("C", 2, 4)
-        ]
+        # digits = [
+        #     ("1", 0, 0), ("2", 1, 0), ("3", 2, 0),
+        #     ("4", 0, 1), ("5", 1, 1), ("6", 2, 1),
+        #     ("7", 0, 2), ("8", 1, 2), ("9", 2, 2),
+        #     ("-", 0, 3), ("0", 1, 3), (".", 2, 3),
+        #     ("⌫", 1, 4), ("C", 2, 4)
+        # ]
 
-        for text, col, row in digits:
-            btn = tk.Button(
-                self,
-                text=text,
-                font=button_font,
-                width=2,
-                command=lambda t=text: self.append_digit(t)
-            )
-            btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
+        # for text, col, row in digits:
+        #     btn = tk.Button(
+        #         self,
+        #         text=text,
+        #         font=button_font,
+        #         width=2,
+        #         command=lambda t=text: self.append_digit(t)
+        #     )
+        #     btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
 
     def clear_easy_leaderboard(self):
         self.mqtt_client.client.publish("jetson/command", "ClearEasyLeaderboard")
@@ -350,10 +350,10 @@ class AdminToolsScreen(tk.Frame):
     def set_offsets(self, x_offset, y_offset):
         self.x_offset = x_offset
         self.y_offset = y_offset
-        self.x_offset_entry.delete(0, tk.END)
-        self.x_offset_entry.insert(0, str(x_offset))
-        self.y_offset_entry.delete(0, tk.END)
-        self.y_offset_entry.insert(0, str(y_offset))
+        #self.x_offset_entry.delete(0, tk.END)
+        #self.x_offset_entry.insert(0, str(x_offset))
+        #self.y_offset_entry.delete(0, tk.END)
+        #self.y_offset_entry.insert(0, str(y_offset))
 
     def calibrate_button_click(self):
         self.controller.show_frame("CalibratingScreen")

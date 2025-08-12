@@ -29,6 +29,9 @@ class CalibratingScreen(tk.Frame):
         self.mqtt_client.client.publish("jetson/command", "Confirm")
         self.controller.show_frame("AdminToolsScreen")
 
+    def load_offsets(self):
+        self.mqtt_client.client.publish("jetson/command", "LoadOffsets")
+
     def create_widgets(self):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
@@ -118,10 +121,25 @@ class CalibratingScreen(tk.Frame):
         self.right_button.bind("<ButtonRelease-1>", self.on_release)     
         self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("right"))  
 
-        self.info_button = tk.Button(
+        self.confirm_button = tk.Button(
         self,
         text="CONFIRM",
         font=("Jockey One", 26),
+        fg="white",
+        background="#3C8D2F",
+        activebackground="#327727",
+        activeforeground="#DFDFDF",
+        borderwidth=0,
+        highlightthickness=0,
+        relief="flat",
+        command=self.on_button_click_confirm
+        )
+        self.confirm_button.place(x=391, y=505, width=243, height=74)
+
+        self.reset_button = tk.Button(
+        self,
+        text="RESET TO DEFAULT",
+        font=("Jockey One", 20),
         fg="white",
         bg="#EE3229",
         activebackground="#B82F27",
@@ -129,9 +147,9 @@ class CalibratingScreen(tk.Frame):
         borderwidth=0,
         highlightthickness=0,
         relief="flat",
-        command=self.on_button_click_confirm
+        command=self.load_offsets
         )
-        self.info_button.place(x=391, y=480, width=243, height=74)
+        self.reset_button.place(x=771, y=505, width=243, height=74)
 
     def show(self):
         pass
