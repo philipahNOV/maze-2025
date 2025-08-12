@@ -840,6 +840,7 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
+                self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
                 
@@ -847,6 +848,7 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
 
             elif cmd == "PlayAloneFailed":
+                self.state = SystemState.PLAYALONE_FAILED
                 print("[FSM] Entering PLAYALONE_FAILED mode")
                 self.playalone_game_stop_requested = True
                 self.path = None
