@@ -259,6 +259,7 @@ class HMIController:
                     add_score(player_name, duration, maze_id, self.mqtt_client)
 
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
+                    threading.Thread(target=self.controller.horizontal, daemon=True).start()
                     break
 
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
@@ -358,6 +359,7 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
+                    threading.Thread(target=self.controller.horizontal, daemon=True).start()
                     break
             
             time.sleep(0.1)
@@ -715,6 +717,7 @@ class HMIController:
                 self.state = SystemState.PLAYVSAI
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
+                self.controller.horizontal()
                 for _ in range(5):
                         self.arduino_thread.send_elevator(-1)
                         time.sleep(0.05)
@@ -762,7 +765,6 @@ class HMIController:
 
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
-                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
@@ -817,6 +819,7 @@ class HMIController:
                 self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
                 self.playalone_game_thread.start()
 
+                self.controller.horizontal()
                 # Elevator movement animation
                 try:
                     for _ in range(5):
@@ -872,8 +875,6 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
-                print("TEST")
-                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
