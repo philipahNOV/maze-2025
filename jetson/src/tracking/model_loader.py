@@ -2,13 +2,16 @@ import numpy as np
 import cv2
 import tensorrt as trt
 import pycuda.driver as cuda
-import pycuda.autoinit
 import torch
 import threading
 import time
 from functools import wraps
 from ultralytics import YOLO
+import pycuda.driver as cuda
 
+cuda.init()
+device = cuda.Device(0)
+ctx = device.make_context()
 
 def ensure_context(fn):
     @wraps(fn)
@@ -199,14 +202,19 @@ class YOLOModel:
             self.is_shutdown = True
 
         try:
+            from pycuda.driver import Context
+            print("[DEBUG] Current context before pop:", Context.get_current())
+
+            # Release CUDA context first
             if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
                 try:
-                    self.cuda_ctx.push()
                     self.cuda_ctx.pop()
                     self.cuda_ctx.detach()
-                except cuda.LogicError:
-                    print("[YOLOModel] CUDA context already popped")
+                except cuda.LogicError as e:
+                    print("[YOLOModel] CUDA pop/detach error:", str(e))
                 self.cuda_ctx = None
+
+            print("[DEBUG] Current context after pop:", Context.get_current())
 
             for attr in ('input_device', 'output_device'):
                 dev = getattr(self, attr, None)

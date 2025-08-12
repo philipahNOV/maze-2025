@@ -269,6 +269,9 @@ class HMIController:
 
             time.sleep(0.1)
 
+        print("[PLAYALONE] Game loop ended, stopping tracker")
+        self.tracking_service.stop_tracker()
+
     def start_playalone_timer(self):
         self.playalone_timer_start_requested = True
         print("[PLAYALONE] Timer start requested!")
@@ -708,37 +711,79 @@ class HMIController:
             if cmd == "Back":
                 self.playalone_timer_start_requested = False
                 self.state = SystemState.HUMAN_CONTROLLER
-            
+
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
-                
+
+                # Safely stop and clear old image thread
                 if self.image_thread is not None:
-                    self.image_thread.stop()
-                    self.image_thread.join()
-                    self.image_thread = None
-                
+                    try:
+                        print("[PLAYALONE] Stopping previous image thread")
+                        self.image_thread.stop()
+                        self.image_thread.join()
+                        self.image_thread = None
+                    except Exception as e:
+                        print(f"[PLAYALONE] Error stopping image thread: {e}")
+
+                # Clean path and update image controller
                 self.path = None
                 self.image_controller.set_new_path(None)
-                self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
-                self.image_thread.start()
+
+                self.tracking_service.start_tracker()
+
+                # Validate tracking service and CUDA context
+                if self.tracking_service is None or not self.tracking_service.started:
+                    print("[PLAYALONE] Error: Tracking service not available or not started")
+                    return
+
+                if not hasattr(self.tracking_service.tracker.model, "cuda_ctx") or self.tracking_service.tracker.model.cuda_ctx is None:
+                    print("[PLAYALONE] Error: YOLO model has no active CUDA context")
+                    return
+
+                try:
+                    # (Re)start image thread
+                    print("[PLAYALONE] Creating image thread")
+                    self.image_thread = ImageSenderThread(
+                        self.image_controller,
+                        self.mqtt_client,
+                        self.tracking_service,
+                        self.path
+                    )
+                    print("[PLAYALONE] Starting image thread")
+                    time.sleep(0.1)  # Let context settle if recently shut down
+                    self.image_thread.start()
+                except Exception as e:
+                    print(f"[PLAYALONE] Failed to start image thread: {e}")
+                    return
+
+                # Stop the robot
                 self.arduino_thread.send_speed(0, 0)
+
+                # Start joystick thread with playalone wait mode
+                print("[PLAYALONE] Starting joystick control")
                 self._start_joystick_control(playalone_wait=True)
                 self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
                 self.playalone_game_thread.start()
 
-                for _ in range(5):
-                    self.arduino_thread.send_elevator(-1)
-                    time.sleep(0.05)
-                time.sleep(1)
-                for _ in range(5):
-                    self.arduino_thread.send_elevator(1)
-                    time.sleep(0.05)
+                # Elevator movement animation
+                try:
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-1)
+                        time.sleep(0.05)
+                    time.sleep(1)
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(1)
+                        time.sleep(0.05)
+                except Exception as e:
+                    print(f"[PLAYALONE] Elevator command error: {e}")
+
 
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
+                self.playalone_game_stop_requested = True
                 if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
                     self.playalone_game_thread.join()
                 self.tracking_service.stop_tracker()
@@ -798,9 +843,10 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
-                self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
+                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
+                    self.playalone_game_thread.join()
                 
                 if hasattr(self, 'joystick_controller'):
                     self.joystick_controller.stop()
@@ -826,6 +872,9 @@ class HMIController:
 
             elif cmd == "PlayAloneFailed":
                 print("[FSM] Entering PLAYALONE_FAILED mode")
+                self.playalone_game_stop_requested = True
+                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
+                    self.playalone_game_thread.join()
                 self.state = SystemState.PLAYALONE_FAILED
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
