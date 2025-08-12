@@ -100,7 +100,7 @@ class AdminCodeScreen(tk.Frame):
     def submit_button_click(self):
         entered_hash = hashlib.sha256(self.code.encode()).hexdigest()
 
-        if entered_hash == self.ADMIN_CODE_HASH:
+        if entered_hash == self.CODE_HASH:
             self.code = ""
             self.code_entry.delete(0, tk.END)
             self.controller.show_frame("AdminToolsScreen")
