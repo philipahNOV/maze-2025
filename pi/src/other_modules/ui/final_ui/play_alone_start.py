@@ -70,7 +70,7 @@ class PlayAloneStartScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.start_button = tk.Button(
             self,
@@ -88,7 +88,7 @@ class PlayAloneStartScreen(tk.Frame):
         )
         self.start_button.place(x=770, y=385, width=200, height=75)
 
-        self.add_essential_buttons()
+        #self.add_essential_buttons()
 
     def update_image(self):
         if self.mqtt_client.img is not None:

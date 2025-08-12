@@ -218,7 +218,7 @@ class CustomPathScreen(tk.Frame):
         self.image_id = self.canvas.create_image(0, 0, anchor="nw", image=self.image)
 
         self.canvas.bind("<Button-1>", self.on_canvas_click)
-        self.add_essential_buttons()
+        #self.add_essential_buttons()
 
         self.back_button = tk.Button(
             self,
@@ -233,7 +233,7 @@ class CustomPathScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back,
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.status_label = tk.Label(
             self,

@@ -57,7 +57,7 @@ class PlayAloneFailedScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_exit
         )
-        self.exit_button.place(x=964, y=10, width=50, height=50)
+        #self.exit_button.place(x=964, y=10, width=50, height=50)
 
         self.restart_button = tk.Button(
             self,
@@ -72,7 +72,7 @@ class PlayAloneFailedScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_restart
         )
-        self.restart_button.place(x=904, y=10, width=50, height=50)
+        #self.restart_button.place(x=904, y=10, width=50, height=50)
 
         self.back_button = tk.Button(
             self,
@@ -87,7 +87,7 @@ class PlayAloneFailedScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,

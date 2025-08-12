@@ -40,7 +40,7 @@ class AdminCodeScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,

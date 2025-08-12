@@ -38,7 +38,7 @@ class PracticeScreen(tk.Frame):
             highlightthickness=0,
             relief="flat",
             command=self.on_back
-        ).place(x=10, y=10, width=120, height=50)
+        ).place(x=864, y=10, width=150, height=50)
 
     def on_back(self):
         self.mqtt_client.client.publish("jetson/command", "Back")

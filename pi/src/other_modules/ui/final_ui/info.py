@@ -64,7 +64,7 @@ class InfoScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.add_essential_buttons()
+        #self.add_essential_buttons()
 
         # Info text frame
         self.info_frame = tk.Frame(self, bg="#FFFFFF", bd=2, relief="sunken")
@@ -109,7 +109,7 @@ class InfoScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,
