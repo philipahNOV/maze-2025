@@ -649,6 +649,7 @@ class HMIController:
                 ori_x = self.tracking_service.get_orientation()[1]
                 ori_y = self.tracking_service.get_orientation()[0]
 
+                offset_file = "offsets.txt"
                 with open(offset_file, "w") as f:
                     f.write(f"{-ori_x},{-ori_y}")
                 self.controller.x_offset = -ori_x
