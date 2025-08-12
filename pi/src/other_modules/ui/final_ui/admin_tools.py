@@ -128,6 +128,20 @@ class AdminToolsScreen(tk.Frame):
         )
         self.clear_leaderboard_hard.place(x=30, y=200, width=243, height=74)
 
+        self.clear_cache_button = tk.Button(
+            self,
+            text="CLEAR PATH CACHE",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.clear_cache
+        )
+        self.clear_cache_button.place(x=30, y=285, width=243, height=74)
+
         self.reboot_button = tk.Button(
             self,
             text="REBOOT",
@@ -138,7 +152,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.reboot_button_click
         )
-        self.reboot_button.place(x=30, y=370, width=243, height=74)
+        self.reboot_button.place(x=30, y=420, width=243, height=74)
 
         self.shutdown_button = tk.Button(
             self,
@@ -150,7 +164,7 @@ class AdminToolsScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.shutdown_button_click
         )
-        self.shutdown_button.place(x=30, y=455, width=243, height=74)
+        self.shutdown_button.place(x=30, y=505, width=243, height=74)
 
         # # --- X Offset Input ---
         # self.x_offset_label = tk.Label(
@@ -339,6 +353,9 @@ class AdminToolsScreen(tk.Frame):
             self.last_elevator_dir = -1
         else:
             self.last_elevator_dir = 1
+
+    def clear_cache(self):
+        self.mqtt_client.client.publish("jetson/command", "ClearCache")
 
     def load_offsets(self):
         self.mqtt_client.client.publish("jetson/command", "LoadOffsets")

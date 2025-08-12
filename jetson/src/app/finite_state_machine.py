@@ -126,7 +126,7 @@ class HMIController:
             self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-            self.ball_finder.start_ball_check()
+            self.ball_finder.start()
 
     def on_path_found(self, path, path_lookahead):
         self.path = path
@@ -258,6 +258,7 @@ class HMIController:
                     add_score(player_name, duration, maze_id, self.mqtt_client)
 
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
+                    threading.Thread(target=self.controller.horizontal, daemon=True).start()
                     break
 
             if hasattr(self, 'playalone_timer_start_requested') and self.playalone_timer_start_requested:
@@ -361,6 +362,7 @@ class HMIController:
             time.sleep(0.1)
         
         self.stop_controller()
+        threading.Thread(target=self.controller.horizontal, daemon=True).start()
         print("[PLAYVSAI] PID turn ended")
         
         if self.state == SystemState.PLAYVSAI_PID:
@@ -372,6 +374,7 @@ class HMIController:
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
 
+        time.sleep(2)
         for _ in range(5):
             self.arduino_thread.send_elevator(1)
             time.sleep(0.05)
@@ -531,7 +534,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                self.ball_finder.start()
             elif cmd == "AdminTools":
                 self.state = SystemState.ADMIN_TOOLS
                 if self.disco_thread is not None:
@@ -658,6 +661,19 @@ class HMIController:
                     f.write(f"{-ori_x},{-ori_y}")
                 self.controller.x_offset = -ori_x
                 self.controller.y_offset = -ori_y
+            elif cmd == "ClearCache":
+                file_path = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "control", "astar", f"path_cache.json")
+                )
+
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        print(f"[INFO] Deleted: {file_path}")
+                    else:
+                        print(f"[INFO] File does not exist: {file_path}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to delete path_cache.json: {e}")
 
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
@@ -712,6 +728,7 @@ class HMIController:
                 self.state = SystemState.PLAYVSAI
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
+                self.controller.horizontal()
                 for _ in range(5):
                         self.arduino_thread.send_elevator(-1)
                         time.sleep(0.05)
@@ -759,7 +776,6 @@ class HMIController:
 
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
-                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
@@ -814,6 +830,7 @@ class HMIController:
                 self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
                 self.playalone_game_thread.start()
 
+                self.controller.horizontal()
                 # Elevator movement animation
                 try:
                     for _ in range(5):
@@ -1132,7 +1149,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                self.ball_finder.start()
 
             elif cmd == "Elevator":
                 pass
@@ -1208,7 +1225,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                #self.ball_finder.start_ball_check()
                 if self.controller_thread is not None and self.controller_thread.is_alive():
                     self.controller_thread.join()
                     self.controller_thread = None
