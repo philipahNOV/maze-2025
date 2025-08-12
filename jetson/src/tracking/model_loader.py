@@ -11,17 +11,10 @@ from ultralytics import YOLO
 def ensure_context(fn):
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        if self.engine_type != "tensorrt" or self.is_shutdown or not self.cuda_ctx:
+        if self.engine_type != "tensorrt" or self.is_shutdown:
             raise RuntimeError("Cannot run inference after shutdown.")
         with self.lock:
-            try:
-                self.cuda_ctx.push()
-                return fn(self, *args, **kwargs)
-            finally:
-                try:
-                    self.cuda_ctx.pop()
-                except Exception as e:
-                    print(f"[YOLOModel] Pop failed - {e}")
+            return fn(self, *args, **kwargs)
     return wrapper
 
 
@@ -55,8 +48,6 @@ class YOLOModel:
             self.engine_type = "pytorch"
 
     def _init_tensorrt(self, model_path):
-        cuda.init()
-        self.cuda_ctx = cuda.Device(0).make_context()
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
 
@@ -84,9 +75,8 @@ class YOLOModel:
         print(f"[YOLOModel] Loaded PyTorch model from: {pt_path}")
 
     def __del__(self):
-        if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
-            self.cuda_ctx.pop()
-            self.cuda_ctx = None
+        # No explicit CUDA context management needed
+        pass
 
     def get_label(self, cls_id):
         return self.names[int(cls_id)]
@@ -197,20 +187,6 @@ class YOLOModel:
             self.is_shutdown = True
 
         try:
-            from pycuda.driver import Context
-            print("[DEBUG] Current context before pop:", Context.get_current())
-
-            # Release CUDA context first
-            if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
-                try:
-                    self.cuda_ctx.pop()
-                    self.cuda_ctx.detach()
-                except cuda.LogicError as e:
-                    print("[YOLOModel] CUDA pop/detach error:", str(e))
-                self.cuda_ctx = None
-
-            print("[DEBUG] Current context after pop:", Context.get_current())
-
             for attr in ('input_device', 'output_device'):
                 dev = getattr(self, attr, None)
                 if dev:
