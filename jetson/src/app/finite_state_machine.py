@@ -268,6 +268,27 @@ class HMIController:
                 print(f"[PLAYALONE] Game start requested, timer started immediately at {start_time}")
 
             time.sleep(0.1)
+            
+        if self.image_thread is not None:
+            self.image_thread.stop()
+            self.image_thread.join()
+            self.image_thread = None
+
+        self.tracking_service.stop_tracker()
+        
+        if self.path_thread is not None and self.path_thread.is_alive():
+            self.path_thread.stop()
+            self.path_thread = None
+        self.mqtt_client.clear_image_buffer()
+        self.playvsai_goal = None
+        self.path = None
+        self.path_lookahead = None
+        self.image_controller.set_new_path(None)
+        
+        if hasattr(self, 'joystick_controller'):
+            self.joystick_controller.stop()
+        if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+            self.joystick_thread.join()
 
     def start_playalone_timer(self):
         self.playalone_timer_start_requested = True
@@ -780,36 +801,9 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
-                print("1")
                 self.playalone_game_stop_requested = True
                 #if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
                 #    self.playalone_game_thread.join()
-                print("2")
-
-                if self.image_thread is not None:
-                    self.image_thread.stop()
-                    self.image_thread.join()
-                    self.image_thread = None
-                print("3")
-
-                self.tracking_service.stop_tracker()
-                print("4")
-                
-                if self.path_thread is not None and self.path_thread.is_alive():
-                    self.path_thread.stop()
-                    self.path_thread = None
-                print("5")
-                self.mqtt_client.clear_image_buffer()
-                print("6")
-                self.playvsai_goal = None
-                self.path = None
-                self.path_lookahead = None
-                self.image_controller.set_new_path(None)
-                
-                if hasattr(self, 'joystick_controller'):
-                    self.joystick_controller.stop()
-                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
-                    self.joystick_thread.join()
                 
                 self.arduino_thread.send_speed(0, 0)
                 self.state = SystemState.HUMAN_CONTROLLER
