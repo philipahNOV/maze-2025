@@ -102,7 +102,7 @@ class LeaderboardScreen(tk.Frame):
             relief="flat",
             command=self.on_back
         )
-        self.back_button.place(x=844, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
     def toggle_maze(self):
         current_id = self.controller.config.get("maze_id", 1)
