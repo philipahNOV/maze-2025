@@ -126,7 +126,7 @@ class HMIController:
             self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-            self.ball_finder.start_ball_check()
+            self.ball_finder.start()
 
     def on_path_found(self, path, path_lookahead):
         self.path = path
@@ -536,7 +536,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                self.ball_finder.start()
             elif cmd == "AdminTools":
                 self.state = SystemState.ADMIN_TOOLS
                 if self.disco_thread is not None:
@@ -1239,7 +1239,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                #self.ball_finder.start_ball_check()
                 if self.controller_thread is not None and self.controller_thread.is_alive():
                     self.controller_thread.join()
                     self.controller_thread = None
