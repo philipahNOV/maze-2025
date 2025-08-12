@@ -140,9 +140,9 @@ class InfoScreen(tk.Frame):
         self.insert_formatted_line("The project was worked on by summer interns at NOV, summer 2025", "normal")
 
         self.insert_formatted_line("\nProject members:", "subtitle")
-        self.insert_formatted_line("• Erlend O. Berge - Arduino/Motor driver & Hardware", "bullet")
-        self.insert_formatted_line("• Philip A. Haugen - Ball tracking, Maze reading & Path finding", "bullet")
-        self.insert_formatted_line("• Lyder K. Jacobsen - Control system, Path following & Human-Machine Interface", "bullet")
+        self.insert_formatted_line("• Erlend O. Berge", "bullet")
+        self.insert_formatted_line("• Philip A. Haugen", "bullet")
+        self.insert_formatted_line("• Lyder K. Jacobsen", "bullet")
 
         self.insert_formatted_line("\nHow to use", "subtitle")
         self.insert_formatted_line("The robot has several modes of operation", "normal")

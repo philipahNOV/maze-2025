@@ -247,6 +247,20 @@ class AdminToolsScreen(tk.Frame):
         )
         self.elevator_button.place(x=491, y=520, width=100, height=50)
 
+        self.calibrate_button = tk.Button(
+            self,
+            text="CALIBRATE",
+            font=("Jockey One", 15),
+            fg="white",
+            borderwidth=0,
+            highlightthickness=0,
+            background="#60666C",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.calibrate_button_click
+        )
+        self.calibrate_button.place(x=601, y=520, width=100, height=50)
+
         self.offset_info_label = tk.Label(
             self,
             text=f"Click 'load' to load default. Submit to save changes",
@@ -340,6 +354,9 @@ class AdminToolsScreen(tk.Frame):
         self.x_offset_entry.insert(0, str(x_offset))
         self.y_offset_entry.delete(0, tk.END)
         self.y_offset_entry.insert(0, str(y_offset))
+
+    def calibrate_button_click(self):
+        self.controller.show_frame("CalibratingScreen")
 
     def append_digit(self, char):
         if self.active_offset_field == 'x':
