@@ -617,6 +617,8 @@ class HMIController:
                 offset_file = "offsets.txt"
                 with open(offset_file, "w") as f:
                     f.write(f"{x_offset},{y_offset}")
+                    self.controller.x_offset = x_offset
+                    self.controller.y_offset = y_offset
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
                 thread = threading.Thread(target=self.controller.horizontal, daemon=True)
                 thread.start()
