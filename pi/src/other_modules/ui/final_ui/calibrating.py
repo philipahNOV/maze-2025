@@ -56,7 +56,7 @@ class CalibratingScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=380, y=70)
+        self.title.place(x=250, y=20)
 
         self.up_button = tk.Button(
             self,
@@ -69,7 +69,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.up_button.place(x=452, y=200, width=120, height=120)
+        self.up_button.place(x=452, y=150, width=120, height=120)
         self.up_button.bind("<ButtonRelease-1>", self.on_release)
         self.up_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("up"))
 
@@ -84,7 +84,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.down_button.place(x=452, y=440, width=120, height=120)
+        self.down_button.place(x=452, y=390, width=120, height=120)
         self.down_button.bind("<ButtonRelease-1>", self.on_release)
         self.down_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("down")) 
 
@@ -99,7 +99,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.left_button.place(x=332, y=320, width=120, height=120)   
+        self.left_button.place(x=332, y=270, width=120, height=120)   
         self.left_button.bind("<ButtonRelease-1>", self.on_release)    
         self.left_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("left")) 
 
@@ -114,7 +114,7 @@ class CalibratingScreen(tk.Frame):
             activebackground="#B82F27",  # Match on press
             activeforeground="#DFDFDF",
         )
-        self.right_button.place(x=692, y=320, width=120, height=120)   
+        self.right_button.place(x=572, y=270, width=120, height=120)   
         self.right_button.bind("<ButtonRelease-1>", self.on_release)     
         self.right_button.bind("<ButtonPress-1>", lambda event: self.on_button_click_motor("right"))  
 
