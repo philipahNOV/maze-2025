@@ -12,11 +12,14 @@ class AdminCodeScreen(tk.Frame):
         self.controller = controller
         self.mqtt_client = mqtt_client
         self.active_field = None
+        self.code = ""
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.create_widgets()
 
     def on_button_click_back(self):
+        self.code = ""
+        self.code_entry.delete(0, tk.END)
         self.controller.show_frame("MainScreen")
 
     def create_widgets(self):
@@ -53,7 +56,7 @@ class AdminCodeScreen(tk.Frame):
             font=("Jockey One", 30),
             justify="center"
         )
-        self.code_entry.place(x=432, y=500, width=140, height=50)
+        self.code_entry.place(x=397, y=500, width=140, height=50)
 
         self.submit_button = tk.Button(
             self,
@@ -67,7 +70,7 @@ class AdminCodeScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_button_click
         )
-        self.submit_button.place(x=582, y=500, width=94, height=50)
+        self.submit_button.place(x=547, y=500, width=94, height=50)
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
@@ -93,8 +96,9 @@ class AdminCodeScreen(tk.Frame):
             btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
 
     def submit_button_click(self):
-            code = self.code_entry.get()
-            if code == "2000":
+            if self.code == "2000":
+                self.code = ""
+                self.code_entry.delete(0, tk.END)
                 self.controller.show_frame("AdminToolsScreen")
                 self.mqtt_client.client.publish("jetson/command", "AdminTools")
 
@@ -103,10 +107,13 @@ class AdminCodeScreen(tk.Frame):
 
         if char == "C":
             self.code_entry.delete(0, tk.END)
+            self.code = ""
         elif char == "⌫":
             self.code_entry.delete(len(current) - 1, tk.END)
+            self.code = self.code[:-1]
         else:
-            self.code_entry.insert(tk.END, char)
+            self.code_entry.insert(tk.END, "*")
+            self.code += char
 
     def show(self):
         pass
