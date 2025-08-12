@@ -12,6 +12,7 @@ case "$1" in
         -v /tmp/.X11-unix:/tmp/.X11-unix \
         -v /usr/local/zed/resources:/usr/local/zed/resources \
         -v /dev:/dev \
+        -v /home/documents/maze-2025:/workspace \
         maze-jetson-image
         ;;
     *)

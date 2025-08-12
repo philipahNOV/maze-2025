@@ -4,6 +4,7 @@ import os
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from main import MainApp
+import hashlib
 
 
 class AdminCodeScreen(tk.Frame):
@@ -16,6 +17,7 @@ class AdminCodeScreen(tk.Frame):
 
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.create_widgets()
+        self.CODE_HASH = "81a83544cf93c245178cbc1620030f1123f435af867c79d87135983c52ab39d9"
 
     def on_button_click_back(self):
         self.code = ""
@@ -96,11 +98,13 @@ class AdminCodeScreen(tk.Frame):
             btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
 
     def submit_button_click(self):
-            if self.code == "2000":
-                self.code = ""
-                self.code_entry.delete(0, tk.END)
-                self.controller.show_frame("AdminToolsScreen")
-                self.mqtt_client.client.publish("jetson/command", "AdminTools")
+        entered_hash = hashlib.sha256(self.code.encode()).hexdigest()
+
+        if entered_hash == self.CODE_HASH:
+            self.code = ""
+            self.code_entry.delete(0, tk.END)
+            self.controller.show_frame("AdminToolsScreen")
+            self.mqtt_client.client.publish("jetson/command", "AdminTools")
 
     def append_digit(self, char):
         current = self.code_entry.get()
