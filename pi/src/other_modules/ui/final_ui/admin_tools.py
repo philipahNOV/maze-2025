@@ -153,56 +153,56 @@ class AdminToolsScreen(tk.Frame):
         )
         self.shutdown_button.place(x=30, y=455, width=243, height=74)
 
-        # --- X Offset Input ---
-        self.x_offset_label = tk.Label(
-            self,
-            text="X Offset:",
-            font=("Jockey One", 15),
-            bg="#D9D9D9",
-            fg="#1A1A1A"
-        )
-        self.x_offset_label.place(x=391, y=300)
+        # # --- X Offset Input ---
+        # self.x_offset_label = tk.Label(
+        #     self,
+        #     text="X Offset:",
+        #     font=("Jockey One", 15),
+        #     bg="#D9D9D9",
+        #     fg="#1A1A1A"
+        # )
+        # self.x_offset_label.place(x=391, y=300)
         
-        self.x_offset_entry = tk.Entry(
-            self,
-            font=("Jockey One", 15),
-            justify="center"
-        )
-        self.x_offset_entry.place(x=491, y=300, width=143, height=30)
-        self.x_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('x'))
+        # self.x_offset_entry = tk.Entry(
+        #     self,
+        #     font=("Jockey One", 15),
+        #     justify="center"
+        # )
+        # self.x_offset_entry.place(x=491, y=300, width=143, height=30)
+        # self.x_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('x'))
 
-        # --- Y Offset Input ---
-        self.y_offset_label = tk.Label(
-            self,
-            text="Y Offset:",
-            font=("Jockey One", 15),
-            bg="#D9D9D9",
-            fg="#1A1A1A"
-        )
-        self.y_offset_label.place(x=391, y=350)
+        # # --- Y Offset Input ---
+        # self.y_offset_label = tk.Label(
+        #     self,
+        #     text="Y Offset:",
+        #     font=("Jockey One", 15),
+        #     bg="#D9D9D9",
+        #     fg="#1A1A1A"
+        # )
+        # self.y_offset_label.place(x=391, y=350)
         
-        self.y_offset_entry = tk.Entry(
-            self,
-            font=("Jockey One", 15),
-            justify="center"
-        )
-        self.y_offset_entry.place(x=491, y=350, width=143, height=30)
-        self.y_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('y'))
+        # self.y_offset_entry = tk.Entry(
+        #     self,
+        #     font=("Jockey One", 15),
+        #     justify="center"
+        # )
+        # self.y_offset_entry.place(x=491, y=350, width=143, height=30)
+        # self.y_offset_entry.bind("<FocusIn>", lambda e: self.set_active_field('y'))
 
         # --- Submit Button ---
-        self.submit_offsets_button = tk.Button(
-            self,
-            text="SUBMIT",
-            font=("Jockey One", 15),
-            fg="white",
-            borderwidth=0,
-            highlightthickness=0,
-            background="#3C8D2F",
-            activebackground="#327727",
-            activeforeground="#DFDFDF",
-            command=self.submit_offsets
-        )
-        self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
+        # self.submit_offsets_button = tk.Button(
+        #     self,
+        #     text="SUBMIT",
+        #     font=("Jockey One", 15),
+        #     fg="white",
+        #     borderwidth=0,
+        #     highlightthickness=0,
+        #     background="#3C8D2F",
+        #     activebackground="#327727",
+        #     activeforeground="#DFDFDF",
+        #     command=self.submit_offsets
+        # )
+        # self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
 
         # --- Submit Button ---
         # self.load_offsets_button = tk.Button(
