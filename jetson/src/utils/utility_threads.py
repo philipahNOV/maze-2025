@@ -80,20 +80,16 @@ class ImAliveThread(threading.Thread):
     def stop(self):
         self._stop_event.set()
 
-class LookForBall:
+class LookForBall(threading.Thread):
     def __init__(self, tracking_service, on_ball_found=None):
+        super().__init__(daemon=True)
         self.tracking_service = tracking_service
         self.on_ball_found = on_ball_found
         self._stop_event = threading.Event()
 
-    def start_ball_check(self):
-        thread = threading.Thread(target=self._check_loop, daemon=True)
-        thread.start()
-
-    def _check_loop(self):
+    def run(self):
         while not self._stop_event.is_set():
             pos = self.tracking_service.get_ball_position()
-            print(pos)
             if pos is not None:
                 if self.on_ball_found:
                     self.on_ball_found()

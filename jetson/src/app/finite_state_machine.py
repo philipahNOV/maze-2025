@@ -1163,7 +1163,7 @@ class HMIController:
                 self.ball_finder = utility_threads.LookForBall(
                     self.tracking_service, on_ball_found=self.on_ball_found
                 )
-                self.ball_finder.start_ball_check()
+                self.ball_finder.start()
 
             elif cmd == "Elevator":
                 pass
