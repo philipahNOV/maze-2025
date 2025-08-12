@@ -14,13 +14,15 @@ class PracticeScreen(tk.Frame):
         self.mqtt_client = mqtt_client
         self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         self.xbox_controller_image_path = os.path.join(self.controller.image_path, 'xbox_controller.png')
-        self.controller_image = ImageTk.PhotoImage(Image.open(self.xbox_controller_image_path))
-
+        controller_img = Image.open(self.xbox_controller_image_path)
+        original_size = controller_img.size
+        new_size = (int(original_size[0] * 0.75), int(original_size[1] * 0.75))
+        controller_img_resized = controller_img.resize(new_size, Image.Resampling.LANCZOS)
+        self.controller_image = ImageTk.PhotoImage(controller_img_resized)
         self.create_widgets()
 
     def create_widgets(self):
         self.update()
-
         bg_label = tk.Label(self, image=self.background_image)
         bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         controller_label = tk.Label(self, image=self.controller_image, bg="#D9D9D9")
