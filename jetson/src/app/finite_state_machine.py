@@ -359,12 +359,12 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] PID succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_pid_success:{duration:.2f}")
-                    threading.Thread(target=self.controller.horizontal, daemon=True).start()
                     break
             
             time.sleep(0.1)
         
         self.stop_controller()
+        threading.Thread(target=self.controller.horizontal, daemon=True).start()
         print("[PLAYVSAI] PID turn ended")
         
         if self.state == SystemState.PLAYVSAI_PID:
@@ -376,6 +376,7 @@ class HMIController:
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
 
+        time.sleep(2)
         for _ in range(5):
             self.arduino_thread.send_elevator(1)
             time.sleep(0.05)
