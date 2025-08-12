@@ -898,7 +898,33 @@ class HMIController:
         
         elif self.state == SystemState.PLAYALONE_FAILED:
             if cmd == "Back":
+                self.tracking_service.stop_tracker()
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+                
+                self.mqtt_client.clear_image_buffer()
+                self.playvsai_goal = None
+                self.path = None
+                self.path_lookahead = None
+                self.image_controller.set_new_path(None)
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                
+                self.arduino_thread.send_speed(0, 0)
                 self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
+                
             if cmd == "Retry":
                 self.state = SystemState.PLAYALONE_START
                 print("[PLAYALONE] Entering play alone start screen")
