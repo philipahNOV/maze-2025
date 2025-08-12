@@ -90,6 +90,7 @@ class LookForBall(threading.Thread):
     def run(self):
         while not self._stop_event.is_set():
             pos = self.tracking_service.get_ball_position()
+            print(pos)
             if pos is not None:
                 if self.on_ball_found:
                     self.on_ball_found()
