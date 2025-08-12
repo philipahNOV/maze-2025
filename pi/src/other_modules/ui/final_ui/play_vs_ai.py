@@ -162,7 +162,7 @@ class PlayVsAIScreen(tk.Frame):
             highlightthickness=0,
             relief="flat"
         )
-        self.back_button.place(x=857, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
     def start_battle(self):
         self.current_turn = "pid"

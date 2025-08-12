@@ -52,7 +52,7 @@ class BootScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_exit  # or self.controller.destroy
         )
-        self.exit_button.place(x=964, y=10, width=50, height=50)
+        #self.exit_button.place(x=964, y=10, width=50, height=50)
 
         self.exit_button = tk.Button(
             self,
@@ -67,7 +67,7 @@ class BootScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_restart
         )
-        self.exit_button.place(x=904, y=10, width=50, height=50)
+        #self.exit_button.place(x=904, y=10, width=50, height=50)
 
     def cycle_images(self):
         self.image_index = (self.image_index + 1) % len(self.images)

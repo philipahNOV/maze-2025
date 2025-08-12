@@ -88,7 +88,7 @@ class LocatingScreen(tk.Frame):
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.image_label = tk.Label(self)
         self.image_label.place(x=412, y=200, width=200, height=200)
-        self.add_essential_buttons()
+        #self.add_essential_buttons()
 
         self.back_button = tk.Button(
             self,
@@ -103,7 +103,7 @@ class LocatingScreen(tk.Frame):
             relief="flat",
             command=self.on_button_click_back,
         )
-        self.back_button.place(x=744, y=10, width=150, height=50)
+        self.back_button.place(x=864, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,

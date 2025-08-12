@@ -40,7 +40,7 @@ class ConnectionLostScreen(tk.Frame):
         self.update()
         self.bg_label = tk.Label(self, image=self.background_image)
         self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.add_essential_buttons()
+        #self.add_essential_buttons()
 
         self.title = tk.Label(
             self,
