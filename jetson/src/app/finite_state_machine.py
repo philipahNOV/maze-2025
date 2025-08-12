@@ -762,6 +762,7 @@ class HMIController:
 
             elif cmd == "StartGame":
                 self.state = SystemState.PLAYALONE_START
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
@@ -831,6 +832,7 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 self.playalone_game_stop_requested = True
                 #if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
                 #    self.playalone_game_thread.join()
@@ -876,6 +878,7 @@ class HMIController:
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
             elif cmd == "PlayAloneFailed":
                 self.state = SystemState.PLAYALONE_FAILED
@@ -883,6 +886,7 @@ class HMIController:
                 self.playalone_game_stop_requested = True
                 self.path = None
                 self.image_controller.set_new_path(self.path)
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
             elif cmd == "Leaderboard":
                     print("[FSM] Entering LEADERBOARD mode")
@@ -961,6 +965,7 @@ class HMIController:
 
             if cmd == "Retry":
                 self.state = SystemState.PLAYALONE_START
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
