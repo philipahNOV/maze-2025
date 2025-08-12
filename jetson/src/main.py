@@ -6,6 +6,7 @@ import time
 from app.finite_state_machine import HMIController
 import yaml
 from pathlib import Path
+import os
 
 def initialize_component(component, name, retries=5, delay=2):
     for attempt in range(retries):
@@ -36,6 +37,19 @@ except Exception as e:
     print(e)
     exit(1)
 
+def load_temp_offsets(controller):
+    offset_file = "offsets.txt"
+    if os.path.exists(offset_file):
+        with open(offset_file, "r") as f:
+            line = f.read().strip()
+            x_offset, y_offset = map(float, line.split(","))
+    else:
+        x_offset, y_offset = (controller.x_offset, controller.y_offset)
+        with open(offset_file, "w") as f:
+            f.write(f"{x_offset},{y_offset}")
+    controller.x_offset = x_offset
+    controller.y_offset = y_offset
+
 config = load_config()
 tracking_config = config["tracking"]
 path_finding_config = config["path_finding"]
@@ -53,6 +67,7 @@ controller = position_controller.Controller(
     lookahead=False,
     config=config
 )
+load_temp_offsets(controller)
 controller.horizontal()
 
 try:
