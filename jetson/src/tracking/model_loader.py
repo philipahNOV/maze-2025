@@ -7,11 +7,6 @@ import threading
 import time
 from functools import wraps
 from ultralytics import YOLO
-import pycuda.driver as cuda
-
-cuda.init()
-device = cuda.Device(0)
-ctx = device.make_context()
 
 def ensure_context(fn):
     @wraps(fn)
