@@ -46,8 +46,7 @@ class MainScreen(tk.Frame):
         self.controller.on_close()
 
     def on_button_click_admin_tools(self):
-        self.mqtt_client.client.publish("jetson/command", "AdminTools")
-        self.controller.show_frame("AdminToolsScreen")
+        self.controller.show_frame("AdminCodeScreen")
 
     def add_essential_buttons(self):
         self.exit_button = tk.Button(
