@@ -88,6 +88,15 @@ class PlayAloneStartScreen(tk.Frame):
         )
         self.start_button.place(x=770, y=385, width=200, height=75)
 
+        self.info_label = tk.Label(
+            self,
+            text="YOU MAY PRESS 'A' TO START",
+            font=("Jockey One", 18),
+            bg="#D9D9D9",
+            fg="#1A1A1A"
+        )
+        self.info_label.place(x=750, y=330)
+
         #self.add_essential_buttons()
 
     def update_image(self):
