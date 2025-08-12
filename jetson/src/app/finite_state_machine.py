@@ -269,9 +269,6 @@ class HMIController:
 
             time.sleep(0.1)
 
-        print("[PLAYALONE] Game loop ended, stopping tracker")
-        self.tracking_service.stop_tracker()
-
     def start_playalone_timer(self):
         self.playalone_timer_start_requested = True
         print("[PLAYALONE] Timer start requested!")
@@ -741,31 +738,32 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
-                self.state = SystemState.HUMAN_CONTROLLER
-                self.playalone_timer_start_requested = False
-                self.playalone_game_stop_requested = True
-                
-                if hasattr(self, 'joystick_controller'):
-                    self.joystick_controller.stop()
-                    del self.joystick_controller
-                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
-                    self.joystick_thread.join()
-                    del self.joystick_thread
-                
                 self.tracking_service.stop_tracker()
-                
-                if self.path_thread is not None and self.path_thread.is_alive():
-                    self.path_thread.stop()
-                    self.path_thread = None
 
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
-                    self.custom_goal = None
                 
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+                
+                self.mqtt_client.clear_image_buffer()
+                self.playvsai_goal = None
                 self.path = None
-                self.image_controller.set_new_path(self.path)
+                self.path_lookahead = None
+                self.image_controller.set_new_path(None)
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                
+                self.arduino_thread.send_speed(0, 0)
+                self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
             
             elif cmd == "StartPlayAloneGame":
                 print("[PLAYALONE] Start game button clicked - activating timer")
@@ -899,7 +897,33 @@ class HMIController:
         
         elif self.state == SystemState.PLAYALONE_FAILED:
             if cmd == "Back":
+                self.tracking_service.stop_tracker()
+
+                if self.image_thread is not None:
+                    self.image_thread.stop()
+                    self.image_thread.join()
+                    self.image_thread = None
+                
+                if self.path_thread is not None and self.path_thread.is_alive():
+                    self.path_thread.stop()
+                    self.path_thread = None
+                
+                self.mqtt_client.clear_image_buffer()
+                self.playvsai_goal = None
+                self.path = None
+                self.path_lookahead = None
+                self.image_controller.set_new_path(None)
+                
+                if hasattr(self, 'joystick_controller'):
+                    self.joystick_controller.stop()
+                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                    self.joystick_thread.join()
+                
+                self.arduino_thread.send_speed(0, 0)
                 self.state = SystemState.HUMAN_CONTROLLER
+                self.mqtt_client.client.publish("pi/command", "show_human_screen")
+                print("[FSM] Transitioned to HUMAN_CONTROLLER")
+
             if cmd == "Retry":
                 self.state = SystemState.PLAYALONE_START
                 print("[PLAYALONE] Entering play alone start screen")
