@@ -366,4 +366,4 @@ class AdminToolsScreen(tk.Frame):
         self.focus_set()
         self.update_idletasks()
         #self.load_offsets_temp()
-        self.after(1000, self.load_offsets_temp)
+        self.after(200, self.load_offsets_temp)
