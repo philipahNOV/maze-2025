@@ -636,6 +636,7 @@ class HMIController:
                 speed = 22
                 if direction == "stop":
                     self.arduino_thread.send_speed(0, 0)
+                    print(self.tracking_service.get_orientation())
                 elif direction == "up":
                     self.arduino_thread.send_speed(speed, 0)
                 elif direction == "down":
