@@ -664,6 +664,19 @@ class HMIController:
                     f.write(f"{-ori_x},{-ori_y}")
                 self.controller.x_offset = -ori_x
                 self.controller.y_offset = -ori_y
+            elif cmd == "ClearCache":
+                file_path = os.path.abspath(
+                    os.path.join(os.path.dirname(__file__), "..", "control", "astar", f"path_cache.json")
+                )
+
+                try:
+                    if os.path.exists(file_path):
+                        os.remove(file_path)
+                        print(f"[INFO] Deleted: {file_path}")
+                    else:
+                        print(f"[INFO] File does not exist: {file_path}")
+                except Exception as e:
+                    print(f"[ERROR] Failed to delete path_cache.json: {e}")
 
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
