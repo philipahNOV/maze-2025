@@ -93,7 +93,7 @@ class LeaderboardScreen(tk.Frame):
         self.back_button = tk.Button(
             self,
             text="BACK",
-            font=("Jockey One", 20),
+            font=("Jockey One", 28),
             fg="white",
             bg="#EE3229",
             activebackground="#B82F27",
