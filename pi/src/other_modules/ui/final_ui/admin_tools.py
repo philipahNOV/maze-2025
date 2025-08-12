@@ -363,7 +363,7 @@ class AdminToolsScreen(tk.Frame):
         self.active_offset_field = field
 
     def show(self):
-        print("TEST")
         self.focus_set()
         self.update_idletasks()
-        self.load_offsets_temp()
+        #self.load_offsets_temp()
+        self.after(1000, self.load_offsets_temp)
