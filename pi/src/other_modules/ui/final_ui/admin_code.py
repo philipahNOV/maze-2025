@@ -42,7 +42,7 @@ class AdminCodeScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="ENTER CODE",
-            font=("Jockey One", 35),
+            font=("Jockey One", 50),
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
@@ -55,7 +55,7 @@ class AdminCodeScreen(tk.Frame):
         )
         self.code_entry.place(x=432, y=500, width=160, height=50)
 
-        self.submit_offsets_button = tk.Button(
+        self.submit_button = tk.Button(
             self,
             text="ENTER",
             font=("Jockey One", 15),
@@ -65,15 +65,15 @@ class AdminCodeScreen(tk.Frame):
             background="#60666C",
             activebackground="#4B4C4C",
             activeforeground="#DFDFDF",
-            command=self.submit_offsets
+            command=self.submit_button_click
         )
-        self.submit_offsets_button.place(x=491, y=400, width=100, height=50)
+        self.submit_button.place(x=602, y=500, width=100, height=50)
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
-        start_x, start_y = 397, 120
-        btn_w, btn_h = 100, 80
-        pad = 10
+        start_x, start_y = 397, 140
+        btn_w, btn_h = 70, 58
+        pad = 8
 
         digits = [
             ("1", 0, 0), ("2", 1, 0), ("3", 2, 0),
@@ -92,7 +92,7 @@ class AdminCodeScreen(tk.Frame):
             )
             btn.place(x=start_x + col * (btn_w + pad), y=start_y + row * (btn_h + pad), width=btn_w, height=btn_h)
 
-    def submit_offsets(self):
+    def submit_button_click(self):
             code = self.code_entry.get()
             if code == "2000":
                 self.controller.show_frame("AdminToolsScreen")
