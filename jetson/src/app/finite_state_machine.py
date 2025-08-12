@@ -268,7 +268,7 @@ class HMIController:
                 print(f"[PLAYALONE] Game start requested, timer started immediately at {start_time}")
 
             time.sleep(0.1)
-            
+
         if self.image_thread is not None:
             self.image_thread.stop()
             self.image_thread.join()
@@ -842,27 +842,6 @@ class HMIController:
             elif cmd == "PlayAloneVictory":
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
-                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
-                    self.playalone_game_thread.join()
-                
-                if hasattr(self, 'joystick_controller'):
-                    self.joystick_controller.stop()
-                    del self.joystick_controller
-                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
-                    self.joystick_thread.join()
-                    del self.joystick_thread
-                
-                self.tracking_service.stop_tracker()
-                
-                if self.path_thread is not None and self.path_thread.is_alive():
-                    self.path_thread.stop()
-                    self.path_thread = None
-
-                if self.image_thread is not None:
-                    self.image_thread.stop()
-                    self.image_thread.join()
-                    self.image_thread = None
-                    self.custom_goal = None
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
@@ -870,31 +849,6 @@ class HMIController:
             elif cmd == "PlayAloneFailed":
                 print("[FSM] Entering PLAYALONE_FAILED mode")
                 self.playalone_game_stop_requested = True
-                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
-                    self.playalone_game_thread.join()
-                self.state = SystemState.PLAYALONE_FAILED
-                self.playalone_timer_start_requested = False
-                self.playalone_game_stop_requested = True
-                
-                if hasattr(self, 'joystick_controller'):
-                    self.joystick_controller.stop()
-                    del self.joystick_controller
-                if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
-                    self.joystick_thread.join()
-                    del self.joystick_thread
-                
-                self.tracking_service.stop_tracker()
-                
-                if self.path_thread is not None and self.path_thread.is_alive():
-                    self.path_thread.stop()
-                    self.path_thread = None
-
-                if self.image_thread is not None:
-                    self.image_thread.stop()
-                    self.image_thread.join()
-                    self.image_thread = None
-                    self.custom_goal = None
-                
                 self.path = None
                 self.image_controller.set_new_path(self.path)
 
