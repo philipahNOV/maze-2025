@@ -311,7 +311,7 @@ class HMIController:
             self.controller.lookahead = True
             self.controller_thread = threading.Thread(
                 target=run_controller_main.main,
-                args=(self.tracking_service, self.controller, self.mqtt_client, self.path, self.image_controller, self.stop_controller_event, self.config, True),
+                args=(self.tracking_service, self.controller, self.mqtt_client, self.path_lookahead, self.image_controller, self.stop_controller_event, self.config, True),
                 daemon=True
             )
             self.controller_thread.start()
