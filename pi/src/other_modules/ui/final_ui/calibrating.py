@@ -131,7 +131,7 @@ class CalibratingScreen(tk.Frame):
         relief="flat",
         command=self.on_button_click_confirm
         )
-        self.info_button.place(x=391, y=450, width=243, height=74)
+        self.info_button.place(x=391, y=480, width=243, height=74)
 
     def show(self):
         pass
