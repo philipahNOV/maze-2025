@@ -872,13 +872,14 @@ class HMIController:
                 print("[PLAYALONE] Image system completely reset with tracking active")
 
             elif cmd == "PlayAloneVictory":
+                print("TEST")
+                threading.Thread(target=self.controller.horizontal, daemon=True).start()
                 self.state = SystemState.PLAYALONE_VICTORY
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = True
                 
                 self.path = None
                 self.image_controller.set_new_path(self.path)
-                threading.Thread(target=self.controller.horizontal, daemon=True).start()
 
             elif cmd == "PlayAloneFailed":
                 self.state = SystemState.PLAYALONE_FAILED
