@@ -732,6 +732,8 @@ class HMIController:
                 self.path = None
                 self.image_controller.set_new_path(None)
 
+                self.tracking_service.start_tracker()
+
                 # Validate tracking service and CUDA context
                 if self.tracking_service is None or not self.tracking_service.started:
                     print("[PLAYALONE] Error: Tracking service not available or not started")
