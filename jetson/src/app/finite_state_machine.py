@@ -782,8 +782,8 @@ class HMIController:
             if cmd == "Back":
                 print("1")
                 self.playalone_game_stop_requested = True
-                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
-                    self.playalone_game_thread.join()
+                #if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
+                #    self.playalone_game_thread.join()
                 print("2")
 
                 if self.image_thread is not None:
