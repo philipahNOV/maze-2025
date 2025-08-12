@@ -667,6 +667,10 @@ class HMIController:
                 self.mqtt_client.client.publish("pi/command", "show_playvsai_screen")
 
                 for _ in range(5):
+                        self.arduino_thread.send_elevator(-1)
+                        time.sleep(0.05)
+                time.sleep(1)
+                for _ in range(5):
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.05)
 
@@ -726,6 +730,10 @@ class HMIController:
                 self._start_joystick_control(playalone_wait=True)
                 threading.Thread(target=self.run_playalone_game, daemon=True).start()
 
+                for _ in range(5):
+                    self.arduino_thread.send_elevator(-1)
+                    time.sleep(0.05)
+                time.sleep(1)
                 for _ in range(5):
                     self.arduino_thread.send_elevator(1)
                     time.sleep(0.05)

@@ -95,7 +95,7 @@ class AdminToolsScreen(tk.Frame):
         self.title = tk.Label(
             self,
             text="ADMIN TOOLS",
-            font=("Jockey One", 45),  # 1.5x of original 30
+            font=("Jockey One", 45),
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
@@ -363,6 +363,7 @@ class AdminToolsScreen(tk.Frame):
         self.active_offset_field = field
 
     def show(self):
+        print("TEST")
         self.focus_set()
         self.update_idletasks()
         self.load_offsets_temp()
