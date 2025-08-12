@@ -46,7 +46,7 @@ class AdminCodeScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=420, y=70)
+        self.title.place(x=380, y=70)
         
         self.code_entry = tk.Entry(
             self,
@@ -71,7 +71,7 @@ class AdminCodeScreen(tk.Frame):
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
-        start_x, start_y = 397, 140
+        start_x, start_y = 397, 200
         btn_w, btn_h = 70, 58
         pad = 8
 
