@@ -788,6 +788,7 @@ class HMIController:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
+                    time.sleep(0.5)
 
                 self.tracking_service.stop_tracker()
                 
