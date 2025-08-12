@@ -268,9 +268,6 @@ class HMIController:
 
             time.sleep(0.1)
 
-        print("[PLAYALONE] Game loop ended, stopping tracker")
-        self.tracking_service.stop_tracker()
-
     def start_playalone_timer(self):
         self.playalone_timer_start_requested = True
         print("[PLAYALONE] Timer start requested!")
