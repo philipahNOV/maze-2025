@@ -726,7 +726,8 @@ class HMIController:
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
                 self._start_joystick_control(playalone_wait=True)
-                threading.Thread(target=self.run_playalone_game, daemon=True).start()
+                self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
+                self.playalone_game_thread.start()
 
                 for _ in range(5):
                     self.arduino_thread.send_elevator(-1)
@@ -738,6 +739,8 @@ class HMIController:
 
         elif self.state == SystemState.PLAYALONE_START:
             if cmd == "Back":
+                if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
+                    self.playalone_game_thread.join()
                 self.tracking_service.stop_tracker()
 
                 if self.image_thread is not None:
@@ -941,7 +944,8 @@ class HMIController:
                 self.image_thread.start()
                 self.arduino_thread.send_speed(0, 0)
                 self._start_joystick_control(playalone_wait=True)
-                threading.Thread(target=self.run_playalone_game, daemon=True).start()
+                self.playalone_game_thread = threading.Thread(target=self.run_playalone_game, daemon=True)
+                self.playalone_game_thread.start()
 
                 for _ in range(5):
                     self.arduino_thread.send_elevator(1)
