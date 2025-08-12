@@ -87,7 +87,7 @@ class MainScreen(tk.Frame):
             self.bg_label.image = self.background_image  # <- PERSISTENT REFERENCE
             self.bg_label.place(x=0, y=0, relwidth=1, relheight=1)
 
-        self.add_essential_buttons()
+        # self.add_essential_buttons()
 
         self.navigation_button = tk.Button(
             self,
@@ -149,17 +149,17 @@ class MainScreen(tk.Frame):
 
         self.admin_tools_button = tk.Button(
             self,
-            text="ADMIN TOOLS",
-            font=("Jockey One", 10),
+            text="ADMIN",
+            font=("Jockey One", 28),
             fg="white",
             borderwidth=0,
             highlightthickness=0,
-            background="#60666C",
-            activebackground="#4B4C4C",
+            bg="#EE3229",           
+            activebackground="#B82F27",
             activeforeground="#DFDFDF",
             command=self.on_button_click_admin_tools
         )
-        self.admin_tools_button.place(x=904, y=70, width=110, height=40)
+        self.admin_tools_button.place(x=864, y=10, width=150, height=50)
 
         self.title = tk.Label(
             self,

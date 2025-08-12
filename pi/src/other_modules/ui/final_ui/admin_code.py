@@ -53,7 +53,7 @@ class AdminCodeScreen(tk.Frame):
             font=("Jockey One", 30),
             justify="center"
         )
-        self.code_entry.place(x=432, y=500, width=160, height=50)
+        self.code_entry.place(x=432, y=500, width=140, height=50)
 
         self.submit_button = tk.Button(
             self,
@@ -67,7 +67,7 @@ class AdminCodeScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.submit_button_click
         )
-        self.submit_button.place(x=602, y=500, width=100, height=50)
+        self.submit_button.place(x=582, y=500, width=94, height=50)
 
         # Digit Buttons (keypad-style)
         button_font = ("Jockey One", 14)
