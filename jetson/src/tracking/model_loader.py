@@ -2,19 +2,28 @@ import numpy as np
 import cv2
 import tensorrt as trt
 import pycuda.driver as cuda
+import pycuda.autoinit
 import torch
 import threading
 import time
 from functools import wraps
 from ultralytics import YOLO
 
+
 def ensure_context(fn):
     @wraps(fn)
     def wrapper(self, *args, **kwargs):
-        if self.engine_type != "tensorrt" or self.is_shutdown:
+        if self.engine_type != "tensorrt" or self.is_shutdown or not self.cuda_ctx:
             raise RuntimeError("Cannot run inference after shutdown.")
         with self.lock:
-            return fn(self, *args, **kwargs)
+            try:
+                self.cuda_ctx.push()
+                return fn(self, *args, **kwargs)
+            finally:
+                try:
+                    self.cuda_ctx.pop()
+                except Exception as e:
+                    print(f"[YOLOModel] Pop failed - {e}")
     return wrapper
 
 
@@ -48,6 +57,8 @@ class YOLOModel:
             self.engine_type = "pytorch"
 
     def _init_tensorrt(self, model_path):
+        cuda.init()
+        self.cuda_ctx = cuda.Device(0).make_context()
         self.logger = trt.Logger(trt.Logger.WARNING)
         self.runtime = trt.Runtime(self.logger)
 
@@ -75,8 +86,9 @@ class YOLOModel:
         print(f"[YOLOModel] Loaded PyTorch model from: {pt_path}")
 
     def __del__(self):
-        # No explicit CUDA context management needed
-        pass
+        if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+            self.cuda_ctx.pop()
+            self.cuda_ctx = None
 
     def get_label(self, cls_id):
         return self.names[int(cls_id)]
@@ -191,16 +203,20 @@ class YOLOModel:
                 dev = getattr(self, attr, None)
                 if dev:
                     dev.free()
-
             for attr in ('context', 'engine', 'runtime', 'stream'):
                 obj = getattr(self, attr, None)
                 if obj:
                     del obj
-
+            if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+                try:
+                    self.cuda_ctx.pop()
+                except cuda.LogicError:
+                    print("[YOLOModel] CUDA context already popped")
+                self.cuda_ctx = None
             print("[YOLOModel] Shutdown completed")
-
         except Exception as e:
             print(f"[YOLOModel] Error: {e}")
+
 
 class Box:
     def __init__(self, x1, y1, x2, y2, conf, cls):
