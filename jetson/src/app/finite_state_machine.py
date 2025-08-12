@@ -631,6 +631,19 @@ class HMIController:
                 self.controller.y_offset = y_offset
 
                 self.mqtt_client.client.publish("pi/command", f"LoadOffsets:{x_offset},{y_offset}")
+            elif cmd.startswith("Motor:"):
+                direction = cmd.split(":")[1]
+                speed = 22
+                if direction == "stop":
+                    self.arduino_thread.send_speed(0, 0)
+                elif direction == "up":
+                    self.arduino_thread.send_speed(speed, 0)
+                elif direction == "down":
+                    self.arduino_thread.send_speed(-speed, 0)
+                elif direction == "left":
+                    self.arduino_thread.send_speed(0, speed)
+                elif direction == "right":
+                    self.arduino_thread.send_speed(0, -speed)
 
         # --- INFO_SCREEN STATE ---
         elif self.state == SystemState.INFO_SCREEN:
