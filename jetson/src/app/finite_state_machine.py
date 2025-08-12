@@ -783,12 +783,13 @@ class HMIController:
                 self.playalone_game_stop_requested = True
                 if hasattr(self, 'playalone_game_thread') and self.playalone_game_thread.is_alive():
                     self.playalone_game_thread.join()
-                self.tracking_service.stop_tracker()
 
                 if self.image_thread is not None:
                     self.image_thread.stop()
                     self.image_thread.join()
                     self.image_thread = None
+
+                self.tracking_service.stop_tracker()
                 
                 if self.path_thread is not None and self.path_thread.is_alive():
                     self.path_thread.stop()
