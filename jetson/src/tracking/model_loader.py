@@ -199,24 +199,29 @@ class YOLOModel:
             self.is_shutdown = True
 
         try:
+            if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
+                try:
+                    self.cuda_ctx.push()
+                    self.cuda_ctx.pop()
+                    self.cuda_ctx.detach()
+                except cuda.LogicError:
+                    print("[YOLOModel] CUDA context already popped")
+                self.cuda_ctx = None
+
             for attr in ('input_device', 'output_device'):
                 dev = getattr(self, attr, None)
                 if dev:
                     dev.free()
+
             for attr in ('context', 'engine', 'runtime', 'stream'):
                 obj = getattr(self, attr, None)
                 if obj:
                     del obj
-            if hasattr(self, 'cuda_ctx') and self.cuda_ctx:
-                try:
-                    self.cuda_ctx.pop()
-                except cuda.LogicError:
-                    print("[YOLOModel] CUDA context already popped")
-                self.cuda_ctx = None
+
             print("[YOLOModel] Shutdown completed")
+
         except Exception as e:
             print(f"[YOLOModel] Error: {e}")
-
 
 class Box:
     def __init__(self, x1, y1, x2, y2, conf, cls):
