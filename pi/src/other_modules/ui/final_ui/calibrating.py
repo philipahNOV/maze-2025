@@ -61,6 +61,24 @@ class CalibratingScreen(tk.Frame):
         )
         self.title.place(x=250, y=20)
 
+        self.info = tk.Label(
+            self,
+            text="Use arrows to move robot to a completely",
+            font=("Jockey One", 20),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
+        )
+        self.info.place(x=730, y=200)
+
+        self.info = tk.Label(
+            self,
+            text="flat position, then press confirm.",
+            font=("Jockey One", 20),
+            fg="#1A1A1A",
+            bg="#D9D9D9"
+        )
+        self.info.place(x=730, y=240)
+
         self.up_button = tk.Button(
             self,
             text="⇧",
