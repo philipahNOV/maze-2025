@@ -396,10 +396,12 @@ class HMIController:
         ball_previously_detected = False
         winner = "None"
         duration = 0.0
+        back_pressed = False
 
         while game_running and self.state == SystemState.PLAYVSAI_HUMAN:
             if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
                 print("[PLAYVSAI] Human turn stop requested")
+                back_pressed = True
                 break
                 
             ball_pos = self.tracking_service.get_ball_position()
@@ -435,23 +437,25 @@ class HMIController:
 
             time.sleep(0.1)
 
-        if duration == -1 and robot_time == -1:
-            winner = "draw"
-        elif robot_time == -1:
-            winner = "player"
-        elif duration == -1:
-            winner = "robot"
-        elif duration < robot_time:
-            winner = "player"
-        elif robot_time < duration:
-            winner = "robot"
+        if not back_pressed:
 
-        if winner == "player":
-            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:player,robot,{duration:.2f},{robot_time:.2f}")
-        elif winner == "robot":
-            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:robot,player,{robot_time:.2f},{duration:.2f}")
-        else:
-            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:draw")
+            if duration == -1 and robot_time == -1:
+                winner = "draw"
+            elif robot_time == -1:
+                winner = "player"
+            elif duration == -1:
+                winner = "robot"
+            elif duration < robot_time:
+                winner = "player"
+            elif robot_time < duration:
+                winner = "robot"
+
+            if winner == "player":
+                self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:player,robot,{duration:.2f},{robot_time:.2f}")
+            elif winner == "robot":
+                self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:robot,player,{robot_time:.2f},{duration:.2f}")
+            else:
+                self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:draw")
 
         if hasattr(self, 'joystick_controller'):
                     self.joystick_controller.stop()
