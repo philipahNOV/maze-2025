@@ -130,83 +130,58 @@ Core dependencies include:
 
 The system operates through a well-defined state machine `finite_state_machine.py` with the following states:
 
-#### `BOOTING`
+#### **BOOTING**
 Initial state. Transitions to `MAIN_SCREEN` after the Raspberry Pi and Jetson perform a MQTT handshake.
 
-#### `MAIN_SCREEN`
+#### **MAIN_SCREEN**
 Functions as a home-screen. May branch into several states.
 
-#### `ADMIN_TOOLS`
+#### **ADMIN_TOOLS**
 Requires a code to enter. From here, the admin can calibrate, clear leaderboards and path cache, restart, reboot or shutdown the robot.
 
-#### `INFO_SCREEN`
+#### **INFO_SCREEN**
 Displays information about the project.
 
-#### `LOCATING`
+#### **LOCATING**
 Transitioned into from `MAIN_SCREEN` when autonomous solving is chosen. Starts tracker and other threads required to locate the ball. When the ball is found, the state transitions to `CUSTOM_PATH`. 
 
-#### `CUSTOM_PATH`
+#### **CUSTOM_PATH**
 In this state/screen, the user can choose a path goal by touching an image of the maze. By pressing 'Calculate path', finding a path will be attempted. If a path is found, start-buttons are enabled. The user can choose 'safe-control' or 'fast-control', which are two modes of the controller. When one of the buttons is pressed, the state transitions into `CONTROLLING`
 
-#### `CONTROLLING`
+#### **CONTROLLING**
 In this state, the control loop is running, letting the robot autonomously balance the ball through the maze. On the screen, a large live camera feed of the maze is displayed for the user to examin while executing. 
 
-#### `HUMAN_CONTROLLER`
+#### **HUMAN_CONTROLLER**
 Transitioned into from `MAIN_SCREEN` if the user chooses 'Game modes'. The main property of this state and states branching from it, is that the user may control the maze using and Xbox controller.
 
-#### `PRACTICE`
+#### **PRACTICE**
 Playground for the user to attempt the maze without being able to loose and without being timed by a stop-watch.
 
-#### `PLAYALONE`
+#### **PLAYALONE**
 Start of the sequence of states that let the player attempt the maze while having their time recorded and, if succeeding, added to the leaderboard. In this state, the user may enter their name on the screen. Transitions into `PLAYALONE_START` when the user confirms their name
 
-#### `PLAYALONE_START`
+#### **PLAYALONE_START**
 In this state, the ball is continuously tracked. If the ball is located withing the elevator, the user may start their attempt. After pressing start, the user attempt is began, letting the user control the ball using the Xbox controller. If the ball falls through a hole, the state transitions into `PLAYALONE_FAILED`. If the ball reaches the goal, the state transitions into `PLAYALONE VICTORY`.
 
-#### `PLAYALONE_FAILED`
+#### **PLAYALONE_FAILED**
 State where the user may either exit from the game mode, or choose to try again, returning to `PLAYALONE_START`
 
-#### `PLAYALONE_VICTORY`
+#### **PLAYALONE_VICTORY**
 The users maze solving time is saved. Their rank is computed by comparing the time to the leaderboard of the corresponding maze. The maze type (easy or hard) is automatically determined by the camera. The users time is added to the leaderboard.
 
-#### `LEADERBOARD`
+#### **LEADERBOARD**
 Transitioned into using the corresponding button in either `HUMAN_CONTROLLER` or `PLAYALONE_VICTORY`. Displays the leaderboards of the easy and hard maze. The user may use a button to swap between the two displays.
 
-#### **BOOTING → MAIN_SCREEN**
-System initialization loads configuration, establishes device connections, and transitions to the main menu with idle lighting effects.
+#### **PLAYVSAI**
+Start of the sequence for the game mode 'Human vs Robot'. In this state, the user may choose a goal by touching an image of the maze. Then the user may press 'Start robot'.
 
-#### **MAIN_SCREEN → Mode Selection**
-Users choose between:
-- **Navigation**: Manual goal setting with autonomous pathfinding
-- **Practice**: Joystick control without timing
-- **Play Alone**: Timed single-player challenges  
-- **Human vs AI**: Competitive alternating turns
+#### **PLAYVSAI_PID**
+Transitioned into when the user presses 'Start robot' in `PLAYVSAI`. The robot computes a path to the goal, and attempts to balance the ball through it. If success, the time is saved.
 
-#### **Navigation Flow**
-```
-NAVIGATION → LOCATING → AUTO_PATH → CONTROLLING
-```
-1. **LOCATING**: Ball detection and maze layout recognition
-2. **AUTO_PATH**: A* pathfinding with goal verification
-3. **CONTROLLING**: PID execution with real-time tracking
+#### **PLAYVSAI_HUMAN**
+Transitioned into after the robot has either failed or succeeded in `PLAYVSAI_PID`. The user may press 'Start turn' and then control the ball through the maze using the xBox controller. If success, the time is saved. The times of the robot and the user are compared, and the winner is determined. 
 
-#### **Play Alone Flow**
-```
-PLAYALONE → PLAYALONE_START → (PLAYALONE_VICTORY | PLAYALONE_FAILED)
-```
-1. **PLAYALONE_START**: Timer activation on ball movement detection
-2. **Continuous Tracking**: Ball position monitoring with timeout protection
-3. **Goal Detection**: Automatic completion time recording and leaderboard updates
-
-#### **Human vs AI Flow**
-```
-PLAYVSAI → PLAYVSAI_PID → PLAYVSAI_HUMAN → (Success/Failure)
-```
-1. **PLAYVSAI_PID**: AI pathfinding execution with performance timing
-2. **PLAYVSAI_HUMAN**: User joystick control with competitive timing
-3. **Result Processing**: Performance comparison and winner determination
-
-#### **State Transition Logic**
+#### **Sate transition logic**
 Each state handles specific commands and maintains system integrity:
 - **Back Commands**: Clean state transitions with resource cleanup
 - **Error Handling**: Automatic fallback to safe states on failures
@@ -231,12 +206,25 @@ The control system integrates multiple subsystems through a centralized finite s
 The PID controller accepts configuration through `config.yaml`:
 
 ```yaml
-controller:
-  kp: 0.8          # Proportional gain for position error
-  ki: 0.02         # Integral gain for steady-state error  
-  kd: 0.15         # Derivative gain for velocity damping
-  max_speed: 120   # Maximum motor velocity limit
-  lookahead: true  # Enable predictive control for smoother paths
+position_controller_normal:
+    feedforward_t: 7.8
+    kd_x: 0.000085
+    kd_y: 0.000085
+    ki_x: 0.0004
+    ki_y: 0.0004
+    kp_x: 0.00004
+    kp_y: 0.00004
+    position_tolerance: 25
+    velocity_tolerance: 20
+  position_smoothing_alpha: 0.1
+  stuck_time_threshold: 0.5
+  stuck_unstuck_hold_time: 0.2
+  stuck_upper_position_threshold: 70
+  stuck_velocity_threshold: 30
+  stuck_wiggle_amplitude: 0.4
+  stuck_wiggle_frequency: 20
+  velocity_smoothing_alpha: 0.99
+  wiggle_direction_bias: 0.007
 ```
 
 **Key Parameters:**
