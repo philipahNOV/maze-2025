@@ -434,7 +434,7 @@ class HMIController:
 
             time.sleep(0.1)
 
-        if duration > robot_time:
+        if duration < robot_time:
             winner = "player"
         else:
             winner = "robot"
