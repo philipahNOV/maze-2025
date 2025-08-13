@@ -328,6 +328,7 @@ class HMIController:
         self.stop_controller_event.clear()
         if self.controller_thread is None or not self.controller_thread.is_alive():
             self.controller.lookahead = True
+            self.controller.looping = False
             self.controller_thread = threading.Thread(
                 target=run_controller_main.main,
                 args=(self.tracking_service, self.controller, self.mqtt_client, self.path_lookahead, self.image_controller, self.stop_controller_event, self.config, True),
