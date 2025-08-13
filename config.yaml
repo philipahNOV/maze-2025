@@ -118,17 +118,6 @@ path_following:
     velocity_threshold: 50
 tracking:
   box_iou_threshold: 0.4
-  hsv_fail_threshold: 60
-  hsv_min_contour_area: 150
-  hsv_range:
-    lower:
-    - 35
-    - 55
-    - 55
-    upper:
-    - 85
-    - 255
-    - 255
   hsv_window_size: 80
   init_ball_region:
     x_max: 1200
