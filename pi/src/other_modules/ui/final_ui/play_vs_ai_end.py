@@ -146,5 +146,3 @@ class PlayvsaiEndScreen(tk.Frame):
     def show(self):
         self.focus_set()
         self.update_idletasks()
-        self.under_title.config(text="YOUR TIME: " + str(self.duration) + " seconds")
-        self.under_title2.config(text="YOUR RANK: " + str(self.rank))
