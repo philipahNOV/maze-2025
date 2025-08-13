@@ -90,6 +90,7 @@ def main(tracker: TrackerService,
                             pathFollower = path_following.PathFollower(path_array, controller, config)
                             image_thread.path_follower = pathFollower
                         controller.path_follower = pathFollower
+                        smoother.smoothed_pos = None
                     blinker = None
                     ball_not_found_timer = None
             else:
