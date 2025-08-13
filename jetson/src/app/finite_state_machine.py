@@ -338,6 +338,8 @@ class HMIController:
         game_running = True
         start_time = time.time()
         last_valid_pos_time = time.time()
+
+        duration = 0.0
         
         while game_running and self.state == SystemState.PLAYVSAI_PID:
             if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
@@ -349,6 +351,7 @@ class HMIController:
                 if time.time() - last_valid_pos_time > ball_lost_timeout:
                     print(f"[PLAYVSAI] PID failed: ball lost > {ball_lost_timeout} seconds.")
                     self.mqtt_client.client.publish("pi/command", "playvsai_pid_fail:ball_lost")
+                    duration = -1
                     break
             else:
                 last_valid_pos_time = time.time()
@@ -367,9 +370,9 @@ class HMIController:
         
         if self.state == SystemState.PLAYVSAI_PID:
             self.state = SystemState.PLAYVSAI_HUMAN
-            threading.Thread(target=self.run_playvsai_human_turn, daemon=True).start()
+            threading.Thread(target=self.run_playvsai_human_turn, args=(duration,), daemon=True).start()
 
-    def run_playvsai_human_turn(self):
+    def run_playvsai_human_turn(self, robot_time):
         print("[PLAYVSAI] Starting human turn...")
         game_config = self.config.get("game", {})
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
@@ -390,7 +393,9 @@ class HMIController:
         last_valid_pos_time = time.time()
         game_timer_started = False
         ball_previously_detected = False
-        
+        winner = "None"
+        duration = 0.0
+
         while game_running and self.state == SystemState.PLAYVSAI_HUMAN:
             if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
                 print("[PLAYVSAI] Human turn stop requested")
@@ -402,6 +407,7 @@ class HMIController:
                 if start_time and (time.time() - last_valid_pos_time > ball_lost_timeout):
                     print(f"[PLAYVSAI] Human failed: ball lost > {ball_lost_timeout} seconds.")
                     self.mqtt_client.client.publish("pi/command", "playvsai_human_fail")
+                    duration = -1
                     break
                 elif ball_previously_detected:
                     ball_previously_detected = False
@@ -427,7 +433,14 @@ class HMIController:
                 print("[PLAYVSAI] Human game start requested, timer will begin when ball is detected")
 
             time.sleep(0.1)
-        
+
+        if winner == "player":
+            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:player,robot,{duration:.2f},{robot_time:.2f}")
+        elif winner == "robot":
+            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:robot,player,{robot_time:.2f},{duration:.2f}")
+        else:
+            self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:draw")
+
         if hasattr(self, 'joystick_controller'):
                     self.joystick_controller.stop()
         if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
@@ -447,6 +460,7 @@ class HMIController:
         
         if self.state == SystemState.PLAYVSAI_HUMAN:
             self.playvsai_goal = None
+
 
     def start_playvsai_human_timer(self):
         self.playvsai_human_timer_start_requested = True
@@ -1096,6 +1110,8 @@ class HMIController:
                 self.stop_controller()
                 self.tracking_service.stop_tracker()
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
+            if cmd == "human_screen":
+                self.state = SystemState.HUMAN_CONTROLLER
 
         elif self.state == SystemState.PLAYVSAI_HUMAN:
             if cmd == "Back":
@@ -1123,6 +1139,8 @@ class HMIController:
             elif cmd == "StartHumanTurn":
                 print("[PLAYVSAI] Human start button clicked - activating timer")
                 self.start_playvsai_human_timer()
+            elif cmd == "human_screen":
+                self.state = SystemState.HUMAN_CONTROLLER
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:

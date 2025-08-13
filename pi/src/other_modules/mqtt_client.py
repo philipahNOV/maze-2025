@@ -133,6 +133,16 @@ class MQTTClientPi(threading.Thread):
                     playvsai_frame = self.app.frames.get('PlayVsAIScreen')
                     if playvsai_frame:
                         playvsai_frame.handle_human_result(False)
+            elif payload.startswith("play_vs_ai_end"):
+                result = payload.split(":")[1].split(",")
+                if self.app and hasattr(self.app, 'frames'):
+                    frame = self.app.frames.get('PlayvsaiEndScreen')
+                    if frame:
+                        self.app.show_frame("PlayvsaiEndScreen")
+                        if result[0] == "draw":
+                            frame.set_texts(draw=True)
+                        else:
+                            frame.set_texts(winner=result[0], loser=result[1], winner_time=result[2], loser_time=result[3])
             elif payload == "clear_image_buffer":
                 self.img = None
             elif payload.startswith("LoadOffsets:"):
