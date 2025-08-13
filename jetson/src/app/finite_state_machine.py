@@ -434,6 +434,11 @@ class HMIController:
 
             time.sleep(0.1)
 
+        if duration > robot_time:
+            winner = "player"
+        else:
+            winner = "robot"
+
         if winner == "player":
             self.mqtt_client.client.publish("pi/command", f"play_vs_ai_end:player,robot,{duration:.2f},{robot_time:.2f}")
         elif winner == "robot":

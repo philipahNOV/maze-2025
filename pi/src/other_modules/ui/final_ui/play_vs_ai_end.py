@@ -126,7 +126,7 @@ class PlayvsaiEndScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.show_main_menu
         )
-        self.main_menu_button.place(x=391, y=400, width=243, height=74)
+        self.main_menu_button.place(x=391, y=440, width=243, height=74)
 
     def set_texts(self, winner=None, loser=None, draw=False, winner_time=None, loser_time=None):
         if draw:

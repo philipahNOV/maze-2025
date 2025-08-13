@@ -142,7 +142,7 @@ class MQTTClientPi(threading.Thread):
                         if result[0] == "draw":
                             frame.set_texts(draw=True)
                         else:
-                            frame.set_texts(winner=result[0], loser=result[1], winner_time=result[2], loser_time=result[3])
+                            frame.set_texts(winner=result[0], loser=result[1], winner_time=result[2], loser_time=result[3], draw=False)
             elif payload == "clear_image_buffer":
                 self.img = None
             elif payload.startswith("LoadOffsets:"):
