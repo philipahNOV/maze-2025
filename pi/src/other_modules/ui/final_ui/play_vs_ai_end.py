@@ -100,7 +100,7 @@ class PlayvsaiEndScreen(tk.Frame):
             self,
             text="",
             font=("Jockey One", 30),  # 1.5x of original 20
-            fg="#1A1A1A",
+            fg="#2E8B57",
             bg="#D9D9D9"
         )
         self.under_title.place(x=512, y=280, anchor="n")
@@ -109,7 +109,7 @@ class PlayvsaiEndScreen(tk.Frame):
             self,
             text="",
             font=("Jockey One", 30),  # 1.5x of original 20
-            fg="#1A1A1A",
+            fg="#EE3229",
             bg="#D9D9D9"
         )
         self.under_title2.place(x=512, y=330, anchor="n")
