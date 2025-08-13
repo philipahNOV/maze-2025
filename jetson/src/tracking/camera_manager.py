@@ -8,7 +8,6 @@ class CameraManager:
 
     def init_camera(self):
         if self.initialized:
-            print("Camera already initialized.")
             return
 
         init_params = sl.InitParameters()
@@ -49,4 +48,3 @@ class CameraManager:
         if self.initialized:
             self.zed.close()
             self.initialized = False
-            print("Camera closed.")

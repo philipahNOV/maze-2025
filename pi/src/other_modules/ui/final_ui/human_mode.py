@@ -15,7 +15,6 @@ class HumanScreen(tk.Frame):
         try:
             self.background_image = ImageTk.PhotoImage(Image.open(controller.background_path))
         except Exception as e:
-            print("Error loading background image:", e)
             self.background_image = None
 
         self.create_widgets()
@@ -153,7 +152,6 @@ class HumanScreen(tk.Frame):
 
 
     def play_vs_ai(self):
-        print("[HumanScreen] Play vs AI selected")
         self.mqtt_client.client.publish("jetson/command", "PlayVsAI")
         self.controller.show_frame("PlayVsAIScreen")
 

@@ -9,24 +9,16 @@ PORT = 1883
 RECOVERY_TOPIC = "jetson/recovery"
 
 def on_connect(client, userdata, flags, rc, *args):
-    print("Connected to broker with result code", rc)
     client.subscribe(RECOVERY_TOPIC)
 
 def on_message(client, userdata, msg):
     payload = msg.payload.decode()
-    print(f"[RecoveryListener] Received: {payload}")
 
-    if payload == "recover":
-        print("[RecoveryListener] Triggering recovery action...")
-        
+    if payload == "recover":        
         try:
-            print("Entering recovery try-block...")
-
             script_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
-            print(f"Resolved script path: {script_path}")
 
             if not os.path.isfile(script_path):
-                print("main.py not found at resolved path!")
                 return
 
             log_path = os.path.join(os.path.dirname(__file__), "recovery_log.txt")
@@ -36,20 +28,14 @@ def on_message(client, userdata, msg):
                     "--", "bash", "-c",
                     f"{sys.executable} '{script_path}'; exec bash"
                 ], stdout=log_file, stderr=subprocess.STDOUT)
-                print(f"Subprocess Popen result: {result}")
-            print("Launched main.py in new GNOME Terminal window.")
         except Exception as e:
             print("Exception during recovery action:")
             traceback.print_exc()
-
-
 
 def main():
     client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
     client.on_connect = on_connect
     client.on_message = on_message
-
-    print("--- Recovery Listener Started ---")
 
     try:
         client.connect(BROKER_ADDRESS, PORT, 60)

@@ -46,13 +46,11 @@ class CustomPathScreen(tk.Frame):
         if self.mqtt_client.img is not None and not self.mqtt_client.finding_path:
             if self.awaiting_path:
                 if self.mqtt_client.path_failed:
-                    print("[UI] Pathfinding failed. Showing image but disabling START buttons.")
                     self.awaiting_path = False
                     self.has_pathfinded = False
                     self.disable_button_start()
                     self.path_failed_label.place(x=730, y=135)
                 else:
-                    print("[UI] Path found. Enabling START buttons.")
                     self.awaiting_path = False
                     self.has_pathfinded = True
                     self.enable_button_start()

@@ -34,7 +34,6 @@ try:
     arduino_thread = initialize_component(ArduinoConnection, "ArduinoConnection")
     time.sleep(2)
 except Exception as e:
-    print(e)
     exit(1)
 
 def load_temp_offsets(controller):
@@ -53,7 +52,6 @@ def load_temp_offsets(controller):
 config = load_config()
 tracking_config = config["tracking"]
 path_finding_config = config["path_finding"]
-print("Config loaded successfully.")
 
 tracker_service = TrackerService(
     model_path=tracking_config["model_path"],
@@ -73,14 +71,10 @@ controller.horizontal()
 try:
     mqtt_client = initialize_component(MQTTClientJetson, "MQTTClientJetson")
 except Exception as e:
-    print(e)
     exit(1)
 
 fsm = HMIController(tracker_service, arduino_thread, mqtt_client, config=config)
 mqtt_client.fsm = fsm
 
-print("Waiting for handshake from Pi...")
 while not mqtt_client.handshake_complete:
     time.sleep(0.1)
-
-print("Connected!")

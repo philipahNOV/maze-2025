@@ -134,12 +134,10 @@ class MQTTClientPi(threading.Thread):
                     if playvsai_frame:
                         playvsai_frame.handle_human_result(False)
             elif payload == "clear_image_buffer":
-                print("[MQTT] Clearing image buffer")
                 self.img = None
             elif payload.startswith("LoadOffsets:"):
                 offsets = payload.split(":")[1]
                 x_offset, y_offset = map(float, offsets.split(","))
-                print(f"[MQTT] Loading offsets: x_offset={x_offset}, y_offset={y_offset}")
                 if self.app and hasattr(self.app, 'frames'):
                     admin_tools = self.app.frames.get('AdminToolsScreen')
                     if admin_tools:
@@ -151,13 +149,10 @@ class MQTTClientPi(threading.Thread):
             if msg.payload.decode() == "ball_not_found":
                 self.ball_found = False
             if msg.payload.decode() == "timeout":
-                print("[Pi] Ball not found for too long, returning to main menu.")
                 self.timeout = True
             if msg.payload.decode() == "path_found":
-                print("[Pi] Path found by Jetson.")
                 self.finding_path = False
             if msg.payload.decode() == "path_not_found":
-                print("[Pi] Path not found by Jetson.")
                 self.finding_path = False
                 self.path_failed = True
             if msg.payload.decode() == "alive":
@@ -219,4 +214,3 @@ class MQTTClientPi(threading.Thread):
         self.client.disconnect()
         self.client.loop_stop()
         #self.thread.join()
-        print("Disconnected from broker and stopped the thread")

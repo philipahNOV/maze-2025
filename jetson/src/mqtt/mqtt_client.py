@@ -33,7 +33,6 @@ class MQTTClientJetson(threading.Thread):
         self.start()
 
     def on_connect(self, client, userdata, flags, rc, *args):
-        print("Connected with result code " + str(rc))
         self.client.subscribe("handshake/request")
         self.client.subscribe("jetson/command")
         self.client.subscribe("jetson/player_name")
@@ -59,13 +58,11 @@ class MQTTClientJetson(threading.Thread):
 
         if topic == "handshake/request":
             if payload == "pi":
-                print("Received handshake request from Pi")
                 self.client.publish("handshake/response", "ack", qos=1)
                 self.client.publish("pi/command", "booted", qos=1)
                 self.handshake_complete = True
         elif topic == "jetson/player_name":
             self.fsm.current_player_name = payload
-            print(f"Player name set to: {payload}")
         elif topic == "pi/response":
             self.pi_state = payload
         else:
