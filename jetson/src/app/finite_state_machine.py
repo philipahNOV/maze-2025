@@ -436,9 +436,13 @@ class HMIController:
 
         if duration == -1 and robot_time == -1:
             winner = "draw"
-        elif duration < robot_time or robot_time == -1:
+        elif robot_time == -1:
             winner = "player"
-        elif robot_time < duration or duration == -1:
+        elif duration == -1:
+            winner = "robot"
+        elif duration < robot_time:
+            winner = "player"
+        elif robot_time < duration:
             winner = "robot"
 
         if winner == "player":
