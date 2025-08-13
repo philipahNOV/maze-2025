@@ -141,6 +141,7 @@ class PlayvsaiEndScreen(tk.Frame):
         if draw:
             self.under_title.config(text="No winners!", fg="#1A1A1A")
             self.under_title2.config(text="Both the player and the robot failed...", fg="#1A1A1A")
+            self.under_title3.config(text="Better luck next time!", fg="#1A1A1A")
         else:
             self.under_title.config(text=f"The {winner} is the winner!")
             self.under_title2.config(text=f"{winner} time: {winner_time} seconds.")
