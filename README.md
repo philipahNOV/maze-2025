@@ -136,21 +136,28 @@ Example:
 
 ```yaml
 controller:
-  stuck_wiggle_amplitude: 0.8
-  stuck_wiggle_frequency: 10
-  angular_controller:
-    kp: 6500
-    max_angle: 1.8
-    command_delay: 0.0001
-  arduino:
-    x_offset: 0.01
-    y_offset: 0.0
-    minimum_velocity: 22
-    maximum_velocity: 100
-    minimum_velocity_difference: 10
+    position_controller_normal:
+        feedforward_t: 7.8
+        kd_x: 0.000085
+        kd_y: 0.000085
+        ki_x: 0.0004
+        ki_y: 0.0004
+        kp_x: 0.00004
+        kp_y: 0.00004
+        position_tolerance: 25
+        velocity_tolerance: 20
+    position_smoothing_alpha: 0.1
+    stuck_time_threshold: 0.5
+    stuck_unstuck_hold_time: 0.2
+    stuck_upper_position_threshold: 70
+    stuck_velocity_threshold: 30
+    stuck_wiggle_amplitude: 0.4
+    stuck_wiggle_frequency: 20
+    velocity_smoothing_alpha: 0.99
+    wiggle_direction_bias: 0.007
 ```
 
-The controller supports both standard and lookahead PID gains (configurable via the `lookahead` toggle).
+The controller supports both standard and lookahead PID gains to complement the two types of path following.
 
 ---
 
