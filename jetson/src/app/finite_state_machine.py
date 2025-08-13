@@ -396,12 +396,11 @@ class HMIController:
         ball_previously_detected = False
         winner = "None"
         duration = 0.0
-        back_pressed = False
+        game_completed = False
 
         while game_running and self.state == SystemState.PLAYVSAI_HUMAN:
             if hasattr(self, 'playvsai_stop_requested') and self.playvsai_stop_requested:
                 print("[PLAYVSAI] Human turn stop requested")
-                back_pressed = True
                 break
                 
             ball_pos = self.tracking_service.get_ball_position()
@@ -411,7 +410,7 @@ class HMIController:
                     print(f"[PLAYVSAI] Human failed: ball lost > {ball_lost_timeout} seconds.")
                     self.mqtt_client.client.publish("pi/command", "playvsai_human_fail")
                     duration = -1
-                    break
+                    game_completed = True
                 elif ball_previously_detected:
                     ball_previously_detected = False
             else:
@@ -428,6 +427,7 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYVSAI] Human succeeded in {duration:.2f} sec")
                     self.mqtt_client.client.publish("pi/command", f"playvsai_human_success:{duration:.2f}")
+                    game_completed = True
                     break
 
             if hasattr(self, 'playvsai_human_timer_start_requested') and self.playvsai_human_timer_start_requested:
@@ -437,7 +437,7 @@ class HMIController:
 
             time.sleep(0.1)
 
-        if not back_pressed:
+        if game_completed:
 
             if duration == -1 and robot_time == -1:
                 winner = "draw"
