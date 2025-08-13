@@ -94,7 +94,7 @@ class PlayvsaiEndScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.title.place(x=512, y=200, anchor="n")  # shifted down to keep spacing similar
+        self.title.place(x=512, y=170, anchor="n")  # shifted down to keep spacing similar
 
         self.under_title = tk.Label(
             self,
@@ -114,6 +114,15 @@ class PlayvsaiEndScreen(tk.Frame):
         )
         self.under_title2.place(x=512, y=330, anchor="n")
 
+        self.under_title3 = tk.Label(
+            self,
+            text="",
+            font=("Jockey One", 30),  # 1.5x of original 20
+            fg="#EE3229",
+            bg="#D9D9D9"
+        )
+        self.under_title3.place(x=512, y=380, anchor="n")
+
         self.main_menu_button = tk.Button(
             self,
             text="MAIN MENU",
@@ -126,18 +135,19 @@ class PlayvsaiEndScreen(tk.Frame):
             activeforeground="#DFDFDF",
             command=self.show_main_menu
         )
-        self.main_menu_button.place(x=391, y=440, width=243, height=74)
+        self.main_menu_button.place(x=391, y=490, width=243, height=74)
 
     def set_texts(self, winner=None, loser=None, draw=False, winner_time=None, loser_time=None):
         if draw:
-            self.under_title.config(text="No winners!")
-            self.under_title2.config(text="Both the player and the robot failed...")
+            self.under_title.config(text="No winners!", fg="#1A1A1A")
+            self.under_title2.config(text="Both the player and the robot failed...", fg="#1A1A1A")
         else:
-            self.under_title.config(text=f"{winner} wins in {winner_time} seconds!")
+            self.under_title.config(text=f"The {winner} is the winner!")
+            self.under_title2.config(text=f"{winner} time: {winner_time} seconds.")
             if loser_time == "-1.00":
-                self.under_title2.config(text=f"{loser} lost because they failed.")
+                self.under_title3.config(text=f"{loser} lost because they failed.")
             else:
-                self.under_title2.config(text=f"{loser} lost with time: {loser_time} seconds.")
+                self.under_title3.config(text=f"{loser} time: {loser_time} seconds.")
 
     def show_main_menu(self):
         self.mqtt_client.client.publish("jetson/command", "human_screen")
