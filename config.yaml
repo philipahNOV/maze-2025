@@ -53,8 +53,8 @@ controller:
   integration_vel_threshold: 40
   position_controller_lookahead:
     feedforward_t: 10.5
-    kd_x: 0.0002
-    kd_y: 0.0002
+    kd_x: 0.001
+    kd_y: 0.001
     ki_x: 0.0002
     ki_y: 0.0002
     kp_x: 1.0e-05
