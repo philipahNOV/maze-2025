@@ -434,9 +434,11 @@ class HMIController:
 
             time.sleep(0.1)
 
-        if duration < robot_time:
+        if duration == -1 and robot_time == -1:
+            winner = "draw"
+        elif duration < robot_time or robot_time == -1:
             winner = "player"
-        else:
+        elif robot_time < duration or duration == -1:
             winner = "robot"
 
         if winner == "player":
