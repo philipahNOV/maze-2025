@@ -223,8 +223,7 @@ class Controller:
                     self.unstuck_timer_x = time.time()
                 elif time.time() - self.unstuck_timer_x > self.stuck_unstuck_hold_time:
                     self.stuck_x_active = False
-                    if not self.lookahead:
-                        self.e_x_int = 0
+                    self.e_x_int = 0
                     self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)
             else:
                 self.unstuck_timer_x = None
@@ -242,8 +241,7 @@ class Controller:
                     self.unstuck_timer_y = time.time()
                 elif time.time() - self.unstuck_timer_y > self.stuck_unstuck_hold_time:
                     self.stuck_y_active = False
-                    if not self.lookahead:
-                        self.e_y_int = 0
+                    self.e_y_int = 0
                     self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)
             else:
                 self.unstuck_timer_y = None
