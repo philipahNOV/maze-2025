@@ -126,23 +126,51 @@ Core dependencies include:
 
 ---
 
-## <a id="control-system"></a>Control System
+### <a id="Flow of the FSM"></a>Flow of the FSM
 
-### <a id="system-components"></a>System Components
+The system operates through a well-defined state machine `finite_state_machine.py` with the following states:
 
-The control system integrates multiple subsystems through a centralized finite state machine:
+#### `BOOTING`
+Initial state. Transitions to `MAIN_SCREEN` after the Raspberry Pi and Jetson perform a MQTT handshake.
 
-**Position Controller** (`position_controller.py`): PID-based control system managing X/Y axis tilt commands with adaptive parameters and velocity limiting.
+#### `MAIN_SCREEN`
+Functions as a home-screen. May branch into several states.
 
-**Arduino Connection** (`arduino_connection.py`): Serial communication interface handling motor commands, elevator control, and system status feedback.
+#### `ADMIN_TOOLS`
+Requires a code to enter. From here, the admin can calibrate, clear leaderboards and path cache, restart, reboot or shutdown the robot.
 
-**Finite State Machine** (`finite_state_machine.py`): Central coordination system managing system states, user interactions, and mode transitions.
+#### `INFO_SCREEN`
+Displays information about the project.
 
-**Joystick Controller**: Manual control interface for practice mode and human vs AI gameplay.
+#### `LOCATING`
+Transitioned into from `MAIN_SCREEN` when autonomous solving is chosen. Starts tracker and other threads required to locate the ball. When the ball is found, the state transitions to `CUSTOM_PATH`. 
 
-### <a id="control-execution-flow"></a>Control Execution Flow
+#### `CUSTOM_PATH`
+In this state/screen, the user can choose a path goal by touching an image of the maze. By pressing 'Calculate path', finding a path will be attempted. If a path is found, start-buttons are enabled. The user can choose 'safe-control' or 'fast-control', which are two modes of the controller. When one of the buttons is pressed, the state transitions into `CONTROLLING`
 
-The system operates through a well-defined state machine with the following primary states:
+#### `CONTROLLING`
+In this state, the control loop is running, letting the robot autonomously balance the ball through the maze. On the screen, a large live camera feed of the maze is displayed for the user to examin while executing. 
+
+#### `HUMAN_CONTROLLER`
+Transitioned into from `MAIN_SCREEN` if the user chooses 'Game modes'. The main property of this state and states branching from it, is that the user may control the maze using and Xbox controller.
+
+#### `PRACTICE`
+Playground for the user to attempt the maze without being able to loose and without being timed by a stop-watch.
+
+#### `PLAYALONE`
+Start of the sequence of states that let the player attempt the maze while having their time recorded and, if succeeding, added to the leaderboard. In this state, the user may enter their name on the screen. Transitions into `PLAYALONE_START` when the user confirms their name
+
+#### `PLAYALONE_START`
+In this state, the ball is continuously tracked. If the ball is located withing the elevator, the user may start their attempt. After pressing start, the user attempt is began, letting the user control the ball using the Xbox controller. If the ball falls through a hole, the state transitions into `PLAYALONE_FAILED`. If the ball reaches the goal, the state transitions into `PLAYALONE VICTORY`.
+
+#### `PLAYALONE_FAILED`
+State where the user may either exit from the game mode, or choose to try again, returning to `PLAYALONE_START`
+
+#### `PLAYALONE_VICTORY`
+The users maze solving time is saved. Their rank is computed by comparing the time to the leaderboard of the corresponding maze. The maze type (easy or hard) is automatically determined by the camera. The users time is added to the leaderboard.
+
+#### `LEADERBOARD`
+Transitioned into using the corresponding button in either `HUMAN_CONTROLLER` or `PLAYALONE_VICTORY`. Displays the leaderboards of the easy and hard maze. The user may use a button to swap between the two displays.
 
 #### **BOOTING → MAIN_SCREEN**
 System initialization loads configuration, establishes device connections, and transitions to the main menu with idle lighting effects.
@@ -183,6 +211,20 @@ Each state handles specific commands and maintains system integrity:
 - **Back Commands**: Clean state transitions with resource cleanup
 - **Error Handling**: Automatic fallback to safe states on failures
 - **Resource Management**: Thread lifecycle and hardware control coordination
+
+## <a id="control-system"></a>Control System
+
+### <a id="system-components"></a>System Components
+
+The control system integrates multiple subsystems through a centralized finite state machine:
+
+**Position Controller** (`position_controller.py`): 
+- `posControl`: PID-based control system computing tilt angles in both X and Y axis required for the ball to reach the target waypoint.
+- `axisControl`: P-controller that takes in reference tilt angles from the position controller, computes motor velocities, and sends the velocities to the Arduino
+
+**Arduino Connection** (`arduino_connection.py`): Serial communication interface handling motor commands, elevator control, and system status feedback.
+
+**Joystick Controller**: Manual control interface for practice mode and human vs AI gameplay.
 
 ### <a id="controller-configuration"></a>Controller Configuration
 
