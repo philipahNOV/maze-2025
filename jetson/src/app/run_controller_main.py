@@ -31,6 +31,7 @@ def main(tracker: TrackerService,
         pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
     else:
         pathFollower = path_following.PathFollower(path_array, controller, config)
+    controller.path_follower = pathFollower
 
     image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
     image_controller.set_new_path(path_array)
@@ -88,6 +89,7 @@ def main(tracker: TrackerService,
                         else:
                             pathFollower = path_following.PathFollower(path_array, controller, config)
                             image_thread.path_follower = pathFollower
+                        controller.path_follower = pathFollower
                     blinker = None
                     ball_not_found_timer = None
             else:

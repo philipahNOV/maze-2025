@@ -16,6 +16,7 @@ class Controller:
         self.elevator_state = "down"  # Set to None if not using elevator, "down" otherwise
 
         # === INITIALIZATION ===
+        self.path_follower = None
         self.prevPos = None
         self.pos = None
         self.prevVel = None
@@ -214,6 +215,7 @@ class Controller:
             elif time.time() - self.stuck_timer_x > self.stuck_time_threshold:
                 self.stuck_x_active = True
                 self.unstuck_timer_x = None
+                self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80) // 2
         else:
             self.stuck_timer_x = None
             if self.stuck_x_active:
@@ -222,6 +224,7 @@ class Controller:
                 elif time.time() - self.unstuck_timer_x > self.stuck_unstuck_hold_time:
                     self.stuck_x_active = False
                     self.e_x_int = 0
+                    self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)
             else:
                 self.unstuck_timer_x = None
         if abs(vel_y) < self.stuck_vel_threshold and abs(e_y) > self.pos_tol // 3:
@@ -230,6 +233,7 @@ class Controller:
             elif time.time() - self.stuck_timer_y > self.stuck_time_threshold:
                 self.stuck_y_active = True
                 self.unstuck_timer_y = None
+                self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80) // 2
         else:
             self.stuck_timer_y = None
             if self.stuck_y_active:
@@ -238,6 +242,7 @@ class Controller:
                 elif time.time() - self.unstuck_timer_y > self.stuck_unstuck_hold_time:
                     self.stuck_y_active = False
                     self.e_y_int = 0
+                    self.path_follower.lookahead_distance = self.config["path_following"]["lookahead"].get("lookahead_distance", 80)
             else:
                 self.unstuck_timer_y = None
 
