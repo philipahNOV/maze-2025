@@ -100,19 +100,19 @@ class PlayvsaiEndScreen(tk.Frame):
             self,
             text="",
             font=("Jockey One", 30),  # 1.5x of original 20
-            fg="#2E8B57",
+            fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.under_title.place(x=512, y=280, anchor="n")
+        self.under_title.place(x=512, y=240, anchor="n")
 
         self.under_title2 = tk.Label(
             self,
             text="",
             font=("Jockey One", 30),  # 1.5x of original 20
-            fg="#EE3229",
+            fg="#2E8B57",
             bg="#D9D9D9"
         )
-        self.under_title2.place(x=512, y=330, anchor="n")
+        self.under_title2.place(x=512, y=320, anchor="n")
 
         self.under_title3 = tk.Label(
             self,
