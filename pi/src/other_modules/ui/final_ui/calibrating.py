@@ -68,7 +68,7 @@ class CalibratingScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.info.place(x=730, y=200)
+        self.info.place(x=715, y=200)
 
         self.info = tk.Label(
             self,
@@ -77,7 +77,7 @@ class CalibratingScreen(tk.Frame):
             fg="#1A1A1A",
             bg="#D9D9D9"
         )
-        self.info.place(x=730, y=240)
+        self.info.place(x=715, y=240)
 
         self.up_button = tk.Button(
             self,
