@@ -106,12 +106,10 @@ class PathFollower:
                 else:
                     self.next_waypoint = min(self.next_waypoint + 1, self.length - 1)
                     self.prev_waypoint = min(self.next_waypoint + 1, self.length - 1)
-                print(f"Stuck — reverting to waypoint {self.next_waypoint}")
 
                 self.prev_progress_time = None
 
         if time.time() - self.last_checkpoint_change_time > self.checkpoint_timeout:
-            print(f"Checkpoint timeout — reverting from waypoint {self.next_waypoint}")
             self.last_checkpoint_change_time = time.time()
 
             if self.forward:

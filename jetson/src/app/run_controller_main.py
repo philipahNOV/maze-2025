@@ -24,17 +24,14 @@ def main(tracker: TrackerService,
     ball_not_found_timer = None
     ball_not_found_limit = 60  # seconds
 
-    print("[INFO] Waiting for YOLO initialization...")
     while not tracker.is_initialized:
         time.sleep(0.1)
-    print("[INFO] Tracking initialized.")
 
     if controller.lookahead:
-        print("[INFO] Using lookahead path following.")
         pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
     else:
-        print("[INFO] Using standard path following.")
         pathFollower = path_following.PathFollower(path_array, controller, config)
+    controller.path_follower = pathFollower
 
     image_thread = ImageSenderThread(image_controller, mqtt_client, tracker, path_array, pathFollower, stop_event=stop_event)
     image_controller.set_new_path(path_array)
@@ -87,13 +84,12 @@ def main(tracker: TrackerService,
                         time.sleep(escape_thread.duration)
                         controller.horizontal()
                         if controller.lookahead:
-                            print("[INFO] Using lookahead path following.")
                             pathFollower = path_following_lookahead.PathFollower(path_array, controller, config)
                             image_thread.path_follower = pathFollower
                         else:
-                            print("[INFO] Using standard path following.")
                             pathFollower = path_following.PathFollower(path_array, controller, config)
                             image_thread.path_follower = pathFollower
+                        controller.path_follower = pathFollower
                     blinker = None
                     ball_not_found_timer = None
             else:
@@ -110,7 +106,6 @@ def main(tracker: TrackerService,
             if ball_not_found_timer is not None:
                 elapsed_time = time.time() - ball_not_found_timer
                 if elapsed_time > ball_not_found_limit:
-                    print("[WARNING] Ball not found for too long, returning to main menu.")
                     controller.arduinoThread.send_speed(0, 0)
                     ball_not_found_timer = None
                     mqtt_client.client.publish("pi/info", "timeout")
@@ -128,7 +123,6 @@ def main(tracker: TrackerService,
         print(f"[ERROR] Control loop crashed: {e}")
         traceback.print_exc()
     finally:
-        print("[INFO] Control thread exited.")
         if blinker is not None:
             blinker.stop()
             blinker = None

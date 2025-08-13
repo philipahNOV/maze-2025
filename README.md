@@ -116,15 +116,14 @@ This part of the system is responsible for coordinating ball tracking, control e
 ### 2. Control Execution Flow
 
 1. On boot, the system enters the `BOOTING` state.
-2. The Pi sends a `"booted"` MQTT message to unlock the main screen.
-3. User sends `"Locate"` → triggers `start_tracker()` and begins ball tracking.
-4. After the ball is found, the system can either:
-   - Auto-calculate a path (`"AutoPath"`)
-   - Wait for a custom goal from the HMI
-5. When `"Start"` is received, control enters the `CONTROLLING` state:
-   - The PID controller is run in a 60Hz loop
-   - The controller calculates tilt angles and sends velocity commands to the Arduino
-   - Camera feedback updates ball position
+2. The Pi sends a `"booted"` MQTT message to enter the main screen.
+3. From the main screen, there are several options of state transitions.
+
+#### Autonomous solver
+1. The FSM transitions to `LOCATING`, and starts tracking the ball
+2. When the ball is found, it transitions to `CUSTOM_PATH`
+3. Upon entering `CUSTOM_PATH`, The Jetson starts sending camera feed to the Pi. When a goal has been selected and path found
+4. The start buttons are then enabled, which transitions the FSM into the `CONTROLLING` state and starts the controller based on the chosen type of path following.
 
 ---
 
@@ -136,21 +135,28 @@ Example:
 
 ```yaml
 controller:
-  stuck_wiggle_amplitude: 0.8
-  stuck_wiggle_frequency: 10
-  angular_controller:
-    kp: 6500
-    max_angle: 1.8
-    command_delay: 0.0001
-  arduino:
-    x_offset: 0.01
-    y_offset: 0.0
-    minimum_velocity: 22
-    maximum_velocity: 100
-    minimum_velocity_difference: 10
+    position_controller_normal:
+        feedforward_t: 7.8
+        kd_x: 0.000085
+        kd_y: 0.000085
+        ki_x: 0.0004
+        ki_y: 0.0004
+        kp_x: 0.00004
+        kp_y: 0.00004
+        position_tolerance: 25
+        velocity_tolerance: 20
+    position_smoothing_alpha: 0.1
+    stuck_time_threshold: 0.5
+    stuck_unstuck_hold_time: 0.2
+    stuck_upper_position_threshold: 70
+    stuck_velocity_threshold: 30
+    stuck_wiggle_amplitude: 0.4
+    stuck_wiggle_frequency: 20
+    velocity_smoothing_alpha: 0.99
+    wiggle_direction_bias: 0.007
 ```
 
-The controller supports both standard and lookahead PID gains (configurable via the `lookahead` toggle).
+The controller supports both standard and lookahead PID gains to complement the two types of path following.
 
 ---
 

@@ -17,7 +17,6 @@ class PathMemory:
         for entry in self.paths:
             s, g, path = entry["start"], entry["goal"], entry["path"]
             if self._within_tolerance(start, s) and self._within_tolerance(goal, g):
-                print("[PathMemory] Reusing fuzzy-matched cached path.")
                 return path
         return None
 

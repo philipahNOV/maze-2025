@@ -44,7 +44,6 @@ class JoystickController:
 
         self.running = True
         interval = 1.0 / self.update_rate_hz
-        print("[XboxController] Started polling at {:.0f} Hz".format(self.update_rate_hz))
 
         try:
             while self.running:
