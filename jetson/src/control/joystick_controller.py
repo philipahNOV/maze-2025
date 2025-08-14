@@ -18,6 +18,7 @@ class JoystickController:
         self.prev_button_state = 0
         self.ball_in_elevator = False
         self.r2_scaled = 0.0
+        self.r2_min = 0.087
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -30,8 +31,18 @@ class JoystickController:
 
     @_apply_deadzone
     def scaled_output(self, raw):
-        scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - 22) + 22
-        scaled = int(scaled * abs(self.r2_scaled - 1))
+        # Base mapping from stick to [22..255]
+        base = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - 22) + 22
+
+        # Blend factor g: 1.0 at r2_min (no reduction), 0.0 at full press (collapse to 22)
+        # Clamp to [0,1] to be safe against small noise
+        denom = (1.0 - self.r2_min)
+        g = (1.0 - self.r2_scaled) / denom if denom > 0 else 0.0
+        g = max(0.0, min(1.0, g))
+
+        # Move base toward 22 as R2 increases
+        scaled = 22 + (base - 22) * g
+
         return int(scaled) if raw > 0 else -int(scaled)
 
     def start(self):
