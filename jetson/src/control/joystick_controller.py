@@ -31,7 +31,7 @@ class JoystickController:
     @_apply_deadzone
     def scaled_output(self, raw):
         scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * 254 + 1
-        scaled = int(scaled * self.r2_scaled)
+        scaled = int(scaled * abs(self.r2_scaled - 1))
         return int(scaled) if raw > 0 else -int(scaled)
 
     def start(self):
