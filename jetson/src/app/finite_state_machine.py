@@ -193,7 +193,7 @@ class HMIController:
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
         time.sleep(1)
         #self.maze_version = determine_maze(self.tracking_service)
-        self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
+        #self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
         if self.maze_version is not None and self.maze_version == "Hard":
             maze_id = 1
         else:
@@ -875,6 +875,8 @@ class HMIController:
                         time.sleep(0.05)
                 except Exception as e:
                     print(f"[PLAYALONE] Elevator command error: {e}")
+                
+                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
 
 
         elif self.state == SystemState.PLAYALONE_START:
