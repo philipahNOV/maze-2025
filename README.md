@@ -116,15 +116,14 @@ This part of the system is responsible for coordinating ball tracking, control e
 ### 2. Control Execution Flow
 
 1. On boot, the system enters the `BOOTING` state.
-2. The Pi sends a `"booted"` MQTT message to unlock the main screen.
-3. User sends `"Locate"` → triggers `start_tracker()` and begins ball tracking.
-4. After the ball is found, the system can either:
-   - Auto-calculate a path (`"AutoPath"`)
-   - Wait for a custom goal from the HMI
-5. When `"Start"` is received, control enters the `CONTROLLING` state:
-   - The PID controller is run in a 60Hz loop
-   - The controller calculates tilt angles and sends velocity commands to the Arduino
-   - Camera feedback updates ball position
+2. The Pi sends a `"booted"` MQTT message to enter the main screen.
+3. From the main screen, there are several options of state transitions.
+
+#### Autonomous solver
+1. The FSM transitions to `LOCATING`, and starts tracking the ball
+2. When the ball is found, it transitions to `CUSTOM_PATH`
+3. Upon entering `CUSTOM_PATH`, The Jetson starts sending camera feed to the Pi. When a goal has been selected and path found
+4. The start buttons are then enabled, which transitions the FSM into the `CONTROLLING` state and starts the controller based on the chosen type of path following.
 
 ---
 

@@ -17,6 +17,8 @@ class JoystickController:
         self.elevator_state = 1
         self.prev_button_state = 0
         self.ball_in_elevator = False
+        self.r2_scaled = 0.0
+        self.r2_min = 40 / 255
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -29,7 +31,18 @@ class JoystickController:
 
     @_apply_deadzone
     def scaled_output(self, raw):
-        scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * 254 + 1
+        min_output = 40  # New minimum speed
+        # Base mapping from stick to [40..255]
+        base = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - min_output) + min_output
+
+        # Blend factor g: 1.0 at r2_min (no reduction), 0.0 at full press (collapse to min_output)
+        denom = (1.0 - self.r2_min)
+        g = (1.0 - self.r2_scaled) / denom if denom > 0 else 0.0
+        g = max(0.0, min(1.0, g))
+
+        # Move base toward min_output as R2 increases
+        scaled = min_output + (base - min_output) * g
+
         return int(scaled) if raw > 0 else -int(scaled)
 
     def start(self):
@@ -50,6 +63,8 @@ class JoystickController:
                 loop_start = time.time()
                 pygame.event.pump()
 
+                print("JOYSTICK")
+
                 if self.playalone_wait:
                     button = joystick.get_button(0)
                     if button and self.prev_button_state != button and self.ball_in_elevator:
@@ -60,7 +75,7 @@ class JoystickController:
                     continue
 
                 axis_x = -joystick.get_axis(1)  # venstre horisontal
-                axis_y = -joystick.get_axis(0)  # vensre vertikal
+                axis_y = -joystick.get_axis(0)  # venstre vertikal
                 vel_x = self.scaled_output(axis_x)
                 vel_y = self.scaled_output(axis_y)
                 self.arduino.send_speed(vel_x, vel_y)
@@ -69,6 +84,9 @@ class JoystickController:
                 if button and not self.prev_button_state:
                     self.elevator_state *= -1
                     self.arduino.send_elevator(self.elevator_state)
+
+                r2_value = joystick.get_axis(5)  # 5 is common for RT, but may vary
+                self.r2_scaled = ((r2_value + 1) / 2) * (1.0 - self.r2_min) + self.r2_min
 
                 self.prev_button_state = button
                 time.sleep(max(0, interval - (time.time() - loop_start)))

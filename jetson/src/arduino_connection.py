@@ -47,8 +47,6 @@ class ArduinoConnection(threading.Thread):
             # Lager en kommando-streng fra alle argumentene pluss state
             command_parts = list(map(str, args)) + [str(state.value)]
             self.command_to_send = ",".join(command_parts) + "\n"
-            if state == ArduinoState.ELEVATOR:
-                print(f"Sending command to Arduino: {self.command_to_send.encode()}")
             self.condition.notify()
     
     def send_idle(self):
