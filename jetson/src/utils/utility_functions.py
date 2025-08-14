@@ -107,19 +107,19 @@ def load_image(config, frame=None, path=None):
         img = cv2.imread(str(path), cv2.IMREAD_COLOR)
         if img is None:
             raise FileNotFoundError(f"Could not read image: {path}")
+    else:
+        raise ValueError("Either 'frame' or 'path' must be provided to load_image().")
 
     x1, y1 = frame_corners[0]
     x2, y2 = frame_corners[3]
     cropped = img[y1:y2, x1:x2]
-
     return cropped
 
 def normalize_view(img, roi=None, resize_to=(512, 512), clahe=True):
     """
-    Optional but helpful:
-    - Crop to a known ROI if your camera sees extra background.
-    - Resize to a consistent size.
-    - Apply CLAHE to reduce lighting variability.
+    - Optional ROI crop
+    - Resize to a consistent size
+    - Optional CLAHE on L channel to reduce lighting variability
     """
     if roi is not None:
         x, y, w, h = roi
@@ -137,36 +137,43 @@ def normalize_view(img, roi=None, resize_to=(512, 512), clahe=True):
 
     return img
 
-def phash_distance(img_a, img_b):
-    """Compute pHash distance (Hamming) between two BGR images."""
-    hasher = cv2.img_hash.pHash_create()
-    h1 = hasher.compute(img_a)
-    h2 = hasher.compute(img_b)
-    # Hamming distance for uint8 arrays: count differing bits
-    # OpenCV returns 1x8 uint8; convert to int64 and popcount
-    x = np.unpackbits(h1 ^ h2).sum()
-    return int(x)
+def absdiff_distance(img_a, img_b, use_gray=True, blur_ksize=3):
+    """
+    Compute a scalar difference using pixel-wise absolute difference.
+    Lower = more similar.
+    - Converts to grayscale (optional)
+    - Light Gaussian blur to reduce noise
+    - Returns the mean absolute difference (float)
+    """
+    if use_gray:
+        img_a = cv2.cvtColor(img_a, cv2.COLOR_BGR2GRAY)
+        img_b = cv2.cvtColor(img_b, cv2.COLOR_BGR2GRAY)
+
+    if blur_ksize and blur_ksize > 1:
+        img_a = cv2.GaussianBlur(img_a, (blur_ksize, blur_ksize), 0)
+        img_b = cv2.GaussianBlur(img_b, (blur_ksize, blur_ksize), 0)
+
+    diff = cv2.absdiff(img_a, img_b)
+    return float(np.mean(diff))
 
 def identify_maze(frame, config):
     """
-    Returns ('A' or 'B', distA, distB).
-    Smaller distance = more similar.
+    Returns 'Hard' or 'Easy'.
+    Uses normalized view + absdiff to pick the closest reference board.
     """
     ref_a_path = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "..", "MAZE_PICS", f"Hard.jpg")
-                )
-
+        os.path.join(os.path.dirname(__file__), "..", "MAZE_PICS", "Hard.jpg")
+    )
     ref_b_path = os.path.abspath(
-                    os.path.join(os.path.dirname(__file__), "..", "MAZE_PICS", f"Easy.jpg")
-                )
+        os.path.join(os.path.dirname(__file__), "..", "MAZE_PICS", "Easy.jpg")
+    )
 
     img_cap = normalize_view(load_image(config, frame=frame))
     img_a   = normalize_view(load_image(config, path=ref_a_path))
     img_b   = normalize_view(load_image(config, path=ref_b_path))
 
-    d_a = phash_distance(img_cap, img_a)
-    d_b = phash_distance(img_cap, img_b)
+    d_a = absdiff_distance(img_cap, img_a)
+    d_b = absdiff_distance(img_cap, img_b)
 
-    print(choice)
     choice = 'Hard' if d_a <= d_b else 'Easy'
     return choice
