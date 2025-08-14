@@ -189,7 +189,7 @@ class HMIController:
         player_name = self.current_player_name
         ball_lost_timeout = game_config.get("ball_lost_timeout", 3)
         
-        self.tracking_service.start_tracker()
+        #self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
         time.sleep(1)
         self.maze_version = determine_maze(self.tracking_service)

@@ -11,6 +11,8 @@ class TrackerService:
         self.tracking_config = tracking_config or {}
 
     def start_tracker(self):
+        if self.started:
+            return
         self.tracker = BallTracker(self.camera, self.tracking_config, model_path=self.model_path)
         self.tracker.start()
         self.started = True
