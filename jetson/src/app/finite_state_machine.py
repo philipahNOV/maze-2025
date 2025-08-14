@@ -464,6 +464,7 @@ class HMIController:
             self.joystick_thread.join()
         
         self.tracking_service.stop_tracker()
+        threading.Thread(target=self.controller.horizontal, daemon=True).start()
         
         if self.image_thread is not None:
             self.image_thread.stop()
