@@ -70,6 +70,7 @@ class HMIController:
         self.loop_path = False
         self.maze_version = None
         self.config = config
+        self.maze_id = 1
 
         self.alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
         self.alive_thread.start()
@@ -194,10 +195,6 @@ class HMIController:
         time.sleep(1)
         #self.maze_version = determine_maze(self.tracking_service)
         #self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
-        if self.maze_version is not None and self.maze_version == "Hard":
-            maze_id = 1
-        else:
-            maze_id = 2
 
         print(f"[PLAYALONE] Playing on Maze {self.maze_version} with timeout {ball_lost_timeout}s")
         print(f"[PLAYALONE] Player name: {player_name}")
@@ -248,7 +245,7 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
 
-                    leaderboard_data = read_leaderboard(maze_id)
+                    leaderboard_data = read_leaderboard(self.maze_id)
                     csv_data = []
                     for entry in leaderboard_data:
                         csv_data.append(f"{entry['name']},{entry['time']:.2f},{entry['date']},{entry['maze_id']}")
@@ -256,7 +253,7 @@ class HMIController:
                     csv_string = '\n'.join(csv_data)
                     rank = self.determine_rank(csv_string, duration)
 
-                    add_score(player_name, duration, maze_id, self.mqtt_client)
+                    add_score(player_name, duration, self.maze_id, self.mqtt_client)
 
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     threading.Thread(target=self.controller.horizontal, daemon=True).start()
@@ -875,8 +872,6 @@ class HMIController:
                         time.sleep(0.05)
                 except Exception as e:
                     print(f"[PLAYALONE] Elevator command error: {e}")
-                
-                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
 
 
         elif self.state == SystemState.PLAYALONE_START:
@@ -894,7 +889,12 @@ class HMIController:
             elif cmd == "StartPlayAloneGame":
                 print("[PLAYALONE] Start game button clicked - activating timer")
                 self.start_playalone_timer()
-            
+                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
+                if self.maze_version is not None and self.maze_version == "Hard":
+                    self.maze_id = 1
+                else:
+                    self.maze_id = 2
+
             elif cmd == "RestartPlayAlone":
                 self.mqtt_client.clear_image_buffer()
                 self.tracking_service.stop_tracker()
