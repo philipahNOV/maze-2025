@@ -63,8 +63,6 @@ class JoystickController:
                 loop_start = time.time()
                 pygame.event.pump()
 
-                print("JOYSTICK")
-
                 if self.playalone_wait:
                     button = joystick.get_button(0)
                     if button and self.prev_button_state != button and self.ball_in_elevator:

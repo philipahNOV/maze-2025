@@ -160,13 +160,13 @@ def identify_maze(frame, config):
                     os.path.join(os.path.dirname(__file__), "..", "MAZE_PICS", f"Easy.jpg")
                 )
 
-    img_cap = normalize_view(config, frame=frame)
-    img_a   = normalize_view(config, path=load_image(ref_a_path))
-    img_b   = normalize_view(config, path=load_image(ref_b_path))
+    img_cap = normalize_view(load_image(config, frame=frame))
+    img_a   = normalize_view(load_image(config, path=ref_a_path))
+    img_b   = normalize_view(load_image(config, path=ref_b_path))
 
     d_a = phash_distance(img_cap, img_a)
     d_b = phash_distance(img_cap, img_b)
 
-    print(choice, d_a, d_b)
+    print(choice)
     choice = 'Hard' if d_a <= d_b else 'Easy'
     return choice
