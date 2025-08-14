@@ -18,7 +18,7 @@ class JoystickController:
         self.prev_button_state = 0
         self.ball_in_elevator = False
         self.r2_scaled = 0.0
-        self.r2_min = 0.087
+        self.r2_min = 40 / 255
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -31,17 +31,17 @@ class JoystickController:
 
     @_apply_deadzone
     def scaled_output(self, raw):
-        # Base mapping from stick to [22..255]
-        base = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - 22) + 22
+        min_output = 40  # New minimum speed
+        # Base mapping from stick to [40..255]
+        base = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - min_output) + min_output
 
-        # Blend factor g: 1.0 at r2_min (no reduction), 0.0 at full press (collapse to 22)
-        # Clamp to [0,1] to be safe against small noise
+        # Blend factor g: 1.0 at r2_min (no reduction), 0.0 at full press (collapse to min_output)
         denom = (1.0 - self.r2_min)
         g = (1.0 - self.r2_scaled) / denom if denom > 0 else 0.0
         g = max(0.0, min(1.0, g))
 
-        # Move base toward 22 as R2 increases
-        scaled = 22 + (base - 22) * g
+        # Move base toward min_output as R2 increases
+        scaled = min_output + (base - min_output) * g
 
         return int(scaled) if raw > 0 else -int(scaled)
 
@@ -84,7 +84,7 @@ class JoystickController:
                     self.arduino.send_elevator(self.elevator_state)
 
                 r2_value = joystick.get_axis(5)  # 5 is common for RT, but may vary
-                self.r2_scaled = ((r2_value + 1) / 2) * (1.0 - 0.087) + 0.087
+                self.r2_scaled = ((r2_value + 1) / 2) * (1.0 - self.r2_min) + self.r2_min
 
                 self.prev_button_state = button
                 time.sleep(max(0, interval - (time.time() - loop_start)))
