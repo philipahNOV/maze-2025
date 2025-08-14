@@ -196,9 +196,6 @@ class HMIController:
         #self.maze_version = determine_maze(self.tracking_service)
         #self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
 
-        print(f"[PLAYALONE] Playing on Maze {self.maze_version} with timeout {ball_lost_timeout}s")
-        print(f"[PLAYALONE] Player name: {player_name}")
-
         game_running = True
         start_time = None
         last_valid_pos_time = time.time()
@@ -1275,7 +1272,9 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
-                self.maze_version = determine_maze(self.tracking_service)
+                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
+                if self.maze_version is not None:
+                    self.maze_id = 1 if self.maze_version == "Hard" else 2
                 print(f"[FSM] Detected maze version: {self.maze_version}")
 
         # --- AUTO_PATH STATE ---
