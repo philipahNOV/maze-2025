@@ -126,66 +126,80 @@ Core dependencies include:
 
 ---
 
-### <a id="Flow of the FSM"></a>Flow of the FSM
+## <a id="Flow of the FSM"></a>Flow of the FSM
 
 The system operates through a well-defined state machine `finite_state_machine.py` with the following states:
 
-#### **BOOTING**
+### BOOTING
 Initial state. Transitions to `MAIN_SCREEN` after the Raspberry Pi and Jetson perform a MQTT handshake.
 
-#### **MAIN_SCREEN**
+### MAIN_SCREEN
 Functions as a home-screen. May branch into several states.
 
-#### **ADMIN_TOOLS**
+### ADMIN_TOOLS
 Requires a code to enter. From here, the admin can calibrate, clear leaderboards and path cache, restart, reboot or shutdown the robot.
 
-#### **INFO_SCREEN**
+### INFO_SCREEN
 Displays information about the project.
 
-#### **LOCATING**
+### LOCATING
 Transitioned into from `MAIN_SCREEN` when autonomous solving is chosen. Starts tracker and other threads required to locate the ball. When the ball is found, the state transitions to `CUSTOM_PATH`. 
 
-#### **CUSTOM_PATH**
+### CUSTOM_PATH
 In this state/screen, the user can choose a path goal by touching an image of the maze. By pressing 'Calculate path', finding a path will be attempted. If a path is found, start-buttons are enabled. The user can choose 'safe-control' or 'fast-control', which are two modes of the controller. When one of the buttons is pressed, the state transitions into `CONTROLLING`
 
-#### **CONTROLLING**
+### CONTROLLING
 In this state, the control loop is running, letting the robot autonomously balance the ball through the maze. On the screen, a large live camera feed of the maze is displayed for the user to examin while executing. 
 
-#### **HUMAN_CONTROLLER**
+### HUMAN_CONTROLLER
 Transitioned into from `MAIN_SCREEN` if the user chooses 'Game modes'. The main property of this state and states branching from it, is that the user may control the maze using and Xbox controller.
 
-#### **PRACTICE**
+### PRACTICE
 Playground for the user to attempt the maze without being able to loose and without being timed by a stop-watch.
 
-#### **PLAYALONE**
+### PLAYALONE
 Start of the sequence of states that let the player attempt the maze while having their time recorded and, if succeeding, added to the leaderboard. In this state, the user may enter their name on the screen. Transitions into `PLAYALONE_START` when the user confirms their name
 
-#### **PLAYALONE_START**
+### PLAYALONE_START
 In this state, the ball is continuously tracked. If the ball is located withing the elevator, the user may start their attempt. After pressing start, the user attempt is began, letting the user control the ball using the Xbox controller. If the ball falls through a hole, the state transitions into `PLAYALONE_FAILED`. If the ball reaches the goal, the state transitions into `PLAYALONE VICTORY`.
 
-#### **PLAYALONE_FAILED**
+### PLAYALONE_FAILED
 State where the user may either exit from the game mode, or choose to try again, returning to `PLAYALONE_START`
 
-#### **PLAYALONE_VICTORY**
+### PLAYALONE_VICTORY
 The users maze solving time is saved. Their rank is computed by comparing the time to the leaderboard of the corresponding maze. The maze type (easy or hard) is automatically determined by the camera. The users time is added to the leaderboard.
 
-#### **LEADERBOARD**
+### LEADERBOARD
 Transitioned into using the corresponding button in either `HUMAN_CONTROLLER` or `PLAYALONE_VICTORY`. Displays the leaderboards of the easy and hard maze. The user may use a button to swap between the two displays.
 
-#### **PLAYVSAI**
+### PLAYVSAI
 Start of the sequence for the game mode 'Human vs Robot'. In this state, the user may choose a goal by touching an image of the maze. Then the user may press 'Start robot'.
 
-#### **PLAYVSAI_PID**
+### PLAYVSAI_PID
 Transitioned into when the user presses 'Start robot' in `PLAYVSAI`. The robot computes a path to the goal, and attempts to balance the ball through it. If success, the time is saved.
 
-#### **PLAYVSAI_HUMAN**
+### PLAYVSAI_HUMAN
 Transitioned into after the robot has either failed or succeeded in `PLAYVSAI_PID`. The user may press 'Start turn' and then control the ball through the maze using the xBox controller. If success, the time is saved. The times of the robot and the user are compared, and the winner is determined. 
 
-#### **Sate transition logic**
+### **Sate transition logic**
 Each state handles specific commands and maintains system integrity:
 - **Back Commands**: Clean state transitions with resource cleanup
 - **Error Handling**: Automatic fallback to safe states on failures
 - **Resource Management**: Thread lifecycle and hardware control coordination
+
+### **MQTT Command integration**
+
+The control system integrates tightly with MQTT communication for coordinated operation:
+
+**Command Processing**: The finite state machine subscribes to `jetson/command` topic and processes:
+- Mode transitions (Practice, PlayAlone, Navigate, etc.)
+- Game controls (StartGame, Retry, Back)
+- System commands (Locate, AdminTools, Disco)
+
+**Status Broadcasting**: Control states are published to relevant topics:
+- `pi/command`: UI state updates and game results
+- `pi/tracking_status`: Ball detection status and game events
+- `arduino/speed`: Real-time motor control commands
 
 ## <a id="control-system"></a>Control System
 
@@ -228,11 +242,11 @@ position_controller_normal:
 ```
 
 **Key Parameters:**
-- **kp**: Primary responsiveness control - higher values increase aggressiveness
-- **ki**: Eliminates steady-state positioning errors - use sparingly to avoid oscillation
-- **kd**: Dampens rapid movements - critical for system stability
-- **max_speed**: Hardware safety limit preventing motor damage
-- **lookahead**: Enables path prediction for smoother trajectory following
+- **feedforward_t**: Tuning parameter for feedforward. Increasing this reduces the responsiveness of the system. Decreasing may lead to fast but unstable responses.
+- **kp**: Proportional gain. Increase to punish position error deviations.
+- **ki**: Integral gain. Increase to punish position error deviations over time. Prevents steady-state errors.
+- **kd**: Derivative gain. Increase for more damping. Increase to punish large velocities and to 'break' when approaching waypoints.
+- **position_tolerance**: Acceptance radius for waypoint navigation.
 
 ### <a id="path-execution"></a>Path Execution
 
@@ -247,73 +261,32 @@ Path execution occurs in the `run_controller_main.main()` function with the foll
    - Check target proximity and advance to next waypoint
 4. **Completion Detection**: Monitor goal proximity and handle success/failure states
 
-**Lookahead Optimization**: When enabled, the controller predicts ball trajectory to smooth path following and reduce overshoot at waypoint transitions.
+**Lookahead Optimization**: When enabled, the controller switches to a pure pursuit type path following. This smooths the ball trajectory and speeds up the execution.
 
 ### <a id="horizontal-calibration"></a>Horizontal Calibration
 
-The system includes automatic horizontal calibration to establish a neutral maze position:
-
-```python
-def horizontal(self):
-    current_x, current_y = self.get_current_position()
-    
-    while abs(current_x) > self.tolerance or abs(current_y) > self.tolerance:
-        adjustment_x = -current_x * self.calibration_rate
-        adjustment_y = -current_y * self.calibration_rate
-        self.send_command(adjustment_x, adjustment_y)
-        time.sleep(self.update_interval)
-```
-
+The system includes automatic horizontal calibration to establish a neutral maze position.
 Calibration occurs automatically during state transitions and can be manually triggered through the admin interface.
-
-### <a id="mqtt-command-integration"></a>MQTT Command Integration
-
-The control system integrates tightly with MQTT communication for coordinated operation:
-
-**Command Processing**: The finite state machine subscribes to `jetson/command` topic and processes:
-- Mode transitions (Practice, PlayAlone, Navigate, etc.)
-- Game controls (StartGame, Retry, Back)
-- System commands (Locate, AdminTools, Disco)
-
-**Status Broadcasting**: Control states are published to relevant topics:
-- `pi/command`: UI state updates and game results
-- `pi/tracking_status`: Ball detection status and game events
-- `arduino/speed`: Real-time motor control commands
-
-### <a id="troubleshooting"></a>Troubleshooting
-
-**Common Issues and Solutions:**
-
-**Ball Not Following Path Accurately**
-- Check PID tuning - reduce `kp` if oscillating, increase if sluggish
-- Verify ball tracking accuracy - ensure good lighting and camera focus
-- Examine path quality - paths too close to walls may cause navigation errors
-
-**System Freezing During Operation**
-- Check MQTT connection stability between devices
-- Monitor Arduino serial communication for timeouts
-- Verify adequate power supply to all motor systems
-
-**Inconsistent Goal Detection**
-- Validate goal region definitions in configuration
-- Check maze boundary detection accuracy
-- Ensure goal areas are properly illuminated for tracking
 
 ### <a id="tuning-tips"></a>Tuning Tips
 
-**PID Optimization Process:**
+**Tuning**
 1. Start with `kp=0.5, ki=0, kd=0` and test basic response
 2. Increase `kp` until slight oscillation appears, then reduce by 20%
 3. Add `kd` (typically `kp/4`) to reduce overshoot and improve stability  
 4. Add minimal `ki` (typically `kp/40`) only if steady-state error persists
 5. Adjust `max_speed` based on maze size and desired completion time
+- Use current values as a base line
+- More responsiveness -> Increase `feedforward_t`
+- Smaller max velocities -> Increase `k_d`
+- More accurately stopping at waypoints -> Increase `k_d`
+- Prevent ball from getting stuck close to waypoints -> Increase `k_i`
+- Improve path accuracy (waypoint navigation) -> Decrease `position_tolerance`
+    - Consequence: Results in ball stopping more often and struggling to approach waypoint.
+- Improve path accuracy (pure pursuit) -> Decrease `lookahead_distance`
+    - Consequence: Reacts more slowly to path turns. Less predictive behaviour.
 
-**Performance Optimization:**
-- Enable lookahead for smoother paths but disable for precise positioning
-- Reduce update intervals for faster response but monitor system load
-- Adjust path waypoint density based on maze complexity
-
-### <a id="electrical-setup"></a>Electrical Setup
+## <a id="electrical-setup"></a>Electrical Setup
 
 The electrical system connects multiple components through a central power distribution and communication hub:
 
@@ -426,21 +399,20 @@ class MQTTClientJetson:
 The Pi MQTT client handles the touchscreen interface and user interaction:
 
 ```python
-class MQTTClientPi:
-    def __init__(self):
-        self.client = mqtt.Client()
+class MQTTClientPi(threading.Thread):
+    def __init__(self, broker_address='192.168.1.3', port=1883):
+        super().__init__()
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-        self.ui_manager = UIManager()
         
     def on_message(self, client, userdata, msg):
-        """Process commands from Jetson"""
-        topic = msg.topic
-        payload = msg.payload.decode()
-        
-        if topic == "pi/command":
-            self.ui_manager.handle_command(payload)
-        elif topic == "pi/image_feed":
-            self.ui_manager.update_camera_feed(payload)
+        if msg.topic == "pi/command":
+            payload = msg.payload.decode()
+            if payload.startswith("playalone_success:"):
+                duration = payload.split(":")[1]
+                rank = payload.split(":")[2]
+                if self.app and hasattr(self.app, 'frames'):
 ```
 
 **Responsibilities:**
