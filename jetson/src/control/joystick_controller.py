@@ -30,7 +30,7 @@ class JoystickController:
 
     @_apply_deadzone
     def scaled_output(self, raw):
-        scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * 254 + 1
+        scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * (255 - 22) + 22
         scaled = int(scaled * abs(self.r2_scaled - 1))
         return int(scaled) if raw > 0 else -int(scaled)
 
@@ -73,7 +73,7 @@ class JoystickController:
                     self.arduino.send_elevator(self.elevator_state)
 
                 r2_value = joystick.get_axis(5)  # 5 is common for RT, but may vary
-                self.r2_scaled = (r2_value + 1) / 2
+                self.r2_scaled = ((r2_value + 1) / 2) * (1.0 - 0.087) + 0.087
 
                 self.prev_button_state = button
                 time.sleep(max(0, interval - (time.time() - loop_start)))
