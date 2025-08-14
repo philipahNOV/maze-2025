@@ -17,6 +17,7 @@ class JoystickController:
         self.elevator_state = 1
         self.prev_button_state = 0
         self.ball_in_elevator = False
+        self.slow_speed = False
 
     def _apply_deadzone(func):
         @wraps(func)
@@ -30,6 +31,8 @@ class JoystickController:
     @_apply_deadzone
     def scaled_output(self, raw):
         scaled = (abs(raw) - self.deadzone) / (self.max_raw - self.deadzone) * 254 + 1
+        if self.slow_speed:
+            scaled = scaled // 2
         return int(scaled) if raw > 0 else -int(scaled)
 
     def start(self):
@@ -60,7 +63,7 @@ class JoystickController:
                     continue
 
                 axis_x = -joystick.get_axis(1)  # venstre horisontal
-                axis_y = -joystick.get_axis(0)  # vensre vertikal
+                axis_y = -joystick.get_axis(0)  # venstre vertikal
                 vel_x = self.scaled_output(axis_x)
                 vel_y = self.scaled_output(axis_y)
                 self.arduino.send_speed(vel_x, vel_y)
@@ -69,6 +72,12 @@ class JoystickController:
                 if button and not self.prev_button_state:
                     self.elevator_state *= -1
                     self.arduino.send_elevator(self.elevator_state)
+
+                r2_value = joystick.get_axis(5)  # 5 is common for RT, but may vary
+                if r2_value > 0.5:  # Threshold for "pressed halfway or more"
+                    self.slow_speed = True
+                else:
+                    self.slow_speed = False
 
                 self.prev_button_state = button
                 time.sleep(max(0, interval - (time.time() - loop_start)))
