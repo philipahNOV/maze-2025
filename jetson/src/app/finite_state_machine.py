@@ -411,6 +411,7 @@ class HMIController:
                     self.mqtt_client.client.publish("pi/command", "playvsai_human_fail")
                     duration = -1
                     game_completed = True
+                    break
                 elif ball_previously_detected:
                     ball_previously_detected = False
             else:
