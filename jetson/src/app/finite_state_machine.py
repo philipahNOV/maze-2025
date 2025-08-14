@@ -934,6 +934,28 @@ class HMIController:
                     print("[FSM] Entering LEADERBOARD mode")
                     self.state = SystemState.LEADERBOARD
                     self.mqtt_client.client.publish("pi/command", "show_leaderboard_screen")
+
+                    if hasattr(self, 'joystick_controller'):
+                        self.joystick_controller.stop()
+                        del self.joystick_controller
+                    if hasattr(self, 'joystick_thread') and self.joystick_thread.is_alive():
+                        self.joystick_thread.join()
+                        del self.joystick_thread
+                    
+                    self.tracking_service.stop_tracker()
+                    
+                    if self.path_thread is not None and self.path_thread.is_alive():
+                        self.path_thread.stop()
+                        self.path_thread = None
+
+                    if self.image_thread is not None:
+                        self.image_thread.stop()
+                        self.image_thread.join()
+                        self.image_thread = None
+                        self.custom_goal = None
+                    
+                    self.path = None
+                    self.image_controller.set_new_path(self.path)
                     
                     from utils.leaderboard_utils import send_leaderboard_data
                     send_leaderboard_data(self.mqtt_client, 1)
