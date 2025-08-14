@@ -167,5 +167,6 @@ def identify_maze(frame, config):
     d_a = phash_distance(img_cap, img_a)
     d_b = phash_distance(img_cap, img_b)
 
+    print(choice, d_a, d_b)
     choice = 'Hard' if d_a <= d_b else 'Easy'
     return choice
