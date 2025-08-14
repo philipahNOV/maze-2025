@@ -59,7 +59,7 @@ Most system parameters are configured through `config.yaml`, making it easy to a
 
 ## <a id="introduction"></a>Introduction
 
-This autonomous maze solver represents the culmination of NOV's 2025 robotics project, integrating computer vision, pathfinding algorithms, and precision motor control into a cohesive system. The project demonstrates practical applications of machine learning inference, real-time control systems, and distributed computing across multiple embedded devices. The system processes live camera feeds at high framerates using GPU-accelerated deep learning models, computes optimal navigation paths in real-time, and executes precise mechanical movements to achieve sub-second maze completion times. The modular architecture allows for easy adaptation to different maze configurations and provides both autonomous operation and interactive gameplay modes.
+This autonomous maze solver represents NOV's 2025 robotics project, integrating computer vision, pathfinding algorithms, and precision motor control into a complete system. The project demonstrates practical applications of machine learning inference, real-time control systems, and distributed computing across multiple embedded devices. The system processes live camera feeds at high framerates using GPU-accelerated deep learning models, computes optimal navigation paths in real-time, and executes precise mechanical movements to achieve sub-second maze completion times. The modular architecture allows for easy adaptation to different maze configurations and provides both autonomous operation and interactive gameplay modes.
 
 ---
 
