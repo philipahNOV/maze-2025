@@ -101,6 +101,16 @@ Mount the ZED 2i camera directly above the maze center with clear line-of-sight 
 
 ## <a id="setup--configuration"></a>Setup & Configuration
 
+### <a id="login-information"></a>Login information
+
+**Raspberry Pi:**
+- Username: raspberrypi
+- Password: raspberry
+
+**Jetson:**
+- Username: student
+- Password: student
+
 ### <a id="dependencies"></a>Dependencies
 
 Install all required packages via requirements file:
@@ -287,11 +297,6 @@ Calibration occurs automatically during state transitions and can be manually tr
 
 ### <a id="tuning-tips"></a>Tuning Tips
 
-1. Start with `kp=0.5, ki=0, kd=0` and test basic response
-2. Increase `kp` until slight oscillation appears, then reduce by 20%
-3. Add `kd` (typically `kp/4`) to reduce overshoot and improve stability  
-4. Add minimal `ki` (typically `kp/40`) only if steady-state error persists
-5. Adjust `max_speed` based on maze size and desired completion time
 - Use current values as a base line
 - More responsiveness -> Increase `feedforward_t`
 - Smaller max velocities -> Increase `k_d`
@@ -330,13 +335,11 @@ The electrical system connects multiple components through a central power distr
 
 The system uses MQTT (Message Queuing Telemetry Transport) as the primary communication protocol between the Jetson control unit and Raspberry Pi interface. This lightweight publish-subscribe protocol ensures reliable message delivery with minimal latency for real-time control applications.
 
-MQTT provides several advantages for this distributed robotics system:
-- **Low Latency**: Sub-millisecond message delivery for time-critical control commands
-- **Reliability**: Quality of Service (QoS) levels ensure message delivery guarantees  
-- **Scalability**: Easy addition of new devices without protocol changes
-- **Debugging**: All messages can be monitored and logged for troubleshooting
+Raspberry Pi IP: `192.168.1.2`
 
-The broker runs locally on the Jetson device, eliminating external network dependencies and ensuring consistent performance.
+Jetson IP: `192.168.1.3`
+
+The broker runs locally on the Jetson device.
 
 ### <a id="topic-structure"></a>Topic Structure
 
@@ -368,48 +371,30 @@ Device initialization follows a structured handshake sequence to ensure reliable
 3. **State Synchronization**: Exchange current system mode and configuration
 4. **Heartbeat Establishment**: Begin periodic status updates
 
-Example handshake sequence:
-```python
-# Pi initiates connection
-mqtt_client.publish("jetson/handshake", "pi_connected")
-
-# Jetson acknowledges and syncs state  
-mqtt_client.publish("pi/command", "show_main_screen")
-mqtt_client.publish("pi/tracking_status", "system_ready")
-```
-
 ### <a id="jetson-mqtt-client"></a>Jetson MQTT Client
 
 The Jetson MQTT client (`MQTTClientJetson`) manages all communication from the control system:
 
 ```python
-class MQTTClientJetson:
-    def __init__(self, broker_host="localhost", broker_port=1883):
-        self.client = mqtt.Client()
+class MQTTClientJetson(threading.Thread):
+    def __init__(self, arduino_connection: ArduinoConnection = None, fsm = None, broker_address="192.168.1.3", port=1883):
+        super().__init__()
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)  # type: ignore
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
-        self.image_buffer = []
-        
-    def on_connect(self, client, userdata, flags, rc):
-        """Subscribe to command topics on connection"""
-        client.subscribe("jetson/command")
-        client.subscribe("jetson/handshake")
-        
+        self.client.on_disconnect = self.on_disconnect
+
     def on_message(self, client, userdata, msg):
-        """Route messages to finite state machine"""
-        topic = msg.topic
         payload = msg.payload.decode()
-        
-        if topic == "jetson/command":
-            self.hmi_controller.on_command(payload)
+        topic = msg.topic
+        print(f"Message received on topic '{topic}': {payload}")
+
+        if topic == "handshake/request":
+            if payload == "pi":
+                self.client.publish("handshake/response", "ack", qos=1)
+                self.client.publish("pi/command", "booted", qos=1)
+                self.handshake_complete = True
 ```
-
-**Key Features:**
-- **Image Buffering**: Manages camera feed transmission with compression
-- **Command Routing**: Forwards UI commands to the finite state machine
-- **Connection Management**: Handles reconnection and error recovery
-- **Message Queuing**: Buffers messages during temporary disconnections
-
 ### <a id="pi-mqtt-client"></a>Pi MQTT Client
 
 The Pi MQTT client handles the touchscreen interface and user interaction:
@@ -431,71 +416,12 @@ class MQTTClientPi(threading.Thread):
                 if self.app and hasattr(self.app, 'frames'):
 ```
 
-**Responsibilities:**
-- **UI State Management**: Updates interface based on system state changes
-- **User Input Processing**: Captures touchscreen interactions and forwards commands
-- **Visual Feedback**: Displays ball tracking status and game progress
-- **Image Display**: Renders real-time camera feed with path overlays
-
-### <a id="message-formats"></a>Message Formats
-
-#### **Camera Feed**
-Images are transmitted as base64-encoded JPEG data with metadata:
-```json
-{
-  "image": "base64_encoded_jpeg_data",
-  "timestamp": 1677123456.789,
-  "path_overlay": true,
-  "ball_position": [145.7, 203.2]
-}
-```
-
-#### **Command Messages**
-Simple string commands for state transitions:
-- `"Practice"` - Enter manual control mode
-- `"PlayAlone"` - Start timed single-player game
-- `"StartGame"` - Begin timer for current game mode
-- `"Back"` - Return to previous state
-- `"Locate"` - Initiate ball detection and tracking
-
-### <a id="command-flow"></a>Command Flow
-
-Typical command sequences for different operations:
-
-**Starting a Navigation Session:**
-```
-Pi → jetson/command: "Navigate"
-Jetson → pi/command: "show_navigation_screen" 
-Pi → jetson/command: "Locate"
-Jetson → pi/tracking_status: "tracking_started"
-Jetson → pi/image_feed: [camera_feed_with_ball_detection]
-```
-
-**Autonomous Path Execution:**
-```
-Pi → jetson/command: "AutoPath"
-Jetson → pi/command: "show_path_planning"
-Jetson → pi/image_feed: [feed_with_path_overlay]
-Jetson → arduino/speed: "120,85"  # X,Y motor commands
-Jetson → pi/tracking_status: "goal_reached"
-```
-
 ### <a id="mqtt-troubleshooting"></a>MQTT Troubleshooting
 
 **Connection Issues:**
 - Verify broker is running: `sudo systemctl status mosquitto`
-- Check network connectivity between devices
+- Check connectivity between devices
 - Monitor broker logs: `sudo tail -f /var/log/mosquitto/mosquitto.log`
-
-**Message Delivery Problems:**
-- Use MQTT client tools to verify topic publishing: `mosquitto_pub -h localhost -t test -m "hello"`
-- Monitor all traffic: `mosquitto_sub -h localhost -t "#"`
-- Check QoS settings for messages
-
-**Performance Optimization:**
-- Adjust keep-alive intervals for faster connection detection
-- Use message compression for large image data
-- Implement message priority queuing for time-critical commands
 
 ---
 
