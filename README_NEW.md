@@ -209,7 +209,7 @@ The control system integrates multiple subsystems through a centralized finite s
 
 **Position Controller** (`position_controller.py`): 
 - `posControl`: PID-based control system computing tilt angles in both X and Y axis required for the ball to reach the target waypoint.
-- `axisControl`: P-controller that takes in reference tilt angles from the position controller, computes motor velocities, and sends the velocities to the Arduino
+- `axisControl`: P-controller that takes in reference tilt angles from the position controller, computes motor velocities, and sends the velocities to the Arduino.
 
 **Arduino Connection** (`arduino_connection.py`): Serial communication interface handling motor commands, elevator control, and system status feedback.
 
