@@ -296,7 +296,7 @@ The electrical system connects multiple components through a central power distr
 
 ### <a id="overview"></a>Overview
 
-The system uses MQTT (Message Queuing Telemetry Transport) as the primary communication protocol between the Jetson control unit and Raspberry Pi interface. This lightweight publish-subscribe protocol ensures reliable message delivery with minimal latency for real-time control applications.
+The system uses MQTT as the primary communication protocol between the Jetson control unit and Raspberry Pi interface. This lightweight publish-subscribe protocol gives a reliable message delivery with low latency.
 
 MQTT provides several advantages for this distributed robotics system:
 - **Low Latency**: Sub-millisecond message delivery for time-critical control commands
