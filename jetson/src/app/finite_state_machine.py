@@ -9,7 +9,7 @@ from control.image_controller import ImageController
 from control.image_controller import ImageSenderThread
 from control.joystick_controller import JoystickController
 import control.position_controller as position_controller
-from utils.utility_functions import is_in_elevator, remove_withing_elevator, determine_maze, is_within_goal
+from utils.utility_functions import is_in_elevator, remove_withing_elevator, determine_maze, is_within_goal, identify_maze
 import app.run_controller_main as run_controller_main
 import threading
 import os
@@ -70,6 +70,8 @@ class HMIController:
         self.loop_path = False
         self.maze_version = None
         self.config = config
+        self.maze_id = 1
+        self.elevator_state = 1  # 1 for up, -1 for down
 
         self.alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
         self.alive_thread.start()
@@ -192,14 +194,8 @@ class HMIController:
         #self.tracking_service.start_tracker()
         self.mqtt_client.client.publish("pi/tracking_status", "tracking_started")
         time.sleep(1)
-        self.maze_version = determine_maze(self.tracking_service)
-        if self.maze_version is not None and self.maze_version == "Hard":
-            maze_id = 1
-        else:
-            maze_id = 2
-
-        print(f"[PLAYALONE] Playing on Maze {self.maze_version} with timeout {ball_lost_timeout}s")
-        print(f"[PLAYALONE] Player name: {player_name}")
+        #self.maze_version = determine_maze(self.tracking_service)
+        #self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
 
         game_running = True
         start_time = None
@@ -247,7 +243,7 @@ class HMIController:
                     duration = time.time() - start_time
                     print(f"[PLAYALONE] Goal reached in {duration:.2f} sec")
 
-                    leaderboard_data = read_leaderboard(maze_id)
+                    leaderboard_data = read_leaderboard(self.maze_id)
                     csv_data = []
                     for entry in leaderboard_data:
                         csv_data.append(f"{entry['name']},{entry['time']:.2f},{entry['date']},{entry['maze_id']}")
@@ -255,7 +251,7 @@ class HMIController:
                     csv_string = '\n'.join(csv_data)
                     rank = self.determine_rank(csv_string, duration)
 
-                    add_score(player_name, duration, maze_id, self.mqtt_client)
+                    add_score(player_name, duration, self.maze_id, self.mqtt_client)
 
                     self.mqtt_client.client.publish("pi/command", f"playalone_success:{duration:.2f}:{rank}")
                     threading.Thread(target=self.controller.horizontal, daemon=True).start()
@@ -746,6 +742,7 @@ class HMIController:
                     self.image_thread.join()
                     self.image_thread = None
                 
+                self.elevator_state = 1
                 self.path = None
                 self.path_lookahead = None
                 self.playvsai_goal = None
@@ -811,6 +808,7 @@ class HMIController:
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
+                self.elevator_state = 1
 
                 # Safely stop and clear old image thread
                 if self.image_thread is not None:
@@ -891,7 +889,12 @@ class HMIController:
             elif cmd == "StartPlayAloneGame":
                 print("[PLAYALONE] Start game button clicked - activating timer")
                 self.start_playalone_timer()
-            
+                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
+                if self.maze_version is not None and self.maze_version == "Hard":
+                    self.maze_id = 1
+                else:
+                    self.maze_id = 2
+
             elif cmd == "RestartPlayAlone":
                 self.mqtt_client.clear_image_buffer()
                 self.tracking_service.stop_tracker()
@@ -962,6 +965,12 @@ class HMIController:
                     from utils.leaderboard_utils import send_leaderboard_data
                     send_leaderboard_data(self.mqtt_client, 1)
                     send_leaderboard_data(self.mqtt_client, 2)
+
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         elif self.state == SystemState.PLAYALONE_VICTORY:
             if cmd == "Back":
@@ -1166,6 +1175,12 @@ class HMIController:
                 
                 threading.Thread(target=self.run_playvsai_pid_turn, daemon=True).start()
 
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
+
         elif self.state == SystemState.PLAYVSAI_PID:
             if cmd == "Back":
                 self.playvsai_goal = None
@@ -1176,6 +1191,11 @@ class HMIController:
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
             if cmd == "human_screen":
                 self.state = SystemState.HUMAN_CONTROLLER
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         elif self.state == SystemState.PLAYVSAI_HUMAN:
             if cmd == "Back":
@@ -1205,6 +1225,11 @@ class HMIController:
                 self.start_playvsai_human_timer()
             elif cmd == "human_screen":
                 self.state = SystemState.HUMAN_CONTROLLER
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:
@@ -1272,7 +1297,9 @@ class HMIController:
                 self.image_controller.set_new_path(self.path)
                 self.image_thread = ImageSenderThread(self.image_controller, self.mqtt_client, self.tracking_service, self.path)
                 self.image_thread.start()
-                self.maze_version = determine_maze(self.tracking_service)
+                self.maze_version = identify_maze(self.tracking_service.get_stable_frame(), self.config)
+                if self.maze_version is not None:
+                    self.maze_id = 1 if self.maze_version == "Hard" else 2
                 print(f"[FSM] Detected maze version: {self.maze_version}")
 
         # --- AUTO_PATH STATE ---
