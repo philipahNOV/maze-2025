@@ -370,7 +370,7 @@ Panel mapping:
 
 ### Fuses
 - Power entry module: 3.15 A ceramic cartridge
-- Each motor: 2.15 A glass cartridge
+- Each motor: 2 A glass cartridge
 - Spares: Both types stored in the transport box
 
 ---
