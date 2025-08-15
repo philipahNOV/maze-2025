@@ -45,7 +45,7 @@ def astar(array, start, goal, repulsion_weight=5.0):
 
         closed[current] = True
 
-        for dx, dy in neighbors: # TODO: could be better optimized
+        for dx, dy in neighbors:
             nx, ny = current[0] + dx, current[1] + dy
 
             if not (0 <= nx < rows and 0 <= ny < cols):

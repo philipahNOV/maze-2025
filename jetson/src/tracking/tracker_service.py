@@ -37,4 +37,4 @@ class TrackerService:
     
     def retrack(self) -> None:
         if self.started and self.tracker:
-            self.tracker.retrack() # call this using tracker_service.retrack()
+            self.tracker.retrack()

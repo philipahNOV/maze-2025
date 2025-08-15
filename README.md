@@ -1,955 +1,1121 @@
-# Autonomous Maze Solver – NOV 2025
+# <a id="autonomous-maze-solver"></a>Autonomous Maze Solver - NOV 2025
 
-This project is the final version of NOV’s autonomous maze-solving system, completed during the summer of 2025. It builds on earlier prototypes and is now fully functional. The system tilts a physical maze board to guide a steel ball from a start point to a goal without falling into holes or hitting obstacles. The movement is done by two motors that tilt the board in the X and Y directions.
+This project is an autonomous maze-solving system that uses computer vision and robotics to guide a steel ball through physical mazes. The system tilts a maze board with two motors to navigate the ball from start to goal while avoiding holes and obstacles.
 
-The system uses a ZED 2i stereo camera mounted above the maze to detect the position of the ball. A Jetson device acts as the main processor. It runs an optimized YOLOv8 model to find the ball in each video frame, calculates the shortest path using the A* algorithm, and sends tilt commands. An Arduino controls the motors using PID logic to follow those commands. The communication between the Jetson and Arduino is handled through MQTT. All main logic runs on the Jetson, and the system operates without direct user input on the it once started.
+The core architecture consists of three main devices: a Jetson Orin Nano for computer vision and control logic, a Raspberry Pi for the human-machine interface, and an Arduino for motor control. A ZED 2i stereo camera mounted above the maze provides real-time ball tracking using a TensorRT-optimized YOLOv8 model. The system calculates optimal paths with A* pathfinding and executes precise movements through PID control.
 
-A Raspberry Pi is also connected to the system and acts as the HMI. It communicates with the Jetson over MQTT and provides a touchscreen interface where users can select between two modes. In Robot Mode, the system runs fully autonomously once a goal for the path is given. The camera tracks the ball, the path is calculated, and the PID controller moves the ball through the maze. In Human Mode, the user takes control. A joystick allows manual control of the maze tilt, and a timer tracks how long it takes the player to solve the maze. A leaderboard system stores high scores locally so users can compete by completing the mazes in the shortest time.
+Users can choose between autonomous mode where the system solves the maze automatically, manual mode for joystick control with competitive timing, and human vs AI mode for head-to-head competition. A local leaderboard tracks the fastest completion times across different maze configurations.
 
-All system settings are configured in a single file called config.yaml. This includes PID values, MQTT topics, camera parameters, and the maze layout. The software is organized into separate modules for detection, path planning, control, communication, and HMI interaction. The main script starts and coordinates all parts of the system.
-
-To set up the system, connect the Jetson, Arduino, Raspberry Pi, camera, and motors. Ensure the config.yaml is correctly filled out for your maze. Start the system using the main script. In Robot Mode, the ball will be tracked and guided to the goal automatically. In Human Mode, the user can control the maze manually and try to complete it as fast as possible.
-
-This version of the project is stable and designed for both demonstration and user interaction. It supports any maze layout that fits the board and provides both autonomous operation and a competitive manual play mode.
+Most system parameters are configured through `config.yaml`, making it easy to adapt to different maze layouts, adjust control parameters, and modify tracking settings without code changes.
 
 ---
 
-<summary><h3>Table of Contents</h3></summary>
+## <a id="table-of-contents"></a>Table of Contents
 
-- [Introduction](#introduction)
-- [System Overview](#system-overview)
+- [System Overview](#system-overview)  
+- [Physical Setup](#physical-setup)
 - [Setup & Configuration](#setup--configuration)
   - [Dependencies](#dependencies)
-- [Run Controller](#run-controller)
-  - [1. System Components](#1-system-components)
-  - [2. Control Execution Flow](#2-control-execution-flow)
-  - [3. Controller Configuration](#3-controller-configuration)
-  - [4. Path Execution](#4-path-execution)
-  - [5. Horizontal Calibration](#5-horizontal-calibration)
-  - [6. MQTT Command Integration](#6-mqtt-command-integration)
-  - [7. Troubleshooting](#7-troubleshooting)
-  - [8. Tuning Tips](#8-tuning-tips)
+- [Control System](#control-system)
+  - [System Components](#system-components)
+  - [Control Execution Flow](#control-execution-flow)
+  - [Controller Configuration](#controller-configuration)
+  - [Path Execution](#path-execution)
+  - [Horizontal Calibration](#horizontal-calibration)
+  - [MQTT Command Integration](#mqtt-command-integration)
+  - [Troubleshooting](#troubleshooting)
+  - [Tuning Tips](#tuning-tips)
+  - [Electrical Setup](#electrical-setup)
 - [MQTT Communication](#mqtt-communication)
-  - [1. Overview](#1-overview)
-  - [2. Topic Structure](#2-topic-structure)
-  - [3. Handshake Protocol](#3-handshake-protocol)
-  - [4. Jetson MQTT Client](#4-jetson-mqtt-client)
-  - [5. Pi MQTT Client](#5-pi-mqtt-client)
-  - [6. Message Formats](#6-message-formats)
-  - [7. Command Flow](#7-command-flow)
-  - [8. MQTT Troubleshooting](#8-mqtt-troubleshooting)
+  - [Overview](#overview)
+  - [Topic Structure](#topic-structure)
+  - [Handshake Protocol](#handshake-protocol)
+  - [Jetson MQTT Client](#jetson-mqtt-client)
+  - [Pi MQTT Client](#pi-mqtt-client)
+  - [Message Formats](#message-formats)
+  - [Command Flow](#command-flow)
+  - [MQTT Troubleshooting](#mqtt-troubleshooting)
 - [Ball Detection](#ball-detection)
-  - [1. System Architecture](#1-system-architecture)
-  - [2. Camera Acquisition](#2-camera-acquisition-cameramanager)
-  - [3. Object Detection](#3-object-detection-yolomodel)
-  - [4. Ball Tracking](#4-ball-tracking-balltracker)
-  - [5. Fallback and Recovery](#5-fallback-and-recovery)
-  - [6. Tracker Service](#6-trackerservice-trackerservice)
-  - [7. Vision Utilities](#7-vision-utilities-vision_utils)
-  - [8. Troubleshooting and Tuning](#8-troubleshooting-and-tuning)
+  - [System Architecture](#ball-detection-architecture)
+  - [Camera Acquisition](#camera-acquisition)
+  - [TensorRT YOLO Inference](#tensorrt-yolo-inference)
+  - [Ball Tracking](#ball-tracking)
+  - [Tracker Service](#tracker-service)
+  - [Detection Troubleshooting](#detection-troubleshooting)
 - [A* Pathfinding](#a-pathfinding)
-  - [1. A* Algorithm with Repulsion Field](#1-a-algorithm-with-repulsion-field)
-  - [2. Downscaled Pathfinding](#2-downscaled-pathfinding)
-  - [3. Binary Mask Preprocessing](#3-binary-mask-preprocessing)
-  - [4. Waypoint Sampling](#4-waypoint-sampling)
-  - [5. Path Drawing](#5-path-drawing)
-  - [6. Path Memory Caching](#6-path-memory-caching)
-  - [7. Nearest Walkable Point](#7-nearest-walkable-point)
-  - [8. A* Troubleshooting and Tuning](#8-troubleshooting-and-tuning-1)
+  - [A* Algorithm with Repulsion Field](#a-algorithm-with-repulsion-field)
+  - [Downscaled Pathfinding](#downscaled-pathfinding)
+  - [Binary Mask Preprocessing](#binary-mask-preprocessing)
+  - [Waypoint Sampling](#waypoint-sampling)
+  - [Path Drawing](#path-drawing)
+  - [Path Memory Caching](#path-memory-caching)
+  - [Nearest Walkable Point](#nearest-walkable-point)
+  - [Pathfinding Troubleshooting](#pathfinding-troubleshooting)
 - [Authors](#authors)
 
-## Introduction
-
-This project integrates multiple subsystems including camera-based ball tracking, a PID controller, MQTT communication, pathfinding via A*, and offline reinforcement learning potential. It runs on Jetson (for vision and control) and communicates with a Raspberry Pi interface for external monitoring and feedback.
 
 ---
 
-## System Overview
+## <a id="system-overview"></a>System Overview
 
-- **Jetson**: Main control unit; runs YOLO + HSV ball tracking and PID or RL controller.
-- **Raspberry Pi**: Displays HMI; sends goals and receives status via MQTT.
-- **Arduino**: Drives the actuators to tilt the maze.
-- **ZED Camera**: Captures real-time video of the maze and ball for tracking.
-- **Software Components**:
-  - Ball detection using YOLOv8 + HSV
-  - A* path planning using binary mask maps
-  - MQTT communication between Jetson and Pi
-  - PID-based and RL-based position control
-  - Visualization + troubleshooting tools
+### Core Architecture
+- **Jetson Orin Nano**: Primary control unit running TensorRT-optimized YOLOv8 inference, A* pathfinding, and PID control logic
+- **Raspberry Pi**: Touchscreen HMI providing user interaction, mode selection, and real-time system status
+- **Arduino Mega**: Motor controller executing precise tilt commands via dual-axis PID control
+- **ZED 2i Camera**: Stereo camera providing real-time ball position tracking and maze orientation detection
 
----
+### Software Components
+- **Ball Detection**: TensorRT-accelerated YOLOv8 model with boundary validation and position smoothing
+- **Path Planning**: A* algorithm with repulsion fields and optimized waypoint sampling
+- **Control System**: PID-based position control with adaptive lookahead and error correction
+- **Communication**: MQTT-based messaging between all system components
+- **User Interface**: Multi-mode touchscreen interface with competitive leaderboards
 
-## Physical Setup
-Before operation, the transport rod needs to be disconnected by unscrewing the screw using a hex key size 3. Then screw the screw back in at the bottom.
-![Alt text](/pictures/transport_rod_up.png)
-
-Before transportation, move the transport rod to the upper part.
-![Alt text](/pictures/transport_rod_down.png)
-
-To unscrew the panels over the electronics panel, a hex size 2 is used.
-
-## Setup & Configuration
-
-### Dependencies
-
-Install via `requirements.txt`:
-
-`pip install -r requirements.txt`
-
-## Run Controller
-
-This part of the system is responsible for coordinating ball tracking, control execution, and path-following logic. It serves as the core runtime loop of the Jetson system and interfaces directly with the tracker, controller, image pipeline, and the HMI via MQTT.
+### Operating Modes
+- **Navigation Mode**: Automatic maze solving with real-time path visualization
+- **Practice Mode**: Manual joystick control for practicing with a joystick
+- **Play Alone**: Timed single-player challenges with leaderboard integration
+- **Human vs Robot**: Competitive mode alternating between human and robot turns
+- **Admin Tools**: Calibration, and access to shutdown and other tools
 
 ---
 
-### 1. System Components
+## <a id="physical-setup"></a>Physical Setup
 
-- **HMI controller** (`finite_state_machine.py`): A central FSM that reacts to commands from the Pi and manages system transitions.
-- **Controller** (`position_controller.py`): Implements PID-based position control and axis-level motor commands, driven by camera tracking and waypoint references.
-- **Main Loop** (`run_controller_main.py`): Continuously reads the ball position, smooths it, and invokes control logic to reach the next target in the path.
-- **ImageController**: Updates HMI visuals with the latest camera frame and path overlay.
-- **MQTTClientJetson**: Handles all MQTT communication and command/event publishing.
-- **utility_threads**: Provides supporting threads for blinking LEDs, elevator escape, and pathfinding.
+### Transport Configuration
+Before operation, disconnect the transport rod by unscrewing with a 3mm hex key, then reinstall the screw at the bottom position.
 
----
+![Transport Rod Up](/pictures/transport_stag_nede.png)
 
-### 2. Control Execution Flow
+For transportation, move the transport rod to the upper position to secure the platform.
 
-1. On boot, the system enters the `BOOTING` state.
-2. The Pi sends a `"booted"` MQTT message to enter the main screen.
-3. From the main screen, there are several options of state transitions.
+![Transport Rod Down](/pictures/transport_stag_oppe.png)
 
-#### Autonomous solver
-1. The FSM transitions to `LOCATING`, and starts tracking the ball
-2. When the ball is found, it transitions to `CUSTOM_PATH`
-3. Upon entering `CUSTOM_PATH`, The Jetson starts sending camera feed to the Pi. When a goal has been selected and path found
-4. The start buttons are then enabled, which transitions the FSM into the `CONTROLLING` state and starts the controller based on the chosen type of path following.
+### Access Panels
+Use a 2mm hex key to remove the electronics panel covers for maintenance access.
+
+### Camera Positioning
+Mount the ZED 2i camera directly above the maze center with clear line-of-sight to the entire playing surface.
 
 ---
 
-### 3. Controller Configuration
+## <a id="setup--configuration"></a>Setup & Configuration
 
-All controller gains, tolerances, and hardware offsets are defined in `config.yaml` under the `controller:` section.
+### <a id="dependencies"></a>Dependencies
 
-Example:
+Install all required packages via requirements file:
+
+```bash
+pip install -r requirements.txt
+```
+---
+
+## <a id="Flow of the FSM"></a>Flow of the FSM
+
+The system operates through a well-defined state machine `finite_state_machine.py` with the following states:
+
+### BOOTING
+Initial state. Transitions to `MAIN_SCREEN` after the Raspberry Pi and Jetson perform a MQTT handshake.
+
+### MAIN_SCREEN
+Functions as a home-screen. May branch into several states.
+
+### ADMIN_TOOLS
+Requires a code to enter. From here, the admin can calibrate, clear leaderboards and path cache, restart, reboot or shutdown the robot.
+
+### INFO_SCREEN
+Displays information about the project.
+
+### LOCATING
+Transitioned into from `MAIN_SCREEN` when autonomous solving is chosen. Starts tracker and other threads required to locate the ball. When the ball is found, the state transitions to `CUSTOM_PATH`. 
+
+### CUSTOM_PATH
+In this state/screen, the user can choose a path goal by touching an image of the maze. By pressing 'Calculate path', finding a path will be attempted. If a path is found, start-buttons are enabled. The user can choose 'safe-control' or 'fast-control', which are two modes of the controller. When one of the buttons is pressed, the state transitions into `CONTROLLING`
+
+### CONTROLLING
+In this state, the control loop is running, letting the robot autonomously balance the ball through the maze. On the screen, a large live camera feed of the maze is displayed for the user to examin while executing. 
+
+### HUMAN_CONTROLLER
+Transitioned into from `MAIN_SCREEN` if the user chooses 'Game modes'. The main property of this state and states branching from it, is that the user may control the maze using and Xbox controller.
+
+### PRACTICE
+Playground for the user to attempt the maze without being able to loose and without being timed by a stop-watch.
+
+### PLAYALONE
+Start of the sequence of states that let the player attempt the maze while having their time recorded and, if succeeding, added to the leaderboard. In this state, the user may enter their name on the screen. Transitions into `PLAYALONE_START` when the user confirms their name
+
+### PLAYALONE_START
+In this state, the ball is continuously tracked. If the ball is located withing the elevator, the user may start their attempt. After pressing start, the user attempt is began, letting the user control the ball using the Xbox controller. If the ball falls through a hole, the state transitions into `PLAYALONE_FAILED`. If the ball reaches the goal, the state transitions into `PLAYALONE VICTORY`.
+
+### PLAYALONE_FAILED
+State where the user may either exit from the game mode, or choose to try again, returning to `PLAYALONE_START`
+
+### PLAYALONE_VICTORY
+The users maze solving time is saved. Their rank is computed by comparing the time to the leaderboard of the corresponding maze. The maze type (easy or hard) is automatically determined by the camera. The users time is added to the leaderboard.
+
+### LEADERBOARD
+Transitioned into using the corresponding button in either `HUMAN_CONTROLLER` or `PLAYALONE_VICTORY`. Displays the leaderboards of the easy and hard maze. The user may use a button to swap between the two displays.
+
+### PLAYVSAI
+Start of the sequence for the game mode 'Human vs Robot'. In this state, the user may choose a goal by touching an image of the maze. Then the user may press 'Start robot'.
+
+### PLAYVSAI_PID
+Transitioned into when the user presses 'Start robot' in `PLAYVSAI`. The robot computes a path to the goal, and attempts to balance the ball through it. If success, the time is saved.
+
+### PLAYVSAI_HUMAN
+Transitioned into after the robot has either failed or succeeded in `PLAYVSAI_PID`. The user may press 'Start turn' and then control the ball through the maze using the xBox controller. If success, the time is saved. The times of the robot and the user are compared, and the winner is determined. 
+
+### **Sate transition logic**
+Each state handles specific commands and maintains system integrity:
+- **Back Commands**: Clean state transitions with resource cleanup
+- **Error Handling**: Automatic fallback to safe states on failures
+- **Resource Management**: Thread lifecycle and hardware control coordination
+
+### **MQTT Command integration**
+
+The control system integrates tightly with MQTT communication for coordinated operation:
+
+**Command Processing**: The finite state machine subscribes to `jetson/command` topic and processes:
+- Mode transitions (Practice, PlayAlone, Navigate, etc.)
+- Game controls (StartGame, Retry, Back)
+- System commands (Locate, AdminTools, Disco)
+
+**Status Broadcasting**: Control states are published to relevant topics:
+- `pi/command`: UI state updates and game results
+- `pi/tracking_status`: Ball detection status and game events
+- `arduino/speed`: Real-time motor control commands
+
+## <a id="control-system"></a>Control System
+
+### <a id="system-components"></a>System Components
+
+The control system integrates multiple subsystems through a centralized finite state machine:
+
+**Position Controller** (`position_controller.py`): 
+- `posControl`: PID-based control system computing tilt angles in both X and Y axis required for the ball to reach the target waypoint.
+- `axisControl`: P-controller that takes in reference tilt angles from the position controller, computes motor velocities, and sends the velocities to the Arduino
+
+**Arduino Connection** (`arduino_connection.py`): Serial communication interface handling motor commands, elevator control, and system status feedback.
+
+**Joystick Controller**: Manual control interface for practice mode and human vs AI gameplay.
+
+### <a id="controller-configuration"></a>Controller Configuration
+
+The PID controller accepts configuration through `config.yaml`:
 
 ```yaml
-controller:
-    position_controller_normal:
-        feedforward_t: 7.8
-        kd_x: 0.000085
-        kd_y: 0.000085
-        ki_x: 0.0004
-        ki_y: 0.0004
-        kp_x: 0.00004
-        kp_y: 0.00004
-        position_tolerance: 25
-        velocity_tolerance: 20
-    position_smoothing_alpha: 0.1
-    stuck_time_threshold: 0.5
-    stuck_unstuck_hold_time: 0.2
-    stuck_upper_position_threshold: 70
-    stuck_velocity_threshold: 30
-    stuck_wiggle_amplitude: 0.4
-    stuck_wiggle_frequency: 20
-    velocity_smoothing_alpha: 0.99
-    wiggle_direction_bias: 0.007
+position_controller_normal:
+    feedforward_t: 7.8
+    kd_x: 0.000085
+    kd_y: 0.000085
+    ki_x: 0.0004
+    ki_y: 0.0004
+    kp_x: 0.00004
+    kp_y: 0.00004
+    position_tolerance: 25
+    velocity_tolerance: 20
+  position_smoothing_alpha: 0.1
+  stuck_time_threshold: 0.5
+  stuck_unstuck_hold_time: 0.2
+  stuck_upper_position_threshold: 70
+  stuck_velocity_threshold: 30
+  stuck_wiggle_amplitude: 0.4
+  stuck_wiggle_frequency: 20
+  velocity_smoothing_alpha: 0.99
+  wiggle_direction_bias: 0.007
 ```
 
-The controller supports both standard and lookahead PID gains to complement the two types of path following.
+**Key Parameters:**
+- **feedforward_t**: Tuning parameter for feedforward. Increasing this reduces the responsiveness of the system. Decreasing may lead to fast but unstable responses.
+- **kp**: Proportional gain. Increase to punish position error deviations.
+- **ki**: Integral gain. Increase to punish position error deviations over time. Prevents steady-state errors.
+- **kd**: Derivative gain. Increase for more damping. Increase to punish large velocities and to 'break' when approaching waypoints.
+- **position_tolerance**: Acceptance radius for waypoint navigation.
+
+### <a id="path-execution"></a>Path Execution
+
+Path execution occurs in the `run_controller_main.main()` function with the following sequence:
+
+1. **Path Validation**: Verify path waypoints are within maze boundaries
+2. **Target Assignment**: Set initial target to first path waypoint
+3. **Position Control Loop**:
+   - Get current ball position from tracking service
+   - Calculate PID control output for X/Y axes
+   - Apply velocity limits and send motor commands
+   - Check target proximity and advance to next waypoint
+4. **Completion Detection**: Monitor goal proximity and handle success/failure states
+
+**Lookahead Optimization**: When enabled, the controller switches to a pure pursuit type path following. This smooths the ball trajectory and speeds up the execution.
+
+### <a id="horizontal-calibration"></a>Horizontal Calibration
+
+The system includes automatic horizontal calibration to establish a neutral maze position.
+Calibration occurs automatically during state transitions and can be manually triggered through the admin interface.
+
+### <a id="tuning-tips"></a>Tuning Tips
+
+**Tuning**
+1. Start with `kp=0.5, ki=0, kd=0` and test basic response
+2. Increase `kp` until slight oscillation appears, then reduce by 20%
+3. Add `kd` (typically `kp/4`) to reduce overshoot and improve stability  
+4. Add minimal `ki` (typically `kp/40`) only if steady-state error persists
+5. Adjust `max_speed` based on maze size and desired completion time
+- Use current values as a base line
+- More responsiveness -> Increase `feedforward_t`
+- Smaller max velocities -> Increase `k_d`
+- More accurately stopping at waypoints -> Increase `k_d`
+- Prevent ball from getting stuck close to waypoints -> Increase `k_i`
+- Improve path accuracy (waypoint navigation) -> Decrease `position_tolerance`
+    - Consequence: Results in ball stopping more often and struggling to approach waypoint.
+- Improve path accuracy (pure pursuit) -> Decrease `lookahead_distance`
+    - Consequence: Reacts more slowly to path turns. Less predictive behaviour.
+
+## <a id="electrical-setup"></a>Electrical Setup
+
+The electrical system connects multiple components through a central power distribution and communication hub:
+
+**Power Requirements:**
+- Main Power Supply: 24V/5A for motor control system
+- Jetson Power: 5V/4A via USB-C or barrel connector
+- Raspberry Pi: 5V/3A via USB-C
+- Arduino: 5V via USB (powered by Jetson)
+
+**Communication Wiring:**
+- Jetson ↔ Arduino: USB serial connection
+- Jetson ↔ Pi: Ethernet (MQTT over WiFi backup)
+- Arduino ↔ Motors: PWM control signals with current feedback
+
+**Safety Features:**
+- Emergency stop circuitry for immediate motor shutdown
+- Current limiting on motor drivers to prevent damage
+- Voltage monitoring with automatic shutdown on power anomalies
 
 ---
 
-### 4. Path Execution
+## <a id="mqtt-communication"></a>MQTT Communication
 
-- The `PathFollower` classes take a list of waypoints and automatically handle:
-  - Velocity estimation
-  - Waypoint switching
-  - Stuck detection
-  - Looping and dwell times
-- The control loop (`run_controller_main.py`) executes path-following in real time, keeping to a target frame rate defined by `TARGET_HZ` (60Hz by default).
+### <a id="overview"></a>Overview
+
+The system uses MQTT (Message Queuing Telemetry Transport) as the primary communication protocol between the Jetson control unit and Raspberry Pi interface. This lightweight publish-subscribe protocol ensures reliable message delivery with minimal latency for real-time control applications.
+
+MQTT provides several advantages for this distributed robotics system:
+- **Low Latency**: Sub-millisecond message delivery for time-critical control commands
+- **Reliability**: Quality of Service (QoS) levels ensure message delivery guarantees  
+- **Scalability**: Easy addition of new devices without protocol changes
+- **Debugging**: All messages can be monitored and logged for troubleshooting
+
+The broker runs locally on the Jetson device, eliminating external network dependencies and ensuring consistent performance.
+
+### <a id="topic-structure"></a>Topic Structure
+
+The topic hierarchy follows a device-based naming convention for clear message routing:
+
+#### **Jetson Publishes:**
+- `pi/command`: UI state changes and game mode transitions
+- `pi/tracking_status`: Ball detection events and system status
+- `pi/image_feed`: Real-time camera feed with path overlays
+- `pi/ball_info`: Ball position coordinates and tracking confidence
+- `arduino/speed`: Motor control commands (X/Y velocities)
+
+#### **Jetson Subscribes:**
+- `jetson/command`: User interface commands and mode requests
+- `jetson/handshake`: Device connection and status verification
+
+#### **Pi Subscribes:**
+- `pi/command`: System state updates and display instructions
+- `pi/tracking_status`: Ball detection status for UI indicators
+- `pi/image_feed`: Camera feed for real-time maze visualization
+- `pi/ball_info`: Ball position for overlay graphics
+
+### <a id="handshake-protocol"></a>Handshake Protocol
+
+Device initialization follows a structured handshake sequence to ensure reliable connection establishment:
+
+1. **Pi Startup**: Publishes connection request to `jetson/handshake`
+2. **Jetson Response**: Acknowledges connection and sends initial state
+3. **State Synchronization**: Exchange current system mode and configuration
+4. **Heartbeat Establishment**: Begin periodic status updates
+
+Example handshake sequence:
+```python
+# Pi initiates connection
+mqtt_client.publish("jetson/handshake", "pi_connected")
+
+# Jetson acknowledges and syncs state  
+mqtt_client.publish("pi/command", "show_main_screen")
+mqtt_client.publish("pi/tracking_status", "system_ready")
+```
+
+### <a id="jetson-mqtt-client"></a>Jetson MQTT Client
+
+The Jetson MQTT client (`MQTTClientJetson`) manages all communication from the control system:
+
+```python
+class MQTTClientJetson:
+    def __init__(self, broker_host="localhost", broker_port=1883):
+        self.client = mqtt.Client()
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        self.image_buffer = []
+        
+    def on_connect(self, client, userdata, flags, rc):
+        """Subscribe to command topics on connection"""
+        client.subscribe("jetson/command")
+        client.subscribe("jetson/handshake")
+        
+    def on_message(self, client, userdata, msg):
+        """Route messages to finite state machine"""
+        topic = msg.topic
+        payload = msg.payload.decode()
+        
+        if topic == "jetson/command":
+            self.hmi_controller.on_command(payload)
+```
+
+**Key Features:**
+- **Image Buffering**: Manages camera feed transmission with compression
+- **Command Routing**: Forwards UI commands to the finite state machine
+- **Connection Management**: Handles reconnection and error recovery
+- **Message Queuing**: Buffers messages during temporary disconnections
+
+### <a id="pi-mqtt-client"></a>Pi MQTT Client
+
+The Pi MQTT client handles the touchscreen interface and user interaction:
+
+```python
+class MQTTClientPi(threading.Thread):
+    def __init__(self, broker_address='192.168.1.3', port=1883):
+        super().__init__()
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+        self.client.on_connect = self.on_connect
+        self.client.on_message = self.on_message
+        
+    def on_message(self, client, userdata, msg):
+        if msg.topic == "pi/command":
+            payload = msg.payload.decode()
+            if payload.startswith("playalone_success:"):
+                duration = payload.split(":")[1]
+                rank = payload.split(":")[2]
+                if self.app and hasattr(self.app, 'frames'):
+```
+
+**Responsibilities:**
+- **UI State Management**: Updates interface based on system state changes
+- **User Input Processing**: Captures touchscreen interactions and forwards commands
+- **Visual Feedback**: Displays ball tracking status and game progress
+- **Image Display**: Renders real-time camera feed with path overlays
+
+### <a id="message-formats"></a>Message Formats
+
+#### **Camera Feed**
+Images are transmitted as base64-encoded JPEG data with metadata:
+```json
+{
+  "image": "base64_encoded_jpeg_data",
+  "timestamp": 1677123456.789,
+  "path_overlay": true,
+  "ball_position": [145.7, 203.2]
+}
+```
+
+#### **Command Messages**
+Simple string commands for state transitions:
+- `"Practice"` - Enter manual control mode
+- `"PlayAlone"` - Start timed single-player game
+- `"StartGame"` - Begin timer for current game mode
+- `"Back"` - Return to previous state
+- `"Locate"` - Initiate ball detection and tracking
+
+### <a id="command-flow"></a>Command Flow
+
+Typical command sequences for different operations:
+
+**Starting a Navigation Session:**
+```
+Pi → jetson/command: "Navigate"
+Jetson → pi/command: "show_navigation_screen" 
+Pi → jetson/command: "Locate"
+Jetson → pi/tracking_status: "tracking_started"
+Jetson → pi/image_feed: [camera_feed_with_ball_detection]
+```
+
+**Autonomous Path Execution:**
+```
+Pi → jetson/command: "AutoPath"
+Jetson → pi/command: "show_path_planning"
+Jetson → pi/image_feed: [feed_with_path_overlay]
+Jetson → arduino/speed: "120,85"  # X,Y motor commands
+Jetson → pi/tracking_status: "goal_reached"
+```
+
+### <a id="mqtt-troubleshooting"></a>MQTT Troubleshooting
+
+**Connection Issues:**
+- Verify broker is running: `sudo systemctl status mosquitto`
+- Check network connectivity between devices
+- Monitor broker logs: `sudo tail -f /var/log/mosquitto/mosquitto.log`
+
+**Message Delivery Problems:**
+- Use MQTT client tools to verify topic publishing: `mosquitto_pub -h localhost -t test -m "hello"`
+- Monitor all traffic: `mosquitto_sub -h localhost -t "#"`
+- Check QoS settings for messages
+
+**Performance Optimization:**
+- Adjust keep-alive intervals for faster connection detection
+- Use message compression for large image data
+- Implement message priority queuing for time-critical commands
 
 ---
 
-### 5. Horizontal Calibration
+## <a id="ball-detection"></a>Ball Detection
 
-Before control begins, `controller.horizontal()` is called to zero the maze and make sure that tilt angles are neutral.
+### <a id="ball-detection-architecture"></a>System Architecture
+
+The ball detection system uses a TensorRT-optimized YOLOv8 model for robust real-time ball tracking. The detection pipeline operates at 50 FPS with the following components:
+- **Camera Manager**: ZED 2i stereo camera interface with hardware-accelerated frame capture
+- **YOLO Model**: TensorRT-optimized object detection with CUDA context management
+- **Ball Tracker**: Producer-consumer threading with boundary validation and position smoothing
+- **Tracker Service**: High-level coordination and state management
+
+### <a id="camera-acquisition"></a>Camera Acquisition
+
+The `CameraManager` class handles ZED 2i camera initialization and frame acquisition:
 
 ```python
-controller.horizontal()  # waits until within tolerance or timeout
+CLASS CameraManager:
+    INIT():
+        Create ZED camera object
+        Mark as not initialized
+
+    FUNCTION init_camera():
+        IF already initialized:
+            RETURN
+        Create camera initialization parameters:
+            - Resolution: HD720
+            - FPS: 60
+            - Depth mode: Neural
+            - Units: Millimeters
+        TRY to open ZED camera with parameters
+        IF open fails:
+            RAISE error "Camera failed to open"
+        Mark as initialized
+
+    FUNCTION grab_frame():
+        Create empty image container
+        IF ZED grab() succeeds:
+            Retrieve LEFT view image into container
+            Convert image to BGR format
+            Convert BGR to RGB format
+            RETURN (rgb_frame, bgr_frame)
+        ELSE:
+            RETURN (None, None)
+
+    FUNCTION get_orientation():
+        Create sensor data container
+        IF retrieving sensor data fails:
+            RETURN None
+        Get IMU data from sensor data
+        Create transform container
+        Get orientation quaternion from IMU pose
+        Round quaternion values to 3 decimal places
+        Calculate:
+            dir1 = ox + ow
+            dir2 = oy - oz
+        RETURN orientation vector [-dir2, dir1]
+
+    FUNCTION close():
+        IF camera is initialized:
+            Close ZED camera
+            Mark as not initialized
 ```
 
-Calibration parameters (time limit, tolerance, gain) are also set in `config.yaml`.
+### <a id="tensorrt-yolo-inference"></a>TensorRT YOLO Inference
+
+The `YOLOModel` class implements optimized inference with TensorRT acceleration:
+
+```python
+CLASS YOLOModel:
+    INIT(model_path, input_shape, conf):
+        Store input shape and confidence threshold
+        Initialize variables and lock
+        TRY:
+            Initialize TensorRT engine (preferred)
+            Set engine_type = "tensorrt"
+        EXCEPT:
+            Print warning and fall back to PyTorch
+            Set engine_type = "pytorch"
+
+    FUNCTION _init_tensorrt(model_path):
+        Initialize CUDA context
+        Create TensorRT runtime
+        Load engine from file
+        Create execution context
+        Get input/output bindings and data types
+        Allocate host and device memory
+        Create CUDA stream
+
+    FUNCTION _init_pytorch_fallback(model_path):
+        Convert engine path to .pt file path
+        Load YOLO model from PyTorch
+        Detect available device (GPU/CPU)
+        Set class names from model
+
+    DESTRUCTOR:
+        If CUDA context exists, pop it
+
+    FUNCTION get_label(cls_id):
+        RETURN class name from ID
+
+    FUNCTION preprocess(image):
+        Resize image to model input size
+        Normalize pixel values to [0,1]
+        Rearrange channels (CHW)
+        Convert to float16
+        Copy into host input buffer
+
+    FUNCTION predict(image):
+        IF engine_type == "tensorrt":
+            RETURN _predict_tensorrt(image)
+        ELSE:
+            RETURN _predict_pytorch(image)
+
+    FUNCTION _predict_tensorrt(image) [ensured CUDA context]:
+        Store original image dimensions
+        Preprocess image
+        Copy input data to GPU
+        Execute inference asynchronously
+        Copy output data from GPU
+        Synchronize stream
+        Postprocess and return results
+
+    FUNCTION _predict_pytorch(image):
+        Run PyTorch YOLO inference
+        Return the first result object
+
+    FUNCTION postprocess(output):
+        If output shape is invalid → return empty result
+        Filter detections by confidence threshold
+        Convert normalized coords to original image coords
+        Run Non-Maximum Suppression (NMS)
+        Select best detection
+        RETURN Result object with Box data
+
+    FUNCTION nms(boxes, scores, iou_threshold):
+        Sort boxes by score (descending)
+        Iteratively keep highest-scoring boxes that don't overlap too much
+        RETURN kept box indices
+
+    FUNCTION _empty_result():
+        RETURN object with empty boxes list
+
+    FUNCTION shutdown():
+        Acquire lock
+        If already shutdown → return
+        Mark as shutdown
+        Free GPU memory
+        Delete TensorRT resources
+        Pop CUDA context if still active
+        Print shutdown complete
+
+CLASS Box:
+    INIT(x1, y1, x2, y2, conf, cls):
+        Store coordinates in xyxy format
+        Store confidence and class
+        Compute xywh format
+
+CLASS Result:
+    INIT(boxes):
+        Store list of Box objects
+```
+
+**Performance Benefits:**
+- **Fast**: TensorRT optimization significantly reduces inference time
+- **Memory**: Optimized memory allocation and reuse
+- **Latency**: Predictable inference times for real-time control
+- **Fallback**: Automatic PyTorch fallback if TensorRT unavailable
+
+### <a id="ball-tracking"></a>Ball Tracking
+
+The `BallTracker` class implements a producer-consumer pattern for continuous ball tracking:
+
+```python
+CLASS BallTracker:
+    INIT(camera, tracking_config, model_path):
+        Load YOLO model from model_path
+        Store camera reference
+        Set configuration parameters (or defaults)
+        Initialize runtime variables:
+            - running state
+            - initialized state
+            - frame queue (small size buffer)
+            - latest BGR frame
+            - current ball position
+            - bounding box buffer
+            - maze boundaries (top-left, top-right, bottom-left, bottom-right)
+    
+    FUNCTION is_point_in_maze(x, y):
+        RETURN True if point is inside maze bounds
+    
+    FUNCTION producer_loop():
+        WHILE running:
+            Record start time
+            Capture RGB and BGR frames from camera
+            IF frames are valid:
+                Add frames to queue
+            Sleep to maintain ~60 FPS
+
+    FUNCTION consumer_loop():
+        WHILE running:
+            IF no frames in queue:
+                Short sleep
+                CONTINUE
+            Remove older frames so only latest remains
+            Take most recent RGB and BGR frames
+            Store latest BGR for later retrieval
+
+            Run YOLO inference on RGB frame
+            Clear current ball position
+
+            Filter predicted boxes for label "ball" (max 1)
+            FOR each detected ball:
+                Compute center coordinates
+                IF ball center is inside maze:
+                    Save ball position
+                    Normalize coordinates relative to frame size
+                    Update bounding box buffer
+                    BREAK (only first ball used)
+
+            Sleep to maintain ~50 FPS
+
+    FUNCTION start():
+        Set running = True and initialized = True
+        Start producer thread (frame grabbing)
+        Start consumer thread (detection/tracking)
+
+    FUNCTION stop():
+        Set running = False
+        Set initialized = False
+        IF model has shutdown method:
+            Call shutdown
+
+    FUNCTION get_position():
+        RETURN current ball position
+
+    FUNCTION get_frame():
+        RETURN latest BGR frame (if available)
+
+    FUNCTION retrack():
+        Reset ball position
+```
+
+**Key Features:**
+- **Threading**: Separate detection thread prevents blocking the control loop
+- **Boundary Validation**: Rejects detections outside valid maze area
+- **Position Smoothing**: Exponential moving average reduces noise
+- **Thread Safety**: Proper locking for concurrent position access
+
+### <a id="tracker-service"></a>Tracker Service
+
+The `TrackerService` provides a high-level interface for the tracking system:
+
+```python
+CLASS TrackerService:
+    INIT(model_path, tracking_config):
+        Create CameraManager instance
+        Initialize camera
+        Set tracker to None
+        Mark as not started
+        Store model path
+        Store tracking config (or default)
+
+    FUNCTION start_tracker():
+        IF already started:
+            RETURN
+        Create BallTracker instance (pass camera, config, model_path)
+        Start BallTracker threads (producer & consumer)
+        Mark as started
+
+    FUNCTION stop_tracker():
+        IF started:
+            Stop BallTracker
+            Mark as not started
+
+    FUNCTION get_ball_position():
+        IF started:
+            RETURN ball position from tracker
+        ELSE:
+            RETURN None
+
+    FUNCTION get_stable_frame():
+        IF started:
+            RETURN latest BGR frame from tracker
+        ELSE:
+            RETURN None
+
+    FUNCTION get_orientation():
+        RETURN orientation vector from camera IMU
+
+    PROPERTY is_initialized:
+        RETURN tracker.initialized if tracker exists, else False
+
+    FUNCTION retrack():
+        IF started AND tracker exists:
+            Call retrack() on BallTracker
+```
+
+### <a id="detection-troubleshooting"></a>Detection Troubleshooting
+
+**Common Issues and Solutions:**
+
+**Ball Detection Failures:**
+- Check lighting conditions, even illumination without shadows is ideal
+- Verify camera focus and positioning for clear ball visibility
+- Check GPU memory usage as insufficient VRAM can cause inference failures
+
+**Position Accuracy Problems:**
+- Calibrate the maze
+- Check camera mounting stability
 
 ---
 
-### 6. MQTT Command Integration
+## <a id="a-pathfinding"></a>A* Pathfinding
 
-Commands from the Pi HMI are parsed inside the `HMIController.on_command()` method. Available commands include:
+### <a id="a-algorithm-with-repulsion-field"></a>A* Algorithm with Repulsion Field
 
-- `Locate`, `AutoPath`, `CustomPath`, `Start`, `Back`, `Restart`, `Exit`
-- `Elevator` to retrieve the ball
-- `Horizontal` for flat calibration
-- `Loop_Path` to toggle waypoint looping
-- `Goal_set:x,y` and `CalculatePath` for custom pathfinding
+The pathfinding system uses an enhanced A* algorithm with repulsion fields to generate safe, efficient paths through the maze. Unlike standard A*, this implementation adds artificial potential fields around obstacles to create paths that maintain safe distances from walls and holes.
 
-All command triggers are mapped to state transitions in a finite-state machine.
+#### **Heuristic Function**
+The heuristic uses Manhattan distance:
+
+```python
+FUNCTION heuristic(a, b):
+    RETURN Manhattan distance between a and b
+    # (Alternatively: Euclidean distance for fewer node expansions)
+```
+
+#### **Repulsion Map Generation**
+Repulsion fields are precomputed using distance transforms, in order to not make the path hug the walls:
+
+```python
+FUNCTION compute_repulsion_cost(array, min_safe_dist):
+    Compute distance transform of obstacle map
+    Create mask marking cells >= min_safe_dist as walkable
+    Find maximum distance value
+    IF max distance is zero:
+        RETURN ones array (no repulsion), mask
+    ELSE:
+        Compute repulsion cost as (1 - (dist / max_dist))^3
+        RETURN repulsion cost map, mask
+```
+
+#### **Path Search Implementation**
+The core A* search integrates repulsion costs:
+
+```python
+FUNCTION astar(array, start, goal, repulsion_weight):
+    rows, cols = dimensions of array
+    repulsion_map, walkable_mask = compute_repulsion_cost(array)
+
+    Define neighbor offsets (up, down, left, right)
+
+    Create min-heap for open set
+    Push start node with f = g + h
+
+    Initialize:
+        came_from = empty dict
+        g_score = array filled with infinity
+        g_score[start] = 0
+        in_open = set containing start
+        closed = boolean array (all False)
+
+    WHILE open_heap not empty:
+        Pop node with lowest fscore
+        Remove from in_open
+
+        IF current node == goal:
+            Reconstruct path by backtracking via came_from
+            RETURN path (start → goal)
+
+        Mark current as closed
+
+        FOR each neighbor offset (dx, dy):
+            nx, ny = current.x + dx, current.y + dy
+
+            IF neighbor out of bounds → skip
+            IF not walkable or already closed → skip
+
+            move_cost = 1 + repulsion_weight * repulsion_map[nx, ny]
+            tentative_g = cost_so_far + move_cost
+
+            IF tentative_g < g_score[neighbor]:
+                Update came_from[neighbor] = current
+                g_score[neighbor] = tentative_g
+                fscore = tentative_g + heuristic(neighbor, goal)
+                IF neighbor not in in_open:
+                    Push (fscore, tentative_g, neighbor) to heap
+                    Add neighbor to in_open
+
+    RETURN empty list (no path found)
+```
+
+### <a id="binary-mask-preprocessing"></a>Binary Mask Preprocessing
+
+High-quality binary masks separating clear areas for the ball and the walls/holes are important for reliable pathfinding:
+
+#### **Dilation and CLAHE**
+```python
+FUNCTION dilate_mask(mask, kernel_size, iterations):
+    Create kernel of ones (uint8) with given size
+    RETURN result of morphological dilation on mask using kernel for given iterations
+
+FUNCTION get_dynamic_threshold(image, target_brightness):
+    Convert image to grayscale
+    Compute current average brightness
+    Calculate adjustment = target_brightness - current_brightness
+    Adjust grayscale pixel values by this amount (clip to range 0–255)
+    RETURN adjusted grayscale image
+
+FUNCTION apply_clahe(gray):
+    Create CLAHE object (contrast-limited adaptive histogram equalization)
+    Apply CLAHE to grayscale image
+    RETURN enhanced grayscale image
+```
+
+#### **Edge Removal and Morphology**
+```python
+FUNCTION create_binary_mask(gray):
+    enhanced = apply_clahe(gray)
+    base_mask = Otsu binary threshold on enhanced image
+    cleaned = Morphological closing (kernel 5x5) on base_mask, 2 iterations
+
+    edges = Canny edge detection on enhanced image (thresholds 100, 200)
+    edges_dilated = Dilate edges with 3x3 kernel, 1 iteration
+    edges_inv = Invert edges_dilated
+
+    final_mask = Logical AND between cleaned mask and edges_inv
+    final_mask = Morphological closing (kernel 7x7) on final_mask, 1 iteration
+
+    RETURN final_mask
+```
+
+### <a id="waypoint-sampling"></a>Waypoint Sampling
+
+The waypoint sampling system transforms raw A* paths into optimized trajectories suitable for physical ball control. The process combines multiple geometric algorithms to balance path smoothness, control accuracy, and computational efficiency.
+
+#### **Theoretical Foundation**
+
+The system uses a multi-stage optimization pipeline:
+
+1. **Raw path densification**: Continuous coverage along path segments by adding intermediate points at regular intervals
+2. **Direction change**: Identifies course changes requiring explicit waypoints for accurate navigation
+3. **L-Pivot smoothing**: Inserts intermediate waypoints at corners to for 90 degrees turns
+4. **Douglas-Peucker**: Reduces redundant waypoints while preserving path geometry within specified tolerance
+5. **Statistical refinement**: Segment length analysis to maintain consistent waypoint spacing
+
+#### **Implementation**
+
+The sampling algorithm processes raw A* output through several transformation stages:
+
+```python
+FUNCTION sample_waypoints(path, mask):
+    raw = [first point in path]
+    y, x = first point
+    FOR each (ty, tx) in remaining path points:
+        dx = tx - x
+        sx = 1 if tx > x else -1
+        FOR xx from x+sx to tx (inclusive) step sx:
+            IF mask[y][xx] is walkable:
+                append (y, xx) to raw
+        x = tx
+
+        dy = ty - y
+        sy = 1 if ty > y else -1
+        FOR yy from y+sy to ty (inclusive) step sy:
+            IF mask[yy][x] is walkable:
+                append (yy, x) to raw
+        y = ty
+
+    pts = [raw[0]]
+    FOR (prev, curr, nxt) sliding through raw:
+        dir1 = vector from prev → curr
+        dir2 = vector from curr → nxt
+        IF direction changes:
+            append curr to pts
+    append last point of raw to pts
+
+    full = [pts[0]]
+    FOR (a, b, c) sliding through pts:
+        IF straight in one axis but corner in next:
+            Generate intermediate corner points:
+                (a.y, c.x), (c.y, c.x)
+            IF not duplicate AND clear_path from last full point to new point:
+                append new point to full
+        IF b not already last in full:
+            append b
+    Append last point of pts if missing
+
+    seg_dists = distances between consecutive points in full
+    mean_seg = average segment length
+    eps = mean_seg * log(raw_length + 1)
+    waypoints = Douglas-Peucker simplify(full, eps)
+
+    IF at least two waypoints:
+        Compute average and std deviation of segment lengths
+        threshold = avg + std
+        new_wps = [first waypoint]
+        FOR each segment (a, b):
+            IF length > threshold:
+                mid = midpoint between a and b
+                append mid
+            append b
+        waypoints = new_wps
+
+    RETURN waypoints
+
+```
+
+#### **Douglas-Peucker Algorithm**
+
+The system uses the Douglas-Peucker algorithm for path simplification:
+
+```python
+FUNCTION _douglas_peucker(pts, eps):
+    IF fewer than 3 points:
+        RETURN pts
+
+    a = first point in pts
+    b = last point in pts
+    idx = 0
+    dmax = 0.0
+
+    FOR i from 1 to len(pts)-2:
+        d = _perp_dist(pts[i], a, b)
+        IF d > dmax:
+            idx = i
+            dmax = d
+
+    IF dmax <= eps:
+        RETURN [a, b]  # all points lie close to straight line
+
+    left = _douglas_peucker(points from a to pts[idx], eps)
+    right = _douglas_peucker(points from pts[idx] to b, eps)
+
+    RETURN left[:-1] + right
+
+
+FUNCTION _perp_dist(pt, a, b):
+    y0, x0 = pt
+    y1, x1 = a
+    y2, x2 = b
+
+    num = ABS((x1 - x0) * (y2 - y0) - (x2 - x0) * (y1 - y0))
+    den = Euclidean distance between a and b (avoid division by zero)
+    RETURN num / den
+
+```
+
+### <a id="path-drawing"></a>Path Drawing
+
+Visual path representation for debugging and user feedback:
+
+```python
+FUNCTION draw_path(image, waypoints, start, goal):
+    out = copy of image
+
+    IF image is grayscale (2D) or has 1 channel:
+        Convert to BGR
+    ELSE IF image has 4 channels (BGRA):
+        Convert to BGR
+
+    h, w = image height and width
+
+    FOR each (x, y) in waypoints (if any):
+        IF y within [0, h) AND x within [0, w):
+            Draw filled circle at (x, y) with radius 4 and color (128, 0, 0)  # dark red
+
+    IF start exists:
+        Draw filled green circle (0, 255, 0) at (start col, start row), radius 5
+    IF goal exists:
+        Draw filled blue circle (255, 0, 0) at (goal col, goal row), radius 5
+
+    RETURN out
+
+```
+
+### <a id="path-memory-caching"></a>Path Memory Caching
+
+Caching reduces computation for repeated queries, skipping the A* loading time:
+
+```python
+FUNCTION get_cached_path(start, goal):
+    FOR each entry in self.paths:
+        s = entry["start"]
+        g = entry["goal"]
+        path = entry["path"]
+        IF start is within tolerance of s AND goal is within tolerance of g:
+            RETURN path
+    RETURN None
+
+
+FUNCTION cache_path(start, goal, path):
+    IF number of cached paths >= max_paths:
+        Remove the oldest entry from self.paths
+
+    Append to self.paths:
+        {
+            "start": start as list,
+            "goal": goal as list,
+            "path": each point in path as list
+        }
+
+    Call self.save_cache()
+```
+
+### <a id="nearest-walkable-point"></a>Nearest Walkable Point
+
+Handles cases where start/goal points are in invalid areas:
+
+```python
+FUNCTION find_nearest_walkable(mask, point, max_radius):
+    y, x = point
+
+    IF mask[y, x] != 0:
+        RETURN point
+
+    dist = DistanceTransform of mask (L2 metric, kernel size 5)
+
+    min_val = infinity
+    nearest = point
+    h, w = mask dimensions
+
+    FOR dy from -max_radius to max_radius:
+        FOR dx from -max_radius to max_radius:
+            ny = y + dy
+            nx = x + dx
+
+            IF ny, nx inside mask bounds AND mask[ny, nx] > 0:
+                IF dist[ny, nx] < min_val:
+                    min_val = dist[ny, nx]
+                    nearest = (ny, nx)
+
+    RETURN nearest
+```
+
+### <a id="pathfinding-troubleshooting"></a>Pathfinding Troubleshooting
+
+#### **repulsion_weight**
+Controls how strongly paths avoid obstacles:
+- **Too Low (<5)**: Paths may pass too close to walls, risking collisions
+- **Too High (>20)**: Paths become overly conservative and inefficient
+- **Optimal Range**: 8-15 for most maze configurations
+
+#### **min_safe_dist in repulsion**  
+Minimum distance maintained from obstacles:
+- **Too Small (<10 pixels)**: Insufficient safety margin for control errors
+- **Too Large (>30 pixels)**: May make narrow passages impassable
+- **Recommended**: 15-25 pixels based on ball size and control precision
 
 ---
 
-### 7. Troubleshooting
+## <a id="authors"></a>Authors
 
-| Issue | Resolution |
-|-------|------------|
-| Ball not found | Make sure the ball is green. See if the camera is properly angled and lighting is sufficient. Check HSV range. |
-| Motors not responding | Check Arduino connection and serial port. Try rebooting the Arduino. |
-| Control loop unresponsive | Check if the tracker is initialized and goal path is valid. |
-| Path not followed | Confirm waypoints are outside elevator zone and control loop is active. |
-| MQTT command ignored | Verify Pi is sending valid command strings to expected topics. |
-
----
-
-### 8. Tuning Tips
-
-- Increase `stuck_wiggle_amplitude` or `stuck_wiggle_frequency` to help escape dead zones.
-- Adjust `position_tolerance` and `velocity_tolerance` for tighter or looser control.
-- Use `controller.lookahead = True` for faster, more aggressive control.
-- Enable or disable looping behavior with the `"LoopOn"` / `"LoopOff"` MQTT commands.
-- Tune `feedforward_t` values for more/less anticipatory movement based on distance to next waypoint.
-
----
-
-### Electical setup
-The project's electrical system is powered by a Mean Well 85 DC power supply which gives out a 5V and a 12V output.
-
-The 5V system consists of the Raspberry Pi 5, LCD display, servo motor, and the LEDs.
-
-The 12V system consists of the Nvidia Jetson Orin Nano, the motor controller, and a fan for the electronic compartment.
-
-The Arduino Mega is powered through the USB connection to the Jetson.
-
-Arduino connections: From the Arduino, the 5V output is connected to the positive potentiometer reference of the motors.
-
-The potentiometer reference voltage pins are connected to analog inputs A4 for motor 1 and A3 for motor 2. This signal gives out 2 when the actuator is at the bottom and 1018 when it's at 50mm.
-
-To control the motors, a PWM signal is sent to the motor controller for up and down. For motor 1, pin 9 is PWM up and pin 10 is PWM down. For motor 2, pin 11 is PWM up and pin 12 is PWM down.
-
-To control the servo motor for the elevator, pin 5 is used. To control the LEDs, pin 7 is used.
-
-Electrical schematic:
-
-![Alt text](/pictures/maze_schematic_color.svg)
-![Alt text](/pictures/maze_schematic_black_and_white.svg)
-<!--- Velg hvilken som ser best ut -->
-
-Fuse:
-The power entry module has a 3.15A ceramic cartridge fuse, and both motors have a 2.15A glass cartridge fuse. Both types of fuses are in the travel box with the robot.
-<!--- Hisker ikke om det er 2.15 så sjekk om det er riktig ved å lese på pakken -->
-
-Pass-Through panel:
-At the back of the maze robot, there is a pass-through panel. There are two USB A connectors, two HDMI connectors, and one USB C connector.
-
-![Alt text](/pictures/pass-through_render.png)
-![Alt text](/pictures/pass-through.png)
-<!--- Velg om virkelig eller rendra bilde ser best ut -->
-
-At the bottom, the USB A and HDMI cable is connected to the Raspberry Pi 5, and the USB C connector is connected directly to 5V from the power supply.
-
-The top USB A and HDMI are connected to the Nvidia Jetson.
-
-Connect the touch screen:
-To power the screen, the USB C cable is used and is always connected whether the screen is connected to the Raspberry Pi or the Nvidia Jetson.
-
-The USB A cables from the screen are for touch.
-
-Under normal operation, the HDMI and USB A cable from the screen is connected to the pass-through connectors connected to the Raspberry Pi 5.
-
-## MQTT Communication
-
-This system uses MQTT to handle communication between the Jetson (main controller) and the Raspberry Pi (HMI interface). MQTT runs on top of TCP/IP. The Jetson hosts the MQTT broker (`192.168.1.3`), while the Raspberry Pi connects as a client (`192.168.1.2`).
-
-All messages are exchanged through well-defined topics and serialized using UTF-8 text or base64-encoded binary payloads.
-
----
-
-### Login
-
-`Raspberry Pi`: login: raspberrypi, password: raspberry \
-`Jetson`: login: student, password: student 
-
----
-
-### 1. Overview
-
-- **MQTT version**: v3.1.1 (via `paho-mqtt`)
-- **Broker**: Hosted on Jetson (`192.168.1.3`)
-- **Client**: Pi connects to Jetson broker
-- **Port**: `1883` (default MQTT TCP port)
-- **Transport Layer**: TCP
-- **Application Layer Protocol**: MQTT
-- **Session Persistence**: No retained messages; all subscriptions are non-persistent
-
----
-
-### 2. Topic Structure
-
-#### Jetson publishes:
-| Topic | Payload Format | Purpose |
-|-------|----------------|---------|
-| `handshake/response` | `"ack"` (string) | Acknowledges handshake from Pi |
-| `pi/command`         | `"booted"` (string) | Triggers HMI to transition UI state |
-| `pi/camera`          | `base64(JPEG)` (binary) | Compressed camera frame for HMI display |
-| `ball/info`          | `x,y` or status string | Sends ball position or system state |
-| `pi/info`            | Status keywords | `"ball_found"`, `"timeout"`, etc. |
-
-#### Jetson subscribes:
-| Topic | Source | Purpose |
-|-------|--------|---------|
-| `handshake/request` | Pi → Jetson | Initiates connection with broker |
-| `jetson/command` | Pi → Jetson | System command input |
-| `jetson/state_transition` | Pi → Jetson | Triggers FSM state |
-| `arduino/elevator` | Arduino → Jetson | Elevator trigger signal |
-| `pi/response` | Pi → Jetson | Pi-side status message |
-
-#### Pi subscribes:
-| Topic | Purpose |
-|-------|---------|
-| `handshake/response` | Acknowledgement of handshake |
-| `pi/command`         | UI control command |
-| `pi/camera`          | Image frame for HMI display |
-| `pi/info`            | Jetson-side status like `"path_found"` |
-
----
-
-### 3. Handshake Protocol
-
-The MQTT handshake makes sure that both sides are ready before entering control flow.
-
-1. **Pi sends**:
-   ```json
-   Topic: "handshake/request"
-   Payload: "pi"
-   ```
-
-2. **Jetson responds**:
-   ```json
-   Topic: "handshake/response" → "ack"
-   Topic: "pi/command" → "booted"
-   ```
-
-3. **Both systems mark**:
-   ```python
-   handshake_complete = True
-   ```
-
-This exchange uses **QoS 1** to for delivery acknowledgment.
-
----
-
-### 4. Jetson MQTT Client
-
-Jetson acts as both a publisher and subscriber, and also hosts the MQTT broker.
-
-Key responsibilities:
-- Responds to Pi handshake
-- Pushes commands to `command_queue`
-- Listens for state changes
-- Publishes images and system status
-
-Initialization:
-
-```python
-mqtt_client = MQTTClientJetson(
-    arduino_connection=arduino,
-    fsm=hmi_controller,
-    broker_address="192.168.1.3"
-)
-```
-
-Shutdown:
-
-```python
-mqtt_client.stop()
-```
-
-Internally uses:
-- `client.loop_start()` for non-blocking message handling
-- Thread-safe `Queue` for command processing
-
----
-
-### 5. Pi MQTT Client
-
-The Pi connects to Jetson’s broker and listens for camera images, system commands, and info updates.
-
-Key responsibilities:
-- Publishes handshake requests
-- Subscribes to `pi/camera`, `pi/info`
-- Decodes images and updates UI
-
-Image reception and decoding:
-
-```python
-image_data = base64.b64decode(msg.payload)
-frame = cv2.imdecode(np.frombuffer(image_data, np.uint8), cv2.IMREAD_COLOR)
-```
-
-Auto-reconnection is handled via a backoff loop.
-
----
-
-### 6. Message Formats
-
-#### Ball Info Message
-
-```text
-ball/info: "x,y"
-```
-
-Used to show current ball position or trigger Pi-side feedback.
-
-#### Camera Feed
-
-Image data is sent as:
-
-- JPEG-compressed (to reduce size)
-- Base64-encoded (to fit into MQTT string payload)
-- Decoded by Pi HMI
-
-Encoding side:
-
-```python
-_, buffer = cv2.imencode('.jpg', image)
-jpeg_b64 = base64.b64encode(buffer).decode('utf-8')
-self.client.publish("pi/camera", jpeg_b64)
-```
-
-Decoding side:
-
-```python
-decoded = base64.b64decode(payload)
-image = cv2.imdecode(np.frombuffer(decoded, np.uint8), cv2.IMREAD_COLOR)
-```
-
----
-
-### 7. Command Flow
-
-Jetson receives commands on `jetson/command`:
-
-```python
-CMD_CONTROL = "Control"
-CMD_STOP = "Stop_control"
-```
-
-And pushes them into `command_queue`, which is checked by the FSM or main loop.
-
-To send a command from Pi:
-
-```python
-client.publish("jetson/command", "Control")
-```
-
----
-
-### 8. MQTT Troubleshooting
-
-| Symptom | Cause | Resolution |
-|---------|-------|------------|
-| No handshake | Broker not running, wrong IP | Verify broker on Jetson (`192.168.1.3`), check if possible to ping |
-| Image not received | Frame too large or not encoded | Lower resolution or ensure base64 step |
-| Reconnect fails | Network config, port blocked | Check UDP 1883/TCP, LAN routing |
-
----
-
-
-## Ball Detection
-
-This part provides an explanation of the ball tracking system which combines object detection via YOLOv8 with real-time color-based tracking using the HSV color space. It is designed for fast visual feedback, and is implemented using modular Python components with threaded architecture for performance. This pipeline is modular and highly tunable, meaning if there are any issues then variables can easily be changed via the `config.yaml` file.
-
----
-
-### 1. System Architecture
-
-The pipeline consists of these components:
-
-- `CameraManager`: Interfaces with the ZED stereo camera to acquire RGB/BGR frames and retrieve orientation data.
-- `YOLOModel`: Loads and runs YOLOv8 for object detection.
-- `BallTracker`: The core of the tracking system, responsible for combining YOLO and HSV tracking.
-- `vision_utils`: Contains utility functions for color tracking using OpenCV.
-- `TrackerService`: A unified interface for the rest of the application to interact with tracking functionality.
-
-All components are developed to maintain high responsiveness and frame stability using a producer-consumer threading pattern.
-
----
-
-### 2. Camera Acquisition (`CameraManager`)
-
-The ZED camera is initialized with fixed parameters for resolution and frame rate, which can be adjusted in `config.yaml` under the `camera:` section:
-
-```python
-init_params.camera_resolution = sl.RESOLUTION.HD720
-init_params.camera_fps = 60
-init_params.depth_mode = sl.DEPTH_MODE.NONE
-```
-
-Frame acquisition is handled by:
-
-```python
-def grab_frame(self):
-    if self.zed.grab() == sl.ERROR_CODE.SUCCESS:
-        self.zed.retrieve_image(image, sl.VIEW.LEFT)
-        bgr = image.get_data()
-        rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
-        return rgb, bgr
-    return None, None
-```
-
-Orientation data is retrieved from the IMU:
-
-```python
-def get_orientation(self):
-    imu_data = sensors_data.get_imu_data()
-    orientation = imu_data.get_pose(zed_imu_pose).get_orientation().get()
-    return [-orientation[1] + orientation[2], orientation[0] + orientation[3]]
-```
-
----
-
-### 3. Object Detection (`YOLOModel`)
-
-The YOLOv8 nano model is loaded and initialized at runtime using the Ultralytics API. It was trained for 40 epochs using 400+ images with manually annotated labels of the class `ball`. The model path is defined in `config.yaml` under `tracking.model_path`.
-
-After loading, the `.fuse()` method is called to combine convolution and batch normalization layers, optimizing the model for faster inference during deployment. This step improves runtime efficiency without affecting accuracy. The model is then set to evaluation mode using `.eval()`, which disables training-specific behaviors such as dropout and batch norm updates in order to give deterministic and consistent outputs. Other hyperparameters include AdamW as the optimizer, 16 as the batch size, 0.01 as the learning rate, and 1.5 as the distribution focal loss gain.
-
-
-```python
-self.model = YOLO(model_path)
-self.model.fuse()
-self.model.eval()
-```
-
-Before inference begins, the model is pre-warmed using a dummy frame:
-
-```python
-dummy = np.zeros((720, 1280, 3), dtype=np.uint8)
-self.model.predict(dummy, verbose=False)
-```
-
-Predictions are returned as:
-
-```python
-results = self.model.predict(image, conf=0.6)[0]
-```
-
-Each bounding box can be interpreted via:
-
-```python
-label = self.model.get_label(box.cls[0])
-```
-
----
-
-### 4. Ball Tracking (`BallTracker`)
-
-The core tracking class runs two threads:
-- `producer_loop`: Continuously updates the latest RGB/BGR frames from the camera.
-- `consumer_loop`: Processes those frames to track the ball.
-
-#### Initialization Phase
-
-When the system starts, the ball must be detected by YOLO within a predefined region defined in `config.yaml` as `tracking.init_ball_region`:
-
-```python
-if self.INIT_BALL_REGION[0][0] <= cx <= self.INIT_BALL_REGION[1][0] and ...
-```
-
-This makes sure that the ball is only initialized if it appears in a valid location, avoiding false starts caused by noise outside of the maze.
-
-#### HSV Tracking Phase
-
-Once the ball is initialized, frame-to-frame tracking switches to HSV. A region around the last known position is used, and the HSV color range and window size are defined in `config.yaml` under `tracking.hsv_range` and `tracking.hsv_window_size`:
-
-```python
-def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
-    roi = frame[y_min:y_max, x_min:x_max]
-    mask = cv2.inRange(cv2.cvtColor(roi, cv2.COLOR_BGR2HSV), hsv_lower, hsv_upper)
-    return get_center_of_mass(mask)
-```
-
-To improve the tracking further, position smoothing is applied using `tracking.smoothing_alpha`:
-
-```python
-alpha = 0.5
-x = int(alpha * new_pos[0] + (1 - alpha) * self.ball_position[0])
-y = int(alpha * new_pos[1] + (1 - alpha) * self.ball_position[1])
-self.ball_position = (x, y)
-```
-
----
-
-### 5. Fallback and Recovery
-
-If HSV fails for several consecutive frames (defined by `self.hsv_fail_threshold` in `config.yaml` under `tracking.hsv_fail_threshold`), the system triggers a fallback process:
-
-1. A global HSV scan (`global_hsv_search`) checks for color presence in the full frame.
-2. If a candidate is found, YOLO is re-run to validate the detection.
-3. A cooldown (`self.yolo_cooldown`) prevents YOLO from running every frame, controlled by `tracking.yolo_cooldown_period`.
-
-Example fallback logic:
-
-```python
-if self.hsv_fail_counter >= self.hsv_fail_threshold and self.yolo_cooldown == 0:
-    global_pos = global_hsv_search(bgr, *self.HSV_RANGE)
-    if global_pos:
-        results = self.model.predict(rgb)
-        # updates the ball position if confirmed
-```
-
----
-
-### 6. TrackerService (`tracker_service`)
-
-The `TrackerService` class simplifies external control and access:
-
-```python
-service = TrackerService()
-service.start_tracker()
-position = service.get_ball_position()
-frame = service.get_stable_frame()
-orientation = service.get_orientation()
-service.retrack()  # force re-detection
-```
-
----
-
-### 7. Vision Utilities (`vision_utils`)
-
-These functions are used internally for HSV-based tracking and position estimation.
-
-#### Center of Mass
-
-```python
-def get_center_of_mass(mask):
-    contours = cv2.findContours(...)[0]
-    largest = max(contours, key=cv2.contourArea)
-    if cv2.contourArea(largest) < min_area:
-        return None
-    return (cx, cy)
-```
-
-The minimum contour area used for filtering can be set in `config.yaml` under `tracking.hsv_min_contour_area`.
-
-#### Global Search
-
-```python
-def global_hsv_search(frame, hsv_lower, hsv_upper):
-    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-    mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
-    return get_center_of_mass(mask)
-```
-
-#### Local Windowed Search
-
-```python
-def hsv_tracking(frame, prev_pos, hsv_lower, hsv_upper, window_size=80):
-    roi = extract around prev_pos
-    mask = cv2.inRange(hsv, hsv_lower, hsv_upper)
-    return get_center_of_mass(mask)
-```
-
----
-
-### 8. Troubleshooting and Tuning
-
-### hsv_fail_threshold
-
-Controls how many consecutive HSV tracking failures must occur before falling back to global search and YOLO detection. Change this via `tracking.hsv_fail_threshold` in `config.yaml`.
-
-```python
-self.hsv_fail_threshold = 30  # default as it shows a good balance (0.5s at 60 FPS)
-```
-
-Increase if you’re experiencing too frequent fallback, decrease for faster recovery.
-
-#### yolo_cooldown_period
-
-Defines how many frames to wait after a YOLO attempt before allowing another. Change this via `tracking.yolo_cooldown_period` in `config.yaml`.
-
-```python
-self.yolo_cooldown_period = 15  # ~0.25s cooldown
-```
-
-Lowering this increases responsiveness at the cost of more frequent inference.
-
-#### min_area
-
-Used in `get_center_of_mass()` to ignore noise in the HSV mask. Change this via `tracking.hsv_min_contour_area` in `config.yaml`.
-
-```python
-min_area = 150  # or higher for higher-resolution cameras
-```
-
-Raise this to avoid tracking small irrelevant blobs.
-
-#### smoothing factor (alpha)
-
-Applies exponential smoothing to reduce jumpiness. Change this via `tracking.smoothing_alpha` in `config.yaml`.
-
-```python
-alpha = 0.5  # lower = smoother, higher = faster reaction
-```
-
-Tune this based on the expected ball motion and latency tolerance.
-
-#### Lighting sensitivity
-
-The HSV thresholds are susceptible to changing light conditions. Tune these empirically via `tracking.hsv_range` in `config.yaml`:
-
-```python
-self.HSV_RANGE = (
-    np.array([35, 80, 80]),  # HSV lower bound for green
-    np.array([85, 255, 255]) # HSV upper bound for green
-)
-```
-
-These can be changed for different ball colors, but it is important to remember that the YOLOv8 model is mostly trained on green balls, and green is what works the best from all values in the HSV space.
-
-## A* Pathfinding
-
-This part explains the architecture and implementation of a complete A* pathfinding system built for navigating the maze using binary obstacle maps. The system includes repulsion-aware path planning, mask preprocessing, waypoint smoothing, path memory caching, and several geometric enhancements. It is modular and can generalize for any type of maze with darker walls and a light background. Configuration for key parameters can be adjusted via the `config.yaml` file.
-
----
-
-### 1. A* Algorithm with Repulsion Field
-
-The core of the system is a modified A* algorithm (`astar.py`) that adds a repulsion term to avoid planning paths too close to obstacles. The algorithm uses Manhattan distance as its heuristic and introduces a cost penalty that increases near obstacles using a distance transform. The repulsion weight and minimum safe distance are configurable in `config.yaml` under `path_finding.repulsion_weight` and `path_finding.min_safe_distance`.
-
-#### Heuristic
-
-The Manhattan distance works well for this maze because A* operates on a discrete grid, only allowing 4-directional movement. It accurately estimates how far the ball is from its goal by summing the number of grid steps it needs to take along the X and Y directions.
-
-```python
-def heuristic(a, b):
-    return abs(a[0] - b[0]) + abs(a[1] - b[1])
-```
-
-#### Repulsion Map
-
-Repulsion cost is calculated by a distance transform on the binary obstacle map:
-
-```python
-def compute_repulsion_cost(array, min_safe_dist=14):
-    dist_transform = cv2.distanceTransform((array * 255).astype(np.uint8), cv2.DIST_L2, 3)
-    repulsion = (1.0 - (dist_transform / max_dist)) ** 3.0
-    return repulsion, mask_safe
-```
-
-This produces a smooth cost field where grid points near obstacles are heavily penalized. The `min_safe_dist` value is set through `config.yaml`.
-
-#### Path Search
-
-The `astar()` function integrates the repulsion field into the node cost:
-
-```python
-cost = 1.0 + repulsion_weight * repulsion_map[neighbor[0], neighbor[1]]
-tentative_g = gscore[current] + cost
-```
-
-This guides the A* search away from narrow gaps and obstacle boundaries.
-
----
-
-### 2. Downscaled Pathfinding
-
-The `astar_downscaled()` function provides a mechanism to run A* on a lower-resolution version of the map for performance purposes. The scale factor can be configured through `config.yaml` under `path_finding.astar_downscale`.
-
-```python
-small_array = cv2.resize(array, (0, 0), fx=scale, fy=scale, interpolation=cv2.INTER_NEAREST)
-path_small = astar(small_array, start_small, goal_small, repulsion_weight)
-```
-
-Once a path is found, it is scaled back up to the original resolution.
-
----
-
-### 3. Binary Mask Preprocessing
-
-Binary masks are generated from RGB camera input and refined through a series of transformations in `mask_utils.py`. The goal is to extract a reliable navigable area that excludes noise, green-field artifacts, and subtle edges. CLAHE, dynamic thresholding, and edge suppression are used. Preprocessing parameters such as kernel sizes and clip limits can be adjusted in `config.yaml` under `path_finding`.
-
-#### CLAHE and Thresholding
-
-The grayscale image is equalized with CLAHE and then binarized using Otsu’s threshold:
-
-```python
-gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-enhanced = apply_clahe(gray)
-_, base_mask = cv2.threshold(enhanced, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-```
-
-#### Edge Removal and Morphology
-
-Edge noise is removed and the mask is cleaned:
-
-```python
-edges = cv2.Canny(enhanced, 100, 200)
-edges_inv = cv2.bitwise_not(cv2.dilate(edges, kernel))
-final_mask = cv2.bitwise_and(cleaned, edges_inv)
-```
-
-#### Green Area Suppression
-
-Green pixels from the ball are removed. HSV threshold values used for this suppression are tuned to avoid corrupting the mask with ball-colored areas:
-
-```python
-hsv = cv2.cvtColor(gray_to_bgr, cv2.COLOR_BGR2HSV)
-green_mask = cv2.inRange(hsv, lower_green, upper_green)
-final_mask = cv2.bitwise_or(final_mask, green_mask)
-```
-
----
-
-### 4. Waypoint Sampling
-
-The raw A* path is often jagged or too dense for real-time movement. The `waypoint_sampling.py` module extracts a simplified list of axis-aligned waypoints for clean tilt control.
-
-#### Grid Expansion
-
-Each segment in the A* path is expanded into horizontal and vertical steps. Movement happens along one axis at a time, aligning the path with the maze's physical structure.
-```python
-for ty, tx in path[1:]:
-    for xx in range(...):
-        if mask[y][xx]:
-            raw.append((y, xx))
-    for yy in range(...):
-        if mask[yy][x]:
-            raw.append((yy, x))
-
-```
-
-#### Straight-Line Collapse
-
-Sequences of points with constant direction are collapsed to their endpoints. This reduces waypoint count while preserving directional flow.
-
-```python
-if direction to next ≠ direction from previous:
-    keep current
-```
-
-#### L-Pivot Injection
-
-At 90 degrees turns, explicit corner pivots are added. These are necessary to guide the PID and the ball through tight turns without diagnoal shortcuts, which could lead to the ball getting stuck. Pivots are added only if a clear line to them exists.
-
-```python
-if horizontal followed by vertical (or vice versa):
-    add intermediate corner
-```
-
-#### Algorithms for Simplification and Visibility Checks
-
-The reduced path is further simplified using a Douglas-Peucker variant. The simplification tolerance is based on the mean segment length and total raw path length.
-
-```python
-eps = mean_segment_length * log(raw_path_length + 1)
-waypoints = _douglas_peucker(path, eps)
-```
-
-All candidate waypoints are tested using a pixel-accurate Bresenham algorithm. This rejects any path segment that intersect obstacles.
-
-```python
-def _clear_path(p0, p1, mask):
-    for each pixel on the line:
-        if mask[y][x] == 0:
-            return False
-    return True
-```
-
----
-
-### 5. Path Drawing
-
-The `draw_path.py` module overlays paths on images for debugging or visualization:
-
-```python
-def draw_path(image, waypoints, start, goal):
-    for x, y in waypoints:
-        cv2.circle(out, (x, y), 8, (0, 0, 255), -1)
-```
-
-The output supports grayscale or color images, and annotates start/goal locations.
-
----
-
-### 6. Path Memory Caching
-
-To avoid recomputation, `path_memory.py` stores previously computed paths using a fuzzy match based on Euclidean distance. Caching parameters like size and tolerance are defined in `config.yaml` under `path_finding.path_cache_size` and `path_finding.path_cache_tolerance`.
-
-```python
-def get_cached_path(self, start, goal):
-    if _within_tolerance(start, cached_start) and _within_tolerance(goal, cached_goal):
-        return cached_path
-```
-
-Paths are serialized to JSON and persisted across runs:
-
-```python
-with open(self.cache_file, "w") as f:
-    json.dump(self.paths, f)
-```
-
----
-
-### 7. Nearest Walkable Point
-
-The function `find_nearest_walkable()` makes sure that the start and goal positions fall inside valid areas:
-
-```python
-if mask[y, x] != 0:
-    return point
-```
-
-If not, it searches in a radius using a distance transform to locate the nearest walkable pixel.
-
----
-
-### 8. Troubleshooting and Tuning
-
-#### repulsion_weight
-
-Controls how strongly the path avoids obstacles. Change this via `path_finding.repulsion_weight` in `config.yaml`.
-
-```python
-astar(..., repulsion_weight=5.0)
-```
-
-Try values between 2.0 and 6.0 for balance.
-
-#### min_safe_dist in repulsion
-
-Defines how far from an obstacle a point must be to be considered "safe." In layman's terms; if A* manages to find a narrow path between a hole and the edge of a wall, then this value needs to be higher. Change this via `path_finding.min_safe_distance` in `config.yaml`.
-
-```python
-compute_repulsion_cost(..., min_safe_dist=14)
-```
-
-#### scale in `astar_downscaled()`
-
-The downscale factor can be tuned in `config.yaml` using `path_finding.astar_downscale`. The default value of 1.0 means no scaling, but this can be changed to 0.5-0.8 for faster processing. Be careful as downscaling can result in `A* failed in downscaled space` error as downscaling the pixels can interfere with the threshold masking.
-
-```python
-astar_downscaled(..., scale=1.0)
-```
-
-Basically, lower values improve calculating speed but reduce precision.
-
-#### cache tolerance
-
-The threshold for cache re-use is defined in `path_finding.path_cache_tolerance` in `config.yaml`.
-
-```python
-PathMemory(tolerance=10)
-```
-
-Increase to enable more cache hits, but at the cost of re-using less precise paths.
-
-## Authors
