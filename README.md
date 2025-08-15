@@ -307,23 +307,75 @@ Calibration occurs automatically during state transitions and can be manually tr
 
 ## <a id="electrical-setup"></a>Electrical Setup
 
-The electrical system connects multiple components through a central power distribution and communication hub:
+This subsystem delivers power, feedback, actuation and data links between Jetson, Raspberry Pi, Arduino, motors and the user interface.
 
-**Power Requirements:**
-- Main Power Supply: 24V/5A for motor control system
-- Jetson Power: 5V/4A via USB-C or barrel connector
-- Raspberry Pi: 5V/3A via USB-C
-- Arduino: 5V via USB (powered by Jetson)
+### Power Architecture
+- Primary PSU:
+    - Mean Well 85 W dual-output (5 V & 12 V)
+- 5 V rail:
+    - Raspberry Pi 5
+    - LCD touch display
+    - Elevator servo
+    - LEDs
+- 12 V rail:
+    - NVIDIA Jetson Orin Nano
+    - Motor controller
+    - Enclosure cooling fan
+- Arduino Mega:
+    - Powered via USB from Jetson
 
-**Communication Wiring:**
-- Jetson ↔ Arduino: USB serial connection
-- Jetson ↔ Pi: Ethernet (MQTT over WiFi backup)
-- Arduino ↔ Motors: PWM control signals with current feedback
+### Arduino Interfaces
+- 5 V out (Arduino) → Positive reference for actuators potentiometers
+- Position feedback (linear actuator pots):
+  - Motor 1: A4
+  - Motor 2: A3
+  - Approximate ADC span: ~2 (fully retracted) to ~1018 at 50 mm extension
+- Motor PWM (direction-specific lines):
+  - Motor 1 Up: D9
+  - Motor 1 Down: D10
+  - Motor 2 Up: D11
+  - Motor 2 Down: D12
+  (Only one direction pin per motor should be active at a time)
+- Elevator servo: D5
+- LEDs: D7
 
-**Safety Features:**
-- Emergency stop circuitry for immediate motor shutdown
-- Current limiting on motor drivers to prevent damage
-- Voltage monitoring with automatic shutdown on power anomalies
+### Communication Wiring
+- Jetson ↔ Arduino: USB serial (motor commands, servo, LEDs)
+- Jetson ↔ Raspberry Pi: Ethernet (primary), MQTT over Wi‑Fi as fallback
+- Arduino ↔ Motor Controller: PWM (D9–D12) + analog feedback (A4, A3)
+- Touch screen (video): HDMI via pass‑through (switchable Pi / Jetson)
+- Touch screen (touch interface): USB‑A (normally to Pi, movable to Jetson)
+
+### Pass-Through Panel (Rear)
+External I/O without opening the enclosure:
+- 2 × USB‑A
+- 2 × HDMI
+- 1 × USB‑C (5 V power out)
+
+Panel mapping:
+- Lower USB‑A + lower HDMI → Raspberry Pi 5
+- Lower USB‑C → 5 V (screen power)
+- Upper USB‑A + upper HDMI → Jetson Orin Nano
+
+Images (choose preferred):
+![Pass-through Render](/pictures/pass-through_render.png)
+![Pass-through Photo](/pictures/pass-through.png)
+<!-- Choose rendered OR real photo -->
+
+### Touch Screen Usage
+- Power: USB‑C cable
+- Touch: USB‑A cable
+- Normal mode: HDMI + USB‑A routed to Raspberry Pi
+- Switch to Jetson: Move HDMI (and optionally touch USB) to Jetson-linked pass‑through ports
+
+### Electrical Schematic
+![Schematic](/pictures/maze_schematic_black_and_white.svg)
+<!-- Pick the clearer version -->
+
+### Fuses
+- Power entry module: 3.15 A ceramic cartridge
+- Each motor: 2.15 A glass cartridge
+- Spares: Both types stored in the transport box
 
 ---
 
