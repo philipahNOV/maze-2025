@@ -247,6 +247,7 @@ Path execution occurs in the `run_controller_main.main()` function with the foll
 
 ### <a id="path-following scheme"></a>Path-following scheme
 The controller may use one of two path-following schemes. Both schemes have advantages and dissadvantages, and the user may choose what scheme to use when starting the control execution after path-finding.
+The member variable `lookahead` in `position_controller.py` can be set to `True` or `False` corresponding to waypoint navigation and pure pursuit respectively. This should be set before starting `run_controller_main.py`.
 
 **Waypoint Navigation**
 
