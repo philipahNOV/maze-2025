@@ -357,10 +357,7 @@ Panel mapping:
 - Lower USB‑C → 5 V (screen power)
 - Upper USB‑A + upper HDMI → Jetson Orin Nano
 
-Images (choose preferred):
-![Pass-through Render](/pictures/pass-through_render.png)
 ![Pass-through Photo](/pictures/pass-through.png)
-<!-- Choose rendered OR real photo -->
 
 ### Touch Screen Usage
 - Power: USB‑C cable
@@ -369,8 +366,7 @@ Images (choose preferred):
 - Switch to Jetson: Move HDMI (and optionally touch USB) to Jetson-linked pass‑through ports
 
 ### Electrical Schematic
-![Schematic](/pictures/maze_schematic_black_and_white.svg)
-<!-- Pick the clearer version -->
+![Schematic](/pictures/maze_schematic.svg)
 
 ### Fuses
 - Power entry module: 3.15 A ceramic cartridge
