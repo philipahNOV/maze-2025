@@ -22,7 +22,7 @@ def add_score(name: str, time: float, maze_id: int, mqtt_client=None):
     else:
         needs_newline = False
     
-    with open(filepath, mode="a", newline="") as f:
+    with open(filepath, mode="a", newline="", encoding="utf-8") as f:
         if needs_newline:
             f.write('\n')
         writer = csv.writer(f)
@@ -50,7 +50,7 @@ def read_leaderboard(maze_id: int):
     if not os.path.exists(filepath):
         return []
 
-    with open(filepath, mode="r", newline="") as f:
+    with open(filepath, mode="r", newline="", encoding="utf-8") as f:
         reader = csv.reader(f)
         entries = []
         for row in reader:
