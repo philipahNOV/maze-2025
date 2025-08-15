@@ -261,7 +261,38 @@ Path execution occurs in the `run_controller_main.main()` function with the foll
    - Check target proximity and advance to next waypoint
 4. **Completion Detection**: Monitor goal proximity and handle success/failure states
 
-**Lookahead Optimization**: When enabled, the controller switches to a pure pursuit type path following. This smooths the ball trajectory and speeds up the execution.
+### <a id="path-following scheme"></a>Path-following scheme
+The controller may use one of two path-following schemes. Both schemes have advantages and dissadvantages, and the user may choose what scheme to use when starting the control execution after path-finding.
+
+**Waypoint Navigation**
+
+*In the HMI, this is referred to as "Safe Control"*
+- Setpoint control toward the next waypoint
+- Advances waypoint when the ball is within an acceptance radius
+- Uses dwell/advance logic at each waypoint. This ensures the ball rests at waypoints and helps prevent prematurely turning around corners.
+- Timeout based waypoint reverting. When a certain amount of time passes with no waypoint advancements, the target waypoint is reverted to the previous in the path.
+- Pros:
+    - Accurately controls to each waypoint
+    - Ball velocity stays controllable
+- Cons:
+    - The scheme is optimal when the path consists of few waypoints. This large reduction with waypoint sampling may lead to important waypoints being removed, resulting in a bad path.
+    - Slow. Stops at every waypoint.
+
+**Pure Pursuit**
+
+*In the HMI, this is referred to as "Fast Control"*
+- Projects the ball onto the nearest segment between two waypoints. Then walks along the path from the projected point a total distance of `lookahead distance`.
+- The projection is continuous, resulting in a smoother path trajectory.
+- Pros:
+    - Continuous path following
+    - Fast control due to not stopping at waypoints
+    - Smooth path/turns
+    - Natural ball movement
+    - Does not rely on optimal waypoint sampling
+- Cons:
+    - Smaller reduction of waypoints through sampling. This results in a more computaionally expensive control loop.
+    - Cuts turns due to the lookahead.
+    - Velocity may build up enough to become difficult to stop quickly using damping.
 
 ### <a id="horizontal-calibration"></a>Horizontal Calibration
 
@@ -270,12 +301,6 @@ Calibration occurs automatically during state transitions and can be manually tr
 
 ### <a id="tuning-tips"></a>Tuning Tips
 
-**Tuning**
-1. Start with `kp=0.5, ki=0, kd=0` and test basic response
-2. Increase `kp` until slight oscillation appears, then reduce by 20%
-3. Add `kd` (typically `kp/4`) to reduce overshoot and improve stability  
-4. Add minimal `ki` (typically `kp/40`) only if steady-state error persists
-5. Adjust `max_speed` based on maze size and desired completion time
 - Use current values as a base line
 - More responsiveness -> Increase `feedforward_t`
 - Smaller max velocities -> Increase `k_d`
