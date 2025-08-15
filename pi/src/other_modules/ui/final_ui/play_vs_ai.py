@@ -160,7 +160,7 @@ class PlayVsAIScreen(tk.Frame):
             highlightthickness=0,
             relief="flat",
         )
-        self.elevator_button.place(x=914, y=450, width=100, height=50)
+        self.elevator_button.place(x=914, y=450, width=200, height=75)
 
         self.back_button = tk.Button(
             self,
