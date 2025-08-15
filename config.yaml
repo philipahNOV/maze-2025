@@ -53,8 +53,8 @@ controller:
   integration_vel_threshold: 40
   position_controller_lookahead:
     feedforward_t: 10.5
-    kd_x: 0.001
-    kd_y: 0.001
+    kd_x: 0.0045
+    kd_y: 0.0045
     ki_x: 0.0002
     ki_y: 0.0002
     kp_x: 1.0e-05
@@ -106,7 +106,7 @@ path_following:
   lookahead:
     adaptive: false
     curvature_gain: 0.99
-    lookahead_distance: 80
+    lookahead_distance: 75
     lookahead_distance_max: 100
     lookahead_distance_min: 60
     smoothing_alpha: 0.03

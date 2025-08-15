@@ -26,8 +26,8 @@ namespace actuators {
 namespace lift_servo {
     Servo lift; // Servo for heis
     const uint8_t servo_pin = 5; // Pinne for servo
-    const uint8_t lift_down = 160; // Lav posisjon for heis
-    const uint8_t lift_up = 50; // Høy posisjon for heis
+    const uint8_t lift_down = 170; // Lav posisjon for heis
+    const uint8_t lift_up = 20; // Høy posisjon for heis
     const uint8_t lift_stop = 90; // Stopp posisjon for heis
     unsigned long elevator_start_time = 0; // Tidspunkt for når heisen startet å kjøre
     bool elevator_running = false; // Variabel for å sjekke om heisen er aktiv
