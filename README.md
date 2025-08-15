@@ -15,6 +15,7 @@ Most system parameters are configured through `config.yaml`, making it easy to a
 - [System Overview](#system-overview)  
 - [Physical Setup](#physical-setup)
 - [Setup & Configuration](#setup--configuration)
+  - [Login Information](#login--information)
   - [Dependencies](#dependencies)
 - [Control System](#control-system)
   - [System Components](#system-components)
@@ -32,8 +33,6 @@ Most system parameters are configured through `config.yaml`, making it easy to a
   - [Handshake Protocol](#handshake-protocol)
   - [Jetson MQTT Client](#jetson-mqtt-client)
   - [Pi MQTT Client](#pi-mqtt-client)
-  - [Message Formats](#message-formats)
-  - [Command Flow](#command-flow)
   - [MQTT Troubleshooting](#mqtt-troubleshooting)
 - [Ball Detection](#ball-detection)
   - [System Architecture](#ball-detection-architecture)
@@ -44,7 +43,6 @@ Most system parameters are configured through `config.yaml`, making it easy to a
   - [Detection Troubleshooting](#detection-troubleshooting)
 - [A* Pathfinding](#a-pathfinding)
   - [A* Algorithm with Repulsion Field](#a-algorithm-with-repulsion-field)
-  - [Downscaled Pathfinding](#downscaled-pathfinding)
   - [Binary Mask Preprocessing](#binary-mask-preprocessing)
   - [Waypoint Sampling](#waypoint-sampling)
   - [Path Drawing](#path-drawing)
@@ -101,7 +99,7 @@ Mount the ZED 2i camera directly above the maze center with clear line-of-sight 
 
 ## <a id="setup--configuration"></a>Setup & Configuration
 
-### <a id="login-information"></a>Login information
+### <a id="login--information"></a>Login Information
 
 **Raspberry Pi:**
 - Username: raspberrypi
