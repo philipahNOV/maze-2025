@@ -71,6 +71,7 @@ class HMIController:
         self.maze_version = None
         self.config = config
         self.maze_id = 1
+        self.elevator_state = 1  # 1 for up, -1 for down
 
         self.alive_thread = utility_threads.ImAliveThread(self.mqtt_client)
         self.alive_thread.start()
@@ -741,6 +742,7 @@ class HMIController:
                     self.image_thread.join()
                     self.image_thread = None
                 
+                self.elevator_state = 1
                 self.path = None
                 self.path_lookahead = None
                 self.playvsai_goal = None
@@ -806,6 +808,7 @@ class HMIController:
                 print("[PLAYALONE] Entering play alone start screen")
                 self.playalone_timer_start_requested = False
                 self.playalone_game_stop_requested = False
+                self.elevator_state = 1
 
                 # Safely stop and clear old image thread
                 if self.image_thread is not None:
@@ -962,6 +965,12 @@ class HMIController:
                     from utils.leaderboard_utils import send_leaderboard_data
                     send_leaderboard_data(self.mqtt_client, 1)
                     send_leaderboard_data(self.mqtt_client, 2)
+
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         elif self.state == SystemState.PLAYALONE_VICTORY:
             if cmd == "Back":
@@ -1166,6 +1175,12 @@ class HMIController:
                 
                 threading.Thread(target=self.run_playvsai_pid_turn, daemon=True).start()
 
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
+
         elif self.state == SystemState.PLAYVSAI_PID:
             if cmd == "Back":
                 self.playvsai_goal = None
@@ -1176,6 +1191,11 @@ class HMIController:
                 self.mqtt_client.client.publish("pi/command", "show_human_screen")
             if cmd == "human_screen":
                 self.state = SystemState.HUMAN_CONTROLLER
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         elif self.state == SystemState.PLAYVSAI_HUMAN:
             if cmd == "Back":
@@ -1205,6 +1225,11 @@ class HMIController:
                 self.start_playvsai_human_timer()
             elif cmd == "human_screen":
                 self.state = SystemState.HUMAN_CONTROLLER
+            elif cmd == "Elevator":
+                    for _ in range(5):
+                        self.arduino_thread.send_elevator(-self.elevator_state)
+                        time.sleep(0.05)
+                    self.elevator_state *= -1
 
         # --- NAVIGATION STATE ---
         elif self.state == SystemState.NAVIGATION:

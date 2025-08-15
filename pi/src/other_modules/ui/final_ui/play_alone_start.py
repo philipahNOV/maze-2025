@@ -88,6 +88,21 @@ class PlayAloneStartScreen(tk.Frame):
         )
         self.start_button.place(x=770, y=385, width=200, height=75)
 
+        self.elevator_button = tk.Button(
+            self,
+            text="ELEVATOR",
+            font=("Jockey One", 20),
+            bg="#60666C",
+            fg="white",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.elevator_pressed,
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+        )
+        self.elevator_button.place(x=770, y=470, width=200, height=75)
+
         self.info_label = tk.Label(
             self,
             text="YOU MAY PRESS 'A' TO START",
@@ -115,6 +130,8 @@ class PlayAloneStartScreen(tk.Frame):
 
         self.after(200, self.update_image)
 
+    def elevator_pressed(self):
+        self.mqtt_client.client.publish("jetson/command", "Elevator")
 
     def on_button_click_back(self):
         self.reset_game_state()

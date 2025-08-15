@@ -147,6 +147,21 @@ class PlayVsAIScreen(tk.Frame):
         )
         self.start_human_button.place(x=50, y=450)
 
+        self.elevator_button = tk.Button(
+            self,
+            text="ELEVATOR",
+            font=("Jockey One", 20),
+            bg="#60666C",
+            fg="white",
+            activebackground="#4B4C4C",
+            activeforeground="#DFDFDF",
+            command=self.elevator_pressed,
+            borderwidth=0,
+            highlightthickness=0,
+            relief="flat",
+        )
+        self.elevator_button.place(x=914, y=450, width=100, height=50)
+
         self.back_button = tk.Button(
             self,
             text="BACK",
@@ -163,6 +178,9 @@ class PlayVsAIScreen(tk.Frame):
             relief="flat"
         )
         self.back_button.place(x=864, y=10, width=150, height=50)
+
+    def elevator_pressed(self):
+        self.mqtt_client.client.publish("jetson/command", "Elevator")
 
     def start_battle(self):
         self.current_turn = "pid"
