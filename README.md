@@ -346,21 +346,17 @@ The broker runs locally on the Jetson device.
 The topic hierarchy follows a device-based naming convention for clear message routing:
 
 #### **Jetson Publishes:**
-- `pi/command`: UI state changes and game mode transitions
-- `pi/tracking_status`: Ball detection events and system status
-- `pi/image_feed`: Real-time camera feed with path overlays
-- `pi/ball_info`: Ball position coordinates and tracking confidence
-- `arduino/speed`: Motor control commands (X/Y velocities)
+- `handshake/response`: Handshake response to Pi.
+- `pi/command`: General commands.
+- `pi/camera`: Camera feed.
+- `pi/info`: General information flow from Jetson to Pi.
+- `pi/tracking_status`: Information about wether the tracker is started and wether or not the ball is found.
+- `pi/leaderboard_data`: Sending of leaderboard data. 
 
-#### **Jetson Subscribes:**
-- `jetson/command`: User interface commands and mode requests
-- `jetson/handshake`: Device connection and status verification
-
-#### **Pi Subscribes:**
-- `pi/command`: System state updates and display instructions
-- `pi/tracking_status`: Ball detection status for UI indicators
-- `pi/image_feed`: Camera feed for real-time maze visualization
-- `pi/ball_info`: Ball position for overlay graphics
+#### **Pi publishes:**
+- `hadshake/request`: Initiate handshake process.
+- `jetson/command`: General commands to transition states in the FSM.
+- `jetson/player_name`: Information about player name when using joystick.
 
 ### <a id="handshake-protocol"></a>Handshake Protocol
 
